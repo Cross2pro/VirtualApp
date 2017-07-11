@@ -3,13 +3,16 @@ package com.lody.virtual.client.hook.proxies.wifi;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.Inject;
 import com.lody.virtual.client.hook.base.MethodProxy;
+import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.hook.delegate.PhoneInfoDelegate;
+import com.lody.virtual.client.ipc.VLocationManager;
 
 import java.lang.reflect.Method;
 
@@ -30,6 +33,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
     protected void onBindMethods() {
         super.onBindMethods();
         addMethodProxy(new GetConnectionInfo());
+        addMethodProxy(new MethodProxies.GetScanResults());
     }
 
     private static class GetConnectionInfo extends MethodProxy {

@@ -4,6 +4,9 @@ import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.Inject;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
+import com.lody.virtual.client.ipc.VLocationManager;
+
+import java.lang.reflect.Method;
 
 import mirror.com.android.internal.telephony.IPhoneSubInfo;
 
@@ -28,7 +31,15 @@ public class PhoneSubInfoStub extends BinderInvocationProxy {
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getGroupIdLevel1"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("getGroupIdLevel1ForSubscriber"));
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getLine1Number"));
-		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1NumberForSubscriber"));
+		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1NumberForSubscriber"){
+			@Override
+			public Object call(Object who, Method method, Object... args) throws Throwable {
+				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
+					return null;
+				}
+				return super.call(who, method, args);
+			}
+		});
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getLine1AlphaTag"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1AlphaTagForSubscriber"));
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getMsisdn"));
@@ -40,6 +51,14 @@ public class PhoneSubInfoStub extends BinderInvocationProxy {
 		// The following method maybe need to fake
 		//addHook(new ReplaceCallingPkgHook("getDeviceId"));
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getIccSerialNumber"));
-		addMethodProxy(new ReplaceLastPkgMethodProxy("getIccSerialNumberForSubscriber"));
+		addMethodProxy(new ReplaceLastPkgMethodProxy("getIccSerialNumberForSubscriber"){
+			@Override
+			public Object call(Object who, Method method, Object... args) throws Throwable {
+				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
+					return null;
+				}
+				return super.call(who, method, args);
+			}
+		});
 	}
 }

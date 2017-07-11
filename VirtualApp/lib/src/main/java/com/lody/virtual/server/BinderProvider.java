@@ -19,6 +19,7 @@ import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
 import com.lody.virtual.server.job.VJobSchedulerService;
+import com.lody.virtual.server.location.VLocationManagerService;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
@@ -52,6 +53,8 @@ public final class BinderProvider extends ContentProvider {
         }
         VNotificationManagerService.systemReady(context);
         addService(ServiceManagerNative.NOTIFICATION, VNotificationManagerService.get());
+        VLocationManagerService.systemReady(context);
+        addService(ServiceManagerNative.LOCATION, VLocationManagerService.get());
         VAppManagerService.get().scanApps();
         VAccountManagerService.systemReady();
         addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());

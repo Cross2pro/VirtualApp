@@ -5,7 +5,6 @@ import android.content.Context;
 import android.support.multidex.MultiDexApplication;
 
 import com.flurry.android.FlurryAgent;
-import com.google.android.gms.ads.MobileAds;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.StubManifest;
 
@@ -49,7 +48,6 @@ public class VApp extends MultiDexApplication {
             @Override
             public void onMainProcess() {
                 Once.initialise(VApp.this);
-                MobileAds.initialize(VApp.this, "ca-app-pub-1609791120068944~5426483711");
                 new FlurryAgent.Builder()
                         .withLogEnabled(true)
                         .withListener(() -> {

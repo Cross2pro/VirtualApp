@@ -23,6 +23,7 @@ public class ServiceManagerNative {
     public static final String ACCOUNT = "account";
     public static final String JOB = "job";
     public static final String NOTIFICATION = "notification";
+    public static final String LOCATION = "vlocation";
     public static final String VS = "vs";
 
     public static final String SERVICE_DEF_AUTH = "virtual.service.BinderProvider";

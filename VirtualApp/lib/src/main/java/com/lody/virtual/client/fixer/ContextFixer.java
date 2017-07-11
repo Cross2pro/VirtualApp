@@ -2,14 +2,18 @@ package com.lody.virtual.client.fixer;
 
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.location.GpsStatus;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.DropBoxManager;
+import android.util.Log;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.proxies.dropbox.DropBoxManagerStub;
 import com.lody.virtual.client.hook.proxies.graphics.GraphicsStatsStub;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
 
@@ -69,6 +73,30 @@ public class ContextFixer {
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             ContentResolverJBMR2.mPackageName.set(context.getContentResolver(), hostPkg);
+        }
+        //第一次的gps状态伪装
+        final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        try {
+
+            Object GpsStatusListenerTransport = Reflect.on(LocationManager.class.getName() + "$GpsStatusListenerTransport").create(locationManager, new GpsStatus.Listener() {
+                @Override
+                public void onGpsStatusChanged(int event) {
+                }
+            }).get();
+            VLocationManager.get().fakeGpsStatus(GpsStatusListenerTransport);
+            Log.i("tmap","fakeGpsStatus1:ok");
+        } catch (Exception e) {
+            Log.w("tmap", "create", e);
+            try {
+                locationManager.addGpsStatusListener(new GpsStatus.Listener() {
+                    @Override
+                    public void onGpsStatusChanged(int event) {
+                    }
+                });
+                Log.i("tmap","fakeGpsStatus2:ok");
+            } catch (Exception e2) {
+                //ignore
+            }
         }
     }
 

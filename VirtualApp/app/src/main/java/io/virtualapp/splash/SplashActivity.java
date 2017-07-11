@@ -3,8 +3,6 @@ package io.virtualapp.splash;
 import android.os.Bundle;
 import android.view.WindowManager;
 
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
 import com.lody.virtual.client.core.VirtualCore;
 
 import io.virtualapp.R;
@@ -16,8 +14,6 @@ import io.virtualapp.home.HomeActivity;
 import jonathanfinerty.once.Once;
 
 public class SplashActivity extends VActivity {
-
-    private AdView mAdView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,9 +43,6 @@ public class SplashActivity extends VActivity {
     }
 
     private void showBanner() {
-        mAdView = (AdView) findViewById(R.id.splash_banner);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
     }
 
     private void doActionInThread() {
