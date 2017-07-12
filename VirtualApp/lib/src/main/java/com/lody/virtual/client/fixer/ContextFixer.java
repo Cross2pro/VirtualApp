@@ -77,14 +77,15 @@ public class ContextFixer {
         //第一次的gps状态伪装
         final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         try {
-
-            Object GpsStatusListenerTransport = Reflect.on(LocationManager.class.getName() + "$GpsStatusListenerTransport").create(locationManager, new GpsStatus.Listener() {
+            String clazz = Build.VERSION.SDK_INT < 24 ? "GpsStatusListenerTransport" : "GnssStatusListenerTransport";
+            Object GpsStatusListenerTransport = Reflect.on(LocationManager.class.getName()
+                    + "$"+clazz).create(locationManager, new GpsStatus.Listener() {
                 @Override
                 public void onGpsStatusChanged(int event) {
                 }
             }).get();
             VLocationManager.get().fakeGpsStatus(GpsStatusListenerTransport);
-            Log.i("tmap","fakeGpsStatus1:ok");
+            Log.i("tmap", "fakeGpsStatus1:ok");
         } catch (Exception e) {
             Log.w("tmap", "create", e);
             try {
@@ -93,7 +94,7 @@ public class ContextFixer {
                     public void onGpsStatusChanged(int event) {
                     }
                 });
-                Log.i("tmap","fakeGpsStatus2:ok");
+                Log.i("tmap", "fakeGpsStatus2:ok");
             } catch (Exception e2) {
                 //ignore
             }

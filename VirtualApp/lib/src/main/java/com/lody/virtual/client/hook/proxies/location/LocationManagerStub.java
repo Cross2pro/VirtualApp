@@ -164,6 +164,19 @@ public class LocationManagerStub extends BinderInvocationProxy {
                     return super.call(who, method, args);
                 }
             });
+        }else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1){
+            addMethodProxy(new ReplaceLastPkgMethodProxy2("requestLocationUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxy2("removeUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxy("getLastKnownLocation") {
+                @Override
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                        Location old = (Location) super.call(who, method, args);
+                        return VLocationManager.get().getVirtualLocation(null, old, getAppUserId());
+                    }
+                    return super.call(who, method, args);
+                }
+            });
         }
     }
 }
