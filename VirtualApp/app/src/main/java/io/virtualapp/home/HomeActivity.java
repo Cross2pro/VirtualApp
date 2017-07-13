@@ -99,18 +99,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
-        Location  location = new Location(LocationManager.GPS_PROVIDER);
-        location.setAltitude(5.1f);
-        //30.4770829328,114.6423339844
-        location.setAccuracy(120f);
-        location.setLatitude(30.479449d);
-        location.setLongitude(114.66834d);
-
-        Bundle extras = new Bundle();
-        if (extras.get("satellites") == null) {
-            extras.putInt("satellites", 5);
-        }
-        location.setExtras(extras);
+        Location  location = VLocationManager.get().makeGpsLocation(30.479449d,114.66834d);
         VActivityManager.get().killAppByPkg("com.tencent.mm",0);
         VActivityManager.get().killAppByPkg("com.tencent.mm.map",0);
         VLocationManager.get().stopAllLocationRequest();

@@ -99,15 +99,57 @@ public class VLocationManager {
         return null;
     }
 
+    /***
+     *
+     * @param loc 有经度和纬度的位置
+     */
+    public Location makeGpsLocation(Location loc) {
+        Location location = new Location(loc);
+        location.setProvider(LocationManager.GPS_PROVIDER);
+        //30.4770829328,114.6423339844
+        if (location.getAccuracy() <= 0 || location.getAccuracy() > 10000) {
+            location.setAccuracy(120f);
+        }
+        Bundle extras = new Bundle();
+        if (extras.get("satellites") == null) {
+            extras.putInt("satellites", GpsStatusGenerate.DEF_USER_FIX_COUNT);
+        }
+        location.setExtras(extras);
+        return location;
+    }
+
+    /***
+     *
+     * @param lat 纬度 -90~90
+     * @param lon 经度 -180~180
+     * @param alt 高度
+     * @param  accuracy 100-10000
+     */
+    public Location makeGpsLocation(double lat, double lon) {
+        Location location = new Location(LocationManager.GPS_PROVIDER);
+        location.setAltitude(0);
+        //30.4770829328,114.6423339844
+        location.setAccuracy(120f);
+        location.setLatitude(lat);
+        location.setLongitude(lon);
+        Bundle extras = new Bundle();
+        if (extras.get("satellites") == null) {
+            extras.putInt("satellites", GpsStatusGenerate.DEF_USER_FIX_COUNT);
+        }
+        location.setExtras(extras);
+        return location;
+    }
+
     /**
      * 停止全部定位
      */
-    public void stopAllLocationRequest(){
+    public void stopAllLocationRequest() {
         try {
             getService().stopAllLocationRequest();
         } catch (RemoteException e) {
         }
     }
+
     /**
      * @param method
      * @param userId

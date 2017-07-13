@@ -20,6 +20,7 @@ import com.lody.virtual.helper.utils.Reflect;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class VLocationManagerService extends ILocationManager.Stub {
@@ -31,7 +32,12 @@ public class VLocationManagerService extends ILocationManager.Stub {
     private final static boolean DEBUG = false;
     private final static int MSG_HANDLE_LOCATION = 1;
     private long mLastGPS, mLastLocation;
+    final Random mRandom = new Random(System.currentTimeMillis());
     private final static int HANDLE_TIME_GPS = 5 * 1000;
+    /**
+     * 报告位置时间间隔
+     */
+    private final static int HANDLE_TIME = 15 * 1000;
     /***
      * 多少时间报告一次
      */
@@ -108,10 +114,6 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 extras.putInt("satellites", 5);
             }
             location.setExtras(extras);
-            location.setTime(System.currentTimeMillis());
-            if (Build.VERSION.SDK_INT >= 17) {
-                Reflect.on(location).call("makeComplete");
-            }
         } else {
             synchronized (mLocations) {
                 location = mLocations.get(userId);
@@ -157,7 +159,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public void stopAllLocationRequest(){
+    public void stopAllLocationRequest() {
         synchronized (mGpsStatusListeners) {
             mGpsStatusListeners.clear();
         }
@@ -180,7 +182,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
             }
         }
         mHandler.removeMessages(MSG_HANDLE_LOCATION);
-        mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, 5000);
+        mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, HANDLE_TIME + mRandom.nextInt(1000));
     }
 
     private void handLocationChanged(boolean start, boolean force) {

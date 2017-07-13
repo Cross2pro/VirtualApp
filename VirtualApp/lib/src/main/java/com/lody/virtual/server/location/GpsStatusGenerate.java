@@ -10,6 +10,11 @@ import com.lody.virtual.helper.utils.Reflect;
 import java.util.Random;
 
 public class GpsStatusGenerate {
+    /***
+     * 默认使用卫星数
+     */
+    public static final int DEF_USER_FIX_COUNT = 5;
+
     private static final int SVID_SHIFT_WIDTH = 7;
     private static final int CONSTELLATION_TYPE_SHIFT_WIDTH = 3;
     /**
@@ -144,7 +149,7 @@ public class GpsStatusGenerate {
             snrs[i] = 30f + random.nextInt(20) + random.nextInt(10);
             elevations[i] = random.nextInt(25) + random.nextInt(15) + 1;
             azimuths[i] = random.nextInt(90) + random.nextInt(20) + random.nextInt(20) + 5;
-            if (i < 5) {
+            if (i < DEF_USER_FIX_COUNT) {
                 ephemerisMask |= prnShift;
                 almanacMask |= prnShift;
                 usedInFixMask |= prnShift;
