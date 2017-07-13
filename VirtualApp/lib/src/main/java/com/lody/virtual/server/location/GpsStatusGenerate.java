@@ -70,7 +70,7 @@ public class GpsStatusGenerate {
                                          int svCount,
                                          int[] prns, float[] snrs, float[] elevations, float[] azimuths,
                                          int ephemerisMask, int almanacMask, int usedInFixMask,
-                                         int[] svidWithFlags){
+                                         int[] svidWithFlags) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             try {
                 Reflect.on(mGpsStatusListenerTransport).call("onSvStatusChanged",
@@ -89,11 +89,12 @@ public class GpsStatusGenerate {
             //24 public void onSvStatusChanged(int svCount, int[] svidWithFlags, float[] snrs, float[] elevations, float[] azimuths)
         }
     }
+
     public static void fakeGpsStatus(LocationManager locationManager) {
         try {
             String clazz = Build.VERSION.SDK_INT < 24 ? "GpsStatusListenerTransport" : "GnssStatusListenerTransport";
             Object GpsStatusListenerTransport = Reflect.on(LocationManager.class.getName()
-                    + "$"+clazz).create(locationManager, new android.location.GpsStatus.Listener() {
+                    + "$" + clazz).create(locationManager, new android.location.GpsStatus.Listener() {
                 @Override
                 public void onGpsStatusChanged(int event) {
                 }
@@ -114,10 +115,12 @@ public class GpsStatusGenerate {
             }
         }
     }
+
     /**
      * 24 GnssStatusListenerTransport
+     * <p>
+     * 卫星状态，目前sdk都是判断卫星使用数和卫星信号，并没有判断卫星的真实位置数据
      *
-     * @param mGpsStatusListenerTransport
      */
     public static void fakeGpsStatus(Object mGpsStatusListenerTransport) {
         if (mGpsStatusListenerTransport == null) {
@@ -150,15 +153,15 @@ public class GpsStatusGenerate {
                 svidWithFlags[i] |= GNSS_SV_FLAGS_USED_IN_FIX;
             }
         }
-        if(mGpsStatusListenerTransport instanceof IGpsStatusListener){
-            IGpsStatusListener listener=(IGpsStatusListener)mGpsStatusListenerTransport;
+        if (mGpsStatusListenerTransport instanceof IGpsStatusListener) {
+            IGpsStatusListener listener = (IGpsStatusListener) mGpsStatusListenerTransport;
             try {
-                listener.onSvStatusChanged(svCount,prns, snrs, elevations, azimuths, ephemerisMask, almanacMask,
+                listener.onSvStatusChanged(svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask,
                         usedInFixMask, svidWithFlags);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-        }else {
+        } else {
             onSvStatusChanged(mGpsStatusListenerTransport, svCount,
                     prns, snrs, elevations, azimuths, ephemerisMask, almanacMask,
                     usedInFixMask, svidWithFlags);

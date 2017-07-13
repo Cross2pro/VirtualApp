@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,6 +27,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -95,6 +99,21 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
+        Location  location = new Location(LocationManager.GPS_PROVIDER);
+        location.setAltitude(5.1f);
+        //30.4770829328,114.6423339844
+        location.setAccuracy(120f);
+        location.setLatitude(30.479449d);
+        location.setLongitude(114.66834d);
+
+        Bundle extras = new Bundle();
+        if (extras.get("satellites") == null) {
+            extras.putInt("satellites", 5);
+        }
+        location.setExtras(extras);
+        VActivityManager.get().killAppByPkg("com.tencent.mm",0);
+        VActivityManager.get().killAppByPkg("com.tencent.mm.map",0);
+        VLocationManager.get().setVirtualLocation(location, 0);
     }
 
     private void initMenu() {

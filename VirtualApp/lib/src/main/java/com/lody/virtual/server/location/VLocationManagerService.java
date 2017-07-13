@@ -28,7 +28,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     private static final AtomicReference<VLocationManagerService> gService = new AtomicReference<>();
     private final List<IGpsStatusListener> mGpsStatusListeners = new ArrayList<>();
     private final List<ILocationListener> mLocationListeners = new ArrayList<>();
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
     private final static int MSG_HANDLE_LOCATION = 1;
     private long mLastGPS, mLastLocation;
     private final static int HANDLE_TIME_GPS = 5 * 1000;
@@ -47,7 +47,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_HANDLE_LOCATION:
-                    handLocationChanged(false);
+                    handLocationChanged(false, false);
                     startHandleTask();
                     return;
 
@@ -79,7 +79,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
         synchronized (mLocations) {
             mLocations.put(userId, loc);
         }
-        handLocationChanged(false);
+        handLocationChanged(false, true);
     }
 
     @Override
@@ -94,8 +94,9 @@ public class VLocationManagerService extends ILocationManager.Stub {
 
     @Override
     public Location getVirtualLocation(Location loc, int userId) {
+        Location location;
         if (DEBUG) {
-            Location location = new Location(LocationManager.GPS_PROVIDER);
+            location = new Location(LocationManager.GPS_PROVIDER);
             location.setAltitude(5.1f);
             //30.4770829328,114.6423339844
             location.setAccuracy(120f);
@@ -111,11 +112,18 @@ public class VLocationManagerService extends ILocationManager.Stub {
             if (Build.VERSION.SDK_INT >= 17) {
                 Reflect.on(location).call("makeComplete");
             }
-            return location;
+        } else {
+            synchronized (mLocations) {
+                location = mLocations.get(userId);
+            }
         }
-        synchronized (mLocations) {
-            return mLocations.get(userId);
+        if (location != null) {
+            location.setTime(System.currentTimeMillis());
+            if (Build.VERSION.SDK_INT >= 17) {
+                Reflect.on(location).call("makeComplete");
+            }
         }
+        return location;
     }
 
     @Override
@@ -139,12 +147,12 @@ public class VLocationManagerService extends ILocationManager.Stub {
     public void addLocationListener(ILocationListener listener) {
         synchronized (mLocationListeners) {
             if (mLocationListeners.contains(listener)) {
-                handLocationChanged(true);
+                handLocationChanged(true, false);
                 return;
             }
             mLocationListeners.add(listener);
         }
-        handLocationChanged(true);
+        handLocationChanged(true, false);
         startHandleTask();
     }
 
@@ -165,7 +173,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
         mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, 5000);
     }
 
-    private void handLocationChanged(boolean start) {
+    private void handLocationChanged(boolean start, boolean force) {
         boolean reportGps = false;
 //        if (!start) {
 //            if (System.currentTimeMillis() - mLastGPS >= HANDLE_TIME_GPS) {
