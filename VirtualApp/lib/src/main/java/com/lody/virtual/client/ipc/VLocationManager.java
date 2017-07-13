@@ -2,10 +2,12 @@ package com.lody.virtual.client.ipc;
 
 import android.location.GpsStatus;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -15,6 +17,7 @@ import com.lody.virtual.server.location.IGpsStatusListener;
 import com.lody.virtual.server.location.ILocationListener;
 import com.lody.virtual.server.location.ILocationManager;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -144,14 +147,16 @@ public class VLocationManager {
                 "registerGnssStatusCallback".equals(method)) {
             Object GpsStatusListenerTransport = args[0];
             GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
-            GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(GpsStatusListenerTransport, userId);
-            synchronized (mObjectListenerMap) {
-                mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
-            }
-            try {
-                getService().addGpsStatusListener(gpsStatusListenerTransport);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+            if (GpsStatusListenerTransport != null) {
+                GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(GpsStatusListenerTransport, userId);
+                synchronized (mObjectListenerMap) {
+                    mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
+                }
+                try {
+                    getService().addGpsStatusListener(gpsStatusListenerTransport);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         } else if ("removeGpsStatusListener".equals(method)
                 || "unregisterGnssStatusCallback".equals(method)) {
@@ -163,38 +168,71 @@ public class VLocationManager {
 
     private class ListenerTransport extends ILocationListener.Stub {
         Object mListenerTransport;
+        //LocationListener mListener
+        private LocationListener mLocationListener;
         int userId;
+        int pId;
 
         public ListenerTransport(Object listenerTransport, int userId) {
             mListenerTransport = listenerTransport;
             this.userId = userId;
+            pId = Process.myPid();
+            mLocationListener = Reflect.on(listenerTransport).opt("mListener");
         }
 
         @Override
         public void onLocationChanged(Location location) throws RemoteException {
-            Reflect.on(mListenerTransport).call("onLocationChanged", location);
+            if (mLocationListener != null) {
+                mLocationListener.onLocationChanged(location);
+            } else {
+                try {
+                    Reflect.on(mListenerTransport).call("onLocationChanged", location);
+                } catch (Exception e) {
+
+                }
+            }
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) throws RemoteException {
-            Reflect.on(mListenerTransport).call("onStatusChanged", provider, status, extras);
+            if (mLocationListener != null) {
+                mLocationListener.onStatusChanged(provider, status, extras);
+            } else {
+                Reflect.on(mListenerTransport).call("onStatusChanged", provider, status, extras);
+            }
         }
 
         @Override
         public void onProviderEnabled(String provider) throws RemoteException {
-            if (LocationManager.GPS_PROVIDER.equals(provider)) {
-                Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+            if (mLocationListener != null) {
+                if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                    mLocationListener.onProviderEnabled(provider);
+                } else {
+                    mLocationListener.onProviderDisabled(provider);
+                }
             } else {
-                Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
+                if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                    Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+                } else {
+                    Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
+                }
             }
         }
 
         @Override
         public void onProviderDisabled(String provider) throws RemoteException {
-            if (LocationManager.GPS_PROVIDER.equals(provider)) {
-                Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+            if (mLocationListener != null) {
+                if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                    mLocationListener.onProviderEnabled(provider);
+                } else {
+                    mLocationListener.onProviderDisabled(provider);
+                }
             } else {
-                Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
+                if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                    Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+                } else {
+                    Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
+                }
             }
         }
 
@@ -202,20 +240,42 @@ public class VLocationManager {
         public int getUserId() throws RemoteException {
             return userId;
         }
+
+        @Override
+        public int getPid() throws RemoteException {
+            return pId;
+        }
     }
 
     private class GpsStatusListenerTransport extends IGpsStatusListener.Stub {
         Object mGpsStatusListenerTransport;
         GpsStatus.Listener mListener;
         int userId;
+        int pId;
 
         public GpsStatusListenerTransport(Object gpsStatusListenerTransport, int userId) {
             mGpsStatusListenerTransport = gpsStatusListenerTransport;
             this.userId = userId;
-            mListener = Reflect.on(gpsStatusListenerTransport).opt("mListener");
-            if (mListener == null) {
-                mListener = Reflect.on(gpsStatusListenerTransport).opt("mGpsListener");
+            mListener = getListener();
+            pId = Process.myPid();
+        }
+
+        private GpsStatus.Listener getListener() {
+            Field[] fields = mGpsStatusListenerTransport.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getType() == GpsStatus.Listener.class) {
+                    field.setAccessible(true);
+                    try {
+                        return (GpsStatus.Listener) field.get(mGpsStatusListenerTransport);
+                    } catch (IllegalAccessException e) {
+                    }
+                }
             }
+            GpsStatus.Listener listener = Reflect.on(mGpsStatusListenerTransport).opt("mListener");
+            if (listener == null && Build.VERSION.SDK_INT > 23) {
+                listener = Reflect.on(mGpsStatusListenerTransport).opt("mGpsListener");
+            }
+            return listener;
         }
 
         @Override
@@ -251,6 +311,11 @@ public class VLocationManager {
         @Override
         public int getUserId() throws RemoteException {
             return userId;
+        }
+
+        @Override
+        public int getPid() throws RemoteException {
+            return pId;
         }
     }
 }

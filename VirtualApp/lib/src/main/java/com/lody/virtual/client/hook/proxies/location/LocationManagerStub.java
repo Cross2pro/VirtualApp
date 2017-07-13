@@ -2,6 +2,7 @@ package com.lody.virtual.client.hook.proxies.location;
 
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -191,5 +192,14 @@ public class LocationManagerStub extends BinderInvocationProxy {
                 }
             });
         }
+        addMethodProxy(new StaticMethodProxy("getBestProvider"){
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    return LocationManager.GPS_PROVIDER;
+                }
+                return super.call(who, method, args);
+            }
+        });
     }
 }

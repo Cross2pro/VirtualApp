@@ -12,4 +12,5 @@ interface IGpsStatusListener {
             in int[] svidWithFlags);
     void onGpsStatusChanged();
     int getUserId();
+    int getPid();
 }

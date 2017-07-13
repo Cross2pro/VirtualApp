@@ -10,4 +10,5 @@ interface ILocationListener {
     void onProviderEnabled(String provider);
     void onProviderDisabled(String provider);
     int getUserId();
+    int getPid();
 }
