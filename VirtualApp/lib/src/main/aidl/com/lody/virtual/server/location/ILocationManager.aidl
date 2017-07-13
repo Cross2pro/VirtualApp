@@ -7,11 +7,11 @@ import com.lody.virtual.server.location.ILocationListener;
 
 interface ILocationManager {
 
-    void setVirtualLocation(in Location loc, int userId);
+    void setVirtualLocation(in Location loc,String packageName, int userId);
 
-    boolean hasVirtualLocation(int userId);
+    boolean hasVirtualLocation(String packageName, int userId);
 
-    Location getVirtualLocation(in Location loc, int userId);
+    Location getVirtualLocation(in Location loc,String packageName, int userId);
 
     void addGpsStatusListener(in IGpsStatusListener listener);
 

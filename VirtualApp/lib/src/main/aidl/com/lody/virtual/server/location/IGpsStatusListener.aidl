@@ -13,4 +13,5 @@ interface IGpsStatusListener {
     void onGpsStatusChanged();
     int getUserId();
     int getPid();
+    String getPackageName();
 }

@@ -11,4 +11,5 @@ interface ILocationListener {
     void onProviderDisabled(String provider);
     int getUserId();
     int getPid();
+    String getPackageName();
 }

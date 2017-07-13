@@ -3,7 +3,6 @@ package com.lody.virtual.server.location;
 
 import android.content.Context;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,11 +36,12 @@ public class VLocationManagerService extends ILocationManager.Stub {
     /**
      * 报告位置时间间隔
      */
-    private final static int HANDLE_TIME = 15 * 1000;
+    private final static int HANDLE_TIME = 10 * 1000;
     /***
      * 多少时间报告一次
      */
     private final static int HANDLE_TIME_LOCATION = 30 * 1000;
+
     private final HandlerThread mHandlerThread;
 
     private class WorkHandler extends Handler {
@@ -81,7 +81,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public void setVirtualLocation(Location loc, int userId) {
+    public void setVirtualLocation(Location loc,String packageName, int userId) {
         synchronized (mLocations) {
             mLocations.put(userId, loc);
         }
@@ -89,7 +89,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public boolean hasVirtualLocation(int userId) {
+    public boolean hasVirtualLocation(String packageName,int userId) {
         if (DEBUG) {
             return true;
         }
@@ -99,7 +99,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public Location getVirtualLocation(Location loc, int userId) {
+    public Location getVirtualLocation(Location loc,String packageName, int userId) {
         Location location;
         if (DEBUG) {
             location = new Location(LocationManager.GPS_PROVIDER);
@@ -186,7 +186,6 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     private void handLocationChanged(boolean start, boolean force) {
-        boolean reportGps = false;
 //        if (!start) {
 //            if (System.currentTimeMillis() - mLastGPS >= HANDLE_TIME_GPS) {
 //                reportGps = true;
@@ -201,10 +200,12 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 try {
                     if (listener.asBinder().isBinderAlive()
                             && VActivityManager.get().isAppPid(listener.getPid())) {
+                        if(DEBUG)
+                            Log.d("tmap",listener.getPackageName()+":IGpsStatusListener");
+
                         if (start) {
                             GpsStatusGenerate.fakeGpsStatus(listener);
                             listener.onGpsStarted();
-                        } else if (reportGps) {
                             listener.onGpsStatusChanged();
                         }
                     } else {
@@ -232,9 +233,9 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 try {
                     if (listener.asBinder().isBinderAlive() && VActivityManager.get().isAppPid(listener.getPid())) {
                         if (!start) {
-                            Location loc = getVirtualLocation(null, listener.getUserId());
+                            Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
                             if (DEBUG)
-                                Log.d("tmap", "onLocationChanged:" + loc);
+                                Log.d("tmap", listener.getPackageName()+":onLocationChanged:" + loc);
                             listener.onLocationChanged(loc);
                         } else {
                             listener.onProviderEnabled(LocationManager.GPS_PROVIDER);

@@ -11,6 +11,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.server.location.GpsStatusGenerate;
 import com.lody.virtual.server.location.IGpsStatusListener;
@@ -55,7 +56,7 @@ public class VLocationManager {
 
     public void setVirtualLocation(Location loc, int userId) {
         try {
-            getService().setVirtualLocation(loc, userId);
+            getService().setVirtualLocation(loc, getPackageName(), userId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -63,7 +64,7 @@ public class VLocationManager {
 
     public boolean hasVirtualLocation(int userId) {
         try {
-            return getService().hasVirtualLocation(userId);
+            return getService().hasVirtualLocation(getPackageName(), userId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,7 +93,7 @@ public class VLocationManager {
         }
         //////
         try {
-            return getService().getVirtualLocation(loc, userId);
+            return getService().getVirtualLocation(loc, getPackageName(), userId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -150,6 +151,10 @@ public class VLocationManager {
         }
     }
 
+    public String getPackageName(){
+        return VClientImpl.get().getCurrentPackage();
+    }
+
     /**
      * @param method
      * @param userId
@@ -174,8 +179,8 @@ public class VLocationManager {
                 Log.e("tmap", "ListenerTransport:null");
             } else {
                 Log.i("tmap", "requestLocationUpdates:attch listener");
-
-                ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport, userId);
+                ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport,
+                        getPackageName(), userId);
                 synchronized (mListenerTransportMap) {
                     mListenerTransportMap.put(ListenerTransport, listenerTransport);
                 }
@@ -199,7 +204,8 @@ public class VLocationManager {
             Object GpsStatusListenerTransport = args[0];
             GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
             if (GpsStatusListenerTransport != null) {
-                GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(GpsStatusListenerTransport, userId);
+                GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(
+                        GpsStatusListenerTransport, getPackageName(), userId);
                 synchronized (mObjectListenerMap) {
                     mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
                 }
@@ -223,16 +229,20 @@ public class VLocationManager {
         private LocationListener mLocationListener;
         int userId;
         int pId;
+        String packageName;
+        private Location mLocation;
 
-        public ListenerTransport(Object listenerTransport, int userId) {
+        public ListenerTransport(Object listenerTransport, String packageName, int userId) {
             mListenerTransport = listenerTransport;
             this.userId = userId;
             pId = Process.myPid();
             mLocationListener = Reflect.on(listenerTransport).opt("mListener");
+            this.packageName = packageName;
         }
 
         @Override
         public void onLocationChanged(Location location) throws RemoteException {
+            mLocation = location;
             if (mLocationListener != null) {
                 mLocationListener.onLocationChanged(location);
             } else {
@@ -296,6 +306,11 @@ public class VLocationManager {
         public int getPid() throws RemoteException {
             return pId;
         }
+
+        @Override
+        public String getPackageName() {
+            return packageName;
+        }
     }
 
     private class GpsStatusListenerTransport extends IGpsStatusListener.Stub {
@@ -303,12 +318,14 @@ public class VLocationManager {
         GpsStatus.Listener mListener;
         int userId;
         int pId;
+        String packageName;
 
-        public GpsStatusListenerTransport(Object gpsStatusListenerTransport, int userId) {
+        public GpsStatusListenerTransport(Object gpsStatusListenerTransport, String packageName, int userId) {
             mGpsStatusListenerTransport = gpsStatusListenerTransport;
             this.userId = userId;
             mListener = getListener();
             pId = Process.myPid();
+            this.packageName = packageName;
         }
 
         private GpsStatus.Listener getListener() {
@@ -367,6 +384,11 @@ public class VLocationManager {
         @Override
         public int getPid() throws RemoteException {
             return pId;
+        }
+
+        @Override
+        public String getPackageName() {
+            return packageName;
         }
     }
 }
