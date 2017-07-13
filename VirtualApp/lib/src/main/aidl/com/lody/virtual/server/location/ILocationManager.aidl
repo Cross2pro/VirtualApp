@@ -2,7 +2,6 @@
 package com.lody.virtual.server.location;
 
 import android.location.Location;
-import com.lody.virtual.server.location.GpsStatus;
 import com.lody.virtual.server.location.IGpsStatusListener;
 import com.lody.virtual.server.location.ILocationListener;
 
@@ -13,10 +12,6 @@ interface ILocationManager {
     boolean hasVirtualLocation(int userId);
 
     Location getVirtualLocation(in Location loc, int userId);
-
-    GpsStatus getGpsStatus(int userId);
-
-    void setGpsStatus(in GpsStatus gpsStatus,int userId);
 
     void addGpsStatusListener(in IGpsStatusListener listener);
 

@@ -16,6 +16,7 @@ import com.lody.virtual.client.hook.proxies.graphics.GraphicsStatsStub;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
+import com.lody.virtual.server.location.GpsStatusGenerate;
 
 import mirror.android.app.ContextImpl;
 import mirror.android.app.ContextImplKitkat;
@@ -76,29 +77,7 @@ public class ContextFixer {
         }
         //第一次的gps状态伪装
         final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        try {
-            String clazz = Build.VERSION.SDK_INT < 24 ? "GpsStatusListenerTransport" : "GnssStatusListenerTransport";
-            Object GpsStatusListenerTransport = Reflect.on(LocationManager.class.getName()
-                    + "$"+clazz).create(locationManager, new GpsStatus.Listener() {
-                @Override
-                public void onGpsStatusChanged(int event) {
-                }
-            }).get();
-            VLocationManager.get().fakeGpsStatus(GpsStatusListenerTransport);
-            Log.i("tmap", "fakeGpsStatus1:ok");
-        } catch (Exception e) {
-            Log.w("tmap", "create", e);
-            try {
-                locationManager.addGpsStatusListener(new GpsStatus.Listener() {
-                    @Override
-                    public void onGpsStatusChanged(int event) {
-                    }
-                });
-                Log.i("tmap", "fakeGpsStatus2:ok");
-            } catch (Exception e2) {
-                //ignore
-            }
-        }
+        GpsStatusGenerate.fakeGpsStatus(locationManager);
     }
 
 }

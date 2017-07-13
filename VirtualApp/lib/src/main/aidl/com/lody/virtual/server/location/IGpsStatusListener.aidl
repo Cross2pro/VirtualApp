@@ -8,7 +8,8 @@ interface IGpsStatusListener {
     void onFirstFix(int ttff);
     void onSvStatusChanged(int svCount, in int[] prns, in float[] snrs,
             in float[] elevations, in float[] azimuths,
-            int ephemerisMask, int almanacMask, int usedInFixMask);
-    void onNmeaReceived(long timestamp, String nmea);
+            int ephemerisMask, int almanacMask, int usedInFixMask,
+            in int[] svidWithFlags);
+    void onGpsStatusChanged();
     int getUserId();
 }

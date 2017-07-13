@@ -5,25 +5,43 @@ import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 import android.util.SparseArray;
+
+import com.lody.virtual.helper.utils.Reflect;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class VLocationManagerService extends ILocationManager.Stub {
     private final SparseArray<Location> mLocations = new SparseArray<>();
-    private final SparseArray<GpsStatus> mGpsStatuss = new SparseArray<>();
     private Context mContext;
     private static final AtomicReference<VLocationManagerService> gService = new AtomicReference<>();
-    private final Map<Object, GpsListener> mGpsStatusListenerList = new ConcurrentHashMap<>();
-    private final Map<Object, ILocationListener> mLocationListenerList = new ConcurrentHashMap<>();
-    private LocationManager mLocationManager;
-    private LocationListener mLocationListener;
+    private final List<IGpsStatusListener> mGpsStatusListeners = new ArrayList<>();
+    private final List<ILocationListener> mLocationListeners = new ArrayList<>();
+    private final static boolean DEBUG = true;
+    private final static int MSG_HANDLE_LOCATION = 1;
+
+    private Handler mHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MSG_HANDLE_LOCATION:
+                    handLocationChanged(false);
+                    startHandleTask();
+                    return;
+
+            }
+            super.handleMessage(msg);
+        }
+    };
 
     public static void systemReady(Context context) {
         VLocationManagerService instance = new VLocationManagerService(context);
@@ -36,7 +54,6 @@ public class VLocationManagerService extends ILocationManager.Stub {
 
     private VLocationManagerService(Context context) {
         mContext = context;
-        mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
     }
 
     @Override
@@ -44,10 +61,14 @@ public class VLocationManagerService extends ILocationManager.Stub {
         synchronized (mLocations) {
             mLocations.put(userId, loc);
         }
+        handLocationChanged(false);
     }
 
     @Override
     public boolean hasVirtualLocation(int userId) {
+        if (DEBUG) {
+            return true;
+        }
         synchronized (mLocations) {
             return mLocations.get(userId) != null;
         }
@@ -55,99 +76,116 @@ public class VLocationManagerService extends ILocationManager.Stub {
 
     @Override
     public Location getVirtualLocation(Location loc, int userId) {
+        if (DEBUG) {
+            Location location = new Location(LocationManager.GPS_PROVIDER);
+            location.setAltitude(0);
+            //30.4770829328,114.6423339844
+            location.setAccuracy(100f);
+            location.setLatitude(30.477082d);
+            location.setLongitude(114.642333d);
+
+            Bundle extras = new Bundle();
+            if (extras.get("satellites") == null) {
+                extras.putInt("satellites", 5);
+            }
+            location.setExtras(extras);
+            location.setTime(System.currentTimeMillis());
+            if (Build.VERSION.SDK_INT >= 17) {
+                Reflect.on(location).call("makeComplete");
+            }
+            return location;
+        }
         synchronized (mLocations) {
             return mLocations.get(userId);
         }
     }
 
     @Override
-    public GpsStatus getGpsStatus(int userId) {
-        synchronized (mGpsStatuss) {
-            return mGpsStatuss.get(userId);
-        }
-    }
-
-    @Override
-    public void setGpsStatus(GpsStatus gpsStatus, int userId) {
-        synchronized (mGpsStatuss) {
-            mGpsStatuss.put(userId, gpsStatus);
-        }
-    }
-
-    @Override
     public void addGpsStatusListener(IGpsStatusListener listener) {
-        GpsListener proxy = new GpsListener(listener);
-        synchronized (mGpsStatusListenerList) {
-            mGpsStatusListenerList.put(listener, proxy);
-            //TODO 如果是系统的监听，则复制gps状态
+        synchronized (mGpsStatusListeners) {
+            mGpsStatusListeners.add(listener);
         }
-        mLocationManager.addGpsStatusListener(proxy);
     }
 
     @Override
     public void removeGpsStatusListener(IGpsStatusListener listener) {
-        GpsListener proxy;
-        synchronized (mGpsStatusListenerList) {
-            proxy = mGpsStatusListenerList.remove(listener);
-        }
-        if (proxy != null) {
-            mLocationManager.removeGpsStatusListener(proxy);
+        synchronized (mGpsStatusListeners) {
+            mGpsStatusListeners.remove(listener);
         }
     }
 
     //LocationRequest, ListenerTransport
     @Override
     public void addLocationListener(ILocationListener listener) {
-//        LocationListenerProxy proxy = new LocationListenerProxy(listener);
-//        synchronized (mLocationListenerList) {
-//            mLocationListenerList.add(listener);
-//        }
-        //LocationRequest
+        synchronized (mLocationListeners) {
+            mLocationListeners.add(listener);
+        }
+        handLocationChanged(true);
+        startHandleTask();
     }
 
     @Override
     public void removeLocationListener(ILocationListener listener) {
-        synchronized (mLocationListenerList) {
-            mLocationListenerList.remove(listener);
+        synchronized (mLocationListeners) {
+            mLocationListeners.remove(listener);
         }
     }
 
-    private class GpsListener implements android.location.GpsStatus.Listener {
-        //GpsStatusListenerTransport
-        private Object mObject;
-
-        private GpsListener(Object old) {
-            mObject = old;
+    private void startHandleTask() {
+        synchronized (mLocationListeners) {
+            if (mLocationListeners.size() == 0) {
+                return;
+            }
         }
-
-        @Override
-        public void onGpsStatusChanged(int event) {
-
-        }
+        mHandler.removeMessages(MSG_HANDLE_LOCATION);
+        mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, 5000);
     }
 
-    private class LocationListenerProxy implements LocationListener {
-        //ListenerTransport
-        private Object mObject;
-
-        @Override
-        public void onLocationChanged(Location location) {
-
+    private void handLocationChanged(boolean start) {
+        synchronized (mGpsStatusListeners) {
+            for (int i = mGpsStatusListeners.size() - 1; i >= 0; i--) {
+                IGpsStatusListener listener = mGpsStatusListeners.get(i);
+                if (listener.asBinder().isBinderAlive()) {
+                    if (start) {
+                        GpsStatusGenerate.fakeGpsStatus(listener);
+                        try {
+                            listener.onGpsStarted();
+                        } catch (RemoteException e) {
+                        }
+                    }
+                } else {
+                    mGpsStatusListeners.remove(i);
+                }
+            }
         }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
+        synchronized (mLocationListeners) {
+            for (int i = mLocationListeners.size() - 1; i >= 0; i--) {
+                ILocationListener listener = mLocationListeners.get(i);
+                if (listener.asBinder().isBinderAlive()) {
+                    if (!start) {
+                        try {
+                            Location loc = getVirtualLocation(null, listener.getUserId());
+                            if (DEBUG)
+                                Log.d("tmap", "onLocationChanged:" + loc);
+                            listener.onLocationChanged(loc);
+                        } catch (RemoteException e) {
+                            //ignore
+                            if (DEBUG)
+                                Log.w("tmap", "onLocationChanged", e);
+                        }
+                    } else {
+                        try {
+                            listener.onProviderEnabled(LocationManager.GPS_PROVIDER);
+                        } catch (RemoteException e) {
+                            //ignore
+                            if (DEBUG)
+                                Log.w("tmap", "onProviderEnabled", e);
+                        }
+                    }
+                }else{
+                    mLocationListeners.remove(listener);
+                }
+            }
         }
     }
 }

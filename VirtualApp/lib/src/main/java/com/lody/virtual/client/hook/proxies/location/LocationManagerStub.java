@@ -47,18 +47,33 @@ public class LocationManagerStub extends BinderInvocationProxy {
         }
     }
 
-    private static class ReplaceLastPkgMethodProxy2 extends ReplaceLastPkgMethodProxy {
-        ReplaceLastPkgMethodProxy2(String name) {
+    private static class ReplaceLastPkgMethodProxyBoolean extends ReplaceLastPkgMethodProxy {
+
+        ReplaceLastPkgMethodProxyBoolean(String name) {
             super(name);
         }
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                Object rs = VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
-                if (rs != null) {
-                    return rs;
-                }
+                VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
+                return true;
+            }
+            return super.call(who, method, args);
+        }
+    }
+
+    private static class ReplaceLastPkgMethodProxyVoid extends ReplaceLastPkgMethodProxy {
+
+        ReplaceLastPkgMethodProxyVoid(String name) {
+            super(name);
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
+                return 0;
             }
             return super.call(who, method, args);
         }
@@ -84,11 +99,11 @@ public class LocationManagerStub extends BinderInvocationProxy {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("addGpsStatusListener"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("removeGpsStatusListener"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyBoolean("addGpsStatusListener"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeGpsStatusListener"));
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("registerGnssStatusCallback"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("unregisterGnssStatusCallback"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyBoolean("registerGnssStatusCallback"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("unregisterGnssStatusCallback"));
         }
         addMethodProxy(new StaticMethodProxy("isProviderEnabled") {
             @Override
@@ -96,8 +111,8 @@ public class LocationManagerStub extends BinderInvocationProxy {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
                     if (args[0] instanceof String) {
                         return VLocationManager.get().isProviderEnabled((String) args[0]);
-                    }else{
-                        Log.w("tmap","args="+ Arrays.toString(args));
+                    } else {
+                        Log.w("tmap", "args=" + Arrays.toString(args));
                     }
                 }
                 return super.call(who, method, args);
@@ -108,16 +123,14 @@ public class LocationManagerStub extends BinderInvocationProxy {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        Object rx = VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
-                        if (rx != null) {
-                            return rx;
-                        }
+                        VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
+                        return 0;
                     }
                     return super.call(who, method, args);
                 }
             });
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("removeUpdates"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("requestGeofence"){
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxy("requestGeofence") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
@@ -126,7 +139,7 @@ public class LocationManagerStub extends BinderInvocationProxy {
                     return super.call(who, method, args);
                 }
             });
-            addMethodProxy(new ReplaceLastPkgMethodProxy("removeGeofence"){
+            addMethodProxy(new ReplaceLastPkgMethodProxy("removeGeofence") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
@@ -149,9 +162,9 @@ public class LocationManagerStub extends BinderInvocationProxy {
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN
                 && TextUtils.equals(Build.VERSION.RELEASE, "4.1.2")) {
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("requestLocationUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("requestLocationUpdates"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("requestLocationUpdatesPI"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("removeUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("removeUpdatesPI"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("addProximityAlert"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getLastKnownLocation") {
@@ -164,9 +177,9 @@ public class LocationManagerStub extends BinderInvocationProxy {
                     return super.call(who, method, args);
                 }
             });
-        }else if(Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1){
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("requestLocationUpdates"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy2("removeUpdates"));
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("requestLocationUpdates"));
+            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getLastKnownLocation") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {

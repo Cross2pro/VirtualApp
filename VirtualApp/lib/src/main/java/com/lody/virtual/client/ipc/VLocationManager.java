@@ -1,28 +1,21 @@
 package com.lody.virtual.client.ipc;
 
-import android.content.Context;
-import android.location.GnssStatus;
-import android.location.GpsSatellite;
+import android.location.GpsStatus;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.server.location.GpsStatus;
+import com.lody.virtual.server.location.GpsStatusGenerate;
+import com.lody.virtual.server.location.IGpsStatusListener;
+import com.lody.virtual.server.location.ILocationListener;
 import com.lody.virtual.server.location.ILocationManager;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -37,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VLocationManager {
     private static final VLocationManager sInstance = new VLocationManager();
     private ILocationManager mRemote;
-    private final static boolean DEBUG = true;
-    private final Map<Object, android.location.GpsStatus.Listener> mObjectListenerMap = new ConcurrentHashMap<>();
+    private final Map<Object, GpsStatusListenerTransport> mObjectListenerMap = new ConcurrentHashMap<>();
+    private final Map<Object, ListenerTransport> mListenerTransportMap = new ConcurrentHashMap<>();
 
     private VLocationManager() {
     }
@@ -66,7 +59,6 @@ public class VLocationManager {
     }
 
     public boolean hasVirtualLocation(int userId) {
-        if (DEBUG) return true;
         try {
             return getService().hasVirtualLocation(userId);
         } catch (Exception e) {
@@ -80,41 +72,22 @@ public class VLocationManager {
     }
 
     public Location getVirtualLocation(Object LocationRequest, Location loc, int userId) {
-        if (DEBUG) {
-            String provider = LocationManager.GPS_PROVIDER;
-            if (LocationRequest != null) {
-                try {
-                    provider = Reflect.on(LocationRequest).call("getProvider").get();
-                } catch (Exception e) {
-                    //ignore
-                    Log.e("tmap", "get provider", e);
-                }
+        //// test code
+        String provider = LocationManager.GPS_PROVIDER;
+        if (LocationRequest != null) {
+            try {
+                provider = Reflect.on(LocationRequest).call("getProvider").get();
+            } catch (Exception e) {
+                //ignore
+                Log.e("tmap", "get provider", e);
             }
-            if (!(LocationManager.GPS_PROVIDER.equals(provider)
-                    || LocationManager.NETWORK_PROVIDER.equals(provider)
-                    || LocationManager.PASSIVE_PROVIDER.equals(provider))) {
-                return loc;
-            }
-            Location location = new Location(LocationManager.GPS_PROVIDER);
-            location.setAltitude(0);
-            //30.4770829328,114.6423339844
-            location.setAccuracy(100f);
-            location.setLatitude(30.477082d);
-            location.setLongitude(114.642333d);
-
-            Bundle extras = new Bundle();
-            if (extras.get("satellites") == null) {
-                extras.putInt("satellites", 5);
-            }
-            extras.putDouble("lat", location.getLatitude());
-            extras.putDouble("lng", location.getLongitude());
-            location.setExtras(extras);
-            location.setTime(System.currentTimeMillis());
-            if (Build.VERSION.SDK_INT >= 17) {
-                Reflect.on(location).call("makeComplete");
-            }
-            return location;
         }
+        if (!(LocationManager.GPS_PROVIDER.equals(provider)
+                || LocationManager.NETWORK_PROVIDER.equals(provider)
+                || LocationManager.PASSIVE_PROVIDER.equals(provider))) {
+            return loc;
+        }
+        //////
         try {
             return getService().getVirtualLocation(loc, userId);
         } catch (Exception e) {
@@ -123,36 +96,16 @@ public class VLocationManager {
         return null;
     }
 
-    /***
-     * gps状态
-     */
-    public GpsStatus getGpsStatus(int userId) {
-        try {
-            getService().getGpsStatus(userId);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /***
-     * gps状态
-     */
-    public void setGpsStatus(GpsStatus gpsStatus, int userId) {
-        try {
-            getService().setGpsStatus(gpsStatus, userId);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * @param method
      * @param userId
      * @param args
      */
-    public Object replaceParams(String method, int userId, Object[] args) {
+    public void replaceParams(String method, int userId, Object[] args) {
         if ("removeUpdates".equals(method)) {
+            synchronized (mListenerTransportMap) {
+                mListenerTransportMap.remove(args[0]);
+            }
         } else if ("requestLocationUpdates".equals(method)) {
             Log.i("tmap", "requestLocationUpdates:start");
             //15-16 last
@@ -167,302 +120,137 @@ public class VLocationManager {
                 Log.e("tmap", "ListenerTransport:null");
             } else {
                 Log.i("tmap", "requestLocationUpdates:attch listener");
-                final LocationListener old = Reflect.on(ListenerTransport).get("mListener");
-                if (old != null) {
-                    Log.i("tmap", "requestLocationUpdates:old=" + old);
-                    final Location loc = getVirtualLocation(null, null, userId);
-                    Log.i("tmap", "LocationListenerProxy:" + loc);
-                    if (loc != null) {
-                        old.onProviderEnabled(loc.getProvider());
-                        old.onStatusChanged(loc.getProvider(), LocationProvider.AVAILABLE, new Bundle());
-                        final Random random = new Random(System.currentTimeMillis());
-                        final List<android.location.GpsStatus.Listener> listeners = new ArrayList<>();
-                        boolean isfake = false;
-                        synchronized (mObjectListenerMap) {
-                            for (Map.Entry<Object, android.location.GpsStatus.Listener> e : mObjectListenerMap.entrySet()) {
-                                final android.location.GpsStatus.Listener listener = e.getValue();
-                                if (!isfake && e.getKey() != null) {
-                                    isfake = true;
-                                    fakeGpsStatus(e.getKey());
-                                }
-                                if (listener != null) {
-                                    listeners.add(listener);
-                                }
-                            }
-                        }
-                        Log.i("tmap", "LocationListenerProxy:onGpsStatusChanged:" + listeners.size());
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e1) {
-                                    e1.printStackTrace();
-                                }
-                                Reflect.on(ListenerTransport).call("onLocationChanged", loc);
-                                for (android.location.GpsStatus.Listener listener : listeners) {
-                                    listener.onGpsStatusChanged(android.location.GpsStatus.GPS_EVENT_STARTED);
-                                    try {
-                                        Thread.sleep(1000);
-                                    } catch (InterruptedException e1) {
-                                        e1.printStackTrace();
-                                    }
-                                    int c = 10 + random.nextInt(60);
-                                    for (int i = 0; i < c; i++) {
-                                        listener.onGpsStatusChanged(android.location.GpsStatus.GPS_EVENT_SATELLITE_STATUS);
-                                        try {
-                                            Thread.sleep(1000);
-                                        } catch (InterruptedException e1) {
-                                            e1.printStackTrace();
-                                        }
-                                    }
-                                }
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e1) {
-                                    e1.printStackTrace();
-                                }
-                                Reflect.on(ListenerTransport).call("onLocationChanged", loc);
-                            }
-                        }).start();
-                        Log.i("tmap", "LocationListenerProxy:onLocationChanged:" + loc);
-//                        old.onLocationChanged(loc);
-                    } else {
-                        Log.w("tmap", "LocationListenerProxy:location is null");
+
+                ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport, userId);
+                synchronized (mListenerTransportMap) {
+                    mListenerTransportMap.put(ListenerTransport, listenerTransport);
+                }
+                try {
+                    getService().addLocationListener(listenerTransport);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                Location loc = getVirtualLocation(null, null, userId);
+                if (loc != null) {
+                    Log.d("tmap", "onLocationChanged1:" + loc);
+                    try {
+                        listenerTransport.onLocationChanged(loc);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
                     }
-                    Reflect.on(args[index]).set("mListener", new LocationListenerProxy(old));
-                } else {
-                    Log.e("tmap", "ListenerTransport:" + ListenerTransport);
                 }
             }
         } else if ("addGpsStatusListener".equals(method) ||
                 "registerGnssStatusCallback".equals(method)) {
             Object GpsStatusListenerTransport = args[0];
-            try {
-                fakeGpsStatus(GpsStatusListenerTransport);
-                android.location.GpsStatus.Listener old = Reflect.on(GpsStatusListenerTransport).opt("mListener");
-                if (old == null) {
-                    old = Reflect.on(GpsStatusListenerTransport).opt("mGpsListener");
-                }
-                if (old != null) {
-                    Log.i("tmap", "GpsStatusListenerProxy:ok");
-//                Reflect.on(GpsStatusListenerTransport).set("mListener", new GpsStatusListenerProxy(GpsStatusListenerTransport, old));
-                } else {
-                    Log.e("tmap", "ListenerTransport:" + GpsStatusListenerTransport);
-                }
-                synchronized (mObjectListenerMap) {
-                    mObjectListenerMap.put(args[0], old);
-                }
-            } catch (Exception e) {
-                Log.e("tmap", "fake GpsStatusListenerTransport", e);
+            GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
+            GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(GpsStatusListenerTransport, userId);
+            synchronized (mObjectListenerMap) {
+                mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
             }
-            return true;
+            try {
+                getService().addGpsStatusListener(gpsStatusListenerTransport);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         } else if ("removeGpsStatusListener".equals(method)
                 || "unregisterGnssStatusCallback".equals(method)) {
             synchronized (mObjectListenerMap) {
                 mObjectListenerMap.remove(args[0]);
             }
         }
-        return null;
     }
 
-    private class LocationListenerProxy implements LocationListener {
-        LocationListener mListener;
+    private class ListenerTransport extends ILocationListener.Stub {
+        Object mListenerTransport;
+        int userId;
 
-        public LocationListenerProxy(LocationListener listener) {
-            mListener = listener;
+        public ListenerTransport(Object listenerTransport, int userId) {
+            mListenerTransport = listenerTransport;
+            this.userId = userId;
         }
 
         @Override
-        public void onLocationChanged(Location location) {
-            Log.i("tmap", "onLocationChanged:" + location);
-            if (mListener != null) {
-                mListener.onLocationChanged(location);
-            }
+        public void onLocationChanged(Location location) throws RemoteException {
+            Reflect.on(mListenerTransport).call("onLocationChanged", location);
         }
 
         @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.i("tmap", "onStatusChanged:" + provider + ",status=" + status);
-            if (mListener != null) {
-                mListener.onStatusChanged(provider, status, extras);
-            }
+        public void onStatusChanged(String provider, int status, Bundle extras) throws RemoteException {
+            Reflect.on(mListenerTransport).call("onStatusChanged", provider, status, extras);
         }
 
         @Override
-        public void onProviderEnabled(String provider) {
-            if (mListener != null) {
-                if (LocationManager.NETWORK_PROVIDER.equals(provider)) {
-                    mListener.onProviderDisabled(provider);
-                } else {
-                    mListener.onProviderEnabled(provider);
-                }
+        public void onProviderEnabled(String provider) throws RemoteException {
+            if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+            } else {
+                Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
             }
         }
 
         @Override
-        public void onProviderDisabled(String provider) {
-            if (mListener != null) {
-                if (LocationManager.GPS_PROVIDER.equals(provider)) {
-                    mListener.onProviderEnabled(provider);
-                } else {
-                    mListener.onProviderDisabled(provider);
-                }
+        public void onProviderDisabled(String provider) throws RemoteException {
+            if (LocationManager.GPS_PROVIDER.equals(provider)) {
+                Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
+            } else {
+                Reflect.on(mListenerTransport).call("onProviderDisabled", provider);
             }
-        }
-    }
-
-    public void fakeGpsStatus(LocationManager locationManager) {
-        if (locationManager == null) {
-            Log.w("tmap", "locationManager==null");
-            return;
-        }
-    }
-
-    private LocationManager getLocation(Object GpsStatusListenerTransport) {
-        if (GpsStatusListenerTransport == null) return null;
-        Field[] fields = GpsStatusListenerTransport.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            if (field.getType() == LocationManager.class) {
-                field.setAccessible(true);
-                try {
-                    return (LocationManager) field.get(GpsStatusListenerTransport);
-                } catch (Exception e) {
-                }
-            }
-        }
-        return null;
-    }
-
-    public static final int SVID_SHIFT_WIDTH = 7;
-    public static final int CONSTELLATION_TYPE_SHIFT_WIDTH = 3;
-    /**
-     * Unknown constellation type.
-     */
-    public static final int CONSTELLATION_UNKNOWN = 0;
-    /**
-     * Constellation type constant for GPS.
-     */
-    public static final int CONSTELLATION_GPS = 1;
-    /**
-     * Constellation type constant for SBAS.
-     */
-    public static final int CONSTELLATION_SBAS = 2;
-    /**
-     * Constellation type constant for Glonass.
-     */
-    public static final int CONSTELLATION_GLONASS = 3;
-    /**
-     * Constellation type constant for QZSS.
-     */
-    public static final int CONSTELLATION_QZSS = 4;
-    /**
-     * Constellation type constant for Beidou.
-     */
-    public static final int CONSTELLATION_BEIDOU = 5;
-    /**
-     * Constellation type constant for Galileo.
-     */
-    public static final int CONSTELLATION_GALILEO = 6;
-    /**
-     * @hide
-     */
-    public static final int CONSTELLATION_TYPE_MASK = 0xf;
-
-    private static final int GLONASS_SVID_OFFSET = 64;
-    private static final int BEIDOU_SVID_OFFSET = 200;
-    private static final int SBAS_SVID_OFFSET = -87;
-
-    /**
-     * @hide
-     */
-    public static final int GNSS_SV_FLAGS_NONE = 0;
-    /**
-     * @hide
-     */
-    public static final int GNSS_SV_FLAGS_HAS_EPHEMERIS_DATA = (1 << 0);
-    /**
-     * @hide
-     */
-    public static final int GNSS_SV_FLAGS_HAS_ALMANAC_DATA = (1 << 1);
-    /**
-     * @hide
-     */
-    public static final int GNSS_SV_FLAGS_USED_IN_FIX = (1 << 2);
-
-    /**
-     * 24 GnssStatusListenerTransport
-     *
-     * @param mGpsStatusListenerTransport
-     */
-    public void fakeGpsStatus(Object mGpsStatusListenerTransport) {
-        if (mGpsStatusListenerTransport == null) {
-            return;
-        }
-        final int svCount = 16;
-        int[] prns = new int[svCount];
-        int[] svidWithFlags = new int[svCount];
-        float[] snrs = new float[svCount];
-        float[] elevations = new float[svCount];
-        float[] azimuths = new float[svCount];
-        int ephemerisMask = 0, almanacMask = 0, usedInFixMask = 0;
-        Random random = new Random(System.currentTimeMillis());
-        for (int i = 0; i < svCount; i++) {
-            int prn = (1 + i);
-            int prnShift = (1 << (prn - 1));
-            int constellationType = CONSTELLATION_GLONASS;
-            svidWithFlags[i] = (prn << SVID_SHIFT_WIDTH + GLONASS_SVID_OFFSET)
-                    | (constellationType << CONSTELLATION_TYPE_SHIFT_WIDTH);
-            prns[i] = prn;
-            snrs[i] = 30f + random.nextInt(20) + random.nextInt(10);
-            elevations[i] = random.nextInt(25) + random.nextInt(15) + 1;
-            azimuths[i] = random.nextInt(90) + random.nextInt(20) + random.nextInt(20) + 5;
-            if (i < 5) {
-                ephemerisMask |= prnShift;
-                almanacMask |= prnShift;
-                usedInFixMask |= prnShift;
-                svidWithFlags[i] |= GNSS_SV_FLAGS_HAS_EPHEMERIS_DATA;
-                svidWithFlags[i] |= GNSS_SV_FLAGS_HAS_ALMANAC_DATA;
-                svidWithFlags[i] |= GNSS_SV_FLAGS_USED_IN_FIX;
-            }
-        }
-        //15-23 public void onSvStatusChanged(int svCount, int[] prns, float[] snrs,float[] elevations, float[] azimuths, int ephemerisMask,int almanacMask, int usedInFixMask)
-        //24 public void onSvStatusChanged(int svCount, int[] prns, float[] snrs, float[] elevations, float[] azimuths)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            Reflect.on(mGpsStatusListenerTransport).call("onSvStatusChanged",
-                    svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
-            //15-23 public void onSvStatusChanged(int svCount, int[] prns, float[] snrs,float[] elevations, float[] azimuths, int ephemerisMask,int almanacMask, int usedInFixMask)
-        } else {
-            Reflect.on(mGpsStatusListenerTransport).call("onSvStatusChanged",
-                    svCount, svidWithFlags, snrs, elevations, azimuths);
-            //24 public void onSvStatusChanged(int svCount, int[] svidWithFlags, float[] snrs, float[] elevations, float[] azimuths)
-        }
-    }
-
-    private class GpsStatusListenerProxy implements android.location.GpsStatus.Listener {
-        private android.location.GpsStatus.Listener mListener;
-        private Object mGpsStatusListenerTransport;
-        private boolean isFaking = false;
-
-        public GpsStatusListenerProxy(Object GpsStatusListenerTransport,
-                                      android.location.GpsStatus.Listener listener) {
-            mListener = listener;
-            mGpsStatusListenerTransport = GpsStatusListenerTransport;
         }
 
         @Override
-        public void onGpsStatusChanged(int event) {
-            if (mListener != null) {
-                if (event == android.location.GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-                    if (!isFaking) {
-                        isFaking = true;
-                        fakeGpsStatus(mGpsStatusListenerTransport);
-                        isFaking = false;
-                        return;
-                    }
-                }
-                mListener.onGpsStatusChanged(event);
+        public int getUserId() throws RemoteException {
+            return userId;
+        }
+    }
+
+    private class GpsStatusListenerTransport extends IGpsStatusListener.Stub {
+        Object mGpsStatusListenerTransport;
+        GpsStatus.Listener mListener;
+        int userId;
+
+        public GpsStatusListenerTransport(Object gpsStatusListenerTransport, int userId) {
+            mGpsStatusListenerTransport = gpsStatusListenerTransport;
+            this.userId = userId;
+            mListener = Reflect.on(gpsStatusListenerTransport).opt("mListener");
+            if (mListener == null) {
+                mListener = Reflect.on(gpsStatusListenerTransport).opt("mGpsListener");
             }
+        }
+
+        @Override
+        public void onGpsStarted() throws RemoteException {
+            Reflect.on(mGpsStatusListenerTransport).call("onGpsStarted");
+        }
+
+        @Override
+        public void onGpsStopped() throws RemoteException {
+            Reflect.on(mGpsStatusListenerTransport).call("onGpsStopped");
+        }
+
+        @Override
+        public void onFirstFix(int ttff) throws RemoteException {
+            Reflect.on(mGpsStatusListenerTransport).call("onFirstFix", ttff);
+        }
+
+        @Override
+        public void onSvStatusChanged(int svCount, int[] prns, float[] snrs, float[] elevations, float[] azimuths,
+                                      int ephemerisMask, int almanacMask, int usedInFixMask, int[] svidWithFlags) throws RemoteException {
+            GpsStatusGenerate.onSvStatusChanged(mGpsStatusListenerTransport,
+                    svCount, prns, snrs, elevations, azimuths,
+                    ephemerisMask, almanacMask, usedInFixMask, svidWithFlags);
+        }
+
+        @Override
+        public void onGpsStatusChanged() throws RemoteException {
+            if (mListener != null) {
+                mListener.onGpsStatusChanged(android.location.GpsStatus.GPS_EVENT_STARTED);
+            }
+        }
+
+        @Override
+        public int getUserId() throws RemoteException {
+            return userId;
         }
     }
 }
