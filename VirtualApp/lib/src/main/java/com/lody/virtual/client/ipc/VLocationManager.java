@@ -100,6 +100,15 @@ public class VLocationManager {
     }
 
     /**
+     * 停止全部定位
+     */
+    public void stopAllLocationRequest(){
+        try {
+            getService().stopAllLocationRequest();
+        } catch (RemoteException e) {
+        }
+    }
+    /**
      * @param method
      * @param userId
      * @param args

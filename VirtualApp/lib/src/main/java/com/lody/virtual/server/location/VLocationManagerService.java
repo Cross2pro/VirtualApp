@@ -157,6 +157,16 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
+    public void stopAllLocationRequest(){
+        synchronized (mGpsStatusListeners) {
+            mGpsStatusListeners.clear();
+        }
+        synchronized (mLocationListeners) {
+            mLocationListeners.clear();
+        }
+    }
+
+    @Override
     public void removeLocationListener(ILocationListener listener) {
         synchronized (mLocationListeners) {
             mLocationListeners.remove(listener);

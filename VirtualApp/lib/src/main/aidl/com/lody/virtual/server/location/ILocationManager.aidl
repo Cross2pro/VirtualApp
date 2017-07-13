@@ -20,4 +20,6 @@ interface ILocationManager {
     void addLocationListener(in ILocationListener listener);
 
     void removeLocationListener(in ILocationListener listener);
+
+    void stopAllLocationRequest();
 }
