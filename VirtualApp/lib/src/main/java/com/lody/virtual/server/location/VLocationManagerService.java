@@ -31,6 +31,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     private final static boolean DEBUG = false;
     private final static int MSG_HANDLE_LOCATION = 1;
     private long mLastGPS, mLastLocation;
+    private static final boolean REPORT_LOCATION_WITH_GPS_STATUS = false;
     final Random mRandom = new Random(System.currentTimeMillis());
     private final static int HANDLE_TIME_GPS = 5 * 1000;
     /**
@@ -81,7 +82,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public void setVirtualLocation(Location loc,String packageName, int userId) {
+    public void setVirtualLocation(Location loc, String packageName, int userId) {
         synchronized (mLocations) {
             mLocations.put(userId, loc);
         }
@@ -89,7 +90,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public boolean hasVirtualLocation(String packageName,int userId) {
+    public boolean hasVirtualLocation(String packageName, int userId) {
         if (DEBUG) {
             return true;
         }
@@ -99,7 +100,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public Location getVirtualLocation(Location loc,String packageName, int userId) {
+    public Location getVirtualLocation(Location loc, String packageName, int userId) {
         Location location;
         if (DEBUG) {
             location = new Location(LocationManager.GPS_PROVIDER);
@@ -194,28 +195,29 @@ public class VLocationManagerService extends ILocationManager.Stub {
 //        } else {
 //            mLastGPS = System.currentTimeMillis();
 //        }
-        synchronized (mGpsStatusListeners) {
-            for (int i = mGpsStatusListeners.size() - 1; i >= 0; i--) {
-                IGpsStatusListener listener = mGpsStatusListeners.get(i);
-                try {
-                    if (listener.asBinder().isBinderAlive()
-                            && VActivityManager.get().isAppPid(listener.getPid())) {
-                        if(DEBUG)
-                            Log.d("tmap",listener.getPackageName()+":IGpsStatusListener");
+        if(REPORT_LOCATION_WITH_GPS_STATUS) {
+            synchronized (mGpsStatusListeners) {
+                for (int i = mGpsStatusListeners.size() - 1; i >= 0; i--) {
+                    IGpsStatusListener listener = mGpsStatusListeners.get(i);
+                    try {
+                        if (listener.asBinder().isBinderAlive()
+                                && listener.isAlive()) {
+                            if (DEBUG)
+                                Log.d("tmap", listener.getPackageName() + ":IGpsStatusListener");
 
-                        if (start) {
-                            GpsStatusGenerate.fakeGpsStatus(listener);
-                            listener.onGpsStarted();
-                            listener.onGpsStatusChanged();
+                            if (start) {
+                                listener.onGpsStarted();
+                                GpsStatusGenerate.fakeGpsStatus(listener);
+                            }
+                        } else {
+                            mGpsStatusListeners.remove(i);
+                            if (DEBUG)
+                                Log.d("tmap", "remove GpsStatusListener:");
                         }
-                    } else {
+                    } catch (Throwable e) {
                         mGpsStatusListeners.remove(i);
-                        if (DEBUG)
-                            Log.d("tmap", "remove GpsStatusListener:");
+                        //
                     }
-                } catch (RemoteException e) {
-                    mGpsStatusListeners.remove(i);
-                    //
                 }
             }
         }
@@ -231,11 +233,11 @@ public class VLocationManagerService extends ILocationManager.Stub {
             for (int i = mLocationListeners.size() - 1; i >= 0; i--) {
                 ILocationListener listener = mLocationListeners.get(i);
                 try {
-                    if (listener.asBinder().isBinderAlive() && VActivityManager.get().isAppPid(listener.getPid())) {
+                    if (listener.asBinder().isBinderAlive() && listener.isAlive()) {
                         if (!start) {
                             Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
                             if (DEBUG)
-                                Log.d("tmap", listener.getPackageName()+":onLocationChanged:" + loc);
+                                Log.d("tmap", listener.getPackageName() + ":onLocationChanged:" + loc);
                             listener.onLocationChanged(loc);
                         } else {
                             listener.onProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -245,7 +247,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
                         if (DEBUG)
                             Log.d("tmap", "remove LocationListener:");
                     }
-                } catch (RemoteException e) {
+                } catch (Throwable e) {
                     //ignore
                     mLocationListeners.remove(i);
                     if (DEBUG)

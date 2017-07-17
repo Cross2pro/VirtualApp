@@ -14,4 +14,5 @@ interface IGpsStatusListener {
     int getUserId();
     int getPid();
     String getPackageName();
+    boolean isAlive();
 }

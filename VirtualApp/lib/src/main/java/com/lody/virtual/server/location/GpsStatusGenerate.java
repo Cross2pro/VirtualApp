@@ -71,28 +71,31 @@ public class GpsStatusGenerate {
      */
     private static final int GNSS_SV_FLAGS_USED_IN_FIX = (1 << 2);
 
-    public static void onSvStatusChanged(Object mGpsStatusListenerTransport,
-                                         int svCount,
-                                         int[] prns, float[] snrs, float[] elevations, float[] azimuths,
-                                         int ephemerisMask, int almanacMask, int usedInFixMask,
-                                         int[] svidWithFlags) {
+    public static boolean onSvStatusChanged(Object mGpsStatusListenerTransport,
+                                            int svCount,
+                                            int[] prns, float[] snrs, float[] elevations, float[] azimuths,
+                                            int ephemerisMask, int almanacMask, int usedInFixMask,
+                                            int[] svidWithFlags) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             try {
                 Reflect.on(mGpsStatusListenerTransport).call("onSvStatusChanged",
                         svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 //TODO 上报方法参数
+                return false;
             }
             //15-23 public void onSvStatusChanged(int svCount, int[] prns, float[] snrs,float[] elevations, float[] azimuths, int ephemerisMask,int almanacMask, int usedInFixMask)
         } else {
             try {
                 Reflect.on(mGpsStatusListenerTransport).call("onSvStatusChanged",
                         svCount, svidWithFlags, snrs, elevations, azimuths);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 //TODO 上报方法参数
+                return false;
             }
             //24 public void onSvStatusChanged(int svCount, int[] svidWithFlags, float[] snrs, float[] elevations, float[] azimuths)
         }
+        return true;
     }
 
     public static void fakeGpsStatus(LocationManager locationManager) {
@@ -105,7 +108,6 @@ public class GpsStatusGenerate {
                 }
             }).get();
             fakeGpsStatus(GpsStatusListenerTransport);
-            Log.i("tmap", "fakeGpsStatus1:ok");
         } catch (Exception e) {
             Log.w("tmap", "create", e);
             try {
@@ -114,7 +116,6 @@ public class GpsStatusGenerate {
                     public void onGpsStatusChanged(int event) {
                     }
                 });
-                Log.i("tmap", "fakeGpsStatus2:ok");
             } catch (Exception e2) {
                 //ignore
             }
@@ -125,11 +126,10 @@ public class GpsStatusGenerate {
      * 24 GnssStatusListenerTransport
      * <p>
      * 卫星状态，目前sdk都是判断卫星使用数和卫星信号，并没有判断卫星的真实位置数据
-     *
      */
-    public static void fakeGpsStatus(Object mGpsStatusListenerTransport) {
+    public static boolean fakeGpsStatus(Object mGpsStatusListenerTransport) {
         if (mGpsStatusListenerTransport == null) {
-            return;
+            return false;
         }
         final int svCount = 16;
         int[] prns = new int[svCount];
@@ -163,11 +163,12 @@ public class GpsStatusGenerate {
             try {
                 listener.onSvStatusChanged(svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask,
                         usedInFixMask, svidWithFlags);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+                return true;
+            } catch (Exception e) {
+                return false;
             }
         } else {
-            onSvStatusChanged(mGpsStatusListenerTransport, svCount,
+            return onSvStatusChanged(mGpsStatusListenerTransport, svCount,
                     prns, snrs, elevations, azimuths, ephemerisMask, almanacMask,
                     usedInFixMask, svidWithFlags);
         }

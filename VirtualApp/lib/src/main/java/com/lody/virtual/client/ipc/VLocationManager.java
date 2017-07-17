@@ -6,6 +6,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -151,7 +152,7 @@ public class VLocationManager {
         }
     }
 
-    public String getPackageName(){
+    public String getPackageName() {
         return VClientImpl.get().getCurrentPackage();
     }
 
@@ -187,7 +188,8 @@ public class VLocationManager {
                 try {
                     getService().addLocationListener(listenerTransport);
                 } catch (RemoteException e) {
-                    e.printStackTrace();
+                    Log.e("tmap", "add", e);
+                    return;
                 }
                 Location loc = getVirtualLocation(null, null, userId);
                 if (loc != null) {
@@ -241,11 +243,18 @@ public class VLocationManager {
         }
 
         @Override
+        public boolean isAlive() {
+            return mListenerTransport != null &&
+                    (Boolean)Reflect.on(mListenerTransport).call("isBinderAlive").get();
+//            return mHandler != null;
+        }
+
+        @Override
         public void onLocationChanged(Location location) throws RemoteException {
             mLocation = location;
             if (mLocationListener != null) {
                 mLocationListener.onLocationChanged(location);
-            } else {
+            } else if(isAlive()){
                 try {
                     Reflect.on(mListenerTransport).call("onLocationChanged", location);
                 } catch (Exception e) {
@@ -258,7 +267,7 @@ public class VLocationManager {
         public void onStatusChanged(String provider, int status, Bundle extras) throws RemoteException {
             if (mLocationListener != null) {
                 mLocationListener.onStatusChanged(provider, status, extras);
-            } else {
+            } else if(isAlive()) {
                 Reflect.on(mListenerTransport).call("onStatusChanged", provider, status, extras);
             }
         }
@@ -271,7 +280,7 @@ public class VLocationManager {
                 } else {
                     mLocationListener.onProviderDisabled(provider);
                 }
-            } else {
+            } else if(isAlive()) {
                 if (LocationManager.GPS_PROVIDER.equals(provider)) {
                     Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
                 } else {
@@ -288,7 +297,7 @@ public class VLocationManager {
                 } else {
                     mLocationListener.onProviderDisabled(provider);
                 }
-            } else {
+            } else if(isAlive()) {
                 if (LocationManager.GPS_PROVIDER.equals(provider)) {
                     Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
                 } else {
@@ -313,11 +322,28 @@ public class VLocationManager {
         }
     }
 
+    private <T> T findField(Object obj, Class<?> clazz) {
+        Field[] fields = obj.getClass().getDeclaredFields();
+        if (fields != null) {
+            for (Field field : fields) {
+                if (clazz.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    try {
+                        return (T) field.get(obj);
+                    } catch (IllegalAccessException e) {
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private class GpsStatusListenerTransport extends IGpsStatusListener.Stub {
         Object mGpsStatusListenerTransport;
         GpsStatus.Listener mListener;
         int userId;
         int pId;
+        Handler mHandler;
         String packageName;
 
         public GpsStatusListenerTransport(Object gpsStatusListenerTransport, String packageName, int userId) {
@@ -326,6 +352,13 @@ public class VLocationManager {
             mListener = getListener();
             pId = Process.myPid();
             this.packageName = packageName;
+//            mHandler = findField(gpsStatusListenerTransport, android.os.Handler.class);
+        }
+
+        @Override
+        public boolean isAlive() {
+            return Reflect.on(mGpsStatusListenerTransport).call("isBinderAlive").get();
+//            return mHandler != null;
         }
 
         private GpsStatus.Listener getListener() {
@@ -348,25 +381,40 @@ public class VLocationManager {
 
         @Override
         public void onGpsStarted() throws RemoteException {
-            Reflect.on(mGpsStatusListenerTransport).call("onGpsStarted");
+            if (mListener != null) {
+                mListener.onGpsStatusChanged(GpsStatus.GPS_EVENT_STARTED);
+            } else {
+                Reflect.on(mGpsStatusListenerTransport).call("onGpsStarted");
+            }
         }
 
         @Override
         public void onGpsStopped() throws RemoteException {
-            Reflect.on(mGpsStatusListenerTransport).call("onGpsStopped");
+            if (mListener != null) {
+                mListener.onGpsStatusChanged(GpsStatus.GPS_EVENT_STOPPED);
+            } else if (isAlive()) {
+                Reflect.on(mGpsStatusListenerTransport).call("onGpsStopped");
+            }
         }
 
         @Override
         public void onFirstFix(int ttff) throws RemoteException {
-            Reflect.on(mGpsStatusListenerTransport).call("onFirstFix", ttff);
+            if (mListener != null) {
+                mListener.onGpsStatusChanged(GpsStatus.GPS_EVENT_FIRST_FIX);
+            } else if (isAlive()) {
+                Reflect.on(mGpsStatusListenerTransport).call("onFirstFix", ttff);
+            }
         }
 
         @Override
         public void onSvStatusChanged(int svCount, int[] prns, float[] snrs, float[] elevations, float[] azimuths,
                                       int ephemerisMask, int almanacMask, int usedInFixMask, int[] svidWithFlags) throws RemoteException {
-            GpsStatusGenerate.onSvStatusChanged(mGpsStatusListenerTransport,
-                    svCount, prns, snrs, elevations, azimuths,
-                    ephemerisMask, almanacMask, usedInFixMask, svidWithFlags);
+            //check Handler
+            if (isAlive()) {
+                GpsStatusGenerate.onSvStatusChanged(mGpsStatusListenerTransport,
+                        svCount, prns, snrs, elevations, azimuths,
+                        ephemerisMask, almanacMask, usedInFixMask, svidWithFlags);
+            }
         }
 
         @Override
