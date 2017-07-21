@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.proxies.wifi;
 
 import android.content.Context;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.os.Build;
 import android.os.WorkSource;
@@ -9,10 +10,12 @@ import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.Mark;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 import mirror.android.net.wifi.IWifiManager;
 
@@ -47,7 +50,15 @@ public class WifiManagerStub extends BinderInvocationProxy {
     protected void onBindMethods() {
         super.onBindMethods();
         addMethodProxy(new GetConnectionInfo());
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("getScanResults"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("getScanResults"){
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
+                    return new ArrayList<ScanResult>();
+                }
+                return super.call(who, method, args);
+            }
+        });
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getBatchedScanResults"));
         addMethodProxy(new RemoveWorkSourceMethodProxy("acquireWifiLock"));
         addMethodProxy(new RemoveWorkSourceMethodProxy("updateWifiLockWorkSource"));
