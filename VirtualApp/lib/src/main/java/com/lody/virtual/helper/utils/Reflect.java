@@ -491,7 +491,7 @@ public class Reflect {
     public <P> P as(Class<P> proxyType) {
         final boolean isMap = (object instanceof Map);
         final InvocationHandler handler = new InvocationHandler() {
-            @Mark
+            
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String name = method.getName();
                 try {
@@ -543,7 +543,6 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Mark
     public int hashCode() {
         return object.hashCode();
     }
@@ -551,7 +550,6 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Mark
     public boolean equals(Object obj) {
         return obj instanceof Reflect && object.equals(((Reflect) obj).get());
 
@@ -560,7 +558,6 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Mark
     public String toString() {
         return object.toString();
     }
