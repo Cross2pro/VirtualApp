@@ -201,5 +201,23 @@ public class LocationManagerStub extends BinderInvocationProxy {
                 return super.call(who, method, args);
             }
         });
+        addMethodProxy(new StaticMethodProxy("addNmeaListener"){
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
+                    return 0;
+                }
+                return super.call(who, method, args);
+            }
+        });
+        addMethodProxy(new StaticMethodProxy("removeNmeaListener"){
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
+                    return 0;
+                }
+                return super.call(who, method, args);
+            }
+        });
     }
 }

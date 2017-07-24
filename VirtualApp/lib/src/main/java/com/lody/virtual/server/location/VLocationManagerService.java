@@ -11,6 +11,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -123,6 +124,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
         if (location != null) {
             location.setTime(System.currentTimeMillis());
             if (Build.VERSION.SDK_INT >= 17) {
+                location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
                 Reflect.on(location).call("makeComplete");
             }
         }
