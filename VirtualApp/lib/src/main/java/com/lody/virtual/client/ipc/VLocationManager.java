@@ -244,8 +244,14 @@ public class VLocationManager {
 
         @Override
         public boolean isAlive() {
-            return mListenerTransport != null &&
-                    (Boolean)Reflect.on(mListenerTransport).call("isBinderAlive").get();
+            try {
+                return mListenerTransport != null &&
+                        (Boolean) Reflect.on(mListenerTransport)
+                                .call("asBinder")
+                                .call("isBinderAlive").get();
+            }catch (Exception e){
+                return false;
+            }
 //            return mHandler != null;
         }
 
@@ -357,8 +363,14 @@ public class VLocationManager {
 
         @Override
         public boolean isAlive() {
-            return Reflect.on(mGpsStatusListenerTransport).call("isBinderAlive").get();
+            try {
+                return Reflect.on(mGpsStatusListenerTransport)
+                        .call("asBinder")
+                        .call("isBinderAlive").get();
 //            return mHandler != null;
+            }catch (Exception e){
+                return false;
+            }
         }
 
         private GpsStatus.Listener getListener() {
