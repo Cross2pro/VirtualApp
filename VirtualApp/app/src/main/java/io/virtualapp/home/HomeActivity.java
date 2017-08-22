@@ -97,10 +97,11 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
-        Location  location = VLocationManager.get().makeGpsLocation(30.479449d,114.66834d);
-        VActivityManager.get().killAppByPkg("com.tencent.mm",0);
-        VActivityManager.get().killAppByPkg("com.tencent.mm.map",0);
-        VLocationManager.get().stopAllLocationRequest();
+        Location  location = VLocationManager.makeGpsLocation(30.479449d, 114.66834d);
+//        VActivityManager.get().killAppByPkg("com.tencent.mm",0);
+//        VActivityManager.get().killAppByPkg("com.tencent.mm.map",0);
+//        VLocationManager.get().stopAllLocationRequest();
+        VActivityManager.get().killAllApps();
         VLocationManager.get().setVirtualLocation(location, 0);
     }
 

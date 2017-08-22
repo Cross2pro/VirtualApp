@@ -78,20 +78,20 @@ public class VLocationManager {
 
     public Location getVirtualLocation(Object LocationRequest, Location loc, int userId) {
         //// test code
-        String provider = LocationManager.GPS_PROVIDER;
-        if (LocationRequest != null) {
-            try {
-                provider = Reflect.on(LocationRequest).call("getProvider").get();
-            } catch (Exception e) {
-                //ignore
-                Log.e("tmap", "get provider", e);
-            }
-        }
-        if (!(LocationManager.GPS_PROVIDER.equals(provider)
-                || LocationManager.NETWORK_PROVIDER.equals(provider)
-                || LocationManager.PASSIVE_PROVIDER.equals(provider))) {
-            return loc;
-        }
+//        String provider = LocationManager.GPS_PROVIDER;
+//        if (LocationRequest != null) {
+//            try {
+//                provider = Reflect.on(LocationRequest).call("getProvider").get();
+//            } catch (Exception e) {
+//                //ignore
+//                Log.e("tmap", "get provider", e);
+//            }
+//        }
+//        if (!(LocationManager.GPS_PROVIDER.equals(provider)
+//                || LocationManager.NETWORK_PROVIDER.equals(provider)
+//                || LocationManager.PASSIVE_PROVIDER.equals(provider))) {
+//            return loc;
+//        }
         //////
         try {
             return getService().getVirtualLocation(loc, getPackageName(), userId);
@@ -127,7 +127,7 @@ public class VLocationManager {
      * @param alt 高度
      * @param  accuracy 100-10000
      */
-    public Location makeGpsLocation(double lat, double lon) {
+    public static Location makeGpsLocation(double lat, double lon) {
         Location location = new Location(LocationManager.GPS_PROVIDER);
         location.setAltitude(0);
         //30.4770829328,114.6423339844

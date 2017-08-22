@@ -41,6 +41,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
@@ -1223,7 +1224,14 @@ class MethodProxies {
                     return VClientImpl.get().getVUid() == uid;
                 }
                 int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-                return userId == -1 || userId == VUserHandle.myUserId();
+                if(userId == -1 || userId == VUserHandle.myUserId()){
+                    if("android.net.wifi.SCAN_RESULTS".equals(intent.getAction())){
+                        if(VLocationManager.get().hasVirtualLocation(userId)){
+                            return false;
+                        }
+                    }
+                }
+                return false;
             }
 
             @SuppressWarnings("unused")

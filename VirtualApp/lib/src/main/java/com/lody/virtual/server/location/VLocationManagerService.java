@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -19,11 +20,13 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class VLocationManagerService extends ILocationManager.Stub {
@@ -61,6 +64,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     //屏幕关闭的时候不发送位置
     private boolean mScreeLock = false;
 
+    private SharedPreferences mSharedPreferences;
     private final HandlerThread mHandlerThread;
 
     private class WorkHandler extends Handler {
@@ -97,12 +101,13 @@ public class VLocationManagerService extends ILocationManager.Stub {
 
     private VLocationManagerService(Context context) {
         mContext = context;
+        mSharedPreferences = context.getSharedPreferences("virtual_location", Context.MODE_PRIVATE);
         mHandlerThread = new HandlerThread("location_work");
         mHandlerThread.start();
         mHandler = new WorkHandler(mHandlerThread.getLooper());
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
-        if(CONFIG_SCREEN) {
+        if (CONFIG_SCREEN) {
             context.getApplicationContext().registerReceiver(new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -114,8 +119,28 @@ public class VLocationManagerService extends ILocationManager.Stub {
                     }
                 }
             }, intentFilter);
-        }else{
+        } else {
             mScreeLock = false;
+        }
+        //
+//        mSharedPreferences.edit().putString("user_" + userId, loc.getLatitude() + ":" + loc.getLongitude()).apply();
+        Set<String> keys = mSharedPreferences.getAll().keySet();
+        if (keys != null) {
+            for (String key : keys) {
+                if (key.startsWith("user_")) {
+                    int userId = Integer.parseInt(key.replace("user_", ""));
+                    String val = mSharedPreferences.getString(key, null);
+                    if (val != null) {
+                        String[] vars = val.split(":");
+                        if (vars.length > 1) {
+                            double lat = Double.parseDouble(vars[0]);
+                            double lon = Double.parseDouble(vars[1]);
+                            mLocations.put(userId, VLocationManager.makeGpsLocation(lat, lon));
+                        }
+                    }
+
+                }
+            }
         }
     }
 
@@ -123,6 +148,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
     public void setVirtualLocation(Location loc, String packageName, int userId) {
         synchronized (mLocations) {
             mLocations.put(userId, loc);
+            mSharedPreferences.edit().putString("user_" + userId, loc.getLatitude() + ":" + loc.getLongitude()).apply();
         }
         handLocationChanged(false, true);
     }
@@ -223,7 +249,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 return;
             }
         }
-        if(CONFIG_LOCATION_TIME) {
+        if (CONFIG_LOCATION_TIME) {
             if (System.currentTimeMillis() - mHandleStartTime >= HANDLE_TIME_MAX) {
                 return;
             }
