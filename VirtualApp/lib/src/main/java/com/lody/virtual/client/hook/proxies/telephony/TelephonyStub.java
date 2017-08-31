@@ -30,36 +30,9 @@ public class TelephonyStub extends BinderInvocationProxy {
 	@Override
 	protected void onBindMethods() {
 		super.onBindMethods();
-		addMethodProxy(new ReplaceCallingPkgMethodProxy("getNeighboringCellInfo"){
-			@Override
-			public Object call(Object who, Method method, Object... args) throws Throwable {
-				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-					Log.d("tmap", "getNeighboringCellInfo:null");
-					return new ArrayList<NeighboringCellInfo>();
-				}
-				return super.call(who, method, args);
-			}
-		});
-		addMethodProxy(new ReplaceCallingPkgMethodProxy("getAllCellInfo"){
-			@Override
-			public Object call(Object who, Method method, Object... args) throws Throwable {
-				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-					Log.d("tmap", "getAllCellInfo:null");
-					return new ArrayList<CellInfo>();
-				}
-				return super.call(who, method, args);
-			}
-		});
-		addMethodProxy(new ReplaceCallingPkgMethodProxy("getCellLocation"){
-			@Override
-			public Object call(Object who, Method method, Object... args) throws Throwable {
-				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-					Log.d("tmap", "getCellLocation:null");
-					return null;
-				}
-				return super.call(who, method, args);
-			}
-		});
+		addMethodProxy(new MethodProxies.GetNeighboringCellInfo());
+		addMethodProxy(new MethodProxies.GetAllCellInfo());
+		addMethodProxy(new MethodProxies.GetCellLocation());
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("isOffhook"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1NumberForDisplay"){
 			@Override

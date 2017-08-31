@@ -1,83 +1,29 @@
 package com.lody.virtual.client.hook.proxies.location;
 
 import android.content.Context;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Build;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
+import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.base.LogInvocation;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VLocationManager;
+import com.lody.virtual.client.stub.VASettings;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 import mirror.android.location.ILocationManager;
-import mirror.android.location.LocationRequestL;
 
 /**
  * @author Lody
  * @see android.location.LocationManager
  */
+@LogInvocation(LogInvocation.Condition.ALWAYS)
+@Inject(MethodProxies.class)
 public class LocationManagerStub extends BinderInvocationProxy {
     public LocationManagerStub() {
         super(ILocationManager.Stub.asInterface, Context.LOCATION_SERVICE);
-    }
-
-    private static class BaseMethodProxy extends ReplaceLastPkgMethodProxy {
-
-        public BaseMethodProxy(String name) {
-            super(name);
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (args.length > 0) {
-                Object request = args[0];
-                if (LocationRequestL.mHideFromAppOps != null) {
-                    LocationRequestL.mHideFromAppOps.set(request, false);
-                }
-                if (LocationRequestL.mWorkSource != null) {
-                    LocationRequestL.mWorkSource.set(request, null);
-                }
-            }
-            return super.call(who, method, args);
-        }
-    }
-
-    private static class ReplaceLastPkgMethodProxyBoolean extends ReplaceLastPkgMethodProxy {
-
-        ReplaceLastPkgMethodProxyBoolean(String name) {
-            super(name);
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
-                return true;
-            }
-            return super.call(who, method, args);
-        }
-    }
-
-    private static class ReplaceLastPkgMethodProxyVoid extends ReplaceLastPkgMethodProxy {
-
-        ReplaceLastPkgMethodProxyVoid(String name) {
-            super(name);
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
-                return 0;
-            }
-            return super.call(who, method, args);
-        }
     }
 
     @Override
@@ -94,130 +40,61 @@ public class LocationManagerStub extends BinderInvocationProxy {
             addMethodProxy(new ReplaceLastPkgMethodProxy("clearTestProviderStatus"));
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            addMethodProxy(new ReplaceLastPkgMethodProxy("addGpsMeasurementsListener"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("addGpsNavigationMessageListener"));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("addGpsMeasurementListener", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("addGpsNavigationMessageListener", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsMeasurementListener", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsNavigationMessageListener", true));
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("requestGeofence", 0));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGeofence", 0));
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            addMethodProxy(new ReplaceLastPkgMethodProxyBoolean("addGpsStatusListener"));
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeGpsStatusListener"));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("addGpsStatusListener", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsStatusListener", 0));
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            addMethodProxy(new ReplaceLastPkgMethodProxyBoolean("registerGnssStatusCallback"));
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("unregisterGnssStatusCallback"));
-        }
-        addMethodProxy(new StaticMethodProxy("isProviderEnabled") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    if (args[0] instanceof String) {
-                        return VLocationManager.get().isProviderEnabled((String) args[0]);
-                    } else {
-                        Log.w("tmap", "args=" + Arrays.toString(args));
-                    }
-                }
-                return super.call(who, method, args);
-            }
-        });
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            addMethodProxy(new BaseMethodProxy("requestLocationUpdates") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
-                        return 0;
-                    }
-                    return super.call(who, method, args);
-                }
-            });
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("requestGeofence") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        return 0;
-                    }
-                    return super.call(who, method, args);
-                }
-            });
-            addMethodProxy(new ReplaceLastPkgMethodProxy("removeGeofence") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        return 0;
-                    }
-                    return super.call(who, method, args);
-                }
-            });
-            addMethodProxy(new BaseMethodProxy("getLastLocation") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        Location old = (Location) super.call(who, method, args);
-                        return VLocationManager.get().getVirtualLocation(args[0], old, getAppUserId());
-                    }
-                    return super.call(who, method, args);
-                }
-            });
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("registerGnssStatusCallback", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("unregisterGnssStatusCallback", 0));
         }
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN
                 && TextUtils.equals(Build.VERSION.RELEASE, "4.1.2")) {
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("requestLocationUpdates"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("requestLocationUpdatesPI"));
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("removeUpdatesPI"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("addProximityAlert"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("getLastKnownLocation") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        Location old = (Location) super.call(who, method, args);
-                        return VLocationManager.get().getVirtualLocation(args[0], old, getAppUserId());
-                    }
-                    return super.call(who, method, args);
-                }
-            });
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("requestLocationUpdates"));
-            addMethodProxy(new ReplaceLastPkgMethodProxyVoid("removeUpdates"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("getLastKnownLocation") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                        Location old = (Location) super.call(who, method, args);
-                        return VLocationManager.get().getVirtualLocation(null, old, getAppUserId());
-                    }
-                    return super.call(who, method, args);
-                }
-            });
         }
-        addMethodProxy(new StaticMethodProxy("getBestProvider"){
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    return LocationManager.GPS_PROVIDER;
-                }
-                return super.call(who, method, args);
-            }
-        });
-        addMethodProxy(new StaticMethodProxy("addNmeaListener"){
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-                    return 0;
-                }
-                return super.call(who, method, args);
-            }
-        });
-        addMethodProxy(new StaticMethodProxy("removeNmeaListener"){
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-                    return 0;
-                }
-                return super.call(who, method, args);
-            }
-        });
+        addMethodProxy(new MethodProxies.IsProviderEnabled());
+        addMethodProxy(new MethodProxies.GetLastKnownLocation());
+        addMethodProxy(new MethodProxies.GetBestProvider());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            addMethodProxy(new MethodProxies.RequestLocationUpdates());
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeUpdates", 0));
+            addMethodProxy(new MethodProxies.GetLastLocation());
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("addNmeaListener", 0));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeNmeaListener", 0));
+        }
     }
+
+    private static class FakeReplaceLastPkgMethodProxy extends ReplaceLastPkgMethodProxy {
+        private Object mDefValue;
+
+        private FakeReplaceLastPkgMethodProxy(String name, Object def) {
+            super(name);
+            mDefValue = def;
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    return mDefValue;
+                }
+            }
+            return super.call(who, method, args);
+        }
+    }
+
 }
