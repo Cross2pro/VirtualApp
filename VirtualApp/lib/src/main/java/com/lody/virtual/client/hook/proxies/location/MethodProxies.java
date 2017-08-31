@@ -4,6 +4,7 @@ import android.location.ILocationListener;
 import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationRequest;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -45,16 +46,26 @@ public class MethodProxies {
         }
     }
 
-    private static class AddGpsStatusListener extends ReplaceLastPkgMethodProxy {
-
+    static class AddGpsStatusListener extends ReplaceLastPkgMethodProxy {
         public AddGpsStatusListener() {
             super("addGpsStatusListener");
         }
 
+        public AddGpsStatusListener(String name) {
+            super(name);
+        }
+
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (isFakeLocationEnable()) {
-                return false;
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    VLocationManager.get().addGpsStatusListener(getAppUserId(), args);
+                    return true;
+                }
+            } else {
+                if (isFakeLocationEnable()) {
+                    return false;
+                }
             }
             return super.call(who, method, args);
         }
@@ -93,12 +104,12 @@ public class MethodProxies {
 
         @Override
         public Object call(final Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
+            if (VASettings.VIRTUAL_LOCATION) {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    VLocationManager.get().replaceParams(getMethodName(), getAppUserId(), args);
+                    VLocationManager.get().requestLocationUpdates(getAppUserId(), args);
                     return 0;
                 }
-            }else {
+            } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
                 LocationRequest request = (LocationRequest) args[0];
                 fixLocationRequest(request);
                 if (isFakeLocationEnable()) {
@@ -113,7 +124,7 @@ public class MethodProxies {
         }
     }
 
-    private static class RemoveUpdates extends ReplaceLastPkgMethodProxy {
+    static class RemoveUpdates extends ReplaceLastPkgMethodProxy {
 
         public RemoveUpdates() {
             super("removeUpdates");
@@ -121,13 +132,20 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (isFakeLocationEnable()) {
-                IBinder binder = (IBinder) args[0];
-                UpdateLocationTask task = tasks.get(binder);
-                if (task != null) {
-                    task.cancel();
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    VLocationManager.get().removeUpdates(getAppUserId(), args);
+                    return 0;
                 }
-                return 0;
+            } else {
+                if (isFakeLocationEnable()) {
+                    IBinder binder = (IBinder) args[0];
+                    UpdateLocationTask task = tasks.get(binder);
+                    if (task != null) {
+                        task.cancel();
+                    }
+                    return 0;
+                }
             }
             return super.call(who, method, args);
         }
@@ -141,12 +159,12 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
+            if (VASettings.VIRTUAL_LOCATION) {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
                     Location old = (Location) super.call(who, method, args);
                     return VLocationManager.get().getVirtualLocation(args[0], old, getAppUserId());
                 }
-            }else {
+            } else {
                 if (isFakeLocationEnable()) {
                     LocationRequest request = (LocationRequest) args[0];
                     fixLocationRequest(request);
@@ -186,13 +204,13 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
+            if (VASettings.VIRTUAL_LOCATION) {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
                     if (args[0] instanceof String) {
                         return VLocationManager.get().isProviderEnabled((String) args[0]);
                     }
                 }
-            }else {
+            } else {
                 if (isFakeLocationEnable()) {
                     String provider = (String) args[0];
                     if (LocationManager.GPS_PROVIDER.equals(provider)) {
@@ -228,11 +246,11 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
+            if (VASettings.VIRTUAL_LOCATION) {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
                     return LocationManager.GPS_PROVIDER;
                 }
-            }else {
+            } else {
                 if (isFakeLocationEnable()) {
                     return LocationManager.NETWORK_PROVIDER;
                 }
@@ -260,5 +278,35 @@ public class MethodProxies {
         sysLoc.setExtras(extraBundle);
         Reflect.on(sysLoc).call("setElapsedRealtimeNanos", SystemClock.elapsedRealtime());
         return sysLoc;
+    }
+
+    static class RemoveGpsStatusListener extends ReplaceLastPkgMethodProxy {
+        public RemoveGpsStatusListener() {
+            super("removeGpsStatusListener");
+        }
+
+        public RemoveGpsStatusListener(String name) {
+            super(name);
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                VLocationManager.get().removeGpsStatusListener(getAppUserId(), args);
+                return 0;
+            }
+            return super.call(who, method, args);
+        }
+    }
+    static class UnregisterGnssStatusCallback extends RemoveGpsStatusListener{
+        public UnregisterGnssStatusCallback() {
+            super("unregisterGnssStatusCallback");
+        }
+    }
+
+    static class RegisterGnssStatusCallback extends AddGpsStatusListener {
+        public RegisterGnssStatusCallback() {
+            super("registerGnssStatusCallback");
+        }
     }
 }

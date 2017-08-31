@@ -156,71 +156,73 @@ public class VLocationManager {
         return VClientImpl.get().getCurrentPackage();
     }
 
+    public void removeUpdates(int userId, Object[] args) {
+        synchronized (mListenerTransportMap) {
+            mListenerTransportMap.remove(args[0]);
+        }
+    }
+
+    public void requestLocationUpdates(int userId, Object[] args) {
+        Log.i("tmap", "requestLocationUpdates:start");
+        //15-16 last
+        final int index;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            index = 1;
+        } else {
+            index = args.length - 1;
+        }
+        final Object ListenerTransport = args[index];
+        if (ListenerTransport == null) {
+            Log.e("tmap", "ListenerTransport:null");
+        } else {
+            Log.i("tmap", "requestLocationUpdates:attch listener");
+            ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport,
+                    getPackageName(), userId);
+            synchronized (mListenerTransportMap) {
+                mListenerTransportMap.put(ListenerTransport, listenerTransport);
+            }
+            try {
+                getService().addLocationListener(listenerTransport);
+            } catch (RemoteException e) {
+                Log.e("tmap", "add", e);
+                return;
+            }
+            Location loc = getVirtualLocation(null, null, userId);
+            if (loc != null) {
+                Log.d("tmap", "onLocationChanged1:" + loc);
+                try {
+                    listenerTransport.onLocationChanged(loc);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void removeGpsStatusListener(int userId, Object[] args) {
+        synchronized (mObjectListenerMap) {
+            mObjectListenerMap.remove(args[0]);
+        }
+    }
+
     /**
      * @param method
      * @param userId
      * @param args
      */
-    public void replaceParams(String method, int userId, Object[] args) {
-        if ("removeUpdates".equals(method)) {
-            synchronized (mListenerTransportMap) {
-                mListenerTransportMap.remove(args[0]);
-            }
-        } else if ("requestLocationUpdates".equals(method)) {
-            Log.i("tmap", "requestLocationUpdates:start");
-            //15-16 last
-            final int index;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                index = 1;
-            } else {
-                index = args.length - 1;
-            }
-            final Object ListenerTransport = args[index];
-            if (ListenerTransport == null) {
-                Log.e("tmap", "ListenerTransport:null");
-            } else {
-                Log.i("tmap", "requestLocationUpdates:attch listener");
-                ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport,
-                        getPackageName(), userId);
-                synchronized (mListenerTransportMap) {
-                    mListenerTransportMap.put(ListenerTransport, listenerTransport);
-                }
-                try {
-                    getService().addLocationListener(listenerTransport);
-                } catch (RemoteException e) {
-                    Log.e("tmap", "add", e);
-                    return;
-                }
-                Location loc = getVirtualLocation(null, null, userId);
-                if (loc != null) {
-                    Log.d("tmap", "onLocationChanged1:" + loc);
-                    try {
-                        listenerTransport.onLocationChanged(loc);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        } else if ("addGpsStatusListener".equals(method) ||
-                "registerGnssStatusCallback".equals(method)) {
-            Object GpsStatusListenerTransport = args[0];
-            GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
-            if (GpsStatusListenerTransport != null) {
-                GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(
-                        GpsStatusListenerTransport, getPackageName(), userId);
-                synchronized (mObjectListenerMap) {
-                    mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
-                }
-                try {
-                    getService().addGpsStatusListener(gpsStatusListenerTransport);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else if ("removeGpsStatusListener".equals(method)
-                || "unregisterGnssStatusCallback".equals(method)) {
+    public void addGpsStatusListener(int userId, Object[] args) {
+        Object GpsStatusListenerTransport = args[0];
+        GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
+        if (GpsStatusListenerTransport != null) {
+            GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(
+                    GpsStatusListenerTransport, getPackageName(), userId);
             synchronized (mObjectListenerMap) {
-                mObjectListenerMap.remove(args[0]);
+                mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
+            }
+            try {
+                getService().addGpsStatusListener(gpsStatusListenerTransport);
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -249,7 +251,7 @@ public class VLocationManager {
                         (Boolean) Reflect.on(mListenerTransport)
                                 .call("asBinder")
                                 .call("isBinderAlive").get();
-            }catch (Exception e){
+            } catch (Exception e) {
                 return false;
             }
 //            return mHandler != null;
@@ -260,7 +262,7 @@ public class VLocationManager {
             mLocation = location;
             if (mLocationListener != null) {
                 mLocationListener.onLocationChanged(location);
-            } else if(isAlive()){
+            } else if (isAlive()) {
                 try {
                     Reflect.on(mListenerTransport).call("onLocationChanged", location);
                 } catch (Exception e) {
@@ -273,7 +275,7 @@ public class VLocationManager {
         public void onStatusChanged(String provider, int status, Bundle extras) throws RemoteException {
             if (mLocationListener != null) {
                 mLocationListener.onStatusChanged(provider, status, extras);
-            } else if(isAlive()) {
+            } else if (isAlive()) {
                 Reflect.on(mListenerTransport).call("onStatusChanged", provider, status, extras);
             }
         }
@@ -286,7 +288,7 @@ public class VLocationManager {
                 } else {
                     mLocationListener.onProviderDisabled(provider);
                 }
-            } else if(isAlive()) {
+            } else if (isAlive()) {
                 if (LocationManager.GPS_PROVIDER.equals(provider)) {
                     Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
                 } else {
@@ -303,7 +305,7 @@ public class VLocationManager {
                 } else {
                     mLocationListener.onProviderDisabled(provider);
                 }
-            } else if(isAlive()) {
+            } else if (isAlive()) {
                 if (LocationManager.GPS_PROVIDER.equals(provider)) {
                     Reflect.on(mListenerTransport).call("onProviderEnabled", provider);
                 } else {
@@ -368,7 +370,7 @@ public class VLocationManager {
                         .call("asBinder")
                         .call("isBinderAlive").get();
 //            return mHandler != null;
-            }catch (Exception e){
+            } catch (Exception e) {
                 return false;
             }
         }
