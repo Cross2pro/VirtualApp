@@ -29,12 +29,15 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import mirror.android.providers.Settings;
+
 public class VLocationManagerService extends ILocationManager.Stub {
     private final SparseArray<Location> mLocations = new SparseArray<>();
     private Context mContext;
     private static final AtomicReference<VLocationManagerService> gService = new AtomicReference<>();
     private final List<IGpsStatusListener> mGpsStatusListeners = new ArrayList<>();
     private final List<ILocationListener> mLocationListeners = new ArrayList<>();
+    private final SparseArray<Long> mUpdateTimes = new SparseArray<>();
     private final static boolean DEBUG = false;
     //屏幕关闭不发送位置信息
     private final static boolean CONFIG_SCREEN = true;
@@ -47,25 +50,22 @@ public class VLocationManagerService extends ILocationManager.Stub {
     private static final boolean REPORT_LOCATION_WITH_GPS_STATUS = false;
     final Random mRandom = new Random(System.currentTimeMillis());
 
-    private final static int HANDLE_TIME_GPS = 5 * 1000;
     /**
      * 报告位置时间间隔
      */
-    private final static int HANDLE_TIME = 10 * 1000;
-    /***
-     * 多少时间报告一次
-     */
-    private final static int HANDLE_TIME_LOCATION = 30 * 1000;
+    private final static int HANDLE_TIME = 5 * 1000;
     /***
      * 发送定位信息，多少时间后停止，为了减少没必要的浪费
      */
     private final static long HANDLE_TIME_MAX = 60 * 60 * 1000;
 
+    private final static long HANDLE_GPS_TIME_MAX = 30 * 1000;
     //屏幕关闭的时候不发送位置
     private boolean mScreeLock = false;
 
     private SharedPreferences mSharedPreferences;
     private final HandlerThread mHandlerThread;
+    private long lastGpsTime;
 
     private class WorkHandler extends Handler {
         public WorkHandler(Looper looper) {
@@ -78,6 +78,10 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 case MSG_HANDLE_LOCATION:
                     if (mScreeLock) {
                         return;
+                    }
+                    if (System.currentTimeMillis() - lastGpsTime >= HANDLE_GPS_TIME_MAX) {
+                        lastGpsTime = System.currentTimeMillis();
+                        handGpsStatusChanged(false);
                     }
                     handLocationChanged(false, false);
                     startHandleTask();
@@ -116,6 +120,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
                         mScreeLock = true;
                     } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                         mScreeLock = false;
+                        startHandleTask();
                     }
                 }
             }, intentFilter);
@@ -195,7 +200,17 @@ public class VLocationManagerService extends ILocationManager.Stub {
     }
 
     @Override
-    public void addGpsStatusListener(IGpsStatusListener listener) {
+    public void addGpsStatusListener(final IGpsStatusListener listener) {
+        try {
+            listener.asBinder().linkToDeath(new DeathRecipient() {
+                @Override
+                public void binderDied() {
+                    removeGpsStatusListener(listener);
+                }
+            }, 0);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         synchronized (mGpsStatusListeners) {
             if (!mGpsStatusListeners.contains(listener)) {
                 mGpsStatusListeners.add(listener);
@@ -206,19 +221,36 @@ public class VLocationManagerService extends ILocationManager.Stub {
     @Override
     public void removeGpsStatusListener(IGpsStatusListener listener) {
         synchronized (mGpsStatusListeners) {
-            mGpsStatusListeners.remove(listener);
+            for (IGpsStatusListener _listener : mGpsStatusListeners) {
+                if (_listener.asBinder() == listener.asBinder()) {
+                    mGpsStatusListeners.remove(_listener);
+                    return;
+                }
+            }
         }
+        Log.w("tmap", "no remove:" + listener);
     }
 
     //LocationRequest, ListenerTransport
     @Override
-    public void addLocationListener(ILocationListener listener) {
+    public void addLocationListener(final ILocationListener listener) {
+        try {
+            listener.asBinder().linkToDeath(new DeathRecipient() {
+                @Override
+                public void binderDied() {
+                    removeLocationListener(listener);
+                }
+            }, 0);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         synchronized (mLocationListeners) {
             if (mLocationListeners.contains(listener)) {
                 handLocationChanged(true, false);
                 return;
             }
             mLocationListeners.add(listener);
+            Log.w("tmap", "addLocationListener:" + listener);
         }
         mHandleStartTime = System.currentTimeMillis();
         handLocationChanged(true, false);
@@ -238,8 +270,14 @@ public class VLocationManagerService extends ILocationManager.Stub {
     @Override
     public void removeLocationListener(ILocationListener listener) {
         synchronized (mLocationListeners) {
-            mLocationListeners.remove(listener);
+            for (ILocationListener _listener : mLocationListeners) {
+                if (_listener.asBinder() == listener.asBinder()) {
+                    mLocationListeners.remove(_listener);
+                    return;
+                }
+            }
         }
+        Log.w("tmap", "no remove:" + listener);
     }
 
     private void startHandleTask() {
@@ -255,19 +293,10 @@ public class VLocationManagerService extends ILocationManager.Stub {
             }
         }
         mHandler.removeMessages(MSG_HANDLE_LOCATION);
-        mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, HANDLE_TIME + mRandom.nextInt(1000));
+        mHandler.sendEmptyMessageDelayed(MSG_HANDLE_LOCATION, HANDLE_TIME);
     }
 
-    private void handLocationChanged(boolean start, boolean force) {
-//        if (!start) {
-//            if (System.currentTimeMillis() - mLastGPS >= HANDLE_TIME_GPS) {
-//                reportGps = true;
-//                mLastGPS = System.currentTimeMillis();
-//            }
-//        } else {
-//            mLastGPS = System.currentTimeMillis();
-//        }
-        if (mScreeLock) return;
+    private void handGpsStatusChanged(boolean start) {
         if (REPORT_LOCATION_WITH_GPS_STATUS) {
             synchronized (mGpsStatusListeners) {
                 for (int i = mGpsStatusListeners.size() - 1; i >= 0; i--) {
@@ -281,6 +310,8 @@ public class VLocationManagerService extends ILocationManager.Stub {
                             if (start) {
                                 listener.onGpsStarted();
                                 GpsStatusGenerate.fakeGpsStatus(listener);
+                            } else {
+                                listener.onGpsStatusChanged();
                             }
                         } else {
                             mGpsStatusListeners.remove(i);
@@ -294,35 +325,49 @@ public class VLocationManagerService extends ILocationManager.Stub {
                 }
             }
         }
-//        if (!start) {
-//            if (System.currentTimeMillis() - mLastLocation < HANDLE_TIME_LOCATION) {
-//                return;
-//            }
-//            mLastLocation = System.currentTimeMillis();
-//        } else {
-//            mLastLocation = System.currentTimeMillis();
-//        }
+    }
+
+    private void handLocationChanged(boolean start, boolean force) {
+        if (mScreeLock) return;
         synchronized (mLocationListeners) {
             for (int i = mLocationListeners.size() - 1; i >= 0; i--) {
                 ILocationListener listener = mLocationListeners.get(i);
+                if (listener == null) continue;
+                Long time = mUpdateTimes.get(listener.hashCode());
+                if (time != null) {
+                    try {
+                        if (System.currentTimeMillis() - time < listener.getInterval()) {
+                            return;
+                        }
+                    } catch (Throwable e) {
+                        //ignore
+                        mLocationListeners.remove(i);
+                        mUpdateTimes.remove(listener.hashCode());
+                        if (DEBUG)
+                            Log.w("tmap", "onLocationChanged:checktime", e);
+                        continue;
+                    }
+                }
                 try {
                     if (listener.asBinder().isBinderAlive() && listener.isAlive()) {
-                        if (!start) {
-                            Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
-                            if (DEBUG)
-                                Log.d("tmap", listener.getPackageName() + ":onLocationChanged:" + loc);
-                            listener.onLocationChanged(loc);
-                        } else {
+                        if (start) {
                             listener.onProviderEnabled(LocationManager.GPS_PROVIDER);
                         }
+                        Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
+                        if (DEBUG)
+                            Log.d("tmap", listener.getPackageName() + ":onLocationChanged:" + loc);
+                        listener.onLocationChanged(loc);
+                        mUpdateTimes.put(listener.hashCode(), System.currentTimeMillis());
                     } else {
                         mLocationListeners.remove(listener);
+                        mUpdateTimes.remove(listener.hashCode());
                         if (DEBUG)
                             Log.d("tmap", "remove LocationListener:");
                     }
                 } catch (Throwable e) {
                     //ignore
                     mLocationListeners.remove(i);
+                    mUpdateTimes.remove(listener.hashCode());
                     if (DEBUG)
                         Log.w("tmap", "onLocationChanged", e);
                 }

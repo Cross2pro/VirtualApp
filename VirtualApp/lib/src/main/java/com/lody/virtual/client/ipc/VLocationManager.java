@@ -4,6 +4,7 @@ import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +14,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.server.location.GpsStatusGenerate;
 import com.lody.virtual.server.location.IGpsStatusListener;
@@ -20,6 +22,7 @@ import com.lody.virtual.server.location.ILocationListener;
 import com.lody.virtual.server.location.ILocationManager;
 
 import java.lang.reflect.Field;
+import java.sql.Ref;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -158,11 +161,22 @@ public class VLocationManager {
 
     public void removeUpdates(int userId, Object[] args) {
         synchronized (mListenerTransportMap) {
-            mListenerTransportMap.remove(args[0]);
+            Object object = args[0];
+            ListenerTransport listenerTransport = mListenerTransportMap.remove(object);
+            if (listenerTransport != null) {
+                try {
+                    getService().removeLocationListener(listenerTransport);
+                    Log.w("tmap", "removeUpdates:ok:" + object);
+                } catch (RemoteException e) {
+                    Log.w("tmap", "removeUpdates:ok:" + object, e);
+                }
+            } else {
+                Log.w("tmap", "removeUpdates:fail:" + object);
+            }
         }
     }
 
-    public void requestLocationUpdates(int userId, Object[] args) {
+    public void requestLocationUpdates(final int userId, Object[] args) {
         Log.i("tmap", "requestLocationUpdates:start");
         //15-16 last
         final int index;
@@ -175,33 +189,54 @@ public class VLocationManager {
         if (ListenerTransport == null) {
             Log.e("tmap", "ListenerTransport:null");
         } else {
-            Log.i("tmap", "requestLocationUpdates:attch listener");
+            //mInterval
+            long mInterval;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                try {
+                    mInterval = Reflect.on(args[0]).get("mInterval");
+                } catch (Exception e) {
+                    mInterval = 60 * 60 * 1000;
+                }
+            } else {
+                mInterval = MethodParameterUtils.getFirstParam(args, Long.class);
+            }
+            Log.i("tmap", "requestLocationUpdates:attch listener:Interval=" + mInterval);
             ListenerTransport listenerTransport = new ListenerTransport(ListenerTransport,
-                    getPackageName(), userId);
+                    getPackageName(), userId, mInterval);
             synchronized (mListenerTransportMap) {
                 mListenerTransportMap.put(ListenerTransport, listenerTransport);
+            }
+            Log.w("tmap", "requestLocationUpdates:put:" + ListenerTransport);
+            try {
+                Log.d("tmap", "removeUpdates:linkToDeath:" + ListenerTransport);
+                IBinder binder = Reflect.on(ListenerTransport).call("asBinder").get();
+                binder.linkToDeath(new IBinder.DeathRecipient() {
+                    @Override
+                    public void binderDied() {
+                        Log.i("kk", "removeUpdates:binderDied:" + ListenerTransport);
+                        removeUpdates(userId, new Object[]{ListenerTransport});
+                    }
+                }, 0);
+            } catch (Exception e) {
+                //ignore
+                Log.w("tmap", "removeUpdates", e);
             }
             try {
                 getService().addLocationListener(listenerTransport);
             } catch (RemoteException e) {
                 Log.e("tmap", "add", e);
-                return;
-            }
-            Location loc = getVirtualLocation(null, null, userId);
-            if (loc != null) {
-                Log.d("tmap", "onLocationChanged1:" + loc);
-                try {
-                    listenerTransport.onLocationChanged(loc);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
 
     public void removeGpsStatusListener(int userId, Object[] args) {
         synchronized (mObjectListenerMap) {
-            mObjectListenerMap.remove(args[0]);
+            GpsStatusListenerTransport gpsStatusListenerTransport = mObjectListenerMap.remove(args[0]);
+            try {
+                getService().removeGpsStatusListener(gpsStatusListenerTransport);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -210,14 +245,28 @@ public class VLocationManager {
      * @param userId
      * @param args
      */
-    public void addGpsStatusListener(int userId, Object[] args) {
-        Object GpsStatusListenerTransport = args[0];
+    public void addGpsStatusListener(final int userId, Object[] args) {
+        final Object GpsStatusListenerTransport = args[0];
         GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
         if (GpsStatusListenerTransport != null) {
             GpsStatusListenerTransport gpsStatusListenerTransport = new GpsStatusListenerTransport(
                     GpsStatusListenerTransport, getPackageName(), userId);
             synchronized (mObjectListenerMap) {
                 mObjectListenerMap.put(GpsStatusListenerTransport, gpsStatusListenerTransport);
+            }
+            try {
+                Log.d("kk", "removeGpsStatusListener:linkToDeath:" + GpsStatusListenerTransport);
+                IBinder binder = Reflect.on(GpsStatusListenerTransport).call("asBinder").get();
+                binder.linkToDeath(new IBinder.DeathRecipient() {
+                    @Override
+                    public void binderDied() {
+                        Log.i("kk", "removeGpsStatusListener:binderDied:" + GpsStatusListenerTransport);
+                        removeGpsStatusListener(userId, new Object[]{GpsStatusListenerTransport});
+                    }
+                }, 0);
+            } catch (Exception e) {
+                //ignore
+                Log.w("kk", "removeGpsStatusListener", e);
             }
             try {
                 getService().addGpsStatusListener(gpsStatusListenerTransport);
@@ -234,14 +283,21 @@ public class VLocationManager {
         int userId;
         int pId;
         String packageName;
+        private long mInterval;
         private Location mLocation;
 
-        public ListenerTransport(Object listenerTransport, String packageName, int userId) {
+        public ListenerTransport(Object listenerTransport, String packageName, int userId, long mInterval) {
             mListenerTransport = listenerTransport;
             this.userId = userId;
             pId = Process.myPid();
+            this.mInterval = mInterval;
             mLocationListener = Reflect.on(listenerTransport).opt("mListener");
             this.packageName = packageName;
+        }
+
+        @Override
+        public long getInterval() {
+            return mInterval;
         }
 
         @Override

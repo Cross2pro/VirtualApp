@@ -13,4 +13,5 @@ interface ILocationListener {
     int getPid();
     String getPackageName();
     boolean isAlive();
+    long getInterval();
 }
