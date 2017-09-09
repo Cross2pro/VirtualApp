@@ -42,8 +42,8 @@ public class LocationManagerStub extends BinderInvocationProxy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("addGpsMeasurementListener", true));
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("addGpsNavigationMessageListener", true));
-            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsMeasurementListener", true));
-            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsNavigationMessageListener", true));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsMeasurementListener", 0));
+            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGpsNavigationMessageListener", 0));
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("requestGeofence", 0));
@@ -55,10 +55,12 @@ public class LocationManagerStub extends BinderInvocationProxy {
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("addProximityAlert", 0));
         }
 
-        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1){
-            addMethodProxy(new FakeReplaceLastPkgMethodProxy("requestLocationUpdatesPI", 0));
-            addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeUpdatesPI", 0));
-        }else{
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN) {
+            addMethodProxy(new MethodProxies.RequestLocationUpdatesPI());
+            addMethodProxy(new MethodProxies.RemoveUpdatesPI());
+        }
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             addMethodProxy(new MethodProxies.RequestLocationUpdates());
             addMethodProxy(new MethodProxies.RemoveUpdates());
         }

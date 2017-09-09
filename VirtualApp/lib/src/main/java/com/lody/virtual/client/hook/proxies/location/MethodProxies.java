@@ -102,6 +102,10 @@ public class MethodProxies {
             super("requestLocationUpdates");
         }
 
+        public RequestLocationUpdates(String name) {
+            super(name);
+        }
+
         @Override
         public Object call(final Object who, Method method, Object... args) throws Throwable {
             if (VASettings.VIRTUAL_LOCATION) {
@@ -109,7 +113,7 @@ public class MethodProxies {
                     VLocationManager.get().requestLocationUpdates(getAppUserId(), args);
                     return 0;
                 }
-            } else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 LocationRequest request = (LocationRequest) args[0];
                 fixLocationRequest(request);
                 if (isFakeLocationEnable()) {
@@ -128,6 +132,10 @@ public class MethodProxies {
 
         public RemoveUpdates() {
             super("removeUpdates");
+        }
+
+        public RemoveUpdates(String name) {
+            super(name);
         }
 
         @Override
@@ -298,7 +306,20 @@ public class MethodProxies {
             return super.call(who, method, args);
         }
     }
-    static class UnregisterGnssStatusCallback extends RemoveGpsStatusListener{
+
+    static class RequestLocationUpdatesPI extends RequestLocationUpdates {
+        public RequestLocationUpdatesPI() {
+            super("requestLocationUpdatesPI");
+        }
+    }
+
+    static class RemoveUpdatesPI extends RemoveUpdates {
+        public RemoveUpdatesPI() {
+            super("removeUpdatesPI");
+        }
+    }
+
+    static class UnregisterGnssStatusCallback extends RemoveGpsStatusListener {
         public UnregisterGnssStatusCallback() {
             super("unregisterGnssStatusCallback");
         }

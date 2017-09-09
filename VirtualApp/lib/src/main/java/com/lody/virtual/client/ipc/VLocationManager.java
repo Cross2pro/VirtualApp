@@ -1,5 +1,6 @@
 package com.lody.virtual.client.ipc;
 
+import android.app.PendingIntent;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
@@ -230,6 +231,9 @@ public class VLocationManager {
     }
 
     public void removeGpsStatusListener(int userId, Object[] args) {
+        if(args[0] instanceof PendingIntent){
+            return;
+        }
         synchronized (mObjectListenerMap) {
             GpsStatusListenerTransport gpsStatusListenerTransport = mObjectListenerMap.remove(args[0]);
             try {
