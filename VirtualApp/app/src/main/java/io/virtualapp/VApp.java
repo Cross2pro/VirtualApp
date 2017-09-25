@@ -2,19 +2,14 @@ package io.virtualapp;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.support.multidex.MultiDexApplication;
-import android.text.TextUtils;
-import android.widget.Toast;
 
 import com.flurry.android.FlurryAgent;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.utils.Reflect;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
-import io.virtualapp.delegate.MyPhoneInfoDelegate;
 import io.virtualapp.delegate.MyTaskDescriptionDelegate;
 import jonathanfinerty.once.Once;
 
@@ -65,8 +60,6 @@ public class VApp extends MultiDexApplication {
             public void onVirtualProcess() {
                 //listener components
                 virtualCore.setComponentDelegate(new MyComponentDelegate());
-                //fake phone imei,macAddress,BluetoothAddress
-                virtualCore.setPhoneInfoDelegate(new MyPhoneInfoDelegate());
                 //fake task description's icon and title
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescriptionDelegate());
             }

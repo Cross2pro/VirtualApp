@@ -81,7 +81,6 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if(VASettings.VIRTUAL_LOCATION) {
                 if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    Log.d("tmap", "getAllCellInfo:null");
                     return new ArrayList<CellInfo>();
                 }
             }else {
