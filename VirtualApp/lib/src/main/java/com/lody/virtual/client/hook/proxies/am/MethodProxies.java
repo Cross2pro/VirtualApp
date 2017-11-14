@@ -1643,4 +1643,20 @@ class MethodProxies {
             return isAppProcess();
         }
     }
+
+    static class OverridePendingTransition extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "overridePendingTransition";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if(VClientImpl.get().isOutSideDiff()){
+                //apk res
+                return 0;
+            }
+            return super.call(who, method, args);
+        }
+    }
 }

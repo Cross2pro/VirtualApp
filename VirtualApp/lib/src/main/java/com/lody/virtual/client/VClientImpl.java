@@ -10,6 +10,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Binder;
@@ -95,6 +96,8 @@ public final class VClientImpl extends IVClient.Stub {
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
     private CrashHandler crashHandler;
+    //res id
+    private boolean outSideDiff;
 
     public static VClientImpl get() {
         return gClient;
@@ -238,6 +241,19 @@ public final class VClientImpl extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
+
+        //check version
+        PackageInfo outSideInfo = null;
+        try {
+            outSideInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+        } catch (Throwable e) {
+            //ignore
+        }
+        if (outSideInfo != null) {
+            outSideDiff = !info.dependSystem;
+        }
+        //end check
+
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
@@ -624,6 +640,10 @@ public final class VClientImpl extends IVClient.Stub {
         return "process : " + VirtualRuntime.getProcessName() + "\n" +
                 "initialPkg : " + VirtualRuntime.getInitialPackageName() + "\n" +
                 "vuid : " + vuid;
+    }
+
+    public boolean isOutSideDiff() {
+        return outSideDiff;
     }
 
     private static class RootThreadGroup extends ThreadGroup {
