@@ -128,8 +128,6 @@ public class VLocationManager {
      *
      * @param lat 纬度 -90~90
      * @param lon 经度 -180~180
-     * @param alt 高度
-     * @param  accuracy 100-10000
      */
     public static Location makeGpsLocation(double lat, double lon) {
         Location location = new Location(LocationManager.GPS_PROVIDER);
@@ -209,7 +207,7 @@ public class VLocationManager {
             }
             Log.w("tmap", "requestLocationUpdates:put:" + ListenerTransport);
             try {
-                Log.d("tmap", "removeUpdates:linkToDeath:" + ListenerTransport);
+//                Log.d("tmap", "removeUpdates:linkToDeath:" + ListenerTransport);
                 IBinder binder = Reflect.on(ListenerTransport).call("asBinder").get();
                 binder.linkToDeath(new IBinder.DeathRecipient() {
                     @Override
@@ -245,7 +243,6 @@ public class VLocationManager {
     }
 
     /**
-     * @param method
      * @param userId
      * @param args
      */

@@ -246,14 +246,14 @@ public class VLocationManagerService extends ILocationManager.Stub {
         }
         synchronized (mLocationListeners) {
             if (mLocationListeners.contains(listener)) {
-                handLocationChanged(true, false);
+                handleLocationNoLock(listener, true);
                 return;
             }
             mLocationListeners.add(listener);
+            mHandleStartTime = System.currentTimeMillis();
+            handleLocationNoLock(listener, true);
             Log.w("tmap", "addLocationListener:" + listener);
         }
-        mHandleStartTime = System.currentTimeMillis();
-        handLocationChanged(true, false);
         startHandleTask();
     }
 
@@ -327,6 +327,32 @@ public class VLocationManagerService extends ILocationManager.Stub {
         }
     }
 
+    private void handleLocationNoLock(ILocationListener listener,boolean start){
+        try {
+            if (listener.asBinder().isBinderAlive() && listener.isAlive()) {
+                if(start) {
+                    listener.onProviderEnabled(LocationManager.GPS_PROVIDER);
+                }
+                Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
+                if (DEBUG)
+                    Log.d("tmap", listener.getPackageName() + ":onLocationChanged:" + loc);
+                listener.onLocationChanged(loc);
+                mUpdateTimes.put(listener.hashCode(), System.currentTimeMillis());
+            } else {
+                mLocationListeners.remove(listener);
+                mUpdateTimes.remove(listener.hashCode());
+                if (DEBUG)
+                    Log.d("tmap", "remove LocationListener:");
+            }
+        } catch (Throwable e) {
+            //ignore
+                mLocationListeners.remove(listener);
+            mUpdateTimes.remove(listener.hashCode());
+            if (DEBUG)
+                Log.w("tmap", "onLocationChanged", e);
+        }
+    }
+
     private void handLocationChanged(boolean start, boolean force) {
         if (mScreeLock) return;
         synchronized (mLocationListeners) {
@@ -348,29 +374,7 @@ public class VLocationManagerService extends ILocationManager.Stub {
                         continue;
                     }
                 }
-                try {
-                    if (listener.asBinder().isBinderAlive() && listener.isAlive()) {
-                        if (start) {
-                            listener.onProviderEnabled(LocationManager.GPS_PROVIDER);
-                        }
-                        Location loc = getVirtualLocation(null, listener.getPackageName(), listener.getUserId());
-                        if (DEBUG)
-                            Log.d("tmap", listener.getPackageName() + ":onLocationChanged:" + loc);
-                        listener.onLocationChanged(loc);
-                        mUpdateTimes.put(listener.hashCode(), System.currentTimeMillis());
-                    } else {
-                        mLocationListeners.remove(listener);
-                        mUpdateTimes.remove(listener.hashCode());
-                        if (DEBUG)
-                            Log.d("tmap", "remove LocationListener:");
-                    }
-                } catch (Throwable e) {
-                    //ignore
-                    mLocationListeners.remove(i);
-                    mUpdateTimes.remove(listener.hashCode());
-                    if (DEBUG)
-                        Log.w("tmap", "onLocationChanged", e);
-                }
+                handleLocationNoLock(listener, start);
             }
         }
     }
