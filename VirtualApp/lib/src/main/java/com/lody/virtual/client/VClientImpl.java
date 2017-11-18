@@ -10,6 +10,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Binder;
@@ -48,10 +49,9 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceInfo;
-import com.taobao.android.dex.interpret.ARTUtils;
-import com.taobao.android.runtime.DalvikUtils;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -96,6 +96,12 @@ public final class VClientImpl extends IVClient.Stub {
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
     private CrashHandler crashHandler;
+    //res id
+    private boolean outSideDiff;
+
+    public boolean isOutSideDiff() {
+        return outSideDiff;
+    }
 
     public static VClientImpl get() {
         return gClient;
@@ -239,16 +245,20 @@ public final class VClientImpl extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
-        if (!info.dependSystem && info.skipDexOpt) {
-            VLog.d(TAG, "Dex opt skipped.");
-            if (VirtualRuntime.isArt()) {
-                ARTUtils.init(VirtualCore.get().getContext());
-                ARTUtils.setIsDex2oatEnabled(false);
-            } else {
-                DalvikUtils.init();
-                DalvikUtils.setDexOptMode(DalvikUtils.OPTIMIZE_MODE_NONE);
-            }
+        //check version
+        PackageInfo outside = null;
+        try {
+            outside = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+        } catch (Throwable e) {
+            //ignore
         }
+        if (outside != null) {
+            PackageInfo inside = VPackageManager.get().getPackageInfo(packageName, 0, getUserId(vuid));
+            outSideDiff = inside.versionCode != outside.versionCode;
+        }else{
+            outSideDiff = false;
+        }
+        //end check
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
@@ -307,6 +317,9 @@ public final class VClientImpl extends IVClient.Stub {
         mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
+        if (Build.VERSION.SDK_INT >= 24 && "com.tencent.mm:recovery".equals(processName)) {
+            fixWeChatRecovery(mInitialApplication);
+        }
         if (data.providers != null) {
             installContentProviders(mInitialApplication, data.providers);
         }
@@ -334,6 +347,19 @@ public final class VClientImpl extends IVClient.Stub {
         }
         VActivityManager.get().appDoneExecuting();
         VirtualCore.get().getComponentDelegate().afterApplicationCreate(mInitialApplication);
+    }
+
+    private void fixWeChatRecovery(Application app) {
+        try {
+            Field field = app.getClassLoader().loadClass("com.tencent.recovery.Recovery").getField("context");
+            field.setAccessible(true);
+            if (field.get(null) != null) {
+                return;
+            }
+            field.set(null, app.getBaseContext());
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupUncaughtHandler() {
@@ -448,12 +474,10 @@ public final class VClientImpl extends IVClient.Stub {
         Object mainThread = VirtualCore.mainThread();
         try {
             for (ProviderInfo cpi : providers) {
-                if (cpi.enabled) {
-                    try {
-                        ActivityThread.installProvider(mainThread, app, cpi, null);
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    ActivityThread.installProvider(mainThread, app, cpi, null);
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
         } finally {

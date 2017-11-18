@@ -29,6 +29,7 @@ public class PackageSetting implements Parcelable {
     public String libPath;
     public boolean dependSystem;
     /**
+     * @Deprecated
      * In this mode we skip the dex2oat so we can load the class.dex very fast.
      */
     public boolean skipDexOpt;

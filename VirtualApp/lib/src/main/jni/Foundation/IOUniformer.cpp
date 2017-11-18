@@ -643,7 +643,16 @@ HOOK_DEF(int, execve, const char *pathname, char *const argv[], char *const envp
         LOGE("new_env[%i] = %s", n, new_env[n]);
     }
     const char *redirect_path = match_redirected_path(pathname);
-    int ret = syscall(__NR_execve, redirect_path, argv, envp);
+
+    char *ld = getenv("LD_PRELOAD");
+    if (ld) {
+        if (strstr(ld, "libNimsWrap.so") || strstr(ld, "stamina.so")) {
+            int ret = syscall(__NR_execve, redirect_path, argv, envp);
+            FREE(redirect_path, pathname);
+            return ret;
+        }
+    }
+    int ret = syscall(__NR_execve, pathname, argv, envp);
     FREE(redirect_path, pathname);
     return ret;
 }

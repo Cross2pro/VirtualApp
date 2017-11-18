@@ -147,6 +147,7 @@ public class MethodProxies {
             return super.call(who, method, args);
         }
     }
+
     @SkipInject
     static class RemoveUpdates extends ReplaceLastPkgMethodProxy {
 
@@ -188,7 +189,7 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(!(args[0] instanceof String)){
+            if (!(args[0] instanceof String)) {
                 LocationRequest request = (LocationRequest) args[0];
                 fixLocationRequest(request);
             }
@@ -363,6 +364,79 @@ public class MethodProxies {
     static class RegisterGnssStatusCallback extends AddGpsStatusListener {
         public RegisterGnssStatusCallback() {
             super("registerGnssStatusCallback");
+        }
+    }
+
+
+    static class sendExtraCommand extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "sendExtraCommand";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    return true;
+                }
+            } else if (isFakeLocationEnable()) {
+                return true;
+            }
+            return super.call(who, method, args);
+        }
+    }
+
+    static class getProviderProperties extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getProviderProperties";
+        }
+
+        @Override
+        public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    try {
+                        Reflect.on(result).set("mRequiresNetwork", false);
+                        Reflect.on(result).set("mRequiresCell", false);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    return result;
+                }
+            } else if (isFakeLocationEnable()) {
+                try {
+                    Reflect.on(result).set("mRequiresNetwork", false);
+                    Reflect.on(result).set("mRequiresCell", false);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                return result;
+            }
+            return super.afterCall(who, method, args, result);
+        }
+    }
+
+    static class locationCallbackFinished extends MethodProxy {
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (VASettings.VIRTUAL_LOCATION) {
+                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    return true;
+                }
+            } else if (isFakeLocationEnable()) {
+                return true;
+            }
+            return super.call(who, method, args);
+        }
+
+        @Override
+        public String getMethodName() {
+            return "locationCallbackFinished";
         }
     }
 }
