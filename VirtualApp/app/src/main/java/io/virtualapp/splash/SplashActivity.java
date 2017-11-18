@@ -23,7 +23,6 @@ public class SplashActivity extends VActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-        showBanner();
         VUiKit.defer().when(() -> {
             if (!Once.beenDone("collect_flurry")) {
                 FlurryROMCollector.startCollect();

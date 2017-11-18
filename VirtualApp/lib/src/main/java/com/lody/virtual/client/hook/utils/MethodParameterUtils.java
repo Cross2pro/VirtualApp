@@ -12,7 +12,7 @@ import java.util.HashSet;
  */
 public class MethodParameterUtils {
 
-	public static <T> T getFirstParam(Object[] args,Class<T> tClass) {
+	public static <T> T getFirstParam(Object[] args, Class<T> tClass) {
 		if (args == null) {
 			return null;
 		}

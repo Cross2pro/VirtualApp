@@ -14,7 +14,6 @@ import java.io.IOException;
 
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VUiKit;
-import io.virtualapp.home.ads.AdScheduler;
 import io.virtualapp.home.models.AppData;
 import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.home.models.MultiplePackageAppData;
@@ -31,7 +30,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     private HomeContract.HomeView mView;
     private Activity mActivity;
     private AppRepository mRepo;
-
     private AppData mTempAppData;
 
 
@@ -57,10 +55,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
 
     @Override
     public void launchApp(AppData data) {
-        launchAppNoAd(data);
-    }
-
-    public void launchAppNoAd(AppData data) {
         try {
             if (data instanceof PackageAppData) {
                 PackageAppData appData = (PackageAppData) data;
