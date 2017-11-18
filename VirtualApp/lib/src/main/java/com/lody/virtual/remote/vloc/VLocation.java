@@ -1,7 +1,13 @@
 package com.lody.virtual.remote.vloc;
 
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.lody.virtual.helper.utils.Reflect;
 
 /**
  * @author Lody
@@ -31,7 +37,20 @@ public class VLocation implements Parcelable {
         dest.writeFloat(this.bearing);
     }
 
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
     public VLocation() {
+    }
+
+    public VLocation(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public VLocation(Parcel in) {
@@ -69,5 +88,27 @@ public class VLocation implements Parcelable {
                 ", speed=" + speed +
                 ", bearing=" + bearing +
                 '}';
+    }
+
+    public Location toSysLocation() {
+        Location location = new Location(LocationManager.GPS_PROVIDER);
+        location.setAccuracy(20f);
+        Bundle extraBundle = new Bundle();
+        location.setBearing(bearing);
+        Reflect.on(location).call("setIsFromMockProvider", false);
+        location.setLatitude(latitude);
+        location.setLongitude(longitude);
+        location.setSpeed(speed);
+        location.setTime(System.currentTimeMillis());
+        int svCount = 19;//VirtualGPSSatalines.get().getSvCount();
+        extraBundle.putInt("satellites", svCount);
+        extraBundle.putInt("satellitesvalue", svCount);
+        location.setExtras(extraBundle);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            location.setElapsedRealtimeNanos(277000000);
+            Reflect.on(location).call("makeComplete");
+        }
+        return location;
     }
 }

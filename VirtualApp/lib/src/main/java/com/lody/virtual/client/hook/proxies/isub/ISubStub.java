@@ -34,14 +34,6 @@ public class ISubStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubInfoCount"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getSubscriptionProperty"));
         addMethodProxy(new StaticMethodProxy(Build.VERSION.SDK_INT >= 24 ?
-                "getSimStateForSlotIdx" : "getSimStateForSubscriber") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    return TelephonyManager.SIM_STATE_ABSENT;
-                }
-                return super.call(who, method, args);
-            }
-        });
+                "getSimStateForSlotIdx" : "getSimStateForSubscriber"));
     }
 }

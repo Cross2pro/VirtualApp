@@ -26,7 +26,7 @@ public class TelephonyRegistryStub extends BinderInvocationProxy {
             @Override
             public boolean beforeCall(Object who, Method method, Object... args) {
                 if (android.os.Build.VERSION.SDK_INT >= 17) {
-                    if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
+                    if (isFakeLocationEnable()) {
                         for (int i = args.length - 1; i > 0; i--) {
                             if (args[i] instanceof Integer) {
                                 int events = (Integer) args[i];

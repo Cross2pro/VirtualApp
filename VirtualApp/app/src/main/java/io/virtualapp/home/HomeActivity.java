@@ -7,8 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,8 +25,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -44,7 +40,7 @@ import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.adapters.LaunchpadAdapter;
 import io.virtualapp.home.adapters.decorations.ItemOffsetDecoration;
-import io.virtualapp.home.location.VirtualLocationSettings;
+import io.virtualapp.home.location.LocationSettingsActivity;
 import io.virtualapp.home.models.AddAppButton;
 import io.virtualapp.home.models.AppData;
 import io.virtualapp.home.models.AppInfoLite;
@@ -99,12 +95,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
-        Location  location = VLocationManager.makeGpsLocation(30.479449d, 114.66834d);
-//        VActivityManager.get().killAppByPkg("com.tencent.mm",0);
-//        VActivityManager.get().killAppByPkg("com.tencent.mm.map",0);
-//        VLocationManager.get().stopAllLocationRequest();
-        VActivityManager.get().killAllApps();
-        VLocationManager.get().setVirtualLocation(location, 0);
     }
 
     private void initMenu() {
@@ -140,7 +130,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             return false;
         });
         menu.add("Virtual Location").setIcon(R.drawable.ic_notification).setOnMenuItemClickListener(item -> {
-            startActivity(new Intent(this, VirtualLocationSettings.class));
+            startActivity(new Intent(this, LocationSettingsActivity.class));
             return true;
         });
         menu.add("Settings").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {

@@ -1249,11 +1249,9 @@ class MethodProxies {
                     return VClientImpl.get().getVUid() == uid;
                 }
                 int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-                if(userId == -1 || userId == VUserHandle.myUserId()){
-                    if("android.net.wifi.SCAN_RESULTS".equals(intent.getAction())){
-                        if(VLocationManager.get().hasVirtualLocation(userId)){
-                            return false;
-                        }
+                if("android.net.wifi.SCAN_RESULTS".equals(intent.getAction())){
+                    if(VLocationManager.get().hasVirtualLocation(getAppPkg(), userId)){
+                        return false;
                     }
                 }
                 return false;

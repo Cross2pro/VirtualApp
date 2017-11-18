@@ -50,7 +50,7 @@ public class LocationManagerStub extends BinderInvocationProxy {
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("removeGeofence", 0));
         }
 
-        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN){
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN) {
             addMethodProxy(new MethodProxies.GetLastKnownLocation());
             addMethodProxy(new FakeReplaceLastPkgMethodProxy("addProximityAlert", 0));
         }
@@ -60,7 +60,7 @@ public class LocationManagerStub extends BinderInvocationProxy {
             addMethodProxy(new MethodProxies.RemoveUpdatesPI());
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             addMethodProxy(new MethodProxies.RequestLocationUpdates());
             addMethodProxy(new MethodProxies.RemoveUpdates());
         }
@@ -91,10 +91,8 @@ public class LocationManagerStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VASettings.VIRTUAL_LOCATION) {
-                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    return mDefValue;
-                }
+            if (isFakeLocationEnable()) {
+                return mDefValue;
             }
             return super.call(who, method, args);
         }

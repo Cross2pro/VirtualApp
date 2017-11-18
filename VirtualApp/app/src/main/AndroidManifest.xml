@@ -41,7 +41,7 @@
             android:taskAffinity="va.task.loading"
             android:theme="@style/TransparentTheme"/>
         <activity
-            android:name=".home.location.VirtualLocationSettings"
+            android:name=".home.location.LocationSettingsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/UITheme"
             />

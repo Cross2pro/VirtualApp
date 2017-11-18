@@ -11,12 +11,11 @@ import android.telephony.CellSignalStrengthGsm;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VLocationManager;
-import com.lody.virtual.client.ipc.VirtualLocationManager;
+import com.lody.virtual.client.ipc.VirtualLocationSettings;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;
@@ -54,17 +53,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
-                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-                    return null;
+            if (isFakeLocationEnable()) {
+                VCell cell = VirtualLocationSettings.get().getCell(getAppUserId(), getAppPkg());
+                if (cell != null) {
+                    return getCellLocationInternal(cell);
                 }
-            }else {
-                if (isFakeLocationEnable()) {
-                    VCell cell = VirtualLocationManager.get().getCell(getAppUserId(), getAppPkg());
-                    if (cell != null) {
-                        return getCellLocationInternal(cell);
-                    }
-                }
+                return null;
             }
             return super.call(who, method, args);
         }
@@ -79,22 +73,16 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION) {
-                if (VLocationManager.get().hasVirtualLocation(getAppUserId())) {
-                    return new ArrayList<CellInfo>();
-                }
-            }else {
-                if (isFakeLocationEnable()) {
-                    List<VCell> cells = VirtualLocationManager.get().getAllCell(getAppUserId(), getAppPkg());
-                    if (cells != null) {
-                        List<CellInfo> result = new ArrayList<CellInfo>();
-                        for (VCell cell : cells) {
-                            result.add(createCellInfo(cell));
-                        }
-                        return result;
+            if (isFakeLocationEnable()) {
+                List<VCell> cells = VirtualLocationSettings.get().getAllCell(getAppUserId(), getAppPkg());
+                if (cells != null) {
+                    List<CellInfo> result = new ArrayList<CellInfo>();
+                    for (VCell cell : cells) {
+                        result.add(createCellInfo(cell));
                     }
-
+                    return result;
                 }
+                return null;
             }
             return super.call(who, method, args);
         }
@@ -109,25 +97,20 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.VIRTUAL_LOCATION){
-                if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-                    return new ArrayList<NeighboringCellInfo>();
-                }
-            }else {
-                if (isFakeLocationEnable()) {
-                    List<VCell> cells = VirtualLocationManager.get().getNeighboringCell(getAppUserId(), getAppPkg());
-                    if (cells != null) {
-                        List<NeighboringCellInfo> infos = new ArrayList<>();
-                        for (VCell cell : cells) {
-                            NeighboringCellInfo info = new NeighboringCellInfo();
-                            mirror.android.telephony.NeighboringCellInfo.mLac.set(info, cell.lac);
-                            mirror.android.telephony.NeighboringCellInfo.mCid.set(info, cell.cid);
-                            mirror.android.telephony.NeighboringCellInfo.mRssi.set(info, 6);
-                            infos.add(info);
-                        }
-                        return infos;
+            if (isFakeLocationEnable()) {
+                List<VCell> cells = VirtualLocationSettings.get().getNeighboringCell(getAppUserId(), getAppPkg());
+                if (cells != null) {
+                    List<NeighboringCellInfo> infos = new ArrayList<>();
+                    for (VCell cell : cells) {
+                        NeighboringCellInfo info = new NeighboringCellInfo();
+                        mirror.android.telephony.NeighboringCellInfo.mLac.set(info, cell.lac);
+                        mirror.android.telephony.NeighboringCellInfo.mCid.set(info, cell.cid);
+                        mirror.android.telephony.NeighboringCellInfo.mRssi.set(info, 6);
+                        infos.add(info);
                     }
+                    return infos;
                 }
+                return null;
             }
             return super.call(who, method, args);
         }

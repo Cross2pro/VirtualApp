@@ -34,15 +34,7 @@ public class TelephonyStub extends BinderInvocationProxy {
 		addMethodProxy(new MethodProxies.GetAllCellInfo());
 		addMethodProxy(new MethodProxies.GetCellLocation());
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("isOffhook"));
-		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1NumberForDisplay"){
-			@Override
-			public Object call(Object who, Method method, Object... args) throws Throwable {
-				if(VLocationManager.get().hasVirtualLocation(getAppUserId())){
-					return null;
-				}
-				return super.call(who, method, args);
-			}
-		});
+		addMethodProxy(new ReplaceLastPkgMethodProxy("getLine1NumberForDisplay"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("isOffhookForSubscriber"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("isRingingForSubscriber"));
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("call"));

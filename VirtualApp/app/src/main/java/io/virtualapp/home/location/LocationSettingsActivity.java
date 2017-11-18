@@ -4,13 +4,12 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.ipc.VirtualLocationManager;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.vloc.VLocation;
@@ -27,7 +26,7 @@ import io.virtualapp.home.repo.AppRepository;
 
 import static io.virtualapp.home.location.MarkerActivity.EXTRA_LOCATION;
 
-public class VirtualLocationSettings extends VActivity implements AdapterView.OnItemClickListener {
+public class LocationSettingsActivity extends VActivity implements AdapterView.OnItemClickListener {
     private static final int REQUSET_CODE = 1001;
     private AppRepository mRepo;
     private ListView mListView;
@@ -47,17 +46,19 @@ public class VirtualLocationSettings extends VActivity implements AdapterView.On
     }
 
     private void readLocation(LocationData locationData) {
-        locationData.mode = VirtualLocationManager.get().getMode(locationData.userId, locationData.packageName);
-        locationData.location = VirtualLocationManager.get().getLocation(locationData.userId, locationData.packageName);
+        locationData.mode = com.lody.virtual.client.ipc.VirtualLocationSettings.get().getMode(locationData.userId, locationData.packageName);
+        locationData.location = VLocationManager.get().getLocation(locationData.packageName, locationData.userId);
     }
 
     private void saveLocation(LocationData locationData) {
-        if(locationData.location == null||locationData.location.isEmpty()){
-            VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 0);
-        }else if(locationData.mode != 2){
-            VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 2);
+        VirtualCore.get().killApp(locationData.packageName, locationData.userId);
+        if (locationData.location == null || locationData.location.isEmpty()) {
+            com.lody.virtual.client.ipc.VirtualLocationSettings.get().setMode(locationData.userId, locationData.packageName, 0);
+        } else if (locationData.mode != 2) {
+            com.lody.virtual.client.ipc.VirtualLocationSettings.get().setMode(locationData.userId, locationData.packageName, 2);
         }
-        VirtualLocationManager.get().setLocation(locationData.userId, locationData.packageName, locationData.location);
+        com.lody.virtual.client.ipc.VirtualLocationSettings.get().setLocation(locationData.userId, locationData.packageName, locationData.location);
+//        VLocationManager.get().setVirtualLocation(locationData.packageName, locationData.location, locationData.userId);
     }
 
     private void loadData() {

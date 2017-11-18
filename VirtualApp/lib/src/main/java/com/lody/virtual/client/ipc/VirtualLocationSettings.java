@@ -15,13 +15,16 @@ import java.util.List;
  * @author Lody
  */
 
-public class VirtualLocationManager {
+public class VirtualLocationSettings {
 
-    private static final VirtualLocationManager sInstance = new VirtualLocationManager();
+    private static final VirtualLocationSettings sInstance = new VirtualLocationSettings();
+    public static final int MODE_CLOSE = 0;
+    public static final int MODE_USE_GLOBAL = 1;
+    public static final int MODE_USE_SELF = 2;
     private IVirtualLocationManager mRemote;
 
 
-    public static VirtualLocationManager get() {
+    public static VirtualLocationSettings get() {
         return sInstance;
     }
 
