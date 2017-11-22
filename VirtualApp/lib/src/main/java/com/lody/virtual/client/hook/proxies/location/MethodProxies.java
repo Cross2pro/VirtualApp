@@ -1,6 +1,5 @@
 package com.lody.virtual.client.hook.proxies.location;
 
-import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationRequest;
 import android.os.Build;
@@ -10,6 +9,7 @@ import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.SkipInject;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.remote.vloc.VLocation;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -114,7 +114,11 @@ public class MethodProxies {
                 fixLocationRequest(request);
             }
             if (isFakeLocationEnable()) {
-                return VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
+                VLocation loc= VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
+                if(loc!=null){
+                    return loc.toSysLocation();
+                }
+                return null;
             }
             return super.call(who, method, args);
         }
@@ -130,8 +134,11 @@ public class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                Location old = (Location) super.call(who, method, args);
-                return VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
+                VLocation loc = VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
+                if (loc != null) {
+                    return loc.toSysLocation();
+                }
+                return null;
             }
             return super.call(who, method, args);
         }
