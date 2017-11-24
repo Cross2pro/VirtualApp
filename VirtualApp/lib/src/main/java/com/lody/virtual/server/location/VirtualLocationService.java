@@ -4,7 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 
-import com.lody.virtual.client.ipc.VirtualLocationSettings;
+import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.PersistenceLayer;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.os.VEnvironment;
@@ -145,7 +145,7 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         VLocConfig config = pkgs.get(pkg);
         if (config == null) {
             config = new VLocConfig();
-            config.mode = VirtualLocationSettings.MODE_CLOSE;
+            config.mode = VirtualLocationManager.MODE_CLOSE;
             pkgs.put(pkg, config);
         }
         return config;
@@ -192,11 +192,11 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         VLocConfig config = getOrCreateConfig(userId, pkg);
         mPersistenceLayer.save();
         switch (config.mode) {
-            case VirtualLocationSettings.MODE_USE_SELF:
+            case VirtualLocationManager.MODE_USE_SELF:
                 return config.cell;
-            case VirtualLocationSettings.MODE_USE_GLOBAL:
+            case VirtualLocationManager.MODE_USE_GLOBAL:
                 return mGlobalConfig.cell;
-            case VirtualLocationSettings.MODE_CLOSE:
+            case VirtualLocationManager.MODE_CLOSE:
             default:
                 return null;
         }
@@ -207,11 +207,11 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         VLocConfig config = getOrCreateConfig(userId, pkg);
         mPersistenceLayer.save();
         switch (config.mode) {
-            case VirtualLocationSettings.MODE_USE_SELF:
+            case VirtualLocationManager.MODE_USE_SELF:
                 return config.allCell;
-            case VirtualLocationSettings.MODE_USE_GLOBAL:
+            case VirtualLocationManager.MODE_USE_GLOBAL:
                 return mGlobalConfig.allCell;
-            case VirtualLocationSettings.MODE_CLOSE:
+            case VirtualLocationManager.MODE_CLOSE:
             default:
                 return null;
         }
@@ -222,11 +222,11 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         VLocConfig config = getOrCreateConfig(userId, pkg);
         mPersistenceLayer.save();
         switch (config.mode) {
-            case VirtualLocationSettings.MODE_USE_SELF:
+            case VirtualLocationManager.MODE_USE_SELF:
                 return config.neighboringCell;
-            case VirtualLocationSettings.MODE_USE_GLOBAL:
+            case VirtualLocationManager.MODE_USE_GLOBAL:
                 return mGlobalConfig.neighboringCell;
-            case VirtualLocationSettings.MODE_CLOSE:
+            case VirtualLocationManager.MODE_CLOSE:
             default:
                 return null;
         }
@@ -243,11 +243,11 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         VLocConfig config = getOrCreateConfig(userId, pkg);
         mPersistenceLayer.save();
         switch (config.mode) {
-            case VirtualLocationSettings.MODE_USE_SELF:
+            case VirtualLocationManager.MODE_USE_SELF:
                 return config.location;
-            case VirtualLocationSettings.MODE_USE_GLOBAL:
+            case VirtualLocationManager.MODE_USE_GLOBAL:
                 return mGlobalConfig.location;
-            case VirtualLocationSettings.MODE_CLOSE:
+            case VirtualLocationManager.MODE_CLOSE:
             default:
                 return null;
         }

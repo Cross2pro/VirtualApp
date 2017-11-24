@@ -14,9 +14,7 @@ import android.telephony.gsm.GsmCellLocation;
 
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
-import com.lody.virtual.client.ipc.VLocationManager;
-import com.lody.virtual.client.ipc.VirtualLocationSettings;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;
 import com.lody.virtual.remote.vloc.VCell;
@@ -54,7 +52,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                VCell cell = VirtualLocationSettings.get().getCell(getAppUserId(), getAppPkg());
+                VCell cell = VirtualLocationManager.get().getCell(getAppUserId(), getAppPkg());
                 if (cell != null) {
                     return getCellLocationInternal(cell);
                 }
@@ -74,7 +72,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                List<VCell> cells = VirtualLocationSettings.get().getAllCell(getAppUserId(), getAppPkg());
+                List<VCell> cells = VirtualLocationManager.get().getAllCell(getAppUserId(), getAppPkg());
                 if (cells != null) {
                     List<CellInfo> result = new ArrayList<CellInfo>();
                     for (VCell cell : cells) {
@@ -98,7 +96,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                List<VCell> cells = VirtualLocationSettings.get().getNeighboringCell(getAppUserId(), getAppPkg());
+                List<VCell> cells = VirtualLocationManager.get().getNeighboringCell(getAppUserId(), getAppPkg());
                 if (cells != null) {
                     List<NeighboringCellInfo> infos = new ArrayList<>();
                     for (VCell cell : cells) {

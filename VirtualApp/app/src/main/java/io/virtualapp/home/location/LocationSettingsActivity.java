@@ -10,6 +10,7 @@ import android.widget.ListView;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VLocationManager;
+import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.vloc.VLocation;
@@ -46,18 +47,18 @@ public class LocationSettingsActivity extends VActivity implements AdapterView.O
     }
 
     private void readLocation(LocationData locationData) {
-        locationData.mode = com.lody.virtual.client.ipc.VirtualLocationSettings.get().getMode(locationData.userId, locationData.packageName);
+        locationData.mode = VirtualLocationManager.get().getMode(locationData.userId, locationData.packageName);
         locationData.location = VLocationManager.get().getLocation(locationData.packageName, locationData.userId);
     }
 
     private void saveLocation(LocationData locationData) {
         VirtualCore.get().killApp(locationData.packageName, locationData.userId);
         if (locationData.location == null || locationData.location.isEmpty()) {
-            com.lody.virtual.client.ipc.VirtualLocationSettings.get().setMode(locationData.userId, locationData.packageName, 0);
+            VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 0);
         } else if (locationData.mode != 2) {
-            com.lody.virtual.client.ipc.VirtualLocationSettings.get().setMode(locationData.userId, locationData.packageName, 2);
+            VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 2);
         }
-        com.lody.virtual.client.ipc.VirtualLocationSettings.get().setLocation(locationData.userId, locationData.packageName, locationData.location);
+        VirtualLocationManager.get().setLocation(locationData.userId, locationData.packageName, locationData.location);
 //        VLocationManager.get().setVirtualLocation(locationData.packageName, locationData.location, locationData.userId);
     }
 

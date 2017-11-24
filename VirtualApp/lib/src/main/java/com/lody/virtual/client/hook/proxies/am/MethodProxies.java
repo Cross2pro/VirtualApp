@@ -22,6 +22,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -1249,10 +1250,13 @@ class MethodProxies {
                     return VClientImpl.get().getVUid() == uid;
                 }
                 int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-                if("android.net.wifi.SCAN_RESULTS".equals(intent.getAction())){
-                    if(VLocationManager.get().hasVirtualLocation(getAppPkg(), userId)){
-                        return false;
+                if(userId == -1 || userId == VUserHandle.myUserId()) {
+                    if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
+                        if (isFakeLocationEnable()) {
+                            return false;
+                        }
                     }
+                    return true;
                 }
                 return false;
             }

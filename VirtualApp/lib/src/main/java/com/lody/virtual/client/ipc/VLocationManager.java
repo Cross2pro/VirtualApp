@@ -2,7 +2,6 @@ package com.lody.virtual.client.ipc;
 
 import android.app.PendingIntent;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
@@ -97,7 +96,7 @@ public class VLocationManager {
 
     public boolean hasVirtualLocation(String packageName, int userId) {
         try {
-            return VirtualLocationSettings.get().getMode(userId, packageName) != VirtualLocationSettings.MODE_CLOSE;
+            return VirtualLocationManager.get().getMode(userId, packageName) != VirtualLocationManager.MODE_CLOSE;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -118,10 +117,10 @@ public class VLocationManager {
 
     public VLocation getVirtualLocation(String packageName, Location loc, int userId) {
         try {
-            if (VirtualLocationSettings.get().getMode(userId, packageName) == VirtualLocationSettings.MODE_USE_GLOBAL) {
-                return VirtualLocationSettings.get().getGlobalLocation();
+            if (VirtualLocationManager.get().getMode(userId, packageName) == VirtualLocationManager.MODE_USE_GLOBAL) {
+                return VirtualLocationManager.get().getGlobalLocation();
             } else {
-                return VirtualLocationSettings.get().getLocation(userId, packageName);
+                return VirtualLocationManager.get().getLocation(userId, packageName);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -156,6 +155,7 @@ public class VLocationManager {
                 mGpsListeners.add(GpsStatusListenerTransport);
             }
         }
+        checkWork();
         notifyGpsStatus(GpsStatusListenerTransport);
         startGpsTask();
     }
@@ -164,15 +164,13 @@ public class VLocationManager {
         if (transport == null) {
             return;
         }
-        checkWork();
+//        checkWork();
         mWorkHandler.post(new Runnable() {
             @Override
             public void run() {
-                GpsStatusGenerate.fakeGpsStatus(transport);
-                if (Build.VERSION.SDK_INT >= 24) {
-                    MockLocationHelper.invokeNmeaReceived(transport);
-                }
-
+//                GpsStatusGenerate.fakeGpsStatus(transport);
+                MockLocationHelper.invokeSvStatusChanged(transport);
+                MockLocationHelper.invokeNmeaReceived(transport);
             }
         });
     }
