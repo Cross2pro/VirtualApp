@@ -57,6 +57,7 @@ class MethodProxies {
                 if (cell != null) {
                     return getCellLocationInternal(cell);
                 }
+                return null;
             }
             return super.call(who, method, args);
         }
@@ -95,7 +96,7 @@ class MethodProxies {
                     }
                     return result;
                 }
-
+                return null;
             }
             return super.call(who, method, args);
         }
@@ -123,6 +124,7 @@ class MethodProxies {
                     }
                     return infos;
                 }
+                return null;
             }
             return super.call(who, method, args);
         }

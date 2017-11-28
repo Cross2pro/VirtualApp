@@ -87,7 +87,6 @@ public final class VirtualCore {
     private PackageInfo hostPkgInfo;
     private int systemPid;
     private ConditionVariable initLock = new ConditionVariable();
-    private PhoneInfoDelegate phoneInfoDelegate;
     private ComponentDelegate componentDelegate;
     private TaskDescriptionDelegate taskDescriptionDelegate;
 
@@ -124,14 +123,6 @@ public final class VirtualCore {
 
     public void setComponentDelegate(ComponentDelegate delegate) {
         this.componentDelegate = delegate;
-    }
-
-    public PhoneInfoDelegate getPhoneInfoDelegate() {
-        return phoneInfoDelegate;
-    }
-
-    public void setPhoneInfoDelegate(PhoneInfoDelegate phoneInfoDelegate) {
-        this.phoneInfoDelegate = phoneInfoDelegate;
     }
 
     public void setCrashHandler(CrashHandler handler) {

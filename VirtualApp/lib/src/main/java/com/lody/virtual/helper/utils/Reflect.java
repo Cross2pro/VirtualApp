@@ -278,6 +278,21 @@ public class Reflect {
      * @return object
      * @throws ReflectException
      */
+    public <T> T opt(String name){
+        try {
+            return field(name).get();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * @param name name
+     * @param <T>  type
+     * @return object
+     * @throws ReflectException
+     */
     public <T> T get(String name) throws ReflectException {
         return field(name).get();
     }

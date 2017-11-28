@@ -15,7 +15,6 @@ import jonathanfinerty.once.Once;
 
 public class SplashActivity extends VActivity {
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         @SuppressWarnings("unused")
@@ -42,6 +41,8 @@ public class SplashActivity extends VActivity {
         });
     }
 
+    private void showBanner() {
+    }
 
     private void doActionInThread() {
         if (!VirtualCore.get().isEngineLaunched()) {

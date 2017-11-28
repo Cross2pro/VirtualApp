@@ -1,9 +1,7 @@
 package com.lody.virtual.client.hook.proxies.location;
 
-import android.util.Log;
-
 import com.lody.virtual.client.env.VirtualGPSSatalines;
-import com.lody.virtual.client.ipc.VirtualLocationManager;
+import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.remote.vloc.VLocation;
 
@@ -23,11 +21,11 @@ public class MockLocationHelper {
         if (listener != null) {
             VirtualGPSSatalines satalines = VirtualGPSSatalines.get();
             try {
-                VLocation location = VirtualLocationManager.get().getLocation();
+                VLocation location = VLocationManager.get().getCurAppLocation();
                 if (location != null) {
                     String date = new SimpleDateFormat("HHmmss:SS", Locale.US).format(new Date());
-                    String lat = getGPSLat(location.latitude);
-                    String lon = getGPSLat(location.longitude);
+                    String lat = getGPSLat(location.getLatitude());
+                    String lon = getGPSLat(location.getLongitude());
                     String latNW = getNorthWest(location);
                     String lonSE = getSouthEast(location);
                     String $GPGGA = checksum(String.format("$GPGGA,%s,%s,%s,%s,%s,1,%s,692,.00,M,.00,M,,,", date, lat, latNW, lon, lonSE, satalines.getSvCount()));
@@ -46,7 +44,7 @@ public class MockLocationHelper {
                         LocationManager.GpsStatusListenerTransport.onNmeaReceived.call(listener, System.currentTimeMillis(), "$GPGSA,A,2,12,15,19,31,,,,,,,,,604,712,986,*27");
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -61,7 +59,16 @@ public class MockLocationHelper {
         int[] prns = satalines.getPrns();
         float[] elevations = satalines.getElevations();
         float[] azimuths = satalines.getAzimuths();
-        Object mGpsStatus = Reflect.on(locationManager).get("mGpsStatus");
+
+        Object mGpsStatus = null;
+        try {
+            mGpsStatus = Reflect.on(locationManager).get("mGpsStatus");
+        } catch (Throwable e) {
+
+        }
+        if (mGpsStatus == null) {
+            return;
+        }
         try {
             setStatus = mGpsStatus.getClass().getDeclaredMethod("setStatus", Integer.TYPE, int[].class, float[].class, float[].class, float[].class, Integer.TYPE, Integer.TYPE, Integer.TYPE);
             setStatus.setAccessible(true);
@@ -147,21 +154,21 @@ public class MockLocationHelper {
                         LocationManager.GpsStatusListenerTransportOPPO_R815T.onSvStatusChanged.call(transport, svCount, prns, snrs, elevations, azimuths, ephemerisMasks, almanacMasks, usedInFixMasks, svCount);
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
     }
 
     private static String getSouthEast(VLocation location) {
-        if (location.longitude > 0.0d) {
+        if (location.getLongitude() > 0.0d) {
             return "E";
         }
         return "W";
     }
 
     private static String getNorthWest(VLocation location) {
-        if (location.latitude > 0.0d) {
+        if (location.getLatitude() > 0.0d) {
             return "N";
         }
         return "S";

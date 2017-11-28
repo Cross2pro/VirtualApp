@@ -99,6 +99,10 @@ public final class VClientImpl extends IVClient.Stub {
     //res id
     private boolean outSideDiff;
 
+    public boolean isOutSideDiff() {
+        return outSideDiff;
+    }
+
     public static VClientImpl get() {
         return gClient;
     }
@@ -241,19 +245,20 @@ public final class VClientImpl extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
-
         //check version
-        PackageInfo outSideInfo = null;
+        PackageInfo outside = null;
         try {
-            outSideInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+            outside = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
         } catch (Throwable e) {
             //ignore
         }
-        if (outSideInfo != null) {
-            outSideDiff = !info.dependSystem;
+        if (outside != null) {
+            PackageInfo inside = VPackageManager.get().getPackageInfo(packageName, 0, getUserId(vuid));
+            outSideDiff = inside.versionCode != outside.versionCode;
+        }else{
+            outSideDiff = false;
         }
         //end check
-
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
@@ -640,10 +645,6 @@ public final class VClientImpl extends IVClient.Stub {
         return "process : " + VirtualRuntime.getProcessName() + "\n" +
                 "initialPkg : " + VirtualRuntime.getInitialPackageName() + "\n" +
                 "vuid : " + vuid;
-    }
-
-    public boolean isOutSideDiff() {
-        return outSideDiff;
     }
 
     private static class RootThreadGroup extends ThreadGroup {
