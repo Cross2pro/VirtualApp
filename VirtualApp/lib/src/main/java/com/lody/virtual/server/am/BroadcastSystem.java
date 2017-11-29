@@ -1,6 +1,5 @@
 package com.lody.virtual.server.am;
 
-import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +15,7 @@ import android.os.Message;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.server.pm.PackageSetting;
@@ -133,7 +133,7 @@ public class BroadcastSystem {
         }
     }
 
-    public void startApp(VPackage p) {
+    public void startApp(VPackage p,int userId) {
         PackageSetting setting = (PackageSetting) p.mExtras;
         for (VPackage.ActivityComponent receiver : p.receivers) {
             ActivityInfo info = receiver.info;
@@ -144,13 +144,13 @@ public class BroadcastSystem {
             }
             String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
             IntentFilter componentFilter = new IntentFilter(componentAction);
-            BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter);
+            BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter, userId);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
             receivers.add(r);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
-                r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter);
+                r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter, userId);
                 mContext.registerReceiver(r, cloneFilter, null, mScheduler);
                 receivers.add(r);
             }
@@ -244,11 +244,13 @@ public class BroadcastSystem {
         private ActivityInfo info;
         @SuppressWarnings("unused")
         private IntentFilter filter;
+        private int userId;
 
-        private StaticBroadcastReceiver(int appId, ActivityInfo info, IntentFilter filter) {
+        private StaticBroadcastReceiver(int appId, ActivityInfo info, IntentFilter filter,int userId) {
             this.appId = appId;
             this.info = info;
             this.filter = filter;
+            this.userId = userId;
         }
 
         @Override
@@ -264,6 +266,9 @@ public class BroadcastSystem {
                 return;
             }
             PendingResult result = goAsync();
+            if (!intent.hasExtra("_VA_|_intent_")) {
+                intent = ComponentUtils.redirectBroadcastIntent(intent, userId);
+            }
             if (!mAMS.handleStaticBroadcast(appId, info, intent, new PendingResultData(result))) {
                 result.finish();
             }

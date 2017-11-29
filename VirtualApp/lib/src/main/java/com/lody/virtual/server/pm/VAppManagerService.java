@@ -114,7 +114,10 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         chmodPackageDictionary(cacheFile);
         PackageCacheManager.put(pkg, ps);
-        BroadcastSystem.get().startApp(pkg);
+        int[] userIds = VirtualCore.get().getPackageInstalledUsers(pkg.packageName);
+        for(int userId : userIds) {
+            BroadcastSystem.get().startApp(pkg, userId);
+        }
         return true;
     }
 
@@ -257,7 +260,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 }
             }
         }
-        BroadcastSystem.get().startApp(pkg);
+        BroadcastSystem.get().startApp(pkg, 0);
         if (notify) {
             notifyAppInstalled(ps, -1);
         }
