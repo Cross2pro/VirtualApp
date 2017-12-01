@@ -635,11 +635,11 @@ public final class VirtualCore {
     public void setAppRequestListener(final AppRequestListener listener) {
         IAppRequestListener inner = new IAppRequestListener.Stub() {
             @Override
-            public void onRequestInstall(final String path) {
+            public void onRequestInstall(final String path,final boolean file) {
                 VirtualRuntime.getUIHandler().post(new Runnable() {
                     @Override
                     public void run() {
-                        listener.onRequestInstall(path);
+                        listener.onRequestInstall(path, file);
                     }
                 });
             }
@@ -757,7 +757,7 @@ public final class VirtualCore {
     }
 
     public interface AppRequestListener {
-        void onRequestInstall(String path);
+        void onRequestInstall(String path, boolean file);
 
         void onRequestUninstall(String pkg);
     }
