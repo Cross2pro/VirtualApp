@@ -31,6 +31,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.TypedValue;
 
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.badger.BadgerManager;
 import com.lody.virtual.client.core.VirtualCore;
@@ -471,14 +472,21 @@ class MethodProxies {
                 Uri packageUri = intent.getData();
                 if (SCHEME_FILE.equals(packageUri.getScheme())) {
                     File sourceFile = new File(packageUri.getPath());
+                    String path = NativeEngine.getRedirectedPath(sourceFile.getAbsolutePath());
                     try {
-                        listener.onRequestInstall(sourceFile.getPath());
+                        listener.onRequestInstall(path, true);
+                        return true;
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    try {
+                        listener.onRequestInstall(packageUri.toString(), false);
                         return true;
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
                 }
-
             }
             return false;
         }
