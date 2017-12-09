@@ -49,8 +49,7 @@ public class VActivityManager {
     }
 
     public IActivityManager getService() {
-        if (mRemote == null ||
-                (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
+        if (mRemote == null || !isAlive()) {
             synchronized (VActivityManager.class) {
                 final Object remote = getRemoteInterface();
                 mRemote = LocalProxyUtils.genProxy(IActivityManager.class, remote);
@@ -59,6 +58,18 @@ public class VActivityManager {
         return mRemote;
     }
 
+    private boolean isAlive(){
+        if(mRemote==null){
+            return false;
+        }
+        if(VirtualCore.get().isMainProcess()){
+            return mRemote.asBinder().pingBinder();
+        }else if(VirtualCore.get().isVAppProcess()){
+            return true;
+        }else{
+            return mRemote.asBinder().isBinderAlive();
+        }
+    }
 
     private Object getRemoteInterface() {
         return IActivityManager.Stub
