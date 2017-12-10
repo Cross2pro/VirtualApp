@@ -46,4 +46,12 @@ public class VDeviceManager {
             return VirtualRuntime.crash(e);
         }
     }
+
+    public void updateDeviceInfo(int userId, VDeviceInfo deviceInfo) {
+        try {
+            getRemote().updateDeviceInfo(userId, deviceInfo);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }
