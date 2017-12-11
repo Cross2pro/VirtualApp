@@ -9,7 +9,6 @@ import android.os.HandlerThread;
 import android.util.Log;
 
 import com.lody.virtual.client.VClientImpl;
-import com.lody.virtual.client.hook.proxies.location.GpsStatusGenerate;
 import com.lody.virtual.client.hook.proxies.location.MockLocationHelper;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.Reflect;
@@ -48,7 +47,7 @@ public class VLocationManager {
 
     public void setLocationManager(LocationManager locationManager) {
         mLocationManager = locationManager;
-        GpsStatusGenerate.fakeGpsStatus(locationManager);
+        MockLocationHelper.invokeSvStatusChanged(locationManager);
     }
 
     private void checkWork() {
@@ -149,7 +148,7 @@ public class VLocationManager {
 
     public void addGpsStatusListener(final Object[] args) {
         final Object GpsStatusListenerTransport = args[0];
-        GpsStatusGenerate.fakeGpsStatus(GpsStatusListenerTransport);
+        MockLocationHelper.invokeSvStatusChanged(GpsStatusListenerTransport);
         if (GpsStatusListenerTransport != null) {
             synchronized (mGpsListeners) {
                 mGpsListeners.add(GpsStatusListenerTransport);

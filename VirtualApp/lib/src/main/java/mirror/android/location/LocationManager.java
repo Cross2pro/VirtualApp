@@ -29,9 +29,15 @@ public class LocationManager {
         public static RefMethod<Void> onGnssStarted;
         @MethodParams({long.class, String.class})
         public static RefMethod<Void> onNmeaReceived;
-        @MethodParams({int.class, int[].class, float[].class, float[].class, float[].class, float[].class})
+        @MethodParams({int.class, int[].class, float[].class, float[].class, float[].class})
         public static RefMethod<Void> onSvStatusChanged;
         public static RefObject<Object> this$0;
+    }
+
+    public static class GnssStatusListenerTransportO {
+        public static Class<?> TYPE = RefClass.load(GnssStatusListenerTransportO.class, "android.location.LocationManager$GnssStatusListenerTransport");
+        @MethodParams({int.class, int[].class, float[].class, float[].class, float[].class, float[].class})
+        public static RefMethod<Void> onSvStatusChanged;
     }
 
     public static class GpsStatusListenerTransport {

@@ -6,10 +6,10 @@ class GPSStateline {
     private double mElevation;
     private boolean mHasAlmanac;
     private boolean mHasEphemeris;
+    private double mCarrierFrequencyHz;
     private int mPnr;
     private double mSnr;
     private boolean mUseInFix;
-
 
     public double getAzimuth() {
         return this.mAzimuth;
@@ -25,6 +25,14 @@ class GPSStateline {
 
     public double getSnr() {
         return this.mSnr;
+    }
+
+    public double getCarrierFrequencyHz() {
+        return mCarrierFrequencyHz;
+    }
+
+    public boolean hasCarrierFrequencyHz() {
+        return mCarrierFrequencyHz > 0;
     }
 
     public boolean isHasAlmanac() {
@@ -67,13 +75,14 @@ class GPSStateline {
         this.mUseInFix = useInFix;
     }
 
-    public GPSStateline(int pnr, double snr, double elevation, double azimuth, boolean useInFix, boolean hasAlmanac, boolean hasEphemeris) {
-        this.mPnr = pnr;
-        this.mSnr = snr;
-        this.mElevation = elevation;
-        this.mAzimuth = azimuth;
-        this.mUseInFix = useInFix;
-        this.mHasAlmanac = hasAlmanac;
-        this.mHasEphemeris = hasEphemeris;
+    public GPSStateline(int pnr, double snr, double elevation, double azimuth, boolean useInFix, boolean hasAlmanac, boolean hasEphemeris, double carrierFrequencyHz) {
+        mAzimuth = azimuth;
+        mElevation = elevation;
+        mHasAlmanac = hasAlmanac;
+        mHasEphemeris = hasEphemeris;
+        mCarrierFrequencyHz = carrierFrequencyHz;
+        mPnr = pnr;
+        mSnr = snr;
+        mUseInFix = useInFix;
     }
 }

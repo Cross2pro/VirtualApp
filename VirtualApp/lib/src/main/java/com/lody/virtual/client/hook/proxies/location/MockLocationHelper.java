@@ -1,5 +1,8 @@
 package com.lody.virtual.client.hook.proxies.location;
 
+import android.os.Build;
+import android.util.Log;
+
 import com.lody.virtual.client.env.VirtualGPSSatalines;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
@@ -7,6 +10,7 @@ import com.lody.virtual.remote.vloc.VLocation;
 
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -121,7 +125,16 @@ public class MockLocationHelper {
                     snrs = satalines.getSnrs();
                     elevations = satalines.getElevations();
                     azimuths = satalines.getAzimuths();
-                    LocationManager.GnssStatusListenerTransport.onSvStatusChanged.call(transport, svCount, prnWithFlags, snrs, elevations, azimuths);
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        float[] carrierFreqs = satalines.getCarrierFreqs();
+                        try {
+                            LocationManager.GnssStatusListenerTransportO.onSvStatusChanged.call(transport, svCount, prnWithFlags, snrs, elevations, azimuths, carrierFreqs);
+                        }catch (NullPointerException e){
+                           //rom
+                        }
+                    } else {
+                        LocationManager.GnssStatusListenerTransport.onSvStatusChanged.call(transport, svCount, prnWithFlags, snrs, elevations, azimuths);
+                    }
                 } else if (aClass == LocationManager.GpsStatusListenerTransport.TYPE) {
                     svCount = satalines.getSvCount();
                     int[] prns = satalines.getPrns();
