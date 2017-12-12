@@ -300,7 +300,7 @@ class MethodProxies {
                     if (resolvedTypes != null && i < resolvedTypes.length) {
                         intent.setDataAndType(intent.getData(), resolvedTypes[i]);
                     }
-                    Intent targetIntent = redirectIntentSender(type, creator, intent);
+                    Intent targetIntent = ComponentUtils.redirectIntentSender(type, creator, intent);
                     if (targetIntent != null) {
                         intents[i] = targetIntent;
                     }
@@ -317,38 +317,6 @@ class MethodProxies {
                 VActivityManager.get().addPendingIntent(sender.asBinder(), creator);
             }
             return sender;
-        }
-
-        private Intent redirectIntentSender(int type, String creator, Intent intent) {
-            Intent newIntent = intent.cloneFilter();
-            switch (type) {
-                case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
-                    ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
-                    if (info != null) {
-                        newIntent.setClass(getHostContext(), StubPendingActivity.class);
-                        newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    }
-                }
-                break;
-                case ActivityManagerCompat.INTENT_SENDER_SERVICE: {
-                    ComponentInfo info = VirtualCore.get().resolveServiceInfo(intent, VUserHandle.myUserId());
-                    if (info != null) {
-                        newIntent.setClass(getHostContext(), StubPendingService.class);
-                    }
-                }
-                break;
-                case ActivityManagerCompat.INTENT_SENDER_BROADCAST: {
-                    newIntent.setClass(getHostContext(), StubPendingReceiver.class);
-                }
-                break;
-                default:
-                    return null;
-            }
-            newIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());
-            newIntent.putExtra("_VA_|_intent_", intent);
-            newIntent.putExtra("_VA_|_creator_", creator);
-            newIntent.putExtra("_VA_|_from_inner_", true);
-            return newIntent;
         }
 
         @Override

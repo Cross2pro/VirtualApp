@@ -9,7 +9,12 @@ import android.content.pm.ComponentInfo;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.stub.StubPendingActivity;
+import com.lody.virtual.client.stub.StubPendingReceiver;
+import com.lody.virtual.client.stub.StubPendingService;
+import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
+import com.lody.virtual.os.VUserHandle;
 
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
 
@@ -127,4 +132,37 @@ public class ComponentUtils {
         }
         return newIntent;
     }
+
+    public static Intent redirectIntentSender(int type, String creator, Intent intent) {
+        Intent newIntent = intent.cloneFilter();
+        switch (type) {
+            case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
+                ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
+                if (info != null) {
+                    newIntent.setClass(VirtualCore.get().getContext(), StubPendingActivity.class);
+                    newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                }
+            }
+            break;
+            case ActivityManagerCompat.INTENT_SENDER_SERVICE: {
+                ComponentInfo info = VirtualCore.get().resolveServiceInfo(intent, VUserHandle.myUserId());
+                if (info != null) {
+                    newIntent.setClass(VirtualCore.get().getContext(), StubPendingService.class);
+                }
+            }
+            break;
+            case ActivityManagerCompat.INTENT_SENDER_BROADCAST: {
+                newIntent.setClass(VirtualCore.get().getContext(), StubPendingReceiver.class);
+            }
+            break;
+            default:
+                return null;
+        }
+        newIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());
+        newIntent.putExtra("_VA_|_intent_", intent);
+        newIntent.putExtra("_VA_|_creator_", creator);
+        newIntent.putExtra("_VA_|_from_inner_", true);
+        return newIntent;
+    }
+
 }

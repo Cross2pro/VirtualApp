@@ -3,6 +3,7 @@ package com.lody.virtual.server.job;
 import android.annotation.TargetApi;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.app.job.JobWorkItem;
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Build;
@@ -15,6 +16,7 @@ import android.text.TextUtils;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VJobScheduler;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
@@ -345,4 +347,43 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.N)
+    @Override
+    public JobInfo getPendingJob(int jobId) throws RemoteException {
+        int vuid = VBinder.getCallingUid();
+        JobInfo jobInfo = null;
+        synchronized (mJobStore) {
+            Iterator<Map.Entry<JobId, JobConfig>> iterator = mJobStore.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<JobId, JobConfig> entry = iterator.next();
+                JobId job = entry.getKey();
+                if (job.vuid == vuid && job.clientJobId == jobId) {
+                    jobInfo = mScheduler.getPendingJob(job.clientJobId);
+                    break;
+                }
+            }
+        }
+        return jobInfo;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    @Override
+    public int enqueue(JobInfo job, JobWorkItem workItem) throws RemoteException {
+        int vuid = VBinder.getCallingUid();
+        int id = job.getId();
+        ComponentName service = job.getService();
+        JobId jobId = new JobId(vuid, service.getPackageName(), id);
+        JobConfig config = mJobStore.get(jobId);
+        if (config == null) {
+            config = new JobConfig(mGlobalJobId++, service.getClassName(), job.getExtras());
+            mJobStore.put(jobId, config);
+        } else {
+            config.serviceName = service.getClassName();
+            config.extras = job.getExtras();
+        }
+        saveJobs();
+        mirror.android.app.job.JobInfo.jobId.set(job, config.virtualJobId);
+        mirror.android.app.job.JobInfo.service.set(job, mJobProxyComponent);
+        return mScheduler.enqueue(job, workItem);
+    }
 }

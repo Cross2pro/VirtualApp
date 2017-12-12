@@ -1,6 +1,9 @@
 package com.lody.virtual.client.ipc;
 
+import android.annotation.TargetApi;
 import android.app.job.JobInfo;
+import android.app.job.JobWorkItem;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 
@@ -69,6 +72,23 @@ public class VJobScheduler {
             getRemote().cancel(jobId);
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public JobInfo getPendingJob(int jobId) {
+        try {
+            return getRemote().getPendingJob(jobId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    public int enqueue(JobInfo job, JobWorkItem workItem) {
+        try {
+            return getRemote().enqueue(job, workItem);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
         }
     }
 }
