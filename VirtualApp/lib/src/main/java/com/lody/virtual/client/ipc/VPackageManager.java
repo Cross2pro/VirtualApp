@@ -33,14 +33,26 @@ public class VPackageManager {
     }
 
     public IPackageManager getInterface() {
-        if (mRemote == null ||
-                (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
+        if (mRemote == null || !isAlive()) {
             synchronized (VPackageManager.class) {
                 Object remote = getRemoteInterface();
                 mRemote = LocalProxyUtils.genProxy(IPackageManager.class, remote);
             }
         }
         return mRemote;
+    }
+
+    private boolean isAlive(){
+        if(mRemote==null){
+            return false;
+        }
+        if(VirtualCore.get().isMainProcess()){
+            return mRemote.asBinder().pingBinder();
+        }else if(VirtualCore.get().isVAppProcess()){
+            return true;
+        }else{
+            return mRemote.asBinder().isBinderAlive();
+        }
     }
 
     private Object getRemoteInterface() {

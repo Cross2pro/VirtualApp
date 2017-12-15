@@ -30,14 +30,26 @@ public class VirtualLocationManager {
 
 
     public IVirtualLocationManager getRemote() {
-        if (mRemote == null ||
-                (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
+        if (mRemote == null || !isAlive()) {
             synchronized (this) {
                 Object remote = getRemoteInterface();
                 mRemote = LocalProxyUtils.genProxy(IVirtualLocationManager.class, remote);
             }
         }
         return mRemote;
+    }
+
+    private boolean isAlive(){
+        if(mRemote==null){
+            return false;
+        }
+        if(VirtualCore.get().isMainProcess()){
+            return mRemote.asBinder().pingBinder();
+        }else if(VirtualCore.get().isVAppProcess()){
+            return true;
+        }else{
+            return mRemote.asBinder().isBinderAlive();
+        }
     }
 
     private Object getRemoteInterface() {
