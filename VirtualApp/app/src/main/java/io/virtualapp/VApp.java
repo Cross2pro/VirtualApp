@@ -31,6 +31,8 @@ public class VApp extends MultiDexApplication {
         mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
         VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
+        //自动随机手机信息
+        VASettings.KEEP_ADMIN_PHONE_INFO = false;
         try {
             VirtualCore.get().startup(base);
         } catch (Throwable e) {

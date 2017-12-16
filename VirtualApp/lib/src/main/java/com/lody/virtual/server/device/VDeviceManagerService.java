@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.remote.VDeviceInfo;
 import com.lody.virtual.server.IDeviceInfoManager;
@@ -58,9 +59,11 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         synchronized (mDeviceInfos) {
             info = mDeviceInfos.get(userId);
             if (info == null) {
-                info = generateRandomDeviceInfo();
-                mDeviceInfos.put(userId, info);
-                mPersistenceLayer.save();
+                if (!VASettings.KEEP_ADMIN_PHONE_INFO || userId > 0) {
+                    info = generateRandomDeviceInfo();
+                    mDeviceInfos.put(userId, info);
+                    mPersistenceLayer.save();
+                }
             }
         }
         return info;
