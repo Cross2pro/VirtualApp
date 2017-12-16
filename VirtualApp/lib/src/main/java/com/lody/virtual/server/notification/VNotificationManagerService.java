@@ -4,16 +4,21 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.text.TextUtils;
 
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.INotificationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class VNotificationManagerService extends INotificationManager.Stub {
-    private static final AtomicReference<VNotificationManagerService> gService = new AtomicReference<>();
+    private static final Singleton<VNotificationManagerService> gService = new Singleton<VNotificationManagerService>(){
+        @Override
+        protected VNotificationManagerService create() {
+            return new VNotificationManagerService();
+        }
+    };
     private NotificationManager mNotificationManager;
     static final String TAG = NotificationCompat.class.getSimpleName();
     private final List<String> mDisables = new ArrayList<>();
@@ -21,14 +26,13 @@ public class VNotificationManagerService extends INotificationManager.Stub {
     private final HashMap<String, List<NotificationInfo>> mNotifications = new HashMap<>();
     private Context mContext;
 
-    private VNotificationManagerService(Context context) {
+    private void init(Context context) {
         mContext = context;
         mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     public static void systemReady(Context context) {
-        VNotificationManagerService instance = new VNotificationManagerService(context);
-        gService.set(instance);
+        get().init(context);
     }
 
     public static VNotificationManagerService get() {

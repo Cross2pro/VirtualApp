@@ -41,6 +41,7 @@ import com.lody.virtual.helper.compat.ApplicationThreadCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
@@ -63,7 +64,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import mirror.android.app.IServiceConnectionO;
 
@@ -77,7 +77,12 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     private static final boolean BROADCAST_NOT_STARTED_PKG = false;
 
-    private static final AtomicReference<VActivityManagerService> sService = new AtomicReference<>();
+    private static final Singleton<VActivityManagerService> sService = new Singleton<VActivityManagerService>(){
+        @Override
+        protected VActivityManagerService create() {
+            return new VActivityManagerService();
+        }
+    };
     private static final String TAG = VActivityManagerService.class.getSimpleName();
     private final SparseArray<ProcessRecord> mPidsSelfLocked = new SparseArray<ProcessRecord>();
     private final ActivityStack mMainStack = new ActivityStack(this);
@@ -94,7 +99,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     public static void systemReady(Context context) {
-        new VActivityManagerService().onCreate(context);
+        get().onCreate(context);
     }
 
     private static ServiceInfo resolveServiceInfo(Intent service, int userId) {
@@ -121,8 +126,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
         if (packageInfo == null) {
             throw new RuntimeException("Unable to found PackageInfo : " + context.getPackageName());
         }
-        sService.set(this);
-
     }
 
 

@@ -30,6 +30,7 @@ import android.util.Xml;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.AccountManagerCompat;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
@@ -52,7 +53,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import mirror.com.android.internal.R_Hide;
 
@@ -64,7 +64,12 @@ import static android.accounts.AccountManager.ERROR_CODE_BAD_ARGUMENTS;
  */
 public class VAccountManagerService extends IAccountManager.Stub {
 
-    private static final AtomicReference<VAccountManagerService> sInstance = new AtomicReference<>();
+    private static final Singleton<VAccountManagerService> sInstance = new Singleton<VAccountManagerService>(){
+        @Override
+        protected VAccountManagerService create() {
+            return new VAccountManagerService();
+        }
+    };
     private static final long CHECK_IN_TIME = 30 * 24 * 60 * 1000L;
     private static final String TAG = VAccountManagerService.class.getSimpleName();
     private final SparseArray<List<VAccount>> accountsByUserId = new SparseArray<>();
@@ -80,9 +85,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     }
 
     public static void systemReady() {
-        VAccountManagerService service = new VAccountManagerService();
-        service.readAllAccounts();
-        sInstance.set(service);
+        get().readAllAccounts();
     }
 
 

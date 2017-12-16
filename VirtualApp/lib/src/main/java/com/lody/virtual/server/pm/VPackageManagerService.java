@@ -22,6 +22,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.IPackageInstaller;
@@ -38,7 +39,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
@@ -71,7 +71,12 @@ public class VPackageManagerService extends IPackageManager.Stub {
             return 0;
         }
     };
-    private static final AtomicReference<VPackageManagerService> gService = new AtomicReference<>();
+    private static final Singleton<VPackageManagerService> gService = new Singleton<VPackageManagerService>(){
+        @Override
+        protected VPackageManagerService create() {
+            return new VPackageManagerService();
+        }
+    };
     private static final Comparator<ProviderInfo> sProviderInitOrderSorter = new Comparator<ProviderInfo>() {
         public int compare(ProviderInfo p1, ProviderInfo p2) {
             final int v1 = p1.initOrder;
@@ -103,9 +108,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
     public static void systemReady() {
-        VPackageManagerService instance = new VPackageManagerService();
-        new VUserManagerService(VirtualCore.get().getContext(), instance, new char[0], instance.mPackages);
-        gService.set(instance);
+        new VUserManagerService(VirtualCore.get().getContext(), get(), new char[0], get().mPackages);
     }
 
     public static VPackageManagerService get() {

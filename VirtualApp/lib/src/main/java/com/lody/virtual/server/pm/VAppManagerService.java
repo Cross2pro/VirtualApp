@@ -14,6 +14,7 @@ import com.lody.virtual.helper.collection.IntArray;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -45,7 +46,12 @@ import dalvik.system.DexFile;
 public class VAppManagerService extends IAppManager.Stub {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
-    private static final AtomicReference<VAppManagerService> sService = new AtomicReference<>();
+    private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>(){
+        @Override
+        protected VAppManagerService create() {
+            return new VAppManagerService();
+        }
+    };
     private final UidSystem mUidSystem = new UidSystem();
     private final PackagePersistenceLayer mPersistenceLayer = new PackagePersistenceLayer(this);
     private final Set<String> mVisibleOutsidePackages = new HashSet<>();
@@ -59,9 +65,7 @@ public class VAppManagerService extends IAppManager.Stub {
 
     public static void systemReady() {
         VEnvironment.systemReady();
-        VAppManagerService instance = new VAppManagerService();
-        instance.mUidSystem.initUidList();
-        sService.set(instance);
+        get().mUidSystem.initUidList();
     }
 
     public boolean isBooting() {
