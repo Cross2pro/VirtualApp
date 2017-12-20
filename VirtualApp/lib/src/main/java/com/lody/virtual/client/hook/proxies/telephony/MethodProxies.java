@@ -11,9 +11,11 @@ import android.telephony.CellSignalStrengthGsm;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
@@ -31,7 +33,7 @@ import java.util.List;
 class MethodProxies {
 
     @FakeDeviceMark("fake device id.")
-    static class GetDeviceId extends StaticMethodProxy {
+    static class GetDeviceId extends ReplaceLastPkgMethodProxy {
 
         public GetDeviceId() {
             super("getDeviceId");
@@ -39,7 +41,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            return getDeviceInfo().deviceId;
+            String imei = getDeviceInfo().deviceId;
+            if(!TextUtils.isEmpty(imei)){
+                return imei;
+            }
+            return super.call(who, method, args);
         }
     }
 

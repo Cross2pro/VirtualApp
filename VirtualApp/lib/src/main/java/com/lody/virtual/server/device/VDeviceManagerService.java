@@ -61,9 +61,11 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
             if (info == null) {
                 if (!VASettings.KEEP_ADMIN_PHONE_INFO || userId > 0) {
                     info = generateRandomDeviceInfo();
-                    mDeviceInfos.put(userId, info);
-                    mPersistenceLayer.save();
+                }else{
+                    info = new VDeviceInfo();
                 }
+                mDeviceInfos.put(userId, info);
+                mPersistenceLayer.save();
             }
         }
         return info;

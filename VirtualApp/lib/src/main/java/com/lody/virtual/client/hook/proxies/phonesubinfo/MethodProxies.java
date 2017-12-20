@@ -1,6 +1,10 @@
 package com.lody.virtual.client.hook.proxies.phonesubinfo;
 
+import android.text.TextUtils;
+
 import com.lody.virtual.client.hook.base.MethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 
 import java.lang.reflect.Method;
@@ -12,16 +16,18 @@ import java.lang.reflect.Method;
 class MethodProxies {
 
     @FakeDeviceMark("fake device id")
-    static class GetDeviceId extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "getDeviceId";
+    static class GetDeviceId extends ReplaceLastPkgMethodProxy {
+        public GetDeviceId() {
+            super("getDeviceId");
         }
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            return getDeviceInfo().deviceId;
+            String deviceId = getDeviceInfo().deviceId;
+            if(!TextUtils.isEmpty(deviceId)){
+                return deviceId;
+            }
+            return super.call(who, method, args);
         }
     }
 
@@ -35,16 +41,18 @@ class MethodProxies {
     }
 
     @FakeDeviceMark("fake iccid")
-    static class GetIccSerialNumber extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "getIccSerialNumber";
+    static class GetIccSerialNumber extends ReplaceLastPkgMethodProxy {
+        public GetIccSerialNumber() {
+            super("getIccSerialNumber");
         }
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            return getDeviceInfo().iccId;
+            String iccId = getDeviceInfo().iccId;
+            if (!TextUtils.isEmpty(iccId)) {
+                return iccId;
+            }
+            return super.call(who, method, args);
         }
     }
 

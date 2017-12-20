@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.WorkSource;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
@@ -142,7 +143,10 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 return createWifiInfo();
             }
             if (wifiInfo != null) {
-                mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, getDeviceInfo().wifiMac);
+                String mac = getDeviceInfo().wifiMac;
+                if(!TextUtils.isEmpty(mac)) {
+                    mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, mac);
+                }
             }
             return wifiInfo;
         }
