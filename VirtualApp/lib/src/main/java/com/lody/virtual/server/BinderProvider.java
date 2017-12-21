@@ -58,6 +58,7 @@ public final class BinderProvider extends ContentProvider {
         VAccountManagerService.systemReady();
         addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());
         addService(ServiceManagerNative.VS, VirtualStorageService.get());
+        VDeviceManagerService.systemReady(context);
         addService(ServiceManagerNative.DEVICE, VDeviceManagerService.get());
         addService(ServiceManagerNative.VIRTUAL_LOC, VirtualLocationService.get());
         return true;

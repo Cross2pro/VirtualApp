@@ -8,6 +8,7 @@ import com.lody.virtual.os.VEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Random;
 
 /**
  * @author Lody
@@ -75,4 +76,74 @@ public class VDeviceInfo implements Parcelable {
         }
         return wifiMacFie;
     }
+
+    public static String genDeviceId(String imei, int userId) {
+        if (imei == null) {
+            return null;
+        }
+        if (imei.length() < 15) {
+            //meid;
+            return generate10(System.currentTimeMillis() + userId, 14);
+        } else {
+            String pre = imei.substring(0, 6);
+            String ot = imei.substring(6, 8);
+            Random random = new Random(Long.parseLong(imei.substring(8, 14)));
+            long num = random.nextLong();
+            if (num < 0) {
+                num = -num;
+            }
+            String last = "" + num;
+            if (last.length() >= 6) {
+                last = last.substring(0, 6);
+            } else {
+                int len = last.length();//1
+                for (int i = 0; i < (6 - len); i++) {
+                    last = "0" + last;
+                }
+            }
+            return checkSum(pre + ot + last);
+        }
+    }
+
+    private static String checkSum(String imeiString) {
+        while (imeiString.length() < 15) {
+            imeiString += "0";
+        }
+        int resultInt = 0;
+        int len = 14;
+        for (int i = 0; i < len; i++) {
+            int a = Integer.parseInt(imeiString.substring(i, i + 1));
+            i++;
+            final int temp = Integer.parseInt(imeiString.substring(i, i + 1)) * 2;
+            final int b = temp < 10 ? temp : temp - 9;
+            resultInt += a + b;
+        }
+        resultInt %= 10;
+        resultInt = resultInt == 0 ? 0 : 10 - resultInt;
+        return imeiString.substring(0, 14) + resultInt;
+    }
+
+    public static String generate10(long seed, int length) {
+        Random random = new Random(seed);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
+    }
+
+    public static String generate16(long seed, int length) {
+        Random random = new Random(seed);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            int nextInt = random.nextInt(16);
+            if (nextInt < 10) {
+                sb.append(nextInt);
+            } else {
+                sb.append((char) (nextInt + 87));
+            }
+        }
+        return sb.toString();
+    }
+
 }

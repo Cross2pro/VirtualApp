@@ -1,8 +1,10 @@
 package com.lody.virtual.server.device;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 import android.os.RemoteException;
+import android.telephony.TelephonyManager;
 
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.SparseArray;
@@ -24,6 +26,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     private final SparseArray<VDeviceInfo> mDeviceInfos = new SparseArray<>();
     private DeviceInfoPersistenceLayer mPersistenceLayer = new DeviceInfoPersistenceLayer(this);
     private UsedDeviceInfoPool mPool = new UsedDeviceInfoPool();
+    private TelephonyManager mTelephonyManager;
 
     public static VDeviceManagerService get() {
         return sInstance;
@@ -37,7 +40,15 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         List<String> iccIds = new ArrayList<>();
     }
 
-    public VDeviceManagerService() {
+    public static void systemReady(Context context) {
+        get().init(context);
+    }
+
+    private void init(Context context){
+        mTelephonyManager= (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+    }
+
+    private VDeviceManagerService() {
         mPersistenceLayer.read();
         for (int i = 0; i < mDeviceInfos.size(); i++) {
             VDeviceInfo info = mDeviceInfos.valueAt(i);
@@ -59,11 +70,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         synchronized (mDeviceInfos) {
             info = mDeviceInfos.get(userId);
             if (info == null) {
-                if (!VASettings.KEEP_ADMIN_PHONE_INFO || userId > 0) {
-                    info = generateRandomDeviceInfo();
-                }else{
-                    info = new VDeviceInfo();
-                }
+                info = generateRandomDeviceInfo(userId);
                 mDeviceInfos.put(userId, info);
                 mPersistenceLayer.save();
             }
@@ -81,15 +88,22 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         }
     }
 
-    private VDeviceInfo generateRandomDeviceInfo() {
+    @SuppressLint("HardwareIds")
+    private VDeviceInfo generateRandomDeviceInfo(int userId) {
         VDeviceInfo info = new VDeviceInfo();
         String value;
+        if (!VASettings.KEEP_ADMIN_PHONE_INFO || userId > 0) {
+            do {
+                value = VDeviceInfo.genDeviceId(mTelephonyManager.getDeviceId(), userId);
+                info.deviceId = value;
+            } while (mPool.deviceIds.contains(value));
+        } else {
+            //default user 0
+            info.deviceId = mTelephonyManager.getDeviceId();
+        }
+
         do {
-            value = generate10(15);
-            info.deviceId = value;
-        } while (mPool.deviceIds.contains(value));
-        do {
-            value = generate16(16);
+            value = VDeviceInfo.generate16(System.currentTimeMillis(), 16);
             info.androidId = value;
         } while (mPool.androidIds.contains(value));
         do {
@@ -102,7 +116,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         } while (mPool.bluetoothMacs.contains(value));
 
         do {
-            value = generate10(20);
+            value = VDeviceInfo.generate10(System.currentTimeMillis(), 20);
             info.iccId = value;
         } while (mPool.iccIds.contains(value));
 
@@ -112,32 +126,8 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         return info;
     }
 
-
     SparseArray<VDeviceInfo> getDeviceInfos() {
         return mDeviceInfos;
-    }
-
-    private static String generate10(int length) {
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            sb.append(random.nextInt(10));
-        }
-        return sb.toString();
-    }
-
-    private static String generate16(int length) {
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            int nextInt = random.nextInt(16);
-            if (nextInt < 10) {
-                sb.append(nextInt);
-            } else {
-                sb.append((char) (nextInt + 87));
-            }
-        }
-        return sb.toString();
     }
 
     private static String generateMac() {
