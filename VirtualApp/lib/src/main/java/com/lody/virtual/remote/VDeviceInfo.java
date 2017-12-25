@@ -143,7 +143,7 @@ public class VDeviceInfo implements Parcelable {
         } else {
             String pre = imei.substring(0, 6);
             String ot = imei.substring(6, 8);
-            Random random = new Random(Long.parseLong(imei.substring(8, 14)));
+            Random random = new Random(Long.parseLong(imei.substring(8, 14))+userId);
             long num = random.nextLong();
             if (num < 0) {
                 num = -num;
