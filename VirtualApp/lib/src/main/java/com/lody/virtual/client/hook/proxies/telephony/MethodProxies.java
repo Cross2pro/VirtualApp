@@ -41,7 +41,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String imei = getDeviceInfo().deviceId;
+            String imei = getDeviceInfo().getDeviceId();
             if(!TextUtils.isEmpty(imei)){
                 return imei;
             }

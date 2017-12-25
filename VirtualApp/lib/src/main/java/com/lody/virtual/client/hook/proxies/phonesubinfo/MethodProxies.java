@@ -23,7 +23,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String deviceId = getDeviceInfo().deviceId;
+            String deviceId = getDeviceInfo().getDeviceId();
             if(!TextUtils.isEmpty(deviceId)){
                 return deviceId;
             }
@@ -48,7 +48,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String iccId = getDeviceInfo().iccId;
+            String iccId = getDeviceInfo().getIccId();
             if (!TextUtils.isEmpty(iccId)) {
                 return iccId;
             }

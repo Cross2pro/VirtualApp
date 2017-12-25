@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 
 import com.lody.virtual.client.stub.VASettings;
@@ -19,7 +20,6 @@ import java.util.Random;
 /**
  * @author Lody
  */
-
 public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
     private static VDeviceManagerService sInstance = new VDeviceManagerService();
@@ -27,6 +27,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     private DeviceInfoPersistenceLayer mPersistenceLayer = new DeviceInfoPersistenceLayer(this);
     private UsedDeviceInfoPool mPool = new UsedDeviceInfoPool();
     private TelephonyManager mTelephonyManager;
+    private Context mContext;
 
     public static VDeviceManagerService get() {
         return sInstance;
@@ -45,6 +46,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     }
 
     private void init(Context context){
+        mContext = context;
         mTelephonyManager= (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
     }
 
@@ -57,11 +59,11 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     }
 
     private void addDeviceInfoToPool(VDeviceInfo info) {
-        mPool.deviceIds.add(info.deviceId);
-        mPool.androidIds.add(info.androidId);
-        mPool.wifiMacs.add(info.wifiMac);
-        mPool.bluetoothMacs.add(info.bluetoothMac);
-        mPool.iccIds.add(info.iccId);
+        mPool.deviceIds.add(info.getDeviceId());
+        mPool.androidIds.add(info.getAndroidId());
+        mPool.wifiMacs.add(info.getWifiMac());
+        mPool.bluetoothMacs.add(info.getBluetoothMac());
+        mPool.iccIds.add(info.getIccId());
     }
 
     @Override
@@ -70,7 +72,11 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         synchronized (mDeviceInfos) {
             info = mDeviceInfos.get(userId);
             if (info == null) {
-                info = generateRandomDeviceInfo(userId);
+                if (VASettings.KEEP_ADMIN_PHONE_INFO && userId == 0) {
+                    info = defaultDevice();
+                } else {
+                    info = generateRandomDeviceInfo(userId);
+                }
                 mDeviceInfos.put(userId, info);
                 mPersistenceLayer.save();
             }
@@ -92,35 +98,30 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     private VDeviceInfo generateRandomDeviceInfo(int userId) {
         VDeviceInfo info = new VDeviceInfo();
         String value;
-        if (!VASettings.KEEP_ADMIN_PHONE_INFO || userId > 0) {
-            do {
-                value = VDeviceInfo.genDeviceId(mTelephonyManager.getDeviceId(), userId);
-                info.deviceId = value;
-            } while (mPool.deviceIds.contains(value));
-        } else {
-            //default user 0
-            info.deviceId = mTelephonyManager.getDeviceId();
-        }
+        do {
+            value = VDeviceInfo.genDeviceId(mTelephonyManager.getDeviceId(), userId);
+            info.setDeviceId(value);
+        } while (mPool.deviceIds.contains(value));
 
         do {
             value = VDeviceInfo.generate16(System.currentTimeMillis(), 16);
-            info.androidId = value;
+            info.setAndroidId(value);
         } while (mPool.androidIds.contains(value));
         do {
             value = generateMac();
-            info.wifiMac = value;
+            info.setWifiMac(value);
         } while (mPool.wifiMacs.contains(value));
         do {
             value = generateMac();
-            info.bluetoothMac = value;
+            info.setBluetoothMac(value);
         } while (mPool.bluetoothMacs.contains(value));
 
         do {
             value = VDeviceInfo.generate10(System.currentTimeMillis(), 20);
-            info.iccId = value;
+            info.setIccId(value);
         } while (mPool.iccIds.contains(value));
 
-        info.serial = generateSerial();
+        info.setSerial(generateSerial());
 
         addDeviceInfoToPool(info);
         return info;
@@ -128,6 +129,18 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
     SparseArray<VDeviceInfo> getDeviceInfos() {
         return mDeviceInfos;
+    }
+
+    @SuppressLint("HardwareIds")
+    private VDeviceInfo defaultDevice() {
+        VDeviceInfo info = new VDeviceInfo();
+        info.setDeviceId(mTelephonyManager.getDeviceId());
+        info.setAndroidId(Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID));
+        info.setWifiMac(null);
+        info.setBluetoothMac(null);
+        info.setIccId(null);
+        info.setSerial(Build.SERIAL);
+        return info;
     }
 
     private static String generateMac() {

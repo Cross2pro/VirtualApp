@@ -240,7 +240,7 @@ public final class VClientImpl extends IVClient.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        mirror.android.os.Build.SERIAL.set(deviceInfo.serial);
+        mirror.android.os.Build.SERIAL.set(deviceInfo.getSerial());
         mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
         ActivityThread.mInitialApplication.set(
                 VirtualCore.mainThread(),

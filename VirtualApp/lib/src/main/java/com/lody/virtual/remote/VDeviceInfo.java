@@ -1,5 +1,6 @@
 package com.lody.virtual.remote;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -14,14 +15,69 @@ import java.util.Random;
  * @author Lody
  */
 public class VDeviceInfo implements Parcelable {
+    private String deviceId;
+    private String androidId;
+    private String wifiMac;
+    private String bluetoothMac;
+    private String iccId;
+    private String serial;
+    private String gmsAdId;
 
-    public String deviceId;
-    public String androidId;
-    public String wifiMac;
-    public String bluetoothMac;
-    public String iccId;
-    public String serial;
-    public String gmsAdId;
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getAndroidId() {
+        return androidId;
+    }
+
+    public void setAndroidId(String androidId) {
+        this.androidId = androidId;
+    }
+
+    public String getWifiMac() {
+        return wifiMac;
+    }
+
+    public void setWifiMac(String wifiMac) {
+        this.wifiMac = wifiMac;
+    }
+
+    public String getBluetoothMac() {
+        return bluetoothMac;
+    }
+
+    public void setBluetoothMac(String bluetoothMac) {
+        this.bluetoothMac = bluetoothMac;
+    }
+
+    public String getIccId() {
+        return iccId;
+    }
+
+    public void setIccId(String iccId) {
+        this.iccId = iccId;
+    }
+
+    public String getSerial() {
+        return serial;
+    }
+
+    public void setSerial(String serial) {
+        this.serial = serial;
+    }
+
+    public String getGmsAdId() {
+        return gmsAdId;
+    }
+
+    public void setGmsAdId(String gmsAdId) {
+        this.gmsAdId = gmsAdId;
+    }
 
     @Override
     public int describeContents() {

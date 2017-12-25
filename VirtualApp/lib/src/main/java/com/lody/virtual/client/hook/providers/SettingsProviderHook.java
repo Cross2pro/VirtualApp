@@ -61,7 +61,7 @@ public class SettingsProviderHook extends ExternalProviderHook {
                 return wrapBundle(arg, presetValue);
             }
             if ("android_id".equals(arg)) {
-                return wrapBundle("android_id", VClientImpl.get().getDeviceInfo().androidId);
+                return wrapBundle("android_id", VClientImpl.get().getDeviceInfo().getAndroidId());
             }
         }
         if (METHOD_PUT == methodType) {

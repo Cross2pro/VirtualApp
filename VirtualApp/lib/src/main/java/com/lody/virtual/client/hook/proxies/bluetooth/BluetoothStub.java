@@ -38,7 +38,7 @@ public class BluetoothStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String mac = getDeviceInfo().bluetoothMac;
+            String mac = getDeviceInfo().getBluetoothMac();
             if(!TextUtils.isEmpty(mac)){
                 return mac;
             }

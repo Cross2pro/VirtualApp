@@ -143,7 +143,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 return createWifiInfo();
             }
             if (wifiInfo != null) {
-                String mac = getDeviceInfo().wifiMac;
+                String mac = getDeviceInfo().getWifiMac();
                 if(!TextUtils.isEmpty(mac)) {
                     mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, mac);
                 }
