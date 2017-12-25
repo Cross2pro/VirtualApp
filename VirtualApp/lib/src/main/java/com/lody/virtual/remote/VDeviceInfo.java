@@ -135,7 +135,7 @@ public class VDeviceInfo implements Parcelable {
 
     public static String genDeviceId(String imei, int userId) {
         if (imei == null) {
-            return null;
+            imei = "864503010000000";
         }
         if (imei.length() < 15) {
             //meid;
