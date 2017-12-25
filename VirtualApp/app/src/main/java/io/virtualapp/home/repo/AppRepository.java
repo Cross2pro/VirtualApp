@@ -26,6 +26,7 @@ import io.virtualapp.home.models.AppInfo;
 import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.home.models.MultiplePackageAppData;
 import io.virtualapp.home.models.PackageAppData;
+import io.virtualapp.utils.PackageUtils;
 
 /**
  * @author Lody
@@ -62,6 +63,10 @@ public class AppRepository implements AppDataSource {
             for (InstalledAppInfo info : infos) {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
+                }
+                if(info.dependSystem){
+                    //检查是否升级
+                    PackageUtils.checkUpdate(mContext, info.packageName);
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
