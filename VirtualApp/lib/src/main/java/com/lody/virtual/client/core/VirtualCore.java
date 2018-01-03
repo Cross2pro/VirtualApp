@@ -19,6 +19,7 @@ import android.os.ConditionVariable;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.VClientImpl;
@@ -34,6 +35,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.compat.UriCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
@@ -160,6 +162,7 @@ public final class VirtualCore {
 
     public void startup(Context context) throws Throwable {
         if (!isStartUp) {
+            UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
@@ -636,7 +639,7 @@ public final class VirtualCore {
     public void setAppRequestListener(final AppRequestListener listener) {
         IAppRequestListener inner = new IAppRequestListener.Stub() {
             @Override
-            public void onRequestInstall(final String path,final boolean file) {
+            public void onRequestInstall(final String path, final boolean file) {
                 VirtualRuntime.getUIHandler().post(new Runnable() {
                     @Override
                     public void run() {

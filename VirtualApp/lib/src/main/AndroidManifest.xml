@@ -1295,6 +1295,13 @@
             android:authorities="${applicationId}.virtual_stub_49"
             android:exported="false"
             android:process=":p49" />
-
+        <provider
+            android:name=".client.stub.StubFileProvider"
+            android:authorities="${applicationId}.virtual.fileprovider"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/stub_file_paths" />
+        </provider>
     </application>
 </manifest>
