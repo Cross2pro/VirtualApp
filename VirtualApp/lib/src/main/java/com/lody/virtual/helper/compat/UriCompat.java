@@ -7,11 +7,12 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.util.Set;
 
 public class UriCompat {
-
+    private static final String TAG = "UriCompat";
     public static String AUTH = "virtual.fileprovider";
     private final static String[] ACTIONS = {"android.media.action.IMAGE_CAPTURE", "com.android.camera.action.CROP"};
 
@@ -37,26 +38,25 @@ public class UriCompat {
 
     public static Intent fakeFileUri(Intent intent) {
         if (!needFake(intent)) {
-            Log.i("kk", "don't need fake intent");
+            VLog.i(TAG, "don't need fake intent");
             return intent;
         }
-        Log.i("kk", "need fake intent:"+intent);
         Uri uri = intent.getData();
         if (uri != null) {
             Uri u = fakeFileUri(uri);
             if (u != null) {
-                Log.i("kk", "fake data uri:" + uri + "->" + u);
+                Log.i(TAG, "fake data uri:" + uri + "->" + u);
                 intent.setData(u);
             }
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
             ClipData data = intent.getClipData();
-            if(data != null){
+            if (data != null) {
                 int count = data.getItemCount();
-                for(int i=0;i<count;i++){
-                    ClipData.Item item =data.getItemAt(i);
+                for (int i = 0; i < count; i++) {
+                    ClipData.Item item = data.getItemAt(i);
                     Uri u = fakeFileUri(item.getUri());
-                    if(u!=null){
+                    if (u != null) {
                         Reflect.on(item).set("mUri", u);
                     }
                 }
@@ -72,14 +72,12 @@ public class UriCompat {
                     Intent i = fakeFileUri((Intent) val);
                     if (i != null) {
                         changed2 = true;
-                        Log.i("kk", "fake Intent:" + val + "->" + i);
                         extras.putParcelable(key, i);
                     }
                 } else if (val instanceof Uri) {
                     Uri u = fakeFileUri((Uri) val);
                     if (u != null) {
                         changed2 = true;
-                        Log.i("kk", "fake uri:" + val + "->" + u);
                         extras.putParcelable(key, u);
                     }
                 }
@@ -88,7 +86,6 @@ public class UriCompat {
                 intent.putExtras(extras);
             }
         }
-        Log.i("kk", "fake ok intent:"+intent);
         return intent;
     }
 }
