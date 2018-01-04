@@ -210,7 +210,14 @@ public class VAppManagerService implements IAppManager {
                 VLog.w(TAG, "Warning: unable to delete file : " + privatePackageFile.getPath());
             }
             try {
-                FileUtils.copyFile(packageFile, privatePackageFile);
+                if ((flags & InstallStrategy.MOVE_FILE) != 0) {
+                    if (!packageFile.renameTo(privatePackageFile)) {
+                        //rename fail
+                        FileUtils.copyFile(packageFile, privatePackageFile);
+                    }
+                } else {
+                    FileUtils.copyFile(packageFile, privatePackageFile);
+                }
             } catch (IOException e) {
                 privatePackageFile.delete();
                 return InstallResult.makeFailure("Unable to copy the package file.");
