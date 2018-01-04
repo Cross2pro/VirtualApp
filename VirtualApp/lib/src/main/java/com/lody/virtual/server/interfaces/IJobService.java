@@ -1,7 +1,7 @@
 package com.lody.virtual.server.interfaces;
 
 import android.app.job.JobInfo;
-import android.app.job.JobWorkItem;
+import android.os.Parcelable;
 import android.os.RemoteException;
 
 import java.util.List;
@@ -21,5 +21,5 @@ public interface IJobService {
 
     JobInfo getPendingJob(int jobId) throws RemoteException;
 
-    int enqueue(JobInfo job, JobWorkItem workItem) throws RemoteException;
+    int enqueue(JobInfo job, Parcelable workItem) throws RemoteException;
 }

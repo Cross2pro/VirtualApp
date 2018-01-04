@@ -366,7 +366,7 @@ public class VJobSchedulerService implements IJobService {
 
     @TargetApi(Build.VERSION_CODES.O)
     @Override
-    public int enqueue(JobInfo job, JobWorkItem workItem){
+    public int enqueue(JobInfo job, Parcelable workItem){
         int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();
@@ -382,6 +382,6 @@ public class VJobSchedulerService implements IJobService {
         saveJobs();
         mirror.android.app.job.JobInfo.jobId.set(job, config.virtualJobId);
         mirror.android.app.job.JobInfo.service.set(job, mJobProxyComponent);
-        return mScheduler.enqueue(job, workItem);
+        return mScheduler.enqueue(job, (JobWorkItem) workItem);
     }
 }
