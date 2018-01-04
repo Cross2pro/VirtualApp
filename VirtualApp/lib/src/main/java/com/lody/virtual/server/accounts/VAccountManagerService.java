@@ -35,8 +35,8 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.server.IAccountManager;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.interfaces.IAccountManager;
 import com.lody.virtual.server.pm.VPackageManagerService;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -62,7 +62,7 @@ import static android.accounts.AccountManager.ERROR_CODE_BAD_ARGUMENTS;
 /**
  * @author Lody
  */
-public class VAccountManagerService extends IAccountManager.Stub {
+public class VAccountManagerService implements IAccountManager {
 
     private static final Singleton<VAccountManagerService> sInstance = new Singleton<VAccountManagerService>(){
         @Override
@@ -185,16 +185,6 @@ public class VAccountManagerService extends IAccountManager.Stub {
                 }
             }
             return accounts;
-        }
-    }
-
-    @Override
-    public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-        try {
-            return super.onTransact(code, data, reply, flags);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
         }
     }
 

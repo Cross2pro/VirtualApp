@@ -10,7 +10,7 @@ import android.telephony.TelephonyManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.remote.VDeviceInfo;
-import com.lody.virtual.server.IDeviceInfoManager;
+import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +20,7 @@ import java.util.Random;
 /**
  * @author Lody
  */
-public class VDeviceManagerService extends IDeviceInfoManager.Stub {
+public class VDeviceManagerService implements IDeviceInfoManager {
 
     private static VDeviceManagerService sInstance = new VDeviceManagerService();
     private final SparseArray<VDeviceInfo> mDeviceInfos = new SparseArray<>();
@@ -67,7 +67,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     }
 
     @Override
-    public VDeviceInfo getDeviceInfo(int userId) throws RemoteException {
+    public VDeviceInfo getDeviceInfo(int userId) {
         VDeviceInfo info;
         synchronized (mDeviceInfos) {
             info = mDeviceInfos.get(userId);
@@ -85,7 +85,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     }
 
     @Override
-    public void updateDeviceInfo(int userId, VDeviceInfo info) throws RemoteException {
+    public void updateDeviceInfo(int userId, VDeviceInfo info) {
         synchronized (mDeviceInfos) {
             if (info != null) {
                 mDeviceInfos.put(userId, info);

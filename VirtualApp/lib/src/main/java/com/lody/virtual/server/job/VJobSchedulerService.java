@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.PersistableBundle;
-import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -19,7 +18,7 @@ import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
-import com.lody.virtual.server.IJobScheduler;
+import com.lody.virtual.server.interfaces.IJobService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +34,7 @@ import java.util.Map;
  * @author Lody
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class VJobSchedulerService extends IJobScheduler.Stub {
+public class VJobSchedulerService implements IJobService {
 
     private static final String TAG = VJobScheduler.class.getSimpleName();
 
@@ -180,7 +179,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
 
 
     @Override
-    public int schedule(JobInfo job) throws RemoteException {
+    public int schedule(JobInfo job) {
         int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();
@@ -258,7 +257,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public void cancel(int jobId) throws RemoteException {
+    public void cancel(int jobId) {
         int vuid = VBinder.getCallingUid();
         synchronized (mJobStore) {
             boolean changed = false;
@@ -281,7 +280,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public void cancelAll() throws RemoteException {
+    public void cancelAll() {
         int vuid = VBinder.getCallingUid();
         synchronized (mJobStore) {
             boolean changed = false;
@@ -304,7 +303,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public List<JobInfo> getAllPendingJobs() throws RemoteException {
+    public List<JobInfo> getAllPendingJobs() {
         int vuid = VBinder.getCallingUid();
         List<JobInfo> jobs = mScheduler.getAllPendingJobs();
         synchronized (mJobStore) {
@@ -348,7 +347,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
 
     @TargetApi(Build.VERSION_CODES.N)
     @Override
-    public JobInfo getPendingJob(int jobId) throws RemoteException {
+    public JobInfo getPendingJob(int jobId){
         int vuid = VBinder.getCallingUid();
         JobInfo jobInfo = null;
         synchronized (mJobStore) {
@@ -367,7 +366,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
 
     @TargetApi(Build.VERSION_CODES.O)
     @Override
-    public int enqueue(JobInfo job, JobWorkItem workItem) throws RemoteException {
+    public int enqueue(JobInfo job, JobWorkItem workItem){
         int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();

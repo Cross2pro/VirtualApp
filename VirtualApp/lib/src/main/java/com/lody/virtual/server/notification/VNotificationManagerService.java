@@ -6,13 +6,13 @@ import android.text.TextUtils;
 
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.server.INotificationManager;
+import com.lody.virtual.server.interfaces.INotificationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class VNotificationManagerService extends INotificationManager.Stub {
+public class VNotificationManagerService implements INotificationManager {
     private static final Singleton<VNotificationManagerService> gService = new Singleton<VNotificationManagerService>(){
         @Override
         protected VNotificationManagerService create() {
