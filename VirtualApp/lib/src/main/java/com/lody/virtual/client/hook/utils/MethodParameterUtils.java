@@ -56,6 +56,19 @@ public class MethodParameterUtils {
 		return null;
 	}
 
+	public static int getIndex(Object[] args, Class<?> type) {
+		for (int i = 0; i < args.length; i++) {
+			Object obj = args[i];
+			if (obj != null && obj.getClass() == type) {
+				return i;
+			}
+			if (type.isInstance(obj)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	public static Class<?>[] getAllInterface(Class clazz){
 		HashSet<Class<?>> classes = new HashSet<>();
 		getAllInterfaces(clazz,classes);

@@ -194,10 +194,10 @@ public class VActivityManager {
         }
     }
 
-    public int bindService(Context context, Intent service, ServiceConnection connection, int flags) {
+    public boolean bindService(Context context, Intent service, ServiceConnection connection, int flags) {
         try {
             IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
-            return getService().bindService(null, null, service, null, conn, flags, 0);
+            return getService().bindService(null, null, service, null, conn, flags, 0) > 0;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

@@ -2,13 +2,12 @@ package com.lody.virtual.client.hook.proxies.job;
 
 import android.annotation.TargetApi;
 import android.app.job.JobInfo;
-import android.app.job.JobWorkItem;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
+import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.ipc.VJobScheduler;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -124,18 +123,18 @@ public class JobServiceStub extends BinderInvocationProxy {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             JobInfo jobInfo = (JobInfo) args[0];
-            JobWorkItem workItem = redirect((JobWorkItem) args[1], getAppPkg());
+            Object workItem = redirect(args[1], getAppPkg());
             return VJobScheduler.get().enqueue(jobInfo, workItem);
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    private JobWorkItem redirect(JobWorkItem item, String pkg) {
+    private Object redirect(Object item, String pkg) {
         if (item != null) {
-            Intent intent = ComponentUtils.redirectIntentSender(ActivityManagerCompat.INTENT_SENDER_SERVICE,
-                    pkg, item.getIntent());
+            Intent target = mirror.android.app.job.JobWorkItem.getIntent.call(item);
+            Intent intent = ComponentUtils.redirectIntentSender(
+                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target);
 
-            JobWorkItem workItem = new JobWorkItem(intent);
+            Object workItem = mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
             int wordId = mirror.android.app.job.JobWorkItem.mWorkId.get(item);
             mirror.android.app.job.JobWorkItem.mWorkId.set(workItem, wordId);
 

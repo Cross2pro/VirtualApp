@@ -3,8 +3,10 @@ package com.lody.virtual.client.fixer;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.DropBoxManager;
+import android.util.Log;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
@@ -14,6 +16,8 @@ import com.lody.virtual.client.hook.proxies.graphics.GraphicsStatsStub;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
+
+import java.util.concurrent.Executor;
 
 import mirror.android.app.ContextImpl;
 import mirror.android.app.ContextImplKitkat;
@@ -75,6 +79,18 @@ public class ContextFixer {
         //第一次的gps状态伪装
         final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         VLocationManager.get().setLocationManager(locationManager);
+
+        if (context.getApplicationInfo().targetSdkVersion < 10) {
+            try {
+                Class<?> cAsyncTask = context.getClassLoader().loadClass(AsyncTask.class.getName());
+                Reflect ref = Reflect.on(cAsyncTask);
+                //AsyncTask.THREAD_POOL_EXECUTOR
+                Executor THREAD_POOL_EXECUTOR = ref.get("THREAD_POOL_EXECUTOR");
+                ref.call("setDefaultExecutor", THREAD_POOL_EXECUTOR);
+            }catch (Throwable e){
+                Log.w(TAG, "setDefaultExecutor",e);
+            }
+        }
     }
 
 }

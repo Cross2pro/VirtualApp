@@ -100,19 +100,27 @@ static int do_load(int fd, symtab_t symtab) {
     /* elf header */
     rv = read(fd, &ehdr, sizeof(ehdr));
     if (0 > rv) {
+#ifdef LOG_ENABLE
         ALOGD("read\n");
+#endif
         goto out;
     }
     if (rv != sizeof(ehdr)) {
+#ifdef LOG_ENABLE
         ALOGD("elf error 1\n");
+#endif
         goto out;
     }
     if (strncmp((const char *) ELFMAG, (const char *) ehdr.e_ident, SELFMAG)) { /* sanity */
+#ifdef LOG_ENABLE
         ALOGD("not an elf\n");
+#endif
         goto out;
     }
     if (sizeof(Elf32_Shdr) != ehdr.e_shentsize) { /* sanity */
+#ifdef LOG_ENABLE
         ALOGD("elf error 2\n");
+#endif
         goto out;
     }
 
@@ -121,11 +129,15 @@ static int do_load(int fd, symtab_t symtab) {
     shdr = (Elf32_Shdr *) xmalloc(size);
     rv = my_pread(fd, shdr, size, ehdr.e_shoff);
     if (0 > rv) {
+#ifdef LOG_ENABLE
         ALOGD("read\n");
+#endif
         goto out;
     }
     if (rv != size) {
+#ifdef LOG_ENABLE
         ALOGD("elf error 3 %d %d\n", rv, size);
+#endif
         goto out;
     }
 
@@ -134,11 +146,15 @@ static int do_load(int fd, symtab_t symtab) {
     shstrtab = (char *) xmalloc(size);
     rv = my_pread(fd, shstrtab, size, shdr[ehdr.e_shstrndx].sh_offset);
     if (0 > rv) {
+#ifdef LOG_ENABLE
         ALOGD("read\n");
+#endif
         goto out;
     }
     if (rv != size) {
+#ifdef LOG_ENABLE
         ALOGD("elf error 4 %d %d\n", rv, size);
+#endif
         goto out;
     }
 
@@ -148,42 +164,56 @@ static int do_load(int fd, symtab_t symtab) {
     for (i = 0, p = shdr; i < ehdr.e_shnum; i++, p++)
         if (SHT_SYMTAB == p->sh_type) {
             if (symh) {
+#ifdef LOG_ENABLE
                 ALOGD("too many symbol tables\n");
+#endif
                 goto out;
             }
             symh = p;
         } else if (SHT_DYNSYM == p->sh_type) {
             if (dynsymh) {
+#ifdef LOG_ENABLE
                 ALOGD("too many symbol tables\n");
+#endif
                 goto out;
             }
             dynsymh = p;
         } else if (SHT_STRTAB == p->sh_type
                    && !strncmp(shstrtab + p->sh_name, ".strtab", 7)) {
             if (strh) {
+#ifdef LOG_ENABLE
                 ALOGD("too many string tables\n");
+#endif
                 goto out;
             }
             strh = p;
         } else if (SHT_STRTAB == p->sh_type
                    && !strncmp(shstrtab + p->sh_name, ".dynstr", 7)) {
             if (dynstrh) {
+#ifdef LOG_ENABLE
                 ALOGD("too many string tables\n");
+#endif
                 goto out;
             }
             dynstrh = p;
         }
     /* sanity checks */
     if ((!dynsymh && dynstrh) || (dynsymh && !dynstrh)) {
+#ifdef LOG_ENABLE
         ALOGD("bad dynamic symbol table\n");
+#endif
         goto out;
     }
     if ((!symh && strh) || (symh && !strh)) {
+#ifdef LOG_ENABLE
         ALOGD("bad symbol table\n");
+#endif
         goto out;
     }
     if (!dynsymh && !symh) {
+#ifdef LOG_ENABLE
         ALOGD("no symbol table\n");
+#endif
         goto out;
     }
 
@@ -207,11 +237,15 @@ static symtab_t load_symtab(char *filename) {
 
     fd = open(filename, O_RDONLY);
     if (0 > fd) {
+#ifdef LOG_ENABLE
         ALOGE("%s open\n", __func__);
+#endif
         return NULL;
     }
     if (0 > do_load(fd, symtab)) {
+#ifdef LOG_ENABLE
         ALOGE("Error ELF parsing %s\n", filename);
+#endif
         free(symtab);
         symtab = NULL;
     }
@@ -234,7 +268,9 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp) {
     sprintf(p_buf, "/proc/%d/maps", pid);
     fd = open(p_buf, O_RDONLY);
     if (0 > fd) {
+#ifdef LOG_ENABLE
         ALOGE("Can't open %s for reading\n", p_buf);
+#endif
         free(p_buf);
         return -1;
     }
@@ -246,7 +282,9 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp) {
     while (1) {
         rv = read(fd, p, buf_size - (p - p_buf));
         if (0 > rv) {
+#ifdef LOG_ENABLE
             ALOGE("%s read", __FUNCTION__);
+#endif
             free(p_buf);
             return -1;
         }
@@ -254,7 +292,9 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp) {
             break;
         p += rv;
         if (p - p_buf >= buf_size) {
+#ifdef LOG_ENABLE
             ALOGE("Too many memory mapping\n");
+#endif
             free(p_buf);
             return -1;
         }
@@ -385,23 +425,31 @@ int find_name(pid_t pid, const char *name, const char *libn,
     symtab_t s;
 
     if (0 > load_memmap(pid, mm, &nmm)) {
+#ifdef LOG_ENABLE
         ALOGD("cannot read memory map\n");
+#endif
         return -1;
     }
     if (0
         > find_libname((char *) libn, (char *) libc, sizeof(libc),
                        &libcaddr, mm, nmm)) {
+#ifdef LOG_ENABLE
         ALOGD("cannot find lib: %s\n", libn);
+#endif
         return -1;
     }
     //ALOGD("lib: >%s<\n", libc)
     s = load_symtab(libc);
     if (!s) {
+#ifdef LOG_ENABLE
         ALOGD("cannot read symbol table\n");
+#endif
         return -1;
     }
     if (0 > lookup_func_sym(s, (char *) name, addr)) {
+#ifdef LOG_ENABLE
         ALOGD("cannot find function: %s\n", name);
+#endif
         return -1;
     }
     *addr += libcaddr;
@@ -416,11 +464,15 @@ int find_libbase(pid_t pid, const char *libn, unsigned long *addr) {
     symtab_t s;
 
     if (0 > load_memmap(pid, mm, &nmm)) {
+#ifdef LOG_ENABLE
         ALOGD("cannot read memory map\n");
+#endif
         return -1;
     }
     if (0 > find_libname(libn, libc, sizeof(libc), &libcaddr, mm, nmm)) {
+#ifdef LOG_ENABLE
         ALOGD("cannot find lib\n");
+#endif
         return -1;
     }
     *addr = libcaddr;

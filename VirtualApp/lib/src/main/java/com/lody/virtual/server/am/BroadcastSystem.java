@@ -16,6 +16,7 @@ import android.os.Message;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.PendingResultData;
@@ -76,7 +77,8 @@ public class BroadcastSystem {
 
     public static void attach(VActivityManagerService ams, VAppManagerService app) {
         if (gDefault != null) {
-            throw new IllegalStateException();
+            VLog.w(TAG, "exist a BroadcastSystem object");
+            return;
         }
         gDefault = new BroadcastSystem(VirtualCore.get().getContext(), ams, app);
     }
@@ -273,6 +275,9 @@ public class BroadcastSystem {
                 return;
             }
             PendingResult result = goAsync();
+            if (!intent.hasExtra("_VA_|_intent_")) {
+                intent = ComponentUtils.redirectBroadcastIntent(intent, 0);
+            }
             if (!mAMS.handleStaticBroadcast(appId, info, intent, new PendingResultData(result))) {
                 result.finish();
             }

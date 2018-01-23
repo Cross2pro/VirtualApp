@@ -1,13 +1,16 @@
 package io.virtualapp;
 
+import android.app.LocalActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.support.multidex.MultiDexApplication;
 import android.support.v4.content.FileProvider;
 
 import com.flurry.android.FlurryAgent;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.utils.Reflect;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;

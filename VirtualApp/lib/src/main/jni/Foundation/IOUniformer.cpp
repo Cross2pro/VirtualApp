@@ -19,7 +19,9 @@ void IOUniformer::init_env_before_all() {
     char *api_level_chars = getenv("V_API_LEVEL");
     char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
     if (api_level_chars) {
+#ifdef LOG_ENABLE
         ALOGE("Enter init before all.");
+#endif
         int api_level = atoi(api_level_chars);
         int preview_api_level;
         preview_api_level = atoi(preview_api_level_chars);
@@ -550,7 +552,9 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
      *
      * We will support 64Bit to adopt it.
      */
+#ifdef LOG_ENABLE
     ALOGE("execve : %s", pathname);
+#endif
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     char *ld = getenv("LD_PRELOAD");
@@ -578,7 +582,9 @@ HOOK_DEF(void*, dlopen, const char *filename, int flag) {
     const char *redirect_path = relocate_path(filename, &res);
     void *ret = orig_dlopen(redirect_path, flag);
     onSoLoaded(filename, ret);
+#ifdef LOG_ENABLE
     ALOGD("dlopen : %s, return : %p.", redirect_path, ret);
+#endif
     FREE(redirect_path, filename);
     return ret;
 }
@@ -588,7 +594,9 @@ HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extin
     const char *redirect_path = relocate_path(filename, &res);
     void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
     onSoLoaded(filename, ret);
+#ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
+#endif
     FREE(redirect_path, filename);
     return ret;
 }
@@ -599,22 +607,40 @@ HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
     const char *redirect_path = relocate_path(name, &res);
     void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
     onSoLoaded(name, ret);
+#ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
+#endif
+    FREE(redirect_path, name);
+    return ret;
+}
+
+HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
+         void *caller_addr) {
+    int res;
+    const char *redirect_path = relocate_path(name, &res);
+    void *ret = orig_do_dlopen_V26(redirect_path, flags, extinfo, caller_addr);
+    onSoLoaded(name, ret);
+#ifdef LOG_ENABLE
+    ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
+#endif
     FREE(redirect_path, name);
     return ret;
 }
 
 
-
 //void *dlsym(void *handle,const char *symbol)
 HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
+#ifdef LOG_ENABLE
     ALOGD("dlsym : %p %s.", handle, symbol);
+#endif
     return orig_dlsym(handle, symbol);
 }
 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
+#ifdef LOG_ENABLE
     ALOGD(">>>>> kill >>> pid: %d, sig: %d.", pid, sig);
+#endif
     int ret = syscall(__NR_kill, pid, sig);
     return ret;
 }
@@ -637,7 +663,13 @@ int findSymbol(const char *name, const char *libn,
 
 void hook_dlopen(int api_level) {
     void *symbol = NULL;
-    if (api_level > 23) {
+    if (api_level > 25) {
+        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv", "linker",
+                       (unsigned long *) &symbol) == 0) {
+            MSHookFunction(symbol, (void *) new_do_dlopen_V26,
+                           (void **) &orig_do_dlopen_V26);
+        }
+    }else if (api_level > 23) {
         if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPv", "linker",
                        (unsigned long *) &symbol) == 0) {
             MSHookFunction(symbol, (void *) new_do_dlopen_V24,

@@ -61,5 +61,5 @@
     *;
 }
 -repackageclass z1
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
