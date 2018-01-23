@@ -11,6 +11,12 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+
+import android.content.Intent;
+
+import com.lody.virtual.client.core.VirtualCore;
 
 /**
  * @author Lody
@@ -103,7 +109,29 @@ public class IPCMethod {
         Object result;
         try {
             data.writeInterfaceToken(interfaceName);
-            data.writeArray(args);
+//            data.writeArray(args);
+            if (args == null) {
+                data.writeInt(-1);
+            } else {
+                data.writeInt(args.length);
+                for (int i = 0; i < args.length; i++) {
+                    Object obj = args[i];
+                    if (obj == null) {
+                        data.writeValue(obj);
+                    } else if (obj instanceof Parcelable) {
+                        String clazz = obj.getClass().getName();
+                        if (hostHasClass(clazz)) {
+                            data.writeValue(obj);
+                        } else {
+                            data.writeInt(4);
+                            data.writeString(getPublicClass(obj.getClass()));
+                            ((Parcelable) obj).writeToParcel(data, 0);
+                        }
+                    } else {
+                        data.writeValue(obj);
+                    }
+                }
+            }
             server.transact(code, data, reply, 0);
             reply.readException();
             result = readValue(reply);
@@ -115,6 +143,36 @@ public class IPCMethod {
             reply.recycle();
         }
         return result;
+    }
+
+    private static final Map<Class<?>, String> sPublicClasses = new HashMap<>();
+
+    private String getPublicClass(Class<?> clazz) {
+        String target;
+        synchronized (sPublicClasses) {
+            target = sPublicClasses.get(clazz);
+        }
+        if (target == null) {
+            boolean next = !hostHasClass(clazz.getName());
+            while (next) {
+                clazz = clazz.getSuperclass();
+                next = !hostHasClass(clazz.getName());
+            }
+            target = clazz.getName();
+            synchronized (sPublicClasses) {
+                sPublicClasses.put(clazz, target);
+            }
+        }
+        return target;
+    }
+
+    private boolean hostHasClass(String clazz){
+        try {
+            VirtualCore.get().getContext().getClassLoader().loadClass(clazz);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     private Object readValue(Parcel replay) {

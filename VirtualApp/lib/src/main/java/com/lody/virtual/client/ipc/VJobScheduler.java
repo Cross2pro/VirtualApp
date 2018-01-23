@@ -8,8 +8,10 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IJobService;
 
 import java.util.List;

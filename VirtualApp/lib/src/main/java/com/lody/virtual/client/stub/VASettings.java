@@ -11,6 +11,9 @@ public class VASettings {
      * userId=0
      */
     public static boolean KEEP_ADMIN_PHONE_INFO = true;
+
+    public static boolean GOOGLE_SUPPOER = false;
+
     public static final String STUB_DEF_AUTHORITY = "virtual_stub_";
     public static final String ACTION_BADGER_CHANGE = "com.lody.virtual.BADGER_CHANGE";
     public static String STUB_ACTIVITY = StubActivity.class.getName();

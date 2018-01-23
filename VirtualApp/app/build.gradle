@@ -14,14 +14,14 @@ android {
         android {
             defaultConfig {
                 ndk {
-                    abiFilters "armeabi-v7a", "x86"
+                    abiFilters "armeabi", "armeabi-v7a", "x86"
                 }
             }
         }
     }
 
     sourceSets {
-        main{
+        main {
             jniLibs.srcDirs = ['libs']
         }
     }

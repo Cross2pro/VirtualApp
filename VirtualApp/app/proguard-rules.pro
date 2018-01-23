@@ -44,7 +44,19 @@
 -keep class com.lody.virtual.client.hook.base.LogInvocation{*;}
 -keep class com.lody.virtual.client.hook.base.LogInvocation$Condition{*;}
 -keep class com.lody.virtual.client.hook.base.SkipInject{*;}
--keep class com.lody.virtual.client.hook.proxies.** { *;}
+#-keep class com.lody.virtual.client.badger.**{*;}
+#-keep class com.lody.virtual.client.hook.base{*;}
+#-keep class com.lody.virtual.client.hook.delegate{*;}
+#-keep class com.lody.virtual.client.hook.providers{*;}
+-keep class com.lody.virtual.client.hook.proxies.** {*;}
+-keep class com.lody.virtual.client.ipc.**{*;}
+
+-keep class * implements com.lody.virtual.client.badger.IBadger{
+    public *;
+}
+-keep class * implements com.lody.virtual.server.interfaces.IPCInterface{
+    public *;
+}
 # jni
 -keep class com.lody.virtual.client.NativeEngine {
     public static void onKillProcess(...);

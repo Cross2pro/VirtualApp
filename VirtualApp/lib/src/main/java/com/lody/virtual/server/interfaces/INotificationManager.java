@@ -5,7 +5,7 @@ import android.os.RemoteException;
 /**
  * @author Lody
  */
-public interface INotificationManager {
+public interface INotificationManager extends IPCInterface {
 
     int dealNotificationId(int id, String packageName, String tag, int userId) throws RemoteException;
 
@@ -18,4 +18,16 @@ public interface INotificationManager {
     void addNotification(int id, String tag, String packageName, int userId) throws RemoteException;
 
     void cancelAllNotification(String packageName, int userId) throws RemoteException;
+
+    abstract class Stub implements INotificationManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

@@ -20,7 +20,7 @@ import java.util.Random;
 /**
  * @author Lody
  */
-public class VDeviceManagerService implements IDeviceInfoManager {
+public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
     private static VDeviceManagerService sInstance = new VDeviceManagerService();
     private final SparseArray<VDeviceInfo> mDeviceInfos = new SparseArray<>();

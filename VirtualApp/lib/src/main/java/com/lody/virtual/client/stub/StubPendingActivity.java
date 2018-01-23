@@ -30,18 +30,23 @@ public class StubPendingActivity extends Activity {
         if (r.intent == null) {
             return;
         }
-//        IBinder resultTo = mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
-        r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-//        if (resultTo != null) {
-//            int requestCode = intent.getIntExtra(EXTRA_REQUESTCODE, 0);
-//            String resultWho = intent.getStringExtra(EXTRA_RESULTWHO);
-//            Bundle options = intent.getBundleExtra(EXTRA_OPTIONS);
-//            int res = VActivityManager.get().startActivity(r.intent, null, resultTo, options, resultWho, requestCode, r.userId);
-//            if (res != 0 && requestCode > 0) {
-//                VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
-//            }
-//        } else {
-        VActivityManager.get().startActivity(r.intent, r.userId);
-//        }
+        if(!VASettings.GOOGLE_SUPPOER){
+            r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            VActivityManager.get().startActivity(r.intent, r.userId);
+        }else {
+            IBinder resultTo = mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
+            r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            if (resultTo != null) {
+                int requestCode = intent.getIntExtra(EXTRA_REQUESTCODE, 0);
+                String resultWho = intent.getStringExtra(EXTRA_RESULTWHO);
+                Bundle options = intent.getBundleExtra(EXTRA_OPTIONS);
+                int res = VActivityManager.get().startActivity(r.intent, null, resultTo, options, resultWho, requestCode, r.userId);
+                if (res != 0 && requestCode > 0) {
+                    VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
+                }
+            } else {
+                VActivityManager.get().startActivity(r.intent, r.userId);
+            }
+        }
     }
 }

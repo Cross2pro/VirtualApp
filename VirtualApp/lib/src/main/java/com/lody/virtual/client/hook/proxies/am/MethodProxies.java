@@ -800,39 +800,39 @@ class MethodProxies {
          */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            /*
-            int intentIndex;
-            int resultToIndex;
-            int resultWhoIndex;
-            int optionsIndex;
-            int requestCodeIndex;
-            if ((Build.VERSION.SDK_INT == 25 && TextUtils.equals(Build.VERSION.RELEASE, "O"))
-                    || Build.VERSION.SDK_INT >= 26) {
-                intentIndex = 3;
-                resultToIndex = 5;
-                resultWhoIndex = 6;
-                requestCodeIndex = 7;
-                optionsIndex = 10;
-            } else {
-                optionsIndex = 9;
-                intentIndex = 2;
-                resultToIndex = 4;
-                resultWhoIndex = 5;
-                requestCodeIndex = 6;
-            }
-            Intent intent = (Intent) args[intentIndex];
-            if (intent != null) {
-                IBinder resultTo = (IBinder) args[resultToIndex];
-                String resultWho = (String) args[resultWhoIndex];
-                int requestCode = (int) args[requestCodeIndex];
-                Bundle options = (Bundle) args[optionsIndex];
+            if(VASettings.GOOGLE_SUPPOER) {
+                int intentIndex;
+                int resultToIndex;
+                int resultWhoIndex;
+                int optionsIndex;
+                int requestCodeIndex;
+                if ((Build.VERSION.SDK_INT == 25 && TextUtils.equals(Build.VERSION.RELEASE, "O"))
+                        || Build.VERSION.SDK_INT >= 26) {
+                    intentIndex = 3;
+                    resultToIndex = 5;
+                    resultWhoIndex = 6;
+                    requestCodeIndex = 7;
+                    optionsIndex = 10;
+                } else {
+                    optionsIndex = 9;
+                    intentIndex = 2;
+                    resultToIndex = 4;
+                    resultWhoIndex = 5;
+                    requestCodeIndex = 6;
+                }
+                Intent intent = (Intent) args[intentIndex];
+                if (intent != null) {
+                    IBinder resultTo = (IBinder) args[resultToIndex];
+                    String resultWho = (String) args[resultWhoIndex];
+                    int requestCode = (int) args[requestCodeIndex];
+                    Bundle options = (Bundle) args[optionsIndex];
 
-                intent.putExtra(StubPendingActivity.EXTRA_REQUESTCODE, requestCode);
-                intent.putExtra(StubPendingActivity.EXTRA_RESULTWHO, resultWho);
-                intent.putExtra(StubPendingActivity.EXTRA_OPTIONS, options);
-                mirror.android.content.Intent.putExtra.call(intent, StubPendingActivity.EXTRA_RESULTTO, resultTo);
+                    intent.putExtra(StubPendingActivity.EXTRA_REQUESTCODE, requestCode);
+                    intent.putExtra(StubPendingActivity.EXTRA_RESULTWHO, resultWho);
+                    intent.putExtra(StubPendingActivity.EXTRA_OPTIONS, options);
+                    mirror.android.content.Intent.putExtra.call(intent, StubPendingActivity.EXTRA_RESULTTO, resultTo);
+                }
             }
-            */
             return super.call(who, method, args);
         }
     }

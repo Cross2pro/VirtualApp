@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IUserManager {
+public interface IUserManager extends IPCInterface {
     VUserInfo createUser(String name, int flags) throws RemoteException;
 
     boolean removeUser(int userHandle) throws RemoteException;
@@ -34,4 +34,16 @@ public interface IUserManager {
     int getUserSerialNumber(int userHandle) throws RemoteException;
 
     int getUserHandle(int userSerialNumber) throws RemoteException;
+
+    abstract class Stub implements IUserManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

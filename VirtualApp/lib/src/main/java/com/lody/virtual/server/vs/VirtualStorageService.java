@@ -12,7 +12,7 @@ import java.util.HashMap;
  * @author Lody
  */
 
-public class VirtualStorageService implements IVirtualStorageService {
+public class VirtualStorageService extends IVirtualStorageService.Stub {
 
     private static final VirtualStorageService sService = new VirtualStorageService();
     private final VSPersistenceLayer mLayer = new VSPersistenceLayer(this);

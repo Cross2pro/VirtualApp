@@ -20,7 +20,7 @@ import java.util.Map;
  * @author Lody
  */
 
-public class VirtualLocationService implements IVirtualLocationManager {
+public class VirtualLocationService extends IVirtualLocationManager.Stub {
 
     private static final VirtualLocationService sInstance = new VirtualLocationService();
     private final SparseArray<Map<String, VLocConfig>> mLocConfigs = new SparseArray<>();

@@ -74,7 +74,7 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
 /**
  * @author Lody
  */
-public class VActivityManagerService implements IActivityManager {
+public class VActivityManagerService extends IActivityManager.Stub {
 
     private static final boolean BROADCAST_NOT_STARTED_PKG = false;
 

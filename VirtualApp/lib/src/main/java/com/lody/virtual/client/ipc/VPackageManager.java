@@ -12,9 +12,11 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.server.IPackageInstaller;
+import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
 import java.util.List;

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IPackageManager {
+public interface IPackageManager extends IPCInterface {
 
     int getPackageUid(String packageName, int userId) throws RemoteException;
 
@@ -69,4 +69,16 @@ public interface IPackageManager {
     String getNameForUid(int uid) throws RemoteException;
 
     IBinder getPackageInstaller() throws RemoteException;
+
+    abstract class Stub implements IPackageManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

@@ -5,6 +5,8 @@ import android.content.pm.PackageManager;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.InstallResult;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,7 +67,8 @@ public class GmsSupport {
                 continue;
             }
             if (userId == 0) {
-                core.installPackage(info.sourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                InstallResult rs = core.installPackage(info.sourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                VLog.i("GmsSuuport", info.packageName + " install " + (rs != null && rs.isSuccess) + ", error=" + (rs == null ? null : rs.error));
             } else {
                 core.installPackageAsUser(userId, packageName);
             }

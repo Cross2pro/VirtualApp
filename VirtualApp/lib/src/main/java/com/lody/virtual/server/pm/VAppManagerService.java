@@ -44,7 +44,7 @@ import dalvik.system.DexFile;
 /**
  * @author Lody
  */
-public class VAppManagerService implements IAppManager {
+public class VAppManagerService extends IAppManager.Stub {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
     private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>(){

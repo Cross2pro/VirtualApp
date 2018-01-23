@@ -43,7 +43,7 @@ import java.util.Map;
 /**
  * @author Lody
  */
-public class VPackageManagerService implements IPackageManager {
+public class VPackageManagerService extends IPackageManager.Stub {
 
     static final String TAG = "PackageManager";
     static final Comparator<ResolveInfo> sResolvePrioritySorter = new Comparator<ResolveInfo>() {

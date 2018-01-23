@@ -34,7 +34,7 @@ import java.util.Map;
  * @author Lody
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class VJobSchedulerService implements IJobService {
+public class VJobSchedulerService extends IJobService.Stub {
 
     private static final String TAG = VJobScheduler.class.getSimpleName();
 

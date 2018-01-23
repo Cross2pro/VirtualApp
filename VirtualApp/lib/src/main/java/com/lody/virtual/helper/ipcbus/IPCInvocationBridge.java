@@ -18,8 +18,21 @@ public class IPCInvocationBridge implements InvocationHandler {
         this.binder = binder;
     }
 
+    private boolean isBinderAlive() {
+        return binder != null && binder.isBinderAlive();
+    }
+
+    private boolean pingBinder() {
+        return binder != null && binder.pingBinder();
+    }
+
     @Override
     public Object invoke(Object o, Method method, Object[] args) throws Throwable {
+        if("pingBinder".equals(method.getName())){
+            return pingBinder();
+        }else if("isBinderAlive".equals(method.getName())){
+            return isBinderAlive();
+        }
         IPCMethod ipcMethod = serverInterface.getIPCMethod(method);
         if (ipcMethod == null) {
             throw new IllegalStateException("Can not found the ipc method : " + method.getDeclaringClass().getName() + "@" +  method.getName());

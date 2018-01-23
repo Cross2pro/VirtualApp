@@ -2,11 +2,13 @@ package com.lody.virtual.client.ipc;
 
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.remote.vloc.VCell;
 import com.lody.virtual.remote.vloc.VLocation;
+import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 import com.lody.virtual.server.interfaces.IVirtualLocationManager;
 
 import java.util.List;

@@ -8,9 +8,11 @@ import android.support.multidex.MultiDexApplication;
 import android.support.v4.content.FileProvider;
 
 import com.flurry.android.FlurryAgent;
+import com.lody.virtual.Build;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
@@ -37,6 +39,10 @@ public class VApp extends MultiDexApplication {
         VASettings.ENABLE_INNER_SHORTCUT = false;
         //自动随机手机信息
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
+        //测试
+        VASettings.GOOGLE_SUPPOER = true;
+        //日志
+        VLog.OPEN_LOG = BuildConfig.DEBUG;
         try {
             VirtualCore.get().startup(base);
         } catch (Throwable e) {
