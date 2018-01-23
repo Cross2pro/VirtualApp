@@ -46,6 +46,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
+import com.lody.virtual.client.stub.StubPendingActivity;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -451,7 +452,7 @@ class MethodProxies {
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
-                } else if (SCHEME_CONTENT.equals(packageUri.getScheme())){
+                } else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
                     InputStream inputStream = null;
                     OutputStream outputStream = null;
                     File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
@@ -788,9 +789,50 @@ class MethodProxies {
             return "startActivityIntentSender";
         }
 
+        /*
+        public int startActivityIntentSender(IApplicationThread caller, IntentSender intent,
+                    Intent fillInIntent, String resolvedType, IBinder resultTo, String resultWho,
+                    int requestCode, int flagsMask, int flagsValues, Bundle options)
+
+        public int startActivityIntentSender(IApplicationThread caller, IIntentSender target,
+                    IBinder whitelistToken, Intent fillInIntent, String resolvedType, IBinder resultTo,
+                    String resultWho, int requestCode, int flagsMask, int flagsValues, Bundle bOptions)
+         */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            /*
+            int intentIndex;
+            int resultToIndex;
+            int resultWhoIndex;
+            int optionsIndex;
+            int requestCodeIndex;
+            if ((Build.VERSION.SDK_INT == 25 && TextUtils.equals(Build.VERSION.RELEASE, "O"))
+                    || Build.VERSION.SDK_INT >= 26) {
+                intentIndex = 3;
+                resultToIndex = 5;
+                resultWhoIndex = 6;
+                requestCodeIndex = 7;
+                optionsIndex = 10;
+            } else {
+                optionsIndex = 9;
+                intentIndex = 2;
+                resultToIndex = 4;
+                resultWhoIndex = 5;
+                requestCodeIndex = 6;
+            }
+            Intent intent = (Intent) args[intentIndex];
+            if (intent != null) {
+                IBinder resultTo = (IBinder) args[resultToIndex];
+                String resultWho = (String) args[resultWhoIndex];
+                int requestCode = (int) args[requestCodeIndex];
+                Bundle options = (Bundle) args[optionsIndex];
 
+                intent.putExtra(StubPendingActivity.EXTRA_REQUESTCODE, requestCode);
+                intent.putExtra(StubPendingActivity.EXTRA_RESULTWHO, resultWho);
+                intent.putExtra(StubPendingActivity.EXTRA_OPTIONS, options);
+                mirror.android.content.Intent.putExtra.call(intent, StubPendingActivity.EXTRA_RESULTTO, resultTo);
+            }
+            */
             return super.call(who, method, args);
         }
     }
@@ -1248,7 +1290,7 @@ class MethodProxies {
                     return VClientImpl.get().getVUid() == uid;
                 }
                 int userId = intent.getIntExtra("_VA_|_user_id_", -1);
-                if(userId == -1 || userId == VUserHandle.myUserId()) {
+                if (userId == -1 || userId == VUserHandle.myUserId()) {
                     if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
                         if (isFakeLocationEnable()) {
                             return false;
@@ -1652,7 +1694,7 @@ class MethodProxies {
         }
     }
 
-    static class OverridePendingTransition extends MethodProxy{
+    static class OverridePendingTransition extends MethodProxy {
         @Override
         public String getMethodName() {
             return "overridePendingTransition";
@@ -1660,7 +1702,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VClientImpl.get().isOutSideDiff()){
+            if (VClientImpl.get().isOutSideDiff()) {
                 //apk res
                 return 0;
             }

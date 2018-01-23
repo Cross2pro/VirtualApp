@@ -54,6 +54,12 @@ public class VActivityManager {
 
 
     public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+        if (info == null) {
+            info = VirtualCore.get().resolveActivityInfo(intent, userId);
+            if (info == null) {
+                return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+            }
+        }
         try {
             return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
         } catch (RemoteException e) {
