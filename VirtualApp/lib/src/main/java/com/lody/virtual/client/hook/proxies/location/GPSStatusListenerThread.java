@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class GPSStatusListenerThread extends TimerTask {
+class GPSStatusListenerThread extends TimerTask {
     private static GPSStatusListenerThread INSTANCE;
     private boolean isRunning = false;
     private Map<Object, Long> listeners = new HashMap<>();

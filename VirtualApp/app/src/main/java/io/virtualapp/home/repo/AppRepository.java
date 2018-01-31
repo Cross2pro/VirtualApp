@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.support.v4.view.ViewPager;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
@@ -64,7 +65,7 @@ public class AppRepository implements AppDataSource {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
-                if(info.dependSystem){
+                if (info.dependSystem) {
                     //检查是否升级
                     PackageUtils.checkUpdate(mContext, info.packageName);
                 }
@@ -130,7 +131,11 @@ public class AppRepository implements AppDataSource {
             }
             // ignore the System package
             if (isSystemApplication(pkg)) {
-                continue;
+                if ((!pkg.packageName.contains("com.google.")
+                        && !VirtualCore.get().isOutsidePackageVisible(pkg.packageName))
+                        || pm.getLaunchIntentForPackage(pkg.packageName) == null) {
+                    continue;
+                }
             }
             ApplicationInfo ai = pkg.applicationInfo;
             String path = ai.publicSourceDir != null ? ai.publicSourceDir : ai.sourceDir;

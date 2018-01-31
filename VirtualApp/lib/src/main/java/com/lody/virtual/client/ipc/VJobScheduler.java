@@ -5,10 +5,13 @@ import android.app.job.JobInfo;
 import android.app.job.JobWorkItem;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IJobService;
 
 import java.util.List;
@@ -71,10 +74,10 @@ public class VJobScheduler {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    public int enqueue(JobInfo job, JobWorkItem workItem) {
+    public int enqueue(JobInfo job, Object workItem) {
+        if (workItem == null) return -1;
         try {
-            return getService().enqueue(job, workItem);
+            return getService().enqueue(job, (Parcelable) workItem);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

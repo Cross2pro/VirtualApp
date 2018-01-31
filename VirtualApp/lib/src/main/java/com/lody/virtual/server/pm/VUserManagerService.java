@@ -47,7 +47,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public class VUserManagerService implements IUserManager {
+public class VUserManagerService extends IUserManager.Stub {
 
     private static final String LOG_TAG = "VUserManagerService";
 

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class VNotificationManagerService implements INotificationManager {
+public class VNotificationManagerService extends INotificationManager.Stub {
     private static final Singleton<VNotificationManagerService> gService = new Singleton<VNotificationManagerService>(){
         @Override
         protected VNotificationManagerService create() {

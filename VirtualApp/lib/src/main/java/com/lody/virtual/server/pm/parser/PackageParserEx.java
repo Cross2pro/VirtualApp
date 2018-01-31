@@ -57,7 +57,11 @@ public class PackageParserEx {
             p.mSignatures = new Signature[]{new Signature(sig)};
             VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
         } else {
-            PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+            try {
+                PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+            }catch (Throwable e){
+                //ignore APK Signature Scheme v2
+            }
         }
         return buildPackageCache(p);
     }

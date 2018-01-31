@@ -5,6 +5,7 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.INotificationManager;
 import com.lody.virtual.server.notification.NotificationCompat;
 

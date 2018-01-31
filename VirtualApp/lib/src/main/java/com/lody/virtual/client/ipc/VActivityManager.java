@@ -52,8 +52,13 @@ public class VActivityManager {
         return singleton.get();
     }
 
-
     public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+        if (info == null) {
+            info = VirtualCore.get().resolveActivityInfo(intent, userId);
+            if (info == null) {
+                return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+            }
+        }
         try {
             return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
         } catch (RemoteException e) {
@@ -182,16 +187,16 @@ public class VActivityManager {
 
     public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean removeNotification) {
         try {
-            getService().setServiceForeground(className, token, id, notification,removeNotification,  VUserHandle.myUserId());
+            getService().setServiceForeground(className, token, id, notification, removeNotification, VUserHandle.myUserId());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
-    public int bindService(Context context, Intent service, ServiceConnection connection, int flags) {
+    public boolean bindService(Context context, Intent service, ServiceConnection connection, int flags) {
         try {
             IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
-            return getService().bindService(null, null, service, null, conn, flags, 0);
+            return getService().bindService(null, null, service, null, conn, flags, 0) > 0;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

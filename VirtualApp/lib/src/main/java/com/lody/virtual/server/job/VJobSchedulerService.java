@@ -34,7 +34,7 @@ import java.util.Map;
  * @author Lody
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class VJobSchedulerService implements IJobService {
+public class VJobSchedulerService extends IJobService.Stub {
 
     private static final String TAG = VJobScheduler.class.getSimpleName();
 
@@ -367,6 +367,9 @@ public class VJobSchedulerService implements IJobService {
     @TargetApi(Build.VERSION_CODES.O)
     @Override
     public int enqueue(JobInfo job, Parcelable workItem){
+        if(!(workItem instanceof JobWorkItem)){
+            return -1;
+        }
         int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();

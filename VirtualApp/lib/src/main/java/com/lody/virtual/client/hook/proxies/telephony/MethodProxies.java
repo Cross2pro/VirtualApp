@@ -16,6 +16,7 @@ import android.text.TextUtils;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
+import com.lody.virtual.client.hook.base.SkipInject;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
@@ -49,6 +50,7 @@ class MethodProxies {
         }
     }
 
+    @SkipInject
     @FakeLocMark("cell location")
     static class GetCellLocation extends ReplaceCallingPkgMethodProxy {
 
@@ -84,6 +86,7 @@ class MethodProxies {
         }
     }
 
+    @SkipInject
     @FakeLocMark("cell location")
     static class GetAllCellInfo extends ReplaceCallingPkgMethodProxy {
 
@@ -108,6 +111,7 @@ class MethodProxies {
         }
     }
 
+    @SkipInject
     @FakeLocMark("neb cell location")
     static class GetNeighboringCellInfo extends ReplaceCallingPkgMethodProxy {
 

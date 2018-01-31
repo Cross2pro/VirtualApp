@@ -44,7 +44,7 @@ import dalvik.system.DexFile;
 /**
  * @author Lody
  */
-public class VAppManagerService implements IAppManager {
+public class VAppManagerService extends IAppManager.Stub {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
     private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>(){
@@ -119,10 +119,7 @@ public class VAppManagerService implements IAppManager {
         }
         chmodPackageDictionary(cacheFile);
         PackageCacheManager.put(pkg, ps);
-        int[] userIds = VirtualCore.get().getPackageInstalledUsers(pkg.packageName);
-        for(int userId : userIds) {
-            BroadcastSystem.get().startApp(pkg, userId);
-        }
+        BroadcastSystem.get().startApp(pkg);
         return true;
     }
 
@@ -272,7 +269,7 @@ public class VAppManagerService implements IAppManager {
                 }
             }
         }
-        BroadcastSystem.get().startApp(pkg, 0);
+        BroadcastSystem.get().startApp(pkg);
         if (notify) {
             notifyAppInstalled(ps, -1);
         }

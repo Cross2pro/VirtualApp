@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IJobService {
+public interface IJobService extends IPCInterface {
 
     int schedule(JobInfo job) throws RemoteException;
 
@@ -22,4 +22,16 @@ public interface IJobService {
     JobInfo getPendingJob(int jobId) throws RemoteException;
 
     int enqueue(JobInfo job, Parcelable workItem) throws RemoteException;
+
+    abstract class Stub implements IJobService {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

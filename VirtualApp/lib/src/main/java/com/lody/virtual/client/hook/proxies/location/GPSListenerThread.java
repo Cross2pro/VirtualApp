@@ -16,7 +16,7 @@ import java.util.TimerTask;
 import mirror.android.location.LocationManager;
 
 
-public class GPSListenerThread extends TimerTask {
+class GPSListenerThread extends TimerTask {
     private static GPSListenerThread INSTANCE;
     private Handler handler = new Handler();
     private boolean isRunning = false;

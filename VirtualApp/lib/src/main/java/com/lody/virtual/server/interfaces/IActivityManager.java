@@ -10,7 +10,7 @@ import com.lody.virtual.remote.*;
 /**
  * @author Lody
  */
-public interface IActivityManager {
+public interface IActivityManager extends IPCInterface {
 
     int initProcess(String packageName, String processName, int userId) throws RemoteException;
 
@@ -103,4 +103,16 @@ public interface IActivityManager {
     void broadcastFinish(PendingResultData res) throws RemoteException;
 
     void notifyBadgerChange(BadgerInfo info) throws RemoteException;
+
+    abstract class Stub implements IActivityManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

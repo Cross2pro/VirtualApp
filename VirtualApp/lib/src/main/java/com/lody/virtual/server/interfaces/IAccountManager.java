@@ -9,7 +9,7 @@ import android.os.RemoteException;
 /**
  * @author Lody
  */
-public interface IAccountManager {
+public interface IAccountManager extends IPCInterface {
 
     AuthenticatorDescription[] getAuthenticatorTypes(int userId) throws RemoteException;
 
@@ -58,4 +58,16 @@ public interface IAccountManager {
     void invalidateAuthToken(int userId, String accountType, String authToken) throws RemoteException;
 
     String peekAuthToken(int userId, Account account, String authTokenType) throws RemoteException;
+
+    abstract class Stub implements IAccountManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

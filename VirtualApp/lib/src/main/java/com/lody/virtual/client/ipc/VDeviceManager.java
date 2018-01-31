@@ -2,10 +2,12 @@ package com.lody.virtual.client.ipc;
 
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.remote.VDeviceInfo;
 import com.lody.virtual.server.interfaces.IDeviceInfoManager;
+import com.lody.virtual.server.interfaces.IPackageManager;
 
 /**
  * @author Lody
@@ -20,7 +22,6 @@ public class VDeviceManager {
     public static VDeviceManager get() {
         return sInstance;
     }
-
 
     public IDeviceInfoManager getService() {
         return singleton.get();

@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IVirtualLocationManager {
+public interface IVirtualLocationManager extends IPCInterface {
 
     int getMode(int userId, String pkg) throws RemoteException;
 
@@ -41,4 +41,16 @@ public interface IVirtualLocationManager {
     void setGlobalLocation(VLocation loc) throws RemoteException;
 
     VLocation getGlobalLocation() throws RemoteException;
+
+    abstract class Stub implements IVirtualLocationManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

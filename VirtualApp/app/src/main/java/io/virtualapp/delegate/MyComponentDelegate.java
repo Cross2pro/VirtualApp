@@ -3,6 +3,8 @@ package io.virtualapp.delegate;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
@@ -20,6 +22,7 @@ public class MyComponentDelegate implements ComponentDelegate {
 
     @Override
     public void afterApplicationCreate(Application application) {
+        //TODO: listen activity lifecycle
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {

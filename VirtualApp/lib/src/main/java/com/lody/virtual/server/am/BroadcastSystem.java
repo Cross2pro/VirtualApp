@@ -1,5 +1,6 @@
 package com.lody.virtual.server.am;
 
+import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,12 +17,14 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.parser.VPackage;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,7 +77,8 @@ public class BroadcastSystem {
 
     public static void attach(VActivityManagerService ams, VAppManagerService app) {
         if (gDefault != null) {
-            throw new IllegalStateException();
+            VLog.w(TAG, "exist a BroadcastSystem object");
+            return;
         }
         gDefault = new BroadcastSystem(VirtualCore.get().getContext(), ams, app);
     }
@@ -103,7 +107,15 @@ public class BroadcastSystem {
             if (packageInfo != null) {
                 Object receiverResource = LoadedApkHuaWei.mReceiverResource.get(packageInfo);
                 if (receiverResource != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        Map<Integer, List<String>> whiteListMap = Reflect.on(receiverResource).get("mWhiteListMap");
+                        List<String> whiteList = whiteListMap.get(0);
+                        if (whiteList == null) {
+                            whiteList = new ArrayList<>();
+                            whiteListMap.put(0, whiteList);
+                        }
+                        whiteList.add(mContext.getPackageName());
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         if (ReceiverResourceN.mWhiteList != null) {
                             List<String> whiteList = ReceiverResourceN.mWhiteList.get(receiverResource);
                             List<String> newWhiteList = new ArrayList<>();
@@ -114,7 +126,6 @@ public class BroadcastSystem {
                             }
                             ReceiverResourceN.mWhiteList.set(receiverResource, newWhiteList);
                         }
-
                     } else {
                         if (ReceiverResourceM.mWhiteList != null) {
                             String[] whiteList = ReceiverResourceM.mWhiteList.get(receiverResource);
@@ -133,7 +144,7 @@ public class BroadcastSystem {
         }
     }
 
-    public void startApp(VPackage p,int userId) {
+    public void startApp(VPackage p) {
         PackageSetting setting = (PackageSetting) p.mExtras;
         for (VPackage.ActivityComponent receiver : p.receivers) {
             ActivityInfo info = receiver.info;
@@ -144,13 +155,13 @@ public class BroadcastSystem {
             }
             String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
             IntentFilter componentFilter = new IntentFilter(componentAction);
-            BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter, userId);
+            BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
             receivers.add(r);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
-                r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter, userId);
+                r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter);
                 mContext.registerReceiver(r, cloneFilter, null, mScheduler);
                 receivers.add(r);
             }
@@ -244,13 +255,11 @@ public class BroadcastSystem {
         private ActivityInfo info;
         @SuppressWarnings("unused")
         private IntentFilter filter;
-        private int userId;
 
-        private StaticBroadcastReceiver(int appId, ActivityInfo info, IntentFilter filter,int userId) {
+        private StaticBroadcastReceiver(int appId, ActivityInfo info, IntentFilter filter) {
             this.appId = appId;
             this.info = info;
             this.filter = filter;
-            this.userId = userId;
         }
 
         @Override
@@ -267,7 +276,7 @@ public class BroadcastSystem {
             }
             PendingResult result = goAsync();
             if (!intent.hasExtra("_VA_|_intent_")) {
-                intent = ComponentUtils.redirectBroadcastIntent(intent, userId);
+                intent = ComponentUtils.redirectBroadcastIntent(intent, 0);
             }
             if (!mAMS.handleStaticBroadcast(appId, info, intent, new PendingResultData(result))) {
                 result.finish();

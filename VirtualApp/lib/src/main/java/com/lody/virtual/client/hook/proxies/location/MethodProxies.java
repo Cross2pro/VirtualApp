@@ -20,7 +20,7 @@ import mirror.android.location.LocationRequestL;
  * @author Lody
  */
 @SuppressWarnings("ALL")
-public class MethodProxies {
+class MethodProxies {
 
     private static void fixLocationRequest(LocationRequest request) {
         if (request != null) {

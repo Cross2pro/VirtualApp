@@ -10,11 +10,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.AmsTask;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IAccountManager;
+import com.lody.virtual.server.interfaces.IVirtualStorageService;
 
 import static com.lody.virtual.helper.compat.AccountManagerCompat.KEY_ANDROID_PACKAGE_NAME;
 

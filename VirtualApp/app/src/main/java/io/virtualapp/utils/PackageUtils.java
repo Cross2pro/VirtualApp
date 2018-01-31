@@ -10,6 +10,8 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
+import java.io.File;
+
 public class PackageUtils {
     public static PackageInfo getApkPackageInfo(PackageManager pm, String path, int flags) {
         try {
@@ -59,7 +61,7 @@ public class PackageUtils {
         }
         PackageInfo vpackageInfo = installedAppInfo.getPackageInfo(0);
         //update apk
-        if (vpackageInfo == null || packageInfo.versionCode != vpackageInfo.versionCode) {
+        if (!new File(installedAppInfo.apkPath).exists() || vpackageInfo == null || packageInfo.versionCode != vpackageInfo.versionCode) {
             VirtualCore.get().killApp(packageName, VUserHandle.USER_ALL);
             InstallResult result = VirtualCore.get().installPackage(packageInfo.applicationInfo.publicSourceDir,
                     InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.DEPEND_SYSTEM_IF_EXIST);

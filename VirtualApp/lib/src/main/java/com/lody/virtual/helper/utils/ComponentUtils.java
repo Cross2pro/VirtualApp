@@ -140,7 +140,7 @@ public class ComponentUtils {
                 ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
                 if (info != null) {
                     newIntent.setClass(VirtualCore.get().getContext(), StubPendingActivity.class);
-                    newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                    newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
             }
             break;

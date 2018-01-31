@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IAppManager {
+public interface IAppManager extends IPCInterface {
 
     int[] getPackageInstalledUsers(String packageName) throws RemoteException;
 
@@ -55,4 +55,16 @@ public interface IAppManager {
     void clearAppRequestListener() throws RemoteException;
 
     IAppRequestListener getAppRequestListener() throws RemoteException;
+
+    abstract class Stub implements IAppManager {
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+    }
 }

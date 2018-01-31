@@ -40,6 +40,7 @@ import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.helper.ipcbus.IServerCache;
 import com.lody.virtual.helper.utils.BitmapUtils;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -49,7 +50,9 @@ import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import dalvik.system.DexFile;
@@ -336,6 +339,38 @@ public final class VirtualCore {
             return getService().installPackage(apkPath, flags);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    public InstallResult installPackageFromAsset(String asset, int flags) {
+        InputStream inputStream = null;
+        try {
+            inputStream = getContext().getAssets().open(asset);
+            return installPackageFromStream(inputStream, flags);
+        } catch (Throwable e) {
+            InstallResult result = new InstallResult();
+            result.error = e.getMessage();
+            return result;
+        } finally {
+            FileUtils.closeQuietly(inputStream);
+        }
+    }
+
+    public InstallResult installPackageFromStream(InputStream inputStream, int flags) {
+        try {
+            File dir = getContext().getCacheDir();
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            File apkFile = new File(dir, "tmp_" + System.currentTimeMillis() + ".apk");
+            FileUtils.writeToFile(inputStream, apkFile);
+            return getService().installPackage(apkFile.getAbsolutePath(), flags | InstallStrategy.MOVE_FILE);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        } catch (Throwable e) {
+            InstallResult result = new InstallResult();
+            result.error = e.getMessage();
+            return result;
         }
     }
 

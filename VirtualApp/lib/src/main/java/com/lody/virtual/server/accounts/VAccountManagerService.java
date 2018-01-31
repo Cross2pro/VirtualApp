@@ -62,7 +62,7 @@ import static android.accounts.AccountManager.ERROR_CODE_BAD_ARGUMENTS;
 /**
  * @author Lody
  */
-public class VAccountManagerService implements IAccountManager {
+public class VAccountManagerService extends IAccountManager.Stub {
 
     private static final Singleton<VAccountManagerService> sInstance = new Singleton<VAccountManagerService>(){
         @Override
