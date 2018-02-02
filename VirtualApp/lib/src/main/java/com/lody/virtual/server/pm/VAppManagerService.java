@@ -449,7 +449,6 @@ public class VAppManagerService extends IAppManager.Stub {
         while (N-- > 0) {
             try {
                 if (userId == -1) {
-                    sendInstalledBroadcast(pkg);
                     mRemoteCallbackList.getBroadcastItem(N).onPackageInstalled(pkg);
                     mRemoteCallbackList.getBroadcastItem(N).onPackageInstalledAsUser(0, pkg);
 
@@ -460,6 +459,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        sendInstalledBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();
         VAccountManagerService.get().refreshAuthenticatorCache(null);
     }
@@ -470,7 +470,6 @@ public class VAppManagerService extends IAppManager.Stub {
         while (N-- > 0) {
             try {
                 if (userId == -1) {
-                    sendUninstalledBroadcast(pkg);
                     mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalled(pkg);
                     mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalledAsUser(0, pkg);
                 } else {
@@ -480,21 +479,22 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        sendUninstalledBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();
         VAccountManagerService.get().refreshAuthenticatorCache(null);
     }
 
 
-    private void sendInstalledBroadcast(String packageName) {
+    private void sendInstalledBroadcast(String packageName, VUserHandle user) {
         Intent intent = new Intent(Intent.ACTION_PACKAGE_ADDED);
         intent.setData(Uri.parse("package:" + packageName));
-        VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
+        VActivityManagerService.get().sendBroadcastAsUser(intent, user);
     }
 
-    private void sendUninstalledBroadcast(String packageName) {
+    private void sendUninstalledBroadcast(String packageName, VUserHandle user) {
         Intent intent = new Intent(Intent.ACTION_PACKAGE_REMOVED);
         intent.setData(Uri.parse("package:" + packageName));
-        VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
+        VActivityManagerService.get().sendBroadcastAsUser(intent, user);
     }
 
     @Override

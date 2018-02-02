@@ -786,7 +786,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         intent.setPackage(ps.packageName);
         intent.putExtra(Intent.EXTRA_UID, VUserHandle.getUid(ps.appId, userId));
         intent.putExtra("android.intent.extra.user_handle", userId);
-        sendBroadcastAsUser(intent, null);
+        sendBroadcastAsUser(intent, new VUserHandle(userId));
     }
 
 

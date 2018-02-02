@@ -46,7 +46,7 @@ public class RefStaticMethod<T> {
                     try {
                         type2 = Class.forName("android.util.ArraySet");
                     } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        //ignore
                     }
                     if(type2 != null) {
                         types2[i] = type2;

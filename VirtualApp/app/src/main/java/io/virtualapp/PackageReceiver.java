@@ -13,7 +13,7 @@ public class PackageReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
             String packageName = intent.getData().getSchemeSpecificPart();
-            PackageUtils.checkUpdate(context, packageName);
+            new Thread(() -> PackageUtils.checkUpdate(context, packageName)).start();
         } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
             // String packageName = intent.getData().getSchemeSpecificPart();
             // VAManager.get().uninstallPackage(packageName);

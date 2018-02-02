@@ -2,6 +2,7 @@ package io.virtualapp.delegate;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.NativeActivity;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -14,7 +15,7 @@ import java.io.File;
 
 
 public class MyComponentDelegate implements ComponentDelegate {
-
+    Activity mProcessTopActivity;
     @Override
     public void beforeApplicationCreate(Application application) {
 
@@ -36,12 +37,14 @@ public class MyComponentDelegate implements ComponentDelegate {
 
             @Override
             public void onActivityResumed(Activity activity) {
-
+                mProcessTopActivity = activity;
             }
 
             @Override
             public void onActivityPaused(Activity activity) {
-
+                if (mProcessTopActivity == activity) {
+                    mProcessTopActivity = null;
+                }
             }
 
             @Override

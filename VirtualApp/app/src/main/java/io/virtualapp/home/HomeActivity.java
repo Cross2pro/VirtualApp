@@ -3,8 +3,10 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -25,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -76,7 +79,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private TextView mDeleteAppTextView;
     private LaunchpadAdapter mLaunchpadAdapter;
     private Handler mUiHandler;
-
+    private boolean mReload = false;
 
     public static void goHome(Context context) {
         Intent intent = new Intent(context, HomeActivity.class);
@@ -95,7 +98,34 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.ACTION_PACKAGE_ADDED);
+        filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
+        filter.addDataScheme("package");
+        registerReceiver(mReceiver, filter);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(mReload){
+            mReload = false;
+            mPresenter.dataChanged();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mReceiver);
+    }
+
+    BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mReload = true;
+        }
+    };
 
     private void initMenu() {
         mPopupMenu = new PopupMenu(new ContextThemeWrapper(this, R.style.Theme_AppCompat_Light), mMenuView);

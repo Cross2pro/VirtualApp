@@ -35,9 +35,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
-    <uses-permission
+    <!-- don't need mock location -->
+    <!--<uses-permission
         android:name="android.permission.ACCESS_MOCK_LOCATION"
-        tools:ignore="MockLocation" />
+        tools:ignore="MockLocation" />-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIMAX_STATE" />
