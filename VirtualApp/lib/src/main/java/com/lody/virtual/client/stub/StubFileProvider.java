@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.os.VEnvironment;
+
 import static org.xmlpull.v1.XmlPullParser.END_DOCUMENT;
 import static org.xmlpull.v1.XmlPullParser.START_TAG;
 
@@ -293,7 +296,9 @@ public class StubFileProvider extends ContentProvider {
                 } else if (TAG_CACHE_PATH.equals(tag)) {
                     target = context.getCacheDir();
                 } else if (TAG_EXTERNAL.equals(tag)) {
-                    target = Environment.getExternalStorageDirectory();
+                    int userId = VUserHandle.myUserId();
+                    //target = Environment.getExternalStorageDirectory();
+                    target = VEnvironment.getExternalStorageDirectory(userId);
                 } else if (TAG_EXTERNAL_FILES.equals(tag)) {
                     File[] externalFilesDirs = getExternalFilesDirs(context, null);
                     if (externalFilesDirs.length > 0) {

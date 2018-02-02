@@ -27,6 +27,7 @@ import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
+import android.os.Environment;
 import android.util.Log;
 
 import com.lody.virtual.client.core.CrashHandler;
@@ -53,6 +54,8 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceInfo;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -440,13 +443,20 @@ public final class VClientImpl extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/user/0/" + info.packageName + "/lib/", libPath);
 
         VirtualStorageManager vsManager = VirtualStorageManager.get();
+        vsManager.setVirtualStorage(info.packageName, userId, VEnvironment.getExternalStorageDirectory(userId).getAbsolutePath());
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
+
         if (enable && vsPath != null) {
             File vsDirectory = new File(vsPath);
             if (vsDirectory.exists() || vsDirectory.mkdirs()) {
                 HashSet<String> mountPoints = getMountPoints();
                 for (String mountPoint : mountPoints) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
+                            continue;
+                        }
+                    }
                     NativeEngine.redirectDirectory(mountPoint, vsPath);
                 }
             }
