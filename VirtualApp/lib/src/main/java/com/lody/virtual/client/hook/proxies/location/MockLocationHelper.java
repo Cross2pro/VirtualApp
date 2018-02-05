@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.env.VirtualGPSSatalines;
 import com.lody.virtual.client.ipc.VLocationManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.remote.vloc.VLocation;
 
@@ -125,7 +126,7 @@ public class MockLocationHelper {
                     snrs = satalines.getSnrs();
                     elevations = satalines.getElevations();
                     azimuths = satalines.getAzimuths();
-                    if (Build.VERSION.SDK_INT >= 26) {
+                    if (BuildCompat.isOreo()) {
                         float[] carrierFreqs = satalines.getCarrierFreqs();
                         try {
                             LocationManager.GnssStatusListenerTransportO.onSvStatusChanged.call(transport, svCount, prnWithFlags, snrs, elevations, azimuths, carrierFreqs);

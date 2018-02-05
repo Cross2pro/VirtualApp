@@ -386,6 +386,7 @@ class MethodProxies {
                 intent.putExtra(ChooserActivity.EXTRA_DATA, options);
                 intent.putExtra(ChooserActivity.EXTRA_WHO, resultWho);
                 intent.putExtra(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
+                mirror.android.content.Intent.putExtra.call(intent, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 return method.invoke(who, args);
             }
 
@@ -681,6 +682,9 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            if(VASettings.DISABLE_FOREGROUND_SERVICE){
+                return 0;
+            }
             ComponentName component = (ComponentName) args[0];
             IBinder token = (IBinder) args[1];
             int id = (int) args[2];
@@ -694,8 +698,10 @@ class MethodProxies {
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
             }
-            VNotificationManager.get().dealNotification(id, notification, getAppPkg());
-
+            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg())) {
+                notification = new Notification();
+                notification.icon = getHostContext().getApplicationInfo().icon;
+            }
             /**
              * `BaseStatusBar#updateNotification` aosp will use use
              * `new StatusBarIcon(...notification.getSmallIcon()...)`
@@ -806,8 +812,7 @@ class MethodProxies {
                 int resultWhoIndex;
                 int optionsIndex;
                 int requestCodeIndex;
-                if ((Build.VERSION.SDK_INT == 25 && TextUtils.equals(Build.VERSION.RELEASE, "O"))
-                        || Build.VERSION.SDK_INT >= 26) {
+                if (BuildCompat.isOreo()) {
                     intentIndex = 3;
                     resultToIndex = 5;
                     resultWhoIndex = 6;

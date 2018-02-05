@@ -210,9 +210,15 @@ import mirror.com.android.internal.R_Hide;
             int id = R_Hide.id.icon.get();
             //only fake small icon
             if (!hasIconBitmap && notification.largeIcon == null) {
-                Drawable drawable = resources.getDrawable(notification.icon);
-                drawable.setLevel(notification.iconLevel);
-                Bitmap bitmap = drawableToBitMap(drawable);
+                Drawable drawable = null;
+                Bitmap bitmap = null;
+                try {
+                    drawable = resources.getDrawable(notification.icon);
+                    drawable.setLevel(notification.iconLevel);
+                    bitmap =  drawableToBitMap(drawable);
+                }catch (Throwable e){
+                    //no find
+                }
                 remoteViews.setImageViewBitmap(id, bitmap);
                 //emui
                 if(OSUtils.getInstance().isEmui()) {
@@ -221,7 +227,7 @@ import mirror.com.android.internal.R_Hide;
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }

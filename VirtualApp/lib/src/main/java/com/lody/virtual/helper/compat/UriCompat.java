@@ -30,7 +30,8 @@ public class UriCompat {
         if ("content".equals(uri.getScheme())) {
             //TODO: fake file path? sdcard/Android/data/
             //fake auth
-            return uri.buildUpon().authority(AUTH).build();
+            String auth = uri.getAuthority();
+            return uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
         } else {
             return null;
         }

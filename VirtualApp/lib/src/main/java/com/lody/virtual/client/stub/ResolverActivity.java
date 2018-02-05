@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.PatternMatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -53,6 +54,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     private static final boolean DEBUG = false;
     protected Bundle mOptions;
     protected String mResultWho;
+    protected IBinder mResultTo;
     protected int mRequestCode;
     private int mLaunchedFromUid;
     private ResolveListAdapter mAdapter;
@@ -396,9 +398,12 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
 //                    startActivity(intent);//, mRequestCode);
 //                }
             } else {
-                VActivityManager.get().startActivity(intent, info, null, mOptions, mResultWho, mRequestCode, mLaunchedFromUid);
+                intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+                int res = VActivityManager.get().startActivity(intent, info, mResultTo, mOptions, mResultWho, mRequestCode, mLaunchedFromUid);
+                if (res != 0 && mResultTo != null && mRequestCode > 0) {
+                    VActivityManager.get().sendActivityResult(mResultTo, mResultWho, mRequestCode);
+                }
             }
-
         }
     }
 

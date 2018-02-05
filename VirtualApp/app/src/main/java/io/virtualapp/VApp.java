@@ -37,10 +37,12 @@ public class VApp extends MultiDexApplication {
         mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
         VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
-        //自动随机手机信息
+        //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
-        //测试
+        //google测试
         VASettings.GOOGLE_SUPPOER = true;
+        //
+        VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
         VLog.OPEN_LOG = BuildConfig.DEBUG;
         try {

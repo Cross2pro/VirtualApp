@@ -38,6 +38,7 @@ import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ApplicationThreadCompat;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -382,7 +383,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 // Report to all of the connections that the service is no longer
                 // available.
                 try {
-                    if (Build.VERSION.SDK_INT >= 26) {
+                    if (BuildCompat.isOreo()) {
                         IServiceConnectionO.connected.call(connection, className, null, true);
                     } else {
                         connection.connected(className, null);
@@ -556,7 +557,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private void connectService(IServiceConnection conn, ComponentName component, ServiceRecord.IntentBindRecord r, boolean dead) {
         try {
             BinderDelegateService delegateService = new BinderDelegateService(component, r.binder);
-            if (Build.VERSION.SDK_INT >= 26) {
+            if (BuildCompat.isOreo()) {
                 IServiceConnectionO.connected.call(conn, component, delegateService, dead);
             } else {
                 conn.connected(component, delegateService);

@@ -1,0 +1,659 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="description" content="">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VirtualApp - 文档</title>
+<link rel="alternate" type="application/rss+xml" title="egrappler.com" href="feed/index.html">
+<link href="css/google-fonts.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/prettify.css">
+<!--<link rel="stylesheet" href="css/bootstrap.min.css">-->
+<!--<script src="js/bootstrap.min.js"/>-->
+<style type="text/css">
+.sub_title {
+	padding-left:20px;
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="container">
+    <h1>Doc</h1>
+    <div id="menu">
+      <ul class="toplinks">
+        <li><a href="https://github.com/asLody/VirtualApp">公开源码</a></li>
+        <!--<li><a href="https://gitee.com/keyongyu/VirtualApp">商业源码</a></li>-->
+        <li><a href="mailto:zl@iluohe.com">联系</a></li>-->
+      </ul>
+    </div>
+    <a id="menu-toggle" href="#" class=" ">&#9776;</a> </div>
+</nav>
+<header>
+  <div class="container">
+    <h2 class="docs-header"> Virtual - 使用文档</h2>
+  </div>
+</header>
+<section>
+  <div class="container" style="width:1024px;">
+    <ul class="docs-nav" id="menu-left">
+	  <li><strong>VirtualApp</strong></li>
+	  <li><a href="#pre" class=" ">概述</a></li>
+      <li><strong>项目配置</strong></li>
+	  <li class="sub_title"><a href="#va_word">Virtual术语</a></li>
+      <li class="sub_title"><a href="#android_studio">Android Studio项目集成</a></li>
+      <li class="sub_title"><a href="#va_init">框架初始化</a></li>
+	  <li><strong>基础使用</strong></li>
+	  <li class="sub_title"><a href="#va_install">App的安装和多开</a></li>
+	  <li class="sub_title"><a href="#va_uninstall">App的卸载</a></li>
+	  <li class="sub_title"><a href="#va_install_listen">虚拟App的安装卸载监听</a></li>
+	  <li class="sub_title"><a href="#va_update_app">更新虚拟App</a></li>
+	  <li class="sub_title"><a href="#get_all_app">获取全部App</a></li>
+	  <li class="sub_title"><a href="#add_shortcut">添加快捷方式</a></li>
+	  <li class="sub_title"><a href="#va_outside_app">外部App白名单</a></li>
+	  <li class="sub_title"><a href="#va_intent_install">虚拟环境的安装请求</a></li>
+	  <li><strong>高级使用</strong></li>
+	  <li class="sub_title"><a href="#va_comp_listen">虚拟组件和广播监听</a></li>
+      <li class="sub_title"><a href="#va_location">虚拟定位</a></li>
+      <li class="sub_title"><a href="#va_phoneinfo">虚拟手机信息</a></li>
+      <li class="sub_title"><a href="#google">Google Service(Beta)</a></li>
+    </ul>
+    <div class="copyrights">Collect from <a href="http://www.cssmoban.com/" title="模板之家">模板之家</a></div>
+    <div class="docs-content">
+		<h3 id="pre">概述</h3>
+		<h4>简介</h5>
+		<p>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VirtualApp是一个App虚拟化引擎（简称VA）。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VirtualApp已兼容Android 0(8.0 Preview)。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VirtualApp在你的App内创建一个虚拟空间，你可以在虚拟空间内任意的安装、启动和卸载APK，这一切都与外部隔离，如同一个沙盒。
+运行在VA中的APK无需在外部安装，即VA支持免安装运行APK。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VA目前被广泛应用于双开/多开、应用市场、模拟定位、一键改机、隐私保护、游戏修改、自动化测试、无感知热更新等技术领域，但它决不仅限于此，Android本身就是一个极其开放的平台，免安装运行APK这一Feature打开了无限可能--------这都取决于您的想象力。
+		</p>
+		<h4>已支持的加固</h4>
+		<p>
+		<h2>项目配置</h2>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;360加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;腾讯加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;梆梆加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;梆梆企业版(12306客户端 Pass)<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;爱加密<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;百度加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;娜迦加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;乐变加固<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;网易易盾<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;通付盾<br/>
+		</p>
+		<h3 id="va_word">Virtual术语</h3>
+		<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;宿主：集成VirtualApp类库（lib）的App叫做宿主。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;虚拟App/VApp：VA的虚拟环境多开的app。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;外部App：手机真实环境安装的app。</p>
+		<h3 id="android_studio">Android Studio项目集成</h3>
+		<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;项目的settings.gradle文件，添加VirtualApp的lib模块，路径填写绝对路径也行，相对路径也行。</p>
+		<pre class="prettyprint">
+include ':lib'
+project(':lib').projectDir = new File(settingsDir, "VirtualApp/VirtualApp/lib")</pre>
+		<p>宿主项目的build.gradle文件添加</p>
+		<pre class="prettyprint">
+dependencies {
+    ...
+    compile project(':lib')
+    …
+}
+		</pre>
+
+      <h3 id="va_init">框架初始化</h3>
+      <p>在宿主的Application类初始化框架</p>
+	  <pre  class="prettyprint">public class App extends Application {
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        //io重定向
+        VASettings.ENABLE_IO_REDIRECT = true;
+        //允许app发送快捷方式
+        VASettings.ENABLE_INNER_SHORTCUT = false;
+         try {
+            VirtualCore.get().startup(base);
+        } catch (Throwable e) {
+            e.printStackTrace();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        //TODO 全部进程都会调用这个地方，所以按照进程名初始化
+        final VirtualCore virtualCore = VirtualCore.get();
+        virtualCore.initialize(new VirtualCore.VirtualInitializer() {
+
+             @Override
+             public void onMainProcess() {
+                    //TODO 宿主app的初始化地方
+             }
+
+             @Override
+             public void onVirtualProcess() {
+                //每个虚拟进程的app调用
+                //activity生命周期监听
+                virtualCore.setComponentDelegate(new MyComponentDelegate());
+                //信息伪造
+                //任务历史显示,activity启动的intent处理（不显示任务）
+                virtualCore.setTaskDescriptionDelegate(new MyTaskDescriptionDelegate());
+            }
+
+            @Override
+            public void onServerProcess() {
+                //服务进程初始化
+                //监听全部插件的安装和卸载
+                virtualCore.registerObserver(new MyPackageObserver(App.this));
+                //服务会通知 通过intent的安装/卸载
+                virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
+                //允许内部app调用外部的app名单，默认：在内部app眼里，外部的app是没安装的
+                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");
+                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqqi");
+                virtualCore.addVisibleOutsidePackage("com.tencent.minihd.qq");
+                virtualCore.addVisibleOutsidePackage("com.tencent.qqlite");
+                virtualCore.addVisibleOutsidePackage("com.facebook.katana");
+                virtualCore.addVisibleOutsidePackage("com.whatsapp");
+                virtualCore.addVisibleOutsidePackage("com.tencent.mm");
+                virtualCore.addVisibleOutsidePackage("com.immomo.momo");
+            }
+        });
+    }
+
+}
+		</pre>
+		<h4>初始化说明</h4>
+		<p><pre  class="prettyprint">VASettings.ENABLE_IO_REDIRECT</pre>是否允许文件重定向，例如 /data/data/xxxxx/files 重定向到虚拟的目录
+		<pre  class="prettyprint">VASettings.ENABLE_INNER_SHORTCUT</pre>是否允许内部app自动创建快捷方式自己代码添加快捷方式参见添加快捷方式
+		</p>
+		<table border="0">
+		<tr><td>onMainProcess</td><td>宿主App的其他sdk初始化地方</td></tr>
+		<tr><td>onVirtualProcess</td><td>虚拟App进程调用的地方<br/>可以监听applicaiton和activity声明周期，以及虚拟App在最近任务的显示（标题，图标）</td></tr>
+		<tr><td>onServerProcess</td><td>核心服务进程，用户服务的初始化以及设置</td></tr>
+		</table>
+		      <h3 id="use_permission">精简权限申明</h3>
+	  <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;如果需要缩减权限，则根据自己产品需要多开哪些产品，把那些产品的权限申明都需要添加到宿主
+	  <pre  class="prettyprint">&lt;uses-permission&gt;XXX&lt;/uses-permission&gt;</pre></p>
+
+      <hr>
+	  
+	  <h2>基础使用</h2>
+	  <h3 id="va_install">App的安装和多开</h3>
+	  <p>VirtualApp的多开机制，类似Android自身的多用户机制，一个app每一个用户的数据都不一致，并且能够同时运行。<br/>
+	     app的apk只会保留一份，也就是多个用户使用同一个apk，但是data数据分开存放。
+	  </p>
+	  1.检查虚拟环境是否已经安装<br/>
+	  2.虚拟环境未安装，则调用安装方法<br/>
+	  <pre  class="prettyprint">
+	/**
+	* @param path apk路径
+	* @param flags 安装选项
+	* @return InstallResult 安装结果，里面isSuccess判断是否成功
+	*/
+	public InstallResult VirtualCore.get().installPackage(String path,int flags);
+
+	/** 安装flag */
+	public interface InstallStrategy{
+	 TERMINATE_IF_EXIST//如果存在，则终止
+	 UPDATE_IF_EXIST//如果存在，则更新
+	 COMPARE_VERSION//对比版本，只有版本高的情况才会安装
+	 IGNORE_NEW_VERSION//忽略版本，只有不存在才会安装
+	 DEPEND_SYSTEM_IF_EXIST//依赖系统的app情况安装，如果目标app卸载，则va内部的无法使用
+	 /**
+	 * 跳过dex的优化，提高安装速度，
+	 * 但是在启动的时候需要调用VirtualCore.get().preOpt(String pkg)进行dex优化
+	 */
+	 SKIP_DEX_OPT
+	}
+</pre>
+	  3.虚拟环境已经安装了，可以进行多开操作。<br/>
+	  <pre  class="prettyprint">
+	//多开，类似安卓的多用户机制，N个用户就能N开
+	for (VUserInfo vUserInfo : list) {
+		//遍历存在的用户，如果该用户没安装该app，则安装到该用户
+		if (!VirtualCore.get().isAppInstalledAsUser(vUserInfo.id, packageName)) {
+			//安装
+			VirtualCore.get().installPackageAsUser(vUserInfo.id, packageName)
+			return;
+		}
+	}
+	//如果存在的用户都安装了，就必须新建一个用户安装。
+	VUserInfo vUserInfo = VUserManager.get().createUser("User" + list.size(), VUserInfo.FLAG_ADMIN);
+	if (vUserInfo == null) {
+		//error
+		return false;
+	}
+	VirtualCore.get().installPackageAsUser(vUserInfo.id, packageName)
+ </pre>
+ 
+	 <h3 id="va_uninstall">卸载虚拟App</h3>
+	 第一个用户的userId是0，也就是说双开app，userId的值为0，如果是多开，则需要自己管理，然后传userid的值，具体参见<a href="#get_all_app">获取全部App</a>。
+	 <pre  class="prettyprint">
+	//杀死正在运行的目标app
+	VirtualCore.get().killApp(pkgName, userId);
+	//卸载
+	VirtualCore.get().uninstallPackageAsUser(pkgName, userId);
+	  </pre>
+	  
+	  <h3 id="va_install_listen">虚拟App的安装卸载监听</h3>
+	  在<a href="#va_init">框架初始化</a>的服务进程注册。
+	  <pre class="prettyprint">
+/**
+* 监听者
+*/
+public class MyPackageObserver extends VirtualCore.PackageObserver {
+	private Context mContext;
+	public MyPackageObserver(Context context) {
+		mContext = context;
+	}
+
+	/**
+	* 模拟系统的包安装卸载广播
+	*/
+	private void sendBroadcast(String action, String pkg) {
+		mContext.sendBroadcast(new Intent(action,
+		Uri.parse("package:" + pkg)));	
+	}
+
+	@Override
+	public void onPackageInstalled(String packageName) throws RemoteException {
+		// Log.d("server", "onPackageInstalled:" + packageName);
+		// sendBroadcast(App.ACTION_PACKAGE_ADD, packageName);
+	}
+
+	@Override
+	public void onPackageUninstalled(String packageName) throws RemoteException {
+	// Log.d("server", "onPackageUninstalled:" + packageName);
+	// sendBroadcast(App.ACTION_PACKAGE_REMOVE, packageName);
+	}
+
+	@Override
+	public void onPackageInstalledAsUser(int userId, String packageName) throws RemoteException {
+		Log.d("server", "onPackageInstalledAsUser:" + packageName);
+		sendBroadcast(App.ACTION_PACKAGE_ADD, packageName);
+	}
+
+	@Override
+	public void onPackageUninstalledAsUser(int userId, String packageName) throws RemoteException {
+		Log.d("server", "onPackageUninstalledAsUser:" + packageName);
+		sendBroadcast(App.ACTION_PACKAGE_REMOVE, packageName);
+	}
+}
+
+	/** 在服务进程初始化 */
+	public void onServerProcess() {
+		virtualCore.registerObserver(new MyPackageObserver(App.this));
+	}
+</pre>
+	  
+	  <h3 id="va_update_app">更新虚拟App</h3>
+	  适用于依赖外部应用的虚拟app，动态随着外部更新而更新。
+	  注
+册静态广播，监听包安装
+ <pre class="prettyprint">
+&lt;receiver android:name=".PackageReceiver"&gt;
+	&lt;intent-filter&gt;
+		&lt;action android:name="android.intent.action.PACKAGE_ADDED"/&gt;
+		&lt;action android:name="android.intent.action.PACKAGE_REPLACED"/&gt;
+		&lt;action android:name="android.intent.action.PACKAGE_REMOVED"/&gt;
+		&lt;data android:scheme="package"/&gt;
+	&lt;/intent-filter&gt;
+&lt;/receiver&gt;
+</pre>
+	应用安装卸载广播监听<br/>
+ <pre class="prettyprint">
+public class PackageReceiver extends BroadcastReceiver {
+
+@Override
+public void onReceive(Context context, Intent intent) {
+	String action = intent.getAction();
+	if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
+		String packageName = intent.getData().getSchemeSpecificPart();
+		checkUpdate(context, packageName);
+	} else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+		// String packageName = intent.getData().getSchemeSpecificPart();
+		// VAManager.get().uninstallPackage(packageName);
+	}
+}
+
+public boolean checkUpdate(Context context, String packageName) {
+	InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(packageName, 0);
+	if (installedAppInfo != null) {
+		PackageInfo packageInfo = installedAppInfo.getPackageInfo(0);
+		int versionCode = PackageUtils.getApkVersionCode(context, installedAppInfo.apkPath);
+		if (versionCode &lt; packageInfo.versionCode) {
+			//需要升级app
+			VirtualCore.get().killApp(packageName, VUserHandle.USER_ALL);
+			VirtualCore.get().installPackage(packageInfo.applicationInfo.publicSourceDir,
+						InstallStrategy.UPDATE_IF_EXIST);
+			return true;
+		}
+	}
+	return false;
+}
+}
+	</pre>  
+	  
+	  
+	  <h3 id="get_all_app">获取全部App</h3>
+	   <pre class="prettyprint">
+/**
+* 安装的信息
+*/
+public class AppInfo {
+	public String packageName;
+	public int versionCode;
+	public int userId;
+}
+
+
+public List&lt;AppInfo&gt; getInstallApps(Context context) {
+	PackageManager pm = context.getPackageManager();
+	List&lt;InstalledAppInfo&gt; infos = VirtualCore.get().getInstalledApps(0);
+	List&lt;AppData&gt; models = new ArrayList&lt;&gt;();
+
+	for (InstalledAppInfo info : infos) {
+		if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
+			continue;
+		}
+
+		//检查更新，具体可参考上一节
+		checkUpdate(context, info.packageName);
+		//
+		int[] userIds = info.getInstalledUsers();
+		int versionCode = PackageUtils.getApkVersionCode(context, info.apkPath);
+		for (int userId : userIds) {
+			final AppInfo ainfo = new AppInfo();
+			ainfo.versionCode = versionCode;
+			ainfo.userId = userId;
+			ainfo.packageName= info.packageName;
+			models.add(ainfo);
+		}
+	}
+	return models;
+}
+</pre>
+	  
+	  <h3 id="add_shortcut">添加快捷方式</h3>
+	  可以自己控制快捷方式的显示标题和图标
+	  <pre class="prettyprint">
+	  /**
+	  * 控制快捷方式的标题和图标
+	  */
+	 VirtualCore.OnEmitShortcutListener listener = new VirtualCore.OnEmitShortcutListener() {
+
+		@Override
+		public Bitmap getIcon(Bitmap originIcon) {
+			//图标
+			return originIcon;
+		}
+
+		@Override
+		public String getName(String originName) {
+			//标题，可自己添加备注管理
+			return originName;
+		}
+	};
+/** 发送快捷方式广播，部分桌面不允许/默认拦截这个广播，那么建创建失败 */
+VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener);
+	  </pre>
+	  
+      <h3 id="va_outside_app">外部App白名单</h2>
+      <p>Virtualapp内部的App是无法识别和访问外部的app，只有调用下面方法，添加外部app到可见名单，内部的app才能识别和访问外部的app。<br/>
+		<pre class="prettyprint">
+public void onServerProcess() {
+    ...
+    virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");//外部app的报名
+    ...
+}
+		</pre>
+</p>
+
+	<h3 id="va_intent_install">虚拟环境的安装请求</h3>
+	内部app通过intent调用系统的安装界面，可以自行进行内部的静默安装（非真实环境），也可以自己模拟系统安装界面。<br/>
+	下面是VirtualApp的demo的静默安装处理。
+<pre class="prettyprint">
+public class MyAppRequestListener implements VirtualCore.AppRequestListener {
+
+	private final Context context;
+	public MyAppRequestListener(Context context) {
+		this.context = context;
+	}
+
+	@Override
+	public void onRequestInstall(String path) {
+		Log.i("server", "install:" + path);
+		InstallResult res = VirtualCore.get().installPackage(path, InstallStrategy.UPDATE_IF_EXIST);
+		if (res.isSuccess) {
+			try {
+				VirtualCore.get().preOpt(res.packageName);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			if (res.isUpdate) {
+				sendBroadcast(App.ACTION_PACKAGE_UPDATE, res.packageName);
+			} else {
+				sendBroadcast(App.ACTION_PACKAGE_ADD, res.packageName);
+			}
+		} else {
+			Toast.makeText(context, "Install failed: " + res.error, Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	private void sendBroadcast(String action, String pkg) {
+		context.sendBroadcast(new Intent(action,
+			Uri.parse("pacakge:" + pkg)).setPackage(context.getPackageName()));
+	}
+
+	@Override
+	public void onRequestUninstall(String pkg) {
+		Log.i("server", "uninstall:" + pkg);
+		sendBroadcast(App.ACTION_PACKAGE_REMOVE, pkg);
+	}
+}
+</pre>
+	
+	<hr>
+	<h2>高级使用</h2>
+	
+	<h3 id="va_comp_listen">虚拟组件和广播监听</h3>
+	可以监听Application, Activity的生命周期, 以及监听sendBroadcast的内容，也可以进行拦截。
+	如果需要添加HOOK模块，可以在afterApplicationCreate直接操作Application的ClassLoder，进行HOOK。
+
+<pre class="prettyprint">
+public class MyComponentDelegate implements ComponentDelegate {
+
+    @Override
+
+    public void beforeApplicationCreate(Application application) {
+
+    }
+
+    @Override
+    public void afterApplicationCreate(Application application) {
+        //TODO hook框架初始化
+    }
+
+    @Override
+
+    public void beforeActivityCreate(Activity activity) {
+    }
+
+    @Override
+
+    public void beforeActivityResume(Activity activity) {
+    }
+
+    @Override
+    public void beforeActivityPause(Activity activity) {
+    }
+
+    @Override
+    public void beforeActivityDestroy(Activity activity) {
+    }
+
+    @Override
+
+    public void afterActivityCreate(Activity activity) {
+    }
+
+    @Override
+    public void afterActivityResume(Activity activity) {
+        //TODO 基于activity对象的自动化点击
+    }
+
+    @Override
+    public void afterActivityPause(Activity activity) {
+    }
+
+    @Override
+    public void afterActivityDestroy(Activity activity) {
+    }
+
+    @Override
+    public void onSendBroadcast(Intent intent) {
+        //TODO 可以修改action，对广播进行拦截，或者修改广播内容
+    }
+
+}
+</pre>
+	<h3 id="va_location">虚拟定位</h3>
+	商业版本，有wifi信息伪装和gps信号伪装功能，部分app定位sdk会判断gps信号，比如Pokenmon Go<br/>
+<pre class="prettyprint">
+ import com.lody.virtual.client.ipc.VirtualLocationManager;
+
+ //关闭虚拟位置
+ public static final int MODE_CLOSE = 0;
+ //使用全局虚拟位置
+ public static final int MODE_USE_GLOBAL = 1;
+ //使用单独虚拟位置
+ public static final int MODE_USE_SELF = 2;
+
+ //获取某个虚拟app的位置模式
+ public int getMode(int userId, String pkg) 
+ //设置某个虚拟app的位置模式
+ public void setMode(int userId, String pkg, int mode)
+
+ //单独位置
+ public void setCell(int userId, String pkg, VCell cell)
+ public void setAllCell(int userId, String pkg, List<VCell> cell)
+ public void setNeighboringCell(int userId, String pkg, List<VCell> cell)
+ public void setLocation(int userId, String pkg, VLocation loc)
+
+
+ //获取虚拟app的基站，位置信息
+ public VCell getCell(int userId, String pkg)
+ public List<VCell> getAllCell(int userId, String pkg)
+ public List<VCell> getNeighboringCell(int userId, String pkg)
+ public VLocation getLocation(int userId, String pkg)
+
+  //全局模式
+ public void setGlobalCell(VCell cell)
+ public void setGlobalAllCell(List<VCell> cell)
+ public void setGlobalNeighboringCell(List<VCell> cell)
+ public void setGlobalLocation(VLocation loc)
+
+</pre>
+
+基站数据类
+<pre class="prettyprint">
+public class VCell implements Parcelable {
+
+    public int type;//2是cmda
+    public int mcc;//gms必填
+    public int mnc;//gms必填
+    public int psc;
+    public int lac;//gms必填
+    public int cid;//gms必填
+
+    public int baseStationId;//cmda必填
+    public int systemId;//cmda必填
+    public int networkId;//cmda必填
+    ...
+}
+</pre>
+GPS数据类
+<pre class="prettyprint">
+public class VLocation implements Parcelable {
+
+    public double latitude = 0.0;//维度   必填
+    public double longitude = 0.0;//经度  必填
+    public double altitude = 0.0f;//高度
+    public float accuracy = 0.0f;//精准度，必填
+    public float speed;//速度
+    public float bearing;//
+    ...
+}
+</pre>
+    <h3 id="va_phoneinfo">虚拟手机信息</h3>
+	手机信息是按照用户来区分，做到多开的每一个app的手机信息都可以独立。<br/>
+	注：wifi的mac采用IO的hook，写入文件。
+	<pre class="prettyprint">
+	/**
+	* 虚拟信息类
+	*/
+	public class VDeviceInfo implements Parcelable {
+		//imei
+		public String deviceId;
+		//androidId
+		public String androidId;
+		//
+		public String wifiMac;
+		
+		public String bluetoothMac;
+		//imsi
+		public String iccId;
+		
+		public String serial;
+		//google ad  id
+		public String gmsAdId;
+		...
+	}
+	
+	
+	package com.lody.virtual.client.ipc;
+	/**
+	* 虚拟信息管理类
+	**/
+	public class VDeviceManager {
+		/** 获取某个用户的虚拟手机信息 */
+		public VDeviceInfo getDeviceInfo(int userId);
+		/** 
+		* 更新某个用户的虚拟手机信息，<br/>
+		* VDeviceInfo对象建议用上面方法获取，<br/>
+		* 然后设置内容，再调用此方法
+		*/
+		public void updateDeviceInfo(int userId, VDeviceInfo info);
+    }
+	</pre>
+	
+	<h3 id="google">使用Google服务(beta)</h3>
+	<p>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VA支持运行官方的Google服务套件，同时我们也提供了对MicroG的支持。(部分机型不行)<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;支持youtube，不支持Google Play游戏以及相关游戏。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;如果您需要在VA中使用官方的Google服务套件（外部已安装的前提下），<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;则可以通过 GmsSupport.installGms(userId) 来安装。<br/>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;兼容模式，需要设置打开开关<br/>
+		<pre class="prettyprint">VASettings.GOOGLE_SUPPOER = true;</pre>
+		<b>注意，您不能同时安装MicroGms和官方的Gms。</b>
+	</p>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="container">
+    <p> &copy; 2018 VirtualApp | 罗盒科技 </p>
+  </div>
+</footer>
+<script src="js/jquery.min.js"></script> 
+ 
+<script type="text/javascript" src="js/prettify/prettify.js"></script> 
+<!--<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?lang=css&skin=sunburst"></script>-->
+<script src="js/layout.js"></script>
+ <script src="js/jquery.localScroll.min.js" type="text/javascript"></script>
+ <script src="js/jquery.scrollTo.min.js" type="text/javascript"></script>
+</body>
+</html>

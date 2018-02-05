@@ -12,7 +12,16 @@ public class VASettings {
      */
     public static boolean KEEP_ADMIN_PHONE_INFO = true;
 
+    /**
+     * support a new google play service
+     */
     public static boolean GOOGLE_SUPPOER = false;
+
+    /**
+     * disable startForeground
+     * @see android.app.Service#startForeground
+     */
+    public static boolean DISABLE_FOREGROUND_SERVICE = false;
 
     public static final String STUB_DEF_AUTHORITY = "virtual_stub_";
     public static final String ACTION_BADGER_CHANGE = "com.lody.virtual.BADGER_CHANGE";

@@ -10,6 +10,7 @@ import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
 
 import com.lody.virtual.client.hook.base.MethodBox;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.InvocationHandler;
@@ -189,7 +190,7 @@ public class ProviderHook implements InvocationHandler {
                 String[] selectionArgs = null;
                 String sortOrder = null;
                 Bundle queryArgs = null;
-                if (Build.VERSION.SDK_INT >= 26) {
+                if (BuildCompat.isOreo()) {
                     queryArgs = (Bundle) args[start + 2];
                     if (queryArgs != null) {
                         selection = queryArgs.getString(QUERY_ARG_SQL_SELECTION);

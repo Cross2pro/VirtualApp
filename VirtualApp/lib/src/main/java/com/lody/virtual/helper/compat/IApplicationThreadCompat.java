@@ -53,7 +53,7 @@ public class IApplicationThreadCompat {
     public static void scheduleServiceArgs(IInterface appThread, IBinder token, boolean taskRemoved,
                                            int startId, int flags, Intent args) throws RemoteException {
 
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (BuildCompat.isOreo()) {
             List<Object> list = new ArrayList<>(1);
             Object serviceStartArg = ServiceStartArgs.ctor.newInstance(taskRemoved, startId, flags, args);
             list.add(serviceStartArg);

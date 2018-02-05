@@ -13,6 +13,7 @@ import android.util.Log;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.server.IBinderDelegateService;
 
 import mirror.android.app.ActivityThread;
@@ -98,7 +99,7 @@ public class ServiceConnectionDelegate extends IServiceConnection.Stub {
             }
         }
 
-        if(Build.VERSION.SDK_INT>=26) {
+        if(BuildCompat.isOreo()) {
             IServiceConnectionO.connected.call(mConn, name, service, dead);
         }else {
             mConn.connected(name, service);
