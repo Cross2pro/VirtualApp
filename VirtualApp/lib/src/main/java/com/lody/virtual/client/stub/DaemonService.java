@@ -22,7 +22,11 @@ public class DaemonService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		startup(this);
+		try {
+			startup(this);
+		}catch (Throwable e){
+			//
+		}
 	}
 
 	@Override

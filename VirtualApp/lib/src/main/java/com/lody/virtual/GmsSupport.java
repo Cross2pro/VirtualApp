@@ -67,7 +67,9 @@ public class GmsSupport {
                 continue;
             }
             if (userId == 0) {
-                InstallResult rs = core.installPackage(info.sourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                InstallResult rs = core.installPackage(info.sourceDir, isGmsFamilyPackage(info.packageName)?
+                                InstallStrategy.DEPEND_SYSTEM_IF_EXIST:
+                        InstallStrategy.COMPARE_VERSION);
                 VLog.i("GmsSuuport", info.packageName + " install " + (rs != null && rs.isSuccess) + ", error=" + (rs == null ? null : rs.error));
             } else {
                 core.installPackageAsUser(userId, packageName);

@@ -16,6 +16,7 @@ public class ChooserActivity extends ResolverActivity {
     public static final String EXTRA_WHO = "android.intent.extra.virtual.who";
     public static final String EXTRA_REQUEST_CODE = "android.intent.extra.virtual.request_code";
     public static final String ACTION;
+    public static final String EXTRA_RESULTTO = "_va|ibinder|resultTo";
 
     static {
         Intent target = new Intent();
@@ -40,6 +41,7 @@ public class ChooserActivity extends ResolverActivity {
         mOptions = intent.getParcelableExtra(EXTRA_DATA);
         mResultWho = intent.getStringExtra(EXTRA_WHO);
         mRequestCode = intent.getIntExtra(EXTRA_REQUEST_CODE, 0);
+        mResultTo =  mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
             VLog.w("ChooseActivity", "Target is not an intent: " + targetParcelable);

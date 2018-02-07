@@ -16,6 +16,7 @@ import android.os.Message;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -107,7 +108,7 @@ public class BroadcastSystem {
             if (packageInfo != null) {
                 Object receiverResource = LoadedApkHuaWei.mReceiverResource.get(packageInfo);
                 if (receiverResource != null) {
-                    if (Build.VERSION.SDK_INT >= 26) {
+                    if (BuildCompat.isOreo()) {
                         Map<Integer, List<String>> whiteListMap = Reflect.on(receiverResource).get("mWhiteListMap");
                         List<String> whiteList = whiteListMap.get(0);
                         if (whiteList == null) {

@@ -107,6 +107,9 @@ import mirror.android.app.IActivityManager;
             ComponentName caller = saveInstance.caller;
             IBinder token = ActivityThread.ActivityClientRecord.token.get(r);
             ActivityInfo info = saveInstance.info;
+            if(info == null){
+                return true;
+            }
             if (VClientImpl.get().getToken() == null) {
                 InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
                 if(installedAppInfo == null){

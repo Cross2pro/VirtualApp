@@ -1,9 +1,8 @@
 package com.lody.virtual.client.hook.proxies.context_hub;
 
-import android.os.Build;
-
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import mirror.android.hardware.location.IContextHubService;
 
@@ -14,7 +13,7 @@ public class ContextHubServiceStub extends BinderInvocationProxy {
     }
 
     private static String getServiceName() {
-        return Build.VERSION.SDK_INT >= 26 ? "contexthub" : "contexthub_service";
+        return BuildCompat.isOreo() ? "contexthub" : "contexthub_service";
     }
 
     @Override

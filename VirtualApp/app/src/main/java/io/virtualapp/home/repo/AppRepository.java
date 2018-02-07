@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.v4.view.ViewPager;
 
+import com.lody.virtual.Build;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;

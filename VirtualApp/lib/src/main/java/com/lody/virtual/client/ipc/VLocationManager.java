@@ -225,17 +225,20 @@ public class VLocationManager {
         }
     }
 
-    private void notifyLocation(final Object ListenerTransport, final Location location, boolean post) {
+    private boolean notifyLocation(final Object ListenerTransport, final Location location, boolean post) {
         if (ListenerTransport == null) {
-            return;
+            return false;
         }
         if (!post) {
             try {
                 mirror.android.location.LocationManager.ListenerTransport.onLocationChanged.call(ListenerTransport, location);
+                return true;
             } catch (Throwable e) {
-                Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
+                if (DEBUG) {
+                    Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
+                }
             }
-            return;
+            return false;
         }
         mWorkHandler.post(new Runnable() {
             @Override
@@ -243,10 +246,13 @@ public class VLocationManager {
                 try {
                     mirror.android.location.LocationManager.ListenerTransport.onLocationChanged.call(ListenerTransport, location);
                 } catch (Throwable e) {
-                    Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
+                    if (DEBUG) {
+                        Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
+                    }
                 }
             }
         });
+        return true;
     }
 
     private final Map<Object, UpdateLocationTask> mLocationTaskMap = new HashMap<>();
@@ -274,8 +280,9 @@ public class VLocationManager {
             if (mRunning) {
                 VLocation location = getCurAppLocation();
                 if (location != null) {
-                    notifyLocation(mListenerTransport, location.toSysLocation(), false);
-                    start();
+                    if (notifyLocation(mListenerTransport, location.toSysLocation(), false)) {
+                        start();
+                    }
                 }
             }
         }
