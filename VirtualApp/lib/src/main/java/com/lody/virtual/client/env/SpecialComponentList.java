@@ -56,7 +56,7 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.location.MODE_CHANGED");
 
         ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
-
+        WHITE_PERMISSION.add("android.permission.USE_XDJA_SIP_swbg");//税务办公
         WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
         WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
         WHITE_PERMISSION.add(Manifest.permission.ACCOUNT_MANAGER);

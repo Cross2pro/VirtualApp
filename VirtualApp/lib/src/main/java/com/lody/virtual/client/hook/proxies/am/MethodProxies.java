@@ -11,6 +11,7 @@ import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
@@ -28,8 +29,10 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 
+import com.lody.virtual.R;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.badger.BadgerManager;
@@ -78,6 +81,7 @@ import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.UserInfo;
+import mirror.android.widget.Toast;
 
 /**
  * @author Lody
@@ -356,6 +360,37 @@ class MethodProxies {
             if (ComponentUtils.isStubComponent(intent)) {
                 return method.invoke(who, args);
             }
+
+            //xdja swbg
+            if(getAppPkg() != null && getAppPkg().equals("com.xdja.swbg")
+                    &&Intent.ACTION_VIEW.equals(intent.getAction())
+                    &&Intent.FLAG_ACTIVITY_NEW_TASK==intent.getFlags()
+                    &&intent.getType()!=null&&intent.getType().equals("*/*")){
+                Log.d("StartActivity", "lxf "+"this is New Task.");
+
+                boolean hasWps = false;
+                List<PackageInfo> listInfos = VPackageManager.get().getInstalledPackages(0, VUserHandle.myUserId());
+                for (PackageInfo info : listInfos){
+                    if(info.packageName.equals("cn.wps.moffice_eng")){
+                        hasWps = true;
+                        break;
+                    }
+                }
+
+                Log.d("StartActivity", "lxf hasWps "+hasWps);
+                if(hasWps){
+                    intent.setClassName("cn.wps.moffice_eng",
+                            "cn.wps.moffice.documentmanager.PreStartActivity");
+                }else{
+                    CharSequence tips = "Not Have WPS!";
+                    android.widget.Toast toast = Toast.makeText.call(getHostContext(), R.string.noApplications,Toast.LENGTH_SHORT);
+
+                    Log.d("StartActivity", "lxf toast "+toast);
+                    toast.show();
+                    return 0;
+                }
+            }
+            //xdja
 
             if (Intent.ACTION_INSTALL_PACKAGE.equals(intent.getAction())
                     || (Intent.ACTION_VIEW.equals(intent.getAction())
