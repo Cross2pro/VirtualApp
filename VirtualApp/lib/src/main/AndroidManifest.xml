@@ -224,6 +224,15 @@
         android:required="false" />
 
     <application>
+        <!--safekey adapter-->
+        <service android:name="com.xdja.safeclient.TunVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+        </service>
+        <!--safekey adapter-->
+
         <service
             android:name="com.lody.virtual.client.stub.DaemonService"
             android:process="@string/engine_process_name" />

@@ -36,6 +36,8 @@ public class VEnvironment {
     }
 
     public static void systemReady() {
+        //create private dir at SdCard & all of TFCard
+        getContext().getExternalFilesDir(null).getAbsolutePath();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 FileUtils.chmod(ROOT.getAbsolutePath(), FileUtils.FileMode.MODE_755);
@@ -159,4 +161,34 @@ public class VEnvironment {
     public static File getPackageInstallerStageDir() {
         return ensureCreated(new File(DATA_DIRECTORY, ".session_dir"));
     }
+
+    /**
+     * get all of data dir of current context
+     * @return
+     */
+    public static File[] getTFRoots(){
+        return getContext().getExternalFilesDirs(null);
+    }
+    /**
+     * get TFCard root dir
+     * @param Dir  /storage/XXXXX/Android/data/@packagename
+     * @return /storage/XXXXX
+     */
+    public static File getTFRoot(String Dir){
+        int lastIndex = Dir.lastIndexOf("/Android/data/");
+        return ensureCreated(new File(Dir.substring(0,lastIndex)));
+    }
+    /**
+     * create and return virtual dir of safetybox at TFCard
+     * @param tfroot /storage/XXXXXX
+     * @return  /storage/XXXXXX/Android/daa/com.xdja/safetybox/virtual/
+     */
+    public static File getTFVirtualRoot(String tfroot){
+        String appFileDir = tfroot + "/Android/data/"+getContext().getPackageName()+"";
+        return ensureCreated(new File(appFileDir, "virtual"));
+    }
+    public static File getTFVirtualRoot(String tfroot,String Dir) {
+        return ensureCreated(new File(getTFVirtualRoot(tfroot).getAbsolutePath(), Dir));
+    }
+
 }

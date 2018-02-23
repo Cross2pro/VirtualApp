@@ -439,6 +439,23 @@ public final class VClientImpl extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + info.packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + info.packageName + "/lib/", libPath);
 
+        //safekey adapter
+        String subPathData = "/Android/data/"+info.packageName;
+        File[] efd = VEnvironment.getTFRoots();
+        for(File f:efd){
+            if(f==null)
+                continue;
+            String filename = f.getAbsolutePath();
+            if(filename.contains("/emulated/0/"))
+                continue;
+            Log.e("lxf","XXX " + f.getAbsolutePath());
+            String tfRoot = VEnvironment.getTFRoot(f.getAbsolutePath()).getAbsolutePath();
+            NativeEngine.redirectDirectory(tfRoot+subPathData
+                    ,VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
+            Log.e("lxf","XXX " + tfRoot+subPathData);
+            Log.e("lxf","XXX " + VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
+        }
+
         VirtualStorageManager vsManager = VirtualStorageManager.get();
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
