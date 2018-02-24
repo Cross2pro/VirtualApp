@@ -5,7 +5,9 @@ import android.widget.Toast;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
+import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.IOException;
 
@@ -27,8 +29,10 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
         InstallResult res = VirtualCore.get().installPackage(path, InstallStrategy.UPDATE_IF_EXIST);
         if (res.isSuccess) {
             if (res.isUpdate) {
+                VAppManagerService.get().sendUpdateBroadcast(res.packageName, VUserHandle.ALL);
                 Toast.makeText(context, "Update: " + res.packageName + " success!", Toast.LENGTH_SHORT).show();
             } else {
+                VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
                 Toast.makeText(context, "Install: " + res.packageName + " success!", Toast.LENGTH_SHORT).show();
             }
         } else {
@@ -39,6 +43,13 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
     @Override
     public void onRequestUninstall(String pkg) {
         Toast.makeText(context, "Uninstall: " + pkg, Toast.LENGTH_SHORT).show();
+        boolean isSucess = VirtualCore.get().uninstallPackage(pkg);
+        if(isSucess == true){
+            VAppManagerService.get().sendUninstalledBroadcast(pkg, VUserHandle.ALL);
+            Toast.makeText(context, "Uninstall: " + pkg + " success!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(context, "Uninstall failed: " + pkg, Toast.LENGTH_SHORT).show();
+        }
 
     }
 }

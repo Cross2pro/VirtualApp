@@ -78,8 +78,8 @@ public class GmsSupport {
     }
 
     public static void installGApps(int userId) {
-        installPackages(GOOGLE_SERVICE, userId);
-        installPackages(GOOGLE_APP, userId);
+        //installPackages(GOOGLE_SERVICE, userId);
+        //installPackages(GOOGLE_APP, userId);
     }
 
     public static void installGoogleService(int userId) {
