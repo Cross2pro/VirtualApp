@@ -354,6 +354,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 notifyAppUninstalled(ps, userId);
                 mPersistenceLayer.save();
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, packageName));
+                FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(userId, packageName));
             }
             return true;
         }
@@ -370,6 +371,7 @@ public class VAppManagerService extends IAppManager.Stub {
             VEnvironment.getOdexFile(packageName).delete();
             for (int id : VUserManagerService.get().getUserIds()) {
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(id, packageName));
+                FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(id, packageName));
             }
             PackageCacheManager.remove(packageName);
         } catch (Exception e) {

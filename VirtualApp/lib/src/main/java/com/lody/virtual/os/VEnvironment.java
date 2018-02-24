@@ -22,6 +22,8 @@ public class VEnvironment {
     private static final File DATA_DIRECTORY;
     private static final File USER_DIRECTORY;
     private static final File DALVIK_CACHE_DIRECTORY;
+    private static final File EXTERNAL_STORAGE_DIRECTORY;
+    private static final File EMULATED_DIRECTORY;
 
     static {
         File host = new File(getContext().getApplicationInfo().dataDir);
@@ -33,6 +35,10 @@ public class VEnvironment {
         USER_DIRECTORY = ensureCreated(new File(DATA_DIRECTORY, "user"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
+        // Point to: /storage/
+        EXTERNAL_STORAGE_DIRECTORY = ensureCreated(new File(ROOT, "storage"));
+        // Point to: /storage/emulated
+        EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
     }
 
     public static void systemReady() {
@@ -191,4 +197,24 @@ public class VEnvironment {
         return ensureCreated(new File(getTFVirtualRoot(tfroot).getAbsolutePath(), Dir));
     }
 
+    public static File getExternalStorageDirectory(int userId) {
+        return ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+    }
+
+    public static File buildPath(File base, String... segments) {
+        File cur = base;
+        for (String segment : segments) {
+            if (cur == null) {
+                cur = new File(segment);
+            } else {
+                cur = new File(cur, segment);
+            }
+        }
+
+        return cur;
+    }
+
+    public static File getExternalStorageAppDataDir(int userId, String packageName) {
+        return buildPath(getExternalStorageDirectory(userId), "Android", "data", packageName);
+    }
 }
