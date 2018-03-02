@@ -36,4 +36,6 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    implementation files('src/main/libs/jar_jniapi--3.8.19.2399.jar')
+    implementation files('src/main/libs/jar_multi_jniapi_3.9.17.112201.jar')
 }

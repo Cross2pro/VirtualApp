@@ -27,6 +27,7 @@ import com.lody.virtual.server.interfaces.INotificationManager;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
 import com.lody.virtual.server.interfaces.IUserManager;
+import com.lody.virtual.server.interfaces.IVSafekeyManager;
 import com.lody.virtual.server.interfaces.IVirtualLocationManager;
 import com.lody.virtual.server.interfaces.IVirtualStorageService;
 import com.lody.virtual.server.job.VJobSchedulerService;
@@ -35,6 +36,7 @@ import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
+import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
 import mirror.android.app.job.IJobScheduler;
@@ -73,6 +75,8 @@ public final class BinderProvider extends ContentProvider {
         VDeviceManagerService.systemReady(context);
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        VSafekeyManagerService.systemReady(context);
+        IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
         return true;
     }
 
