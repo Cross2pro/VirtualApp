@@ -49,6 +49,7 @@ import com.lody.virtual.server.ServiceCache;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
+import com.lody.virtual.server.interfaces.IVSCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -533,6 +534,9 @@ public final class VirtualCore {
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {
+    }
+
+    public abstract static class VSCallback extends IVSCallback.Stub {
     }
 
     public void setUiCallback(Intent intent, IUiCallback callback) {
