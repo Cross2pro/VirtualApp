@@ -27,7 +27,6 @@ ff_Recognizer::~ff_Recognizer() {
 }
 
 bool ff_Recognizer::init(const char * magicPath) {
-#ifndef HOST
     handle = ::dlopen("libmyfile.so", RTLD_LAZY);
     if(handle == NULL)
     {
@@ -52,14 +51,11 @@ bool ff_Recognizer::init(const char * magicPath) {
     }
 
     LOGE("** ff_Recognizer::init success !");
-#endif
     return true;
 }
 
 void ff_Recognizer::uninit() {
-#ifndef HOST
     p_uninit();
-#endif
 }
 
 const char * ff_Recognizer::getFormat(char *buf, int len) {
@@ -69,11 +65,7 @@ const char * ff_Recognizer::getFormat(char *buf, int len) {
         return "UNKNOW";
     }
 
-#ifndef HOST
     return p_getFormat(buf, len);
-#else
-    return "JPEG image data";
-#endif
 }
 
 const char * hit_item[] =

@@ -2,9 +2,8 @@
 // Created by zhangsong on 17-11-14.
 //
 #include "originalInterface.h"
-
-#ifndef HOST
 #include <asm/unistd.h>
+
 ssize_t my_write(int fd, const void* buf, size_t count)
 {
     return syscall(__NR_write, fd, buf, count);
@@ -45,23 +44,3 @@ ssize_t (*originalInterface::original_pwrite64)(int fd, const void *buf, size_t 
 int (*originalInterface::original_ftruncate)(int, off_t) = 0;
 int (*originalInterface::original_ftruncate64)(int, off64_t) = 0;
 ssize_t (*originalInterface::original_sendfile)(int out_fd, int in_fd, off_t* offset, size_t count) = 0;
-#else
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <stddef.h>
-
-int (*originalInterface::original_close)(int ) = close;
-int (*originalInterface::original_openat)(int dirfd, const char *pathname, int flags, mode_t mode) = (int (*)(int, const char*, int, mode_t))openat;
-ssize_t (*originalInterface::original_read)(int, void *, size_t) = read;
-ssize_t (*originalInterface::original_write)(int , const void *, size_t ) = write;
-off_t (*originalInterface::original_lseek)(int , off_t , int ) = lseek;
-int (*originalInterface::original_llseek)(unsigned int fd, unsigned long offset_high,
-                                          unsigned long offset_low, loff_t *result,
-                                          unsigned int whence) = 0;
-int (*originalInterface::original_fstat)(int , struct stat *) = fstat;
-ssize_t (*originalInterface::original_pread64)(int fd, void *buf, size_t count, off64_t offset) = pread64;
-ssize_t (*originalInterface::original_pwrite64)(int fd, const void *buf, size_t count, off64_t offset) = pwrite64;
-#endif
-//int (*originalInterface::original_open)(const char*, int, ...) = open;
-//

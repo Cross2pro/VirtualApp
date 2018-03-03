@@ -173,14 +173,13 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
         }
 
         do {
-#ifndef HOST
             if (strncmp(path, "/data", 5) != 0
                 && strncmp(path, "/sdcard", 7) != 0
                 && strncmp(path, "/storage", 8) != 0
                     ) {
                 break;
             }
-#endif
+
             struct stat sb;
             originalInterface::original_fstat(fd, &sb);
 
