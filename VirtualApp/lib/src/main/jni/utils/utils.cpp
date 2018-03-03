@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <linux/fcntl.h>
+#include <string>
+#include <list>
 #include "utils.h"
-#include "controllerManagerNative.h"
 #include "mylog.h"
-#include "fileTrace.h"
 
 static int my_readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
     int ret = syscall(__NR_readlinkat, dirfd, pathname, buf, bufsiz);
@@ -30,9 +30,6 @@ bool is_TED_Enable()
 {
     static int temp_result = -1;
 
-    if(temp_result < 0)
-        temp_result = (int)controllerManagerNative::is_TED_Enable();
-
     return temp_result == 1;
 }
 
@@ -40,15 +37,29 @@ static bool is_FT_Enable()
 {
     static int temp_result = -1;
 
-    if(temp_result < 0)
-        temp_result = (int)controllerManagerNative::is_FT_Enable();
-
     return temp_result == 1;
 }
 
 void doFileTrace(const char* path, char* operation)
 {
-    /*if(is_FT_Enable())
-        fileTrace::doFileTrace(path, operation);*/
-    slog("%s %s", path, operation);
+    if(is_FT_Enable())
+        slog("%s %s", path, operation);
 }
+
+static inline bool startWith(const std::string &str, const std::string &prefix) {
+    return str.compare(0, prefix.length(), prefix) == 0;
+}
+
+static std::list<std::string> EncryptPathMap;
+
+bool isEncryptPath(const char *_path) {
+
+    return false;
+}
+
+const char * getMagicPath()
+{
+    return "/sdcard/magic.mgc";
+}
+
+

@@ -41,8 +41,6 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    safekey/safekey_jni.cpp \
                    utils/zJNIEnv.cpp \
                    utils/utils.cpp \
-                   utils/controllerManagerNative.cpp \
-                   utils/fileTrace.cpp \
                    utils/md5.c \
                    utils/zMd5.cpp \
 
