@@ -91,7 +91,7 @@ public class ContextFixer {
             try {
                 Reflect.on(alarmManager).set("mService", alarmBinder.getProxyInterface());
             } catch (ReflectException e) {
-                e.printStackTrace();
+                //ignore
             }
         }
         try {
@@ -105,7 +105,7 @@ public class ContextFixer {
             try {
                 Reflect.on(wifiManager).set("mService", wifiBinder.getProxyInterface());
             } catch (ReflectException e) {
-                e.printStackTrace();
+                //ignore
             }
         }
         String hostPkg = VirtualCore.get().getHostPkg();
@@ -116,21 +116,23 @@ public class ContextFixer {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             ContentResolverJBMR2.mPackageName.set(context.getContentResolver(), hostPkg);
         }
-        //第一次的gps状态伪装
-        final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        VLocationManager.get().setLocationManager(locationManager);
-
-        if (context.getApplicationInfo().targetSdkVersion < 10) {
-            try {
-                Class<?> cAsyncTask = context.getClassLoader().loadClass(AsyncTask.class.getName());
-                Reflect ref = Reflect.on(cAsyncTask);
-                //AsyncTask.THREAD_POOL_EXECUTOR
-                Executor THREAD_POOL_EXECUTOR = ref.get("THREAD_POOL_EXECUTOR");
-                ref.call("setDefaultExecutor", THREAD_POOL_EXECUTOR);
-            }catch (Throwable e){
-                Log.w(TAG, "setDefaultExecutor",e);
+        if(!fixed) {
+            final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            VLocationManager.get().setLocationManager(locationManager);
+            if (context.getApplicationInfo().targetSdkVersion < 10) {
+                try {
+                    Class<?> cAsyncTask = context.getClassLoader().loadClass(AsyncTask.class.getName());
+                    Reflect ref = Reflect.on(cAsyncTask);
+                    //AsyncTask.THREAD_POOL_EXECUTOR
+                    Executor THREAD_POOL_EXECUTOR = ref.get("THREAD_POOL_EXECUTOR");
+                    ref.call("setDefaultExecutor", THREAD_POOL_EXECUTOR);
+                } catch (Throwable e) {
+                    Log.w(TAG, "setDefaultExecutor", e);
+                }
             }
         }
+        fixed = true;
     }
 
+    private static boolean fixed = false;
 }

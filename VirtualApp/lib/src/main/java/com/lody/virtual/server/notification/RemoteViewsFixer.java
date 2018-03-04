@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 /* package */ class RemoteViewsFixer {
     private static final String TAG = NotificationCompat.TAG;
+    private static final boolean DEBUG = false;
     private final WidthCompat mWidthCompat;
     private int notification_min_height, notification_max_height, notification_mid_height;
     private int notification_panel_width;
@@ -42,11 +43,15 @@ import java.util.HashMap;
         try {
             mCache = createView(context, remoteViews, isBig, systemId);
         } catch (Throwable throwable) {
-            VLog.w(TAG, "toView 1", throwable);
+            if(DEBUG){
+                VLog.w(TAG, "toView 1", throwable);
+            }
             try {
                 mCache = LayoutInflater.from(context).inflate(remoteViews.getLayoutId(), null);
             } catch (Throwable e) {
-                VLog.w(TAG, "toView 2", e);
+                if(DEBUG){
+                    VLog.w(TAG, "toView 2", e);
+                }
             }
         }
         return mCache;
@@ -85,7 +90,7 @@ import java.util.HashMap;
                     }
                 }
             }
-        } else {
+        } else if(DEBUG){
             VLog.e(TAG, "create views");
         }
         return view;
@@ -96,14 +101,20 @@ import java.util.HashMap;
             return null;
         Context base = mNotificationCompat.getHostContext();
         init(base);
-        VLog.v(TAG, "createView:big=" + isBig + ",system=" + systemId);
+        if(DEBUG){
+            VLog.v(TAG, "createView:big=" + isBig + ",system=" + systemId);
+        }
 
         int height = isBig ? notification_max_height : notification_min_height;
         int width = mWidthCompat.getNotificationWidth(base, notification_panel_width, height,
                 notification_side_padding);
-        VLog.v(TAG, "createView:getNotificationWidth=" + width);
+        if(DEBUG){
+            VLog.v(TAG, "createView:getNotificationWidth=" + width);
+        }
         ViewGroup frameLayout = new FrameLayout(context);
-        VLog.v(TAG, "createView:apply");
+        if(DEBUG){
+            VLog.v(TAG, "createView:apply");
+        }
 
         View view1 = apply(context, remoteViews);
 
@@ -126,14 +137,18 @@ import java.util.HashMap;
                 mode = View.MeasureSpec.EXACTLY;
             }
         }
-        VLog.v(TAG, "createView:layout");
+        if(DEBUG){
+            VLog.v(TAG, "createView:layout");
+        }
         View mCache = frameLayout;
         mCache.layout(0, 0, width, height);
         mCache.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, mode));
         mCache.layout(0, 0, width, mCache.getMeasuredHeight());
-        VLog.v(TAG, "notification:systemId=" + systemId + ",max=%d/%d, szie=%d/%d", width, height,
-                mCache.getMeasuredWidth(), mCache.getMeasuredHeight());
+        if(DEBUG){
+            VLog.v(TAG, "notification:systemId=" + systemId + ",max=%d/%d, szie=%d/%d", width, height,
+                    mCache.getMeasuredWidth(), mCache.getMeasuredHeight());
+        }
         return mCache;
     }
 
@@ -175,37 +190,51 @@ import java.util.HashMap;
         } else {
             layoutId = R.layout.custom_notification;
         }
-        VLog.v(TAG, "createviews id = " + layoutId);
+        if(DEBUG){
+            VLog.v(TAG, "createviews id = " + layoutId);
+        }
         //make a remoteViews
         RemoteViews remoteViews = new RemoteViews(mNotificationCompat.getHostContext().getPackageName(), layoutId);
-        VLog.v(TAG, "remoteViews to view");
+        if(DEBUG){
+            VLog.v(TAG, "remoteViews to view");
+        }
         View cache = toView(pluginContext, contentView, isBig, systemId);
         // remoteViews to bitmap
-        VLog.v(TAG, "start createBitmap");
+        if(DEBUG){
+            VLog.v(TAG, "start createBitmap");
+        }
         final Bitmap bmp = createBitmap(cache);
-        if (bmp == null) {
-            VLog.e(TAG, "bmp is null,contentView=" + contentView);
-            // return null; //ignore notification
-        } else {
-            VLog.v(TAG, "bmp w=" + bmp.getWidth() + ",h=" + bmp.getHeight());
+        if(DEBUG){
+            if (bmp == null) {
+                VLog.e(TAG, "bmp is null,contentView=" + contentView);
+                // return null; //ignore notification
+            } else {
+                VLog.v(TAG, "bmp w=" + bmp.getWidth() + ",h=" + bmp.getHeight());
+            }
         }
         Bitmap old;
         synchronized (mImages) {
             old = mImages.get(key);
         }
         if (old != null && !old.isRecycled()) {
-            VLog.v(TAG, "recycle " + key);
+            if(DEBUG){
+                VLog.v(TAG, "recycle " + key);
+            }
             old.recycle();
         }
         remoteViews.setImageViewBitmap(R.id.im_main, bmp);
-        VLog.v(TAG, "createview " + key);
+        if(DEBUG){
+            VLog.v(TAG, "createview " + key);
+        }
         synchronized (mImages) {
             mImages.put(key, bmp);
         }
         //notification's click
         if (click) {
             if (layoutId == R.layout.custom_notification) {
-                VLog.v(TAG, "start setPendIntent");
+                if(DEBUG){
+                    VLog.v(TAG, "start setPendIntent");
+                }
                 try {
                     pendIntentCompat.setPendIntent(remoteViews,
                             toView(mNotificationCompat.getHostContext(), remoteViews, isBig, systemId),

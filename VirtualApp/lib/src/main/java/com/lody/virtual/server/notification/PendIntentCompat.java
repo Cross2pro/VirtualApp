@@ -53,7 +53,6 @@ class PendIntentCompat {
             Iterator<Map.Entry<Integer, PendingIntent>> set = clickIntents.entrySet().iterator();
             List<RectInfo> list = new ArrayList<>();
             int index = 0;
-            VLog.v(TAG, "start find intent");
             while (set.hasNext()) {
                 Map.Entry<Integer, PendingIntent> e = set.next();
                 View view = oldRemoteView.findViewById(e.getKey());
@@ -63,7 +62,6 @@ class PendIntentCompat {
                     index++;
                 }
             }
-            VLog.v(TAG, "find:" + list);
             if (remoteview instanceof ViewGroup) {
                 setIntentByViewGroup(remoteViews, (ViewGroup) remoteview, list);
             }

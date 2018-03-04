@@ -44,7 +44,7 @@ public class ChooserActivity extends ResolverActivity {
         mResultTo =  mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
-            VLog.w("ChooseActivity", "Target is not an intent: " + targetParcelable);
+            VLog.w("ChooseActivity", "Target is not an intent: %s", targetParcelable);
             finish();
             return;
         }
@@ -60,7 +60,7 @@ public class ChooserActivity extends ResolverActivity {
             for (int i = 0; i < pa.length; i++) {
                 if (!(pa[i] instanceof Intent)) {
                     VLog.w("ChooseActivity", "Initial intent #" + i
-                            + " not an Intent: " + pa[i]);
+                            + " not an Intent: %s", pa[i]);
                     finish();
                     return;
                 }

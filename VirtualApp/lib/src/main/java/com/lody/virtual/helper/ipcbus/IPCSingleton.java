@@ -27,11 +27,11 @@ public class IPCSingleton<T extends IPCInterface> {
         if (VirtualCore.get().isMainProcess()) {
             if (!instance.pingBinder()) {
                 instance = IPCBus.get(ipcClass);
-                VLog.w("ipcbus", "main reload ipc:" + ipcClass);
+                VLog.w("ipcbus", "main reload ipc:%s", ipcClass);
             }
         } else if (!instance.isBinderAlive()) {
             instance = IPCBus.get(ipcClass);
-            VLog.w("ipcbus", "app and x reload ipc:" + ipcClass);
+            VLog.w("ipcbus", "app and x reload ipc:%s", ipcClass);
         }
         return instance;
     }

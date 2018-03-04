@@ -68,7 +68,6 @@ import java.util.Set;
 
 import mirror.android.app.IServiceConnectionO;
 
-import static android.os.Process.killProcess;
 import static com.lody.virtual.os.VBinder.getCallingPid;
 import static com.lody.virtual.os.VUserHandle.getUserId;
 
@@ -1108,5 +1107,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
         intent.putExtra("packageName", info.packageName);
         intent.putExtra("badgerCount", info.badgerCount);
         VirtualCore.get().getContext().sendBroadcast(intent);
+    }
+
+    private void killProcess(int pid){
+        Process.killProcess(pid);
     }
 }
