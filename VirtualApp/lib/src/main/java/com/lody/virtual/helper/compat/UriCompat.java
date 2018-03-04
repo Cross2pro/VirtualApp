@@ -14,7 +14,13 @@ import java.util.Set;
 public class UriCompat {
     private static final String TAG = "UriCompat";
     public static String AUTH = "virtual.fileprovider";
-    private final static String[] ACTIONS = {"android.media.action.IMAGE_CAPTURE", "com.android.camera.action.CROP"};
+    private final static String[] ACTIONS = {
+            Intent.ACTION_SEND,
+            Intent.ACTION_SEND_MULTIPLE,
+            Intent.ACTION_SENDTO,
+            "android.media.action.IMAGE_CAPTURE",
+            "com.android.camera.action.CROP",
+    };
 
     public static boolean needFake(Intent intent) {
         for (String act : ACTIONS) {

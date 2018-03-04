@@ -1,9 +1,12 @@
 package com.lody.virtual.client.hook.secondary;
 
+import android.content.Context;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.RemoteException;
+
+import com.lody.virtual.client.core.VirtualCore;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.InvocationHandler;
@@ -19,10 +22,33 @@ abstract class StubBinder implements IBinder {
 	private ClassLoader mClassLoader;
 	private IBinder mBase;
 	private IInterface mInterface;
+	private Context context;
 
-	StubBinder(ClassLoader classLoader, IBinder base) {
+	StubBinder(Context appContext, ClassLoader classLoader, IBinder base) {
+		this.context = appContext;
 		this.mClassLoader = classLoader;
 		this.mBase = base;
+	}
+
+	public String getAppPkg(){
+		return context.getPackageName();
+	}
+
+	public String getHostPkg(){
+		return VirtualCore.get().getHostPkg();
+	}
+
+	protected void fakePackage(Object[] args){
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] instanceof String) {
+					String str = (String) args[i];
+					if (getHostPkg().equals(str)) {
+//						args[i] = getAppPkg();
+					}
+				}
+			}
+		}
 	}
 
 	@Override

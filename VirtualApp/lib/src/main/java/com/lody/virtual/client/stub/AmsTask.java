@@ -66,8 +66,7 @@ public abstract class AmsTask extends FutureTask<Bundle> implements AccountManag
         // case to help debug where this is occurring. When this bug is fixed this
         // condition statement should be removed.
         if (bundle == null) {
-            VLog.e("AccountManager", "the bundle must not be null", new Exception());
-
+            VLog.e("AccountManager", "the bundle must not be null\n%s", new Exception());
         }
         super.set(bundle);
     }

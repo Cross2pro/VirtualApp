@@ -526,12 +526,14 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 ResolveInfo r0 = currentResolveList.get(0);
                 for (int i = 1; i < N; i++) {
                     ResolveInfo ri = currentResolveList.get(i);
-                    if (DEBUG) VLog.v(
-                            "ResolveListActivity",
-                            r0.activityInfo.name + "=" +
-                                    r0.priority + "/" + r0.isDefault + " vs " +
-                                    ri.activityInfo.name + "=" +
-                                    ri.priority + "/" + ri.isDefault);
+                    if (DEBUG) {
+                        VLog.v(
+                                "ResolveListActivity",
+                                r0.activityInfo.name + "=" +
+                                        r0.priority + "/" + r0.isDefault + " vs " +
+                                        ri.activityInfo.name + "=" +
+                                        ri.priority + "/" + ri.isDefault);
+                    }
                     if (r0.priority != ri.priority ||
                             r0.isDefault != ri.isDefault) {
                         while (i < N) {

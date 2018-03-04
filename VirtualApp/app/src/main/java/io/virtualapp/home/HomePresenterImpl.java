@@ -2,14 +2,17 @@ package io.virtualapp.home;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.Environment;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
+import java.io.File;
 import java.io.IOException;
 
 import io.virtualapp.VCommends;
@@ -121,6 +124,10 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                     throw new IllegalStateException();
                 }
             }
+            //virtual sdcard
+            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
+                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
+            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
         }).done(res -> {

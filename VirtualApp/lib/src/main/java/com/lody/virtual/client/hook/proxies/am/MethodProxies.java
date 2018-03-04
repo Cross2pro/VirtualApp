@@ -401,7 +401,7 @@ class MethodProxies {
 
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
-                VLog.e("VActivityManager", "Unable to resolve activityInfo : " + intent);
+                VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
                 if (intent.getPackage() != null && isAppPkg(intent.getPackage())) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
@@ -664,6 +664,15 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+//            for (int i = 0; i < args.length; i++) {
+//                Object obj = args[i];
+//                if (obj instanceof Uri) {
+//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+//                    if (uri != null) {
+//                        args[i] = uri;
+//                    }
+//                }
+//            }
             return method.invoke(who, args);
         }
 
@@ -682,7 +691,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.DISABLE_FOREGROUND_SERVICE){
+            if (VASettings.DISABLE_FOREGROUND_SERVICE) {
                 return 0;
             }
             ComponentName component = (ComponentName) args[0];
@@ -806,7 +815,7 @@ class MethodProxies {
          */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.GOOGLE_SUPPOER) {
+            if (VASettings.GOOGLE_SUPPOER) {
                 int intentIndex;
                 int resultToIndex;
                 int resultWhoIndex;
@@ -1652,7 +1661,33 @@ class MethodProxies {
         }
     }
 
+    static class GrantUriPermission extends MethodProxy {
 
+        @Override
+        public String getMethodName() {
+            return "grantUriPermission";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            MethodParameterUtils.replaceFirstAppPkg(args);
+            for (int i = 0; i < args.length; i++) {
+                Object obj = args[i];
+                if (obj instanceof Uri) {
+                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+                    if (uri != null) {
+                        args[i] = uri;
+                    }
+                }
+            }
+            return method.invoke(who, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
     static class CheckGrantUriPermission extends MethodProxy {
 
         @Override
@@ -1663,6 +1698,15 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+//            for (int i = 0; i < args.length; i++) {
+//                Object obj = args[i];
+//                if (obj instanceof Uri) {
+//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+//                    if (uri != null) {
+//                        args[i] = uri;
+//                    }
+//                }
+//            }
             return method.invoke(who, args);
         }
 

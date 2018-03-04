@@ -134,7 +134,7 @@ public class NativeEngine {
         }
     }
 
-    static void launchEngine() {
+    public static void launchEngine() {
         if (sFlag) {
             return;
         }
