@@ -135,9 +135,27 @@ bool isEncryptPath(const char *_path) {
     return false;
 }
 
+const char * magicPath[] = {
+        "/data/app/io.virtualapp-1/lib/magic.mgc",
+        "/data/app/io.virtualapp-2/lib/magic.mgc",
+};
+
 const char * getMagicPath()
 {
-    return "/sdcard/magic.mgc";
+    for(int i = 0; i < sizeof(magicPath) / sizeof(magicPath[0]); i++)
+    {
+        int fd = originalInterface::original_openat(AT_FDCWD, magicPath[i], O_RDONLY, 0);
+        if( fd > 0)
+        {
+            originalInterface::original_close(fd);
+
+            return magicPath[i];
+        }
+    }
+
+    slog("magic file not found !");
+
+    return "unknow";
 }
 
 
