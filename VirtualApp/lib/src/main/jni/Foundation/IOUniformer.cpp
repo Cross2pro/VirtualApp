@@ -1474,7 +1474,7 @@ void hook_dlopen(int api_level) {
 
 void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_api_level) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
-    LOGE("zhangsong ffr init %s", ret ? "success" : "fail");
+    LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
 
     char api_level_chars[5];
     setenv("V_SO_PATH", so_path, 1);

@@ -136,8 +136,7 @@ bool isEncryptPath(const char *_path) {
 }
 
 const char * magicPath[] = {
-        "/data/app/io.virtualapp-1/lib/magic.mgc",
-        "/data/app/io.virtualapp-2/lib/magic.mgc",
+        "/sdcard/magic.mgc",
 };
 
 const char * getMagicPath()
