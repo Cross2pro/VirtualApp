@@ -154,9 +154,6 @@ import mirror.com.android.internal.R_Hide;
                                 if (type == ReflectionActionCompat.INT && (int) value == 0) {
                                     hasIcon = false;
                                 }
-                                if (hasIcon) {
-                                    VLog.v(TAG, "find icon " + methodName + " type=" + type + ", value=" + value);
-                                }
                             }
                         }
                         if (methodName.equals("setImageResource")) {

@@ -3,11 +3,18 @@ package io.virtualapp.delegate;
 import android.app.Activity;
 import android.app.Application;
 import android.app.NativeActivity;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.media.session.MediaController;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
 import com.lody.virtual.helper.utils.Reflect;
 
@@ -18,7 +25,19 @@ public class MyComponentDelegate implements ComponentDelegate {
     Activity mProcessTopActivity;
     @Override
     public void beforeApplicationCreate(Application application) {
-
+//        Context mBase = application.getBaseContext();
+//        ApplicationInfo applicationInfo = mBase.getApplicationInfo();
+//        //
+//        String realDataDir = VirtualCore.get().getContext().getApplicationInfo().dataDir
+//                .replace(VirtualCore.get().getHostPkg(), applicationInfo.packageName);
+//        applicationInfo.dataDir = realDataDir;
+//        ContextWrapper wrapper = new ContextWrapper(mBase) {
+//            @Override
+//            public ApplicationInfo getApplicationInfo() {
+//                return applicationInfo;
+//            }
+//        };
+//        Reflect.on(application).set("mBase", wrapper);
     }
 
     @Override
@@ -32,7 +51,25 @@ public class MyComponentDelegate implements ComponentDelegate {
 
             @Override
             public void onActivityStarted(Activity activity) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    MediaController mediaController = activity.getWindow().getMediaController();
+                    if (mediaController != null) {
+                        Log.e("kk", "fix mediaController");
+                        final String pkg = VirtualCore.get().getHostPkg();
+                        Context base = Reflect.on(mediaController).get("mContext");
+                        ContextWrapper wrapper = new ContextWrapper(base) {
+                            @Override
+                            public String getPackageName() {
+                                return pkg;
+                            }
 
+                            public String getOpPackageName() {
+                                return pkg;
+                            }
+                        };
+                        Reflect.on(mediaController).set("mContext", wrapper);
+                    }
+                }
             }
 
             @Override

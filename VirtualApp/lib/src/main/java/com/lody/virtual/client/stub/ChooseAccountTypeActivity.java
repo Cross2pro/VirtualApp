@@ -34,7 +34,7 @@ import java.util.Set;
  */
 public class ChooseAccountTypeActivity extends Activity {
     private static final String TAG = "AccountChooser";
-
+    private static final boolean DEBUG = false;
     private HashMap<String, AuthInfo> mTypeToAuthenticatorInfo = new HashMap<String, AuthInfo>();
     private ArrayList<AuthInfo> mAuthenticatorInfosToDisplay;
 
@@ -99,8 +99,10 @@ public class ChooseAccountTypeActivity extends Activity {
         Bundle bundle = new Bundle();
         bundle.putString(AccountManager.KEY_ACCOUNT_TYPE, type);
         setResult(Activity.RESULT_OK, new Intent().putExtras(bundle));
-        VLog.v(TAG, "ChooseAccountTypeActivity.setResultAndFinish: "
-                + "selected account type " + type);
+        if(DEBUG){
+            VLog.v(TAG, "ChooseAccountTypeActivity.setResultAndFinish: "
+                    + "selected account type " + type);
+        }
         finish();
     }
 

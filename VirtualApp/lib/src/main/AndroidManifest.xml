@@ -1307,6 +1307,7 @@
             android:process=":p49" />
         <provider
             android:name=".client.stub.StubFileProvider"
+            android:exported="false"
             android:authorities="${applicationId}.virtual.fileprovider"
             android:grantUriPermissions="true">
             <meta-data
