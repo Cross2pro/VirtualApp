@@ -300,10 +300,14 @@ public class StubFileProvider extends ContentProvider {
                     //target = Environment.getExternalStorageDirectory();
                     target = VEnvironment.getExternalStorageDirectory(userId);
                 } else if (TAG_EXTERNAL_FILES.equals(tag)) {
+                    int userId = VUserHandle.myUserId();
+                    target = VEnvironment.getExternalStorageDirectory(userId);
+                    /*
                     File[] externalFilesDirs = getExternalFilesDirs(context, null);
                     if (externalFilesDirs.length > 0) {
                         target = externalFilesDirs[0];
                     }
+                    */
                 } else if (TAG_EXTERNAL_CACHE.equals(tag)) {
                     File[] externalCacheDirs = getExternalCacheDirs(context);
                     if (externalCacheDirs.length > 0) {

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.os.Environment;
 
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -33,6 +34,16 @@ public class UriCompat {
 
     public static Uri fakeFileUri(Uri uri) {
         if (uri == null) return null;
+        if ("file".equals(uri.getScheme())) {
+            String path = uri.getEncodedPath();
+            String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            if (path.startsWith(external_path))
+            {
+                String split_path = path.substring(external_path.length());
+                return fakeFileUri(uri.buildUpon().scheme("content").path("/external" + split_path).build());
+            }
+        }
+
         if ("content".equals(uri.getScheme())) {
             //TODO: fake file path? sdcard/Android/data/
             //fake auth
