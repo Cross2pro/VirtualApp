@@ -5,6 +5,8 @@ import android.os.RemoteException;
 public interface IVSafekeyManager extends IPCInterface {
     boolean checkCardState() throws RemoteException;
 
+    String getCardId() throws RemoteException;
+
     int getPinTryCount() throws RemoteException;
 
     int encryptKey(byte[] key, int keylen, byte[] seckey, int seckeylen) throws RemoteException;

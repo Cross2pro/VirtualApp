@@ -32,6 +32,14 @@ public class VSafekeyManager {
         }
     }
 
+    public String getCardId() {
+        try {
+            return getService().getCardId();
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
     public int getPinTryCount() {
         try {
             return getService().getPinTryCount();
