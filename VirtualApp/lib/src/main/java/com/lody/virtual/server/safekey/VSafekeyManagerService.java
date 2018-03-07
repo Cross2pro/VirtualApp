@@ -58,7 +58,7 @@ public class VSafekeyManagerService extends IVSafekeyManager.Stub {
                 VLog.e(TAG, "List<JniApiParam> is null ");
                 return false;
             }
-            cardId = getCardId();
+            cardId = getCardIdStatic();
             if(cardId == null) {
                 VLog.e(TAG, "cardId is null ");
                 return false;
@@ -79,7 +79,40 @@ public class VSafekeyManagerService extends IVSafekeyManager.Stub {
 
 
 
-    private static String getCardId(){
+    private static String getCardIdStatic(){
+        if(all != null){
+            if (all.first != 0){
+                VLog.e(TAG,"Get card id failed ");
+                return null;
+            }
+            String cardIdStr = null;
+            for (JniApiParam jap : all.second) {
+
+                VLog.d(TAG, "CardId : " + jap.cardId + "CardType : " + jap.chipType);
+
+                if (jap.chipType == JniApiParam.TYPE_ONBOARD) {
+                    cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_TF) {
+                    cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_BLUETOOTH) {
+                    cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_COVERED) {
+                    cardIdStr = jap.cardId;
+                }
+                if(cardIdStr != null){
+                    cardFlag = true;
+                    return cardIdStr;
+                }
+
+            }
+        } else{
+            VLog.e(TAG,"List<JniApiParam> is null, Get card id failed ! ");
+        }
+        return null;
+    }
+
+    @Override
+    public String getCardId() throws RemoteException {
         if(all != null){
             if (all.first != 0){
                 VLog.e(TAG,"Get card id failed ");
@@ -123,6 +156,8 @@ public class VSafekeyManagerService extends IVSafekeyManager.Stub {
         }
         return null;
     }
+
+
 
     @Override
     public boolean checkCardState(){
