@@ -87,6 +87,13 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
+    public static void goHome(Context context,int value) {
+        Intent intent = new Intent(context, HomeActivity.class);
+        intent.putExtra("VA_install",value);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -103,6 +110,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
         filter.addDataScheme("package");
         registerReceiver(mReceiver, filter);
+
     }
 
     @Override
@@ -111,6 +119,12 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         if(mReload){
             mReload = false;
             mPresenter.dataChanged();
+        }
+        int value = getIntent().getIntExtra("VA_install",0);
+        if(value==1){
+            moveTaskToBack(true);
+            getIntent().putExtra("VA_install",0);
+            return;
         }
     }
 
