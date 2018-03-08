@@ -11,6 +11,8 @@ import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.IOException;
 
+import io.virtualapp.home.HomeActivity;
+
 /**
  * @author Lody
  */
@@ -34,6 +36,7 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
             } else {
                 VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
                 Toast.makeText(context, "Install: " + res.packageName + " success!", Toast.LENGTH_SHORT).show();
+                HomeActivity.goHome(context,1);
             }
         } else {
             Toast.makeText(context, "Install failed: " + res.error, Toast.LENGTH_SHORT).show();
