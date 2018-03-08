@@ -47,6 +47,7 @@ public class StubFileProvider extends ContentProvider {
     private static final String TAG_EXTERNAL = "external-path";
     private static final String TAG_EXTERNAL_FILES = "external-files-path";
     private static final String TAG_EXTERNAL_CACHE = "external-cache-path";
+    private static final String TAG_EOA_EXTERNAL_CACHE = "eoa-external-cache-path";
 
     private static final String ATTR_NAME = "name";
     private static final String ATTR_PATH = "path";
@@ -312,6 +313,16 @@ public class StubFileProvider extends ContentProvider {
                     File[] externalCacheDirs = getExternalCacheDirs(context);
                     if (externalCacheDirs.length > 0) {
                         target = externalCacheDirs[0];
+                    }
+                } else if (TAG_EOA_EXTERNAL_CACHE.equals(tag)) {
+                    String pkg = in.getAttributeValue(null, "package");
+                    String subpath = in.getAttributeValue(null, "subpath");
+                    if (pkg != null) {
+                        int userId = VUserHandle.myUserId();
+                        File pkg_root = VEnvironment.getExternalStorageAppDataDir(userId, pkg);
+                        if (subpath != null) {
+                            target = new File(pkg_root, subpath);
+                        }
                     }
                 }
 
