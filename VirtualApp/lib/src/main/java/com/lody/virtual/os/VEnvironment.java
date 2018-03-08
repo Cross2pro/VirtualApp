@@ -25,6 +25,30 @@ public class VEnvironment {
     private static final File EXTERNAL_STORAGE_DIRECTORY;
     private static final File EMULATED_DIRECTORY;
 
+    private static final String DIRECTORY_MUSIC = "Music";
+    private static final String DIRECTORY_PODCASTS = "Podcasts";
+    private static final String DIRECTORY_RINGTONES = "Ringtones";
+    private static final String DIRECTORY_ALARMS = "Alarms";
+    private static final String DIRECTORY_NOTIFICATIONS = "Notifications";
+    private static final String DIRECTORY_PICTURES = "Pictures";
+    private static final String DIRECTORY_MOVIES = "Movies";
+    private static final String DIRECTORY_DOWNLOADS = "Download";
+    private static final String DIRECTORY_DCIM = "DCIM";
+    private static final String DIRECTORY_DOCUMENTS = "Documents";
+
+    public static final String[] STANDARD_DIRECTORIES = {
+            DIRECTORY_MUSIC,
+            DIRECTORY_PODCASTS,
+            DIRECTORY_RINGTONES,
+            DIRECTORY_ALARMS,
+            DIRECTORY_NOTIFICATIONS,
+            DIRECTORY_PICTURES,
+            DIRECTORY_MOVIES,
+            DIRECTORY_DOWNLOADS,
+            DIRECTORY_DCIM,
+            DIRECTORY_DOCUMENTS
+    };
+
     static {
         File host = new File(getContext().getApplicationInfo().dataDir);
         // Point to: /
@@ -198,7 +222,12 @@ public class VEnvironment {
     }
 
     public static File getExternalStorageDirectory(int userId) {
-        return ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+        File storage_dir = ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+        for (String sdir : STANDARD_DIRECTORIES) {
+            ensureCreated(new File(storage_dir, sdir));
+        }
+        //return ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+        return storage_dir;
     }
 
     public static File buildPath(File base, String... segments) {

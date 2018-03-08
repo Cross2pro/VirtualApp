@@ -3,10 +3,15 @@ package com.lody.virtual.helper.compat;
 import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.database.Cursor;
+import java.io.File;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -19,6 +24,7 @@ public class UriCompat {
             Intent.ACTION_SEND,
             Intent.ACTION_SEND_MULTIPLE,
             Intent.ACTION_SENDTO,
+            "android.intent.action.VIEW",
             "android.media.action.IMAGE_CAPTURE",
             "com.android.camera.action.CROP",
     };
@@ -48,6 +54,37 @@ public class UriCompat {
             //TODO: fake file path? sdcard/Android/data/
             //fake auth
             String auth = uri.getAuthority();
+            if ("media".equals(uri.getAuthority())) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    Cursor cursor = VirtualCore.get().getContext().getContentResolver().query(uri,null,null,null,null,null);
+                    while (cursor.moveToNext()) {
+                        int idx = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+                        if (idx >= 0) {
+                            byte [] path_in_bytes = cursor.getBlob(idx);
+                            if ( path_in_bytes != null ) {
+                                String path = null;
+                                int byte_end = path_in_bytes.length - 1;
+                                while (byte_end > 0) {
+                                    if (path_in_bytes[byte_end] == 0) {
+                                        byte_end = byte_end -1;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                if (byte_end > 0) {
+                                    path = new String(path_in_bytes, 0, byte_end + 1);
+                                }
+
+                                String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+                                if (path_in_bytes != null && path.startsWith(external_path)) {
+                                    return fakeFileUri(Uri.fromFile(new File(path)));
+                                }
+                            }
+                        }
+                    }
+                    cursor.close();
+                }
+            }
             return uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
         } else {
             return null;
@@ -103,6 +140,9 @@ public class UriCompat {
             if (changed2) {
                 intent.putExtras(extras);
             }
+        }
+        if (intent.getAction() == Intent.ACTION_VIEW) {
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
         return intent;
     }
