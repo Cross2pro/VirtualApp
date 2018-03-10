@@ -37,6 +37,7 @@ import com.lody.virtual.R;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
@@ -70,6 +71,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     private int mLastSelected = ListView.INVALID_POSITION;
     private AlertDialog dialog;
     private boolean mRegistered;
+    private Context mContext;
 
     private Intent makeMyIntent() {
         Intent intent = new Intent(getIntent());
@@ -456,6 +458,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         public ResolveListAdapter(Context context, Intent intent,
                                   Intent[] initialIntents, List<ResolveInfo> rList, int launchedFromUid) {
             mIntent = new Intent(intent);
+            mContext = context;
             mInitialIntents = initialIntents;
             mBaseResolveList = rList;
             mLaunchedFromUid = launchedFromUid;
@@ -495,9 +498,14 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 currentResolveList = mBaseResolveList;
                 mOrigResolveList = null;
             } else {
-                currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
+                /*currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
                         mIntent, PackageManager.MATCH_DEFAULT_ONLY
-                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));
+                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));*/
+
+                currentResolveList = mOrigResolveList = VPackageManager.get().queryIntentActivities(
+                        mIntent, mIntent.resolveType(mContext), PackageManager.MATCH_DEFAULT_ONLY
+                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0), 0);
+
                 // Filter out any activities that the launched uid does not
                 // have permission for.  We don't do this when we have an explicit
                 // list of resolved activities, because that only happens when
