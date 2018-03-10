@@ -8,6 +8,9 @@
 #include <map>
 #include <string>
 #include <pthread.h>
+#include <utils/RefBase.h>
+#include <utils/StrongPointer.h>
+#include <utils/SuperStrongPointer.h>
 
 #include "EncryptFile.h"
 #include "TemplateFile.h"
@@ -25,7 +28,7 @@ enum vfileState
 };
 
 class virtualFile;
-class virtualFileDescribe
+class virtualFileDescribe : public xdja::zs::LightRefBase<virtualFileDescribe>
 {
 public:
     virtualFile * _vf;
@@ -38,16 +41,15 @@ public:
     }
 };
 
-
 /*
  * 虚拟文件描述符集
  */
 class virtualFileDescribeSet
 {
-    virtualFileDescribe * items[1024];
-
+    mutable virtualFileDescribe * items[1024];
 
 public:
+    void reset(int idx);
     void set(int idx, virtualFileDescribe * vfd);
     virtualFileDescribe * get(int idx);
 

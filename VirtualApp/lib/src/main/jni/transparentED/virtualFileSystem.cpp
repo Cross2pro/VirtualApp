@@ -12,13 +12,21 @@ virtualFileDescribeSet& virtualFileDescribeSet::getVFDSet() {
     return g_VFDS;
 }
 
+void virtualFileDescribeSet::reset(int idx) {
+    if(idx < 0 || idx > 1023)
+    {
+        return ;
+    }
+
+    __sync_fetch_and_and(&items[idx], 0);
+}
 void virtualFileDescribeSet::set(int idx, virtualFileDescribe *vfd) {
     if(idx < 0 || idx > 1023)
     {
         return;
     }
 
-    items[idx] = vfd;
+    __sync_fetch_and_or(&items[idx], vfd);
 }
 
 virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
