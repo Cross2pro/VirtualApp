@@ -5,6 +5,7 @@ import android.widget.Toast;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.server.pm.VAppManagerService;
@@ -33,9 +34,11 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
             if (res.isUpdate) {
                 VAppManagerService.get().sendUpdateBroadcast(res.packageName, VUserHandle.ALL);
                 Toast.makeText(context, "Update: " + res.packageName + " success!", Toast.LENGTH_SHORT).show();
+                FileUtils.deleteDir(path);
             } else {
                 VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
                 Toast.makeText(context, "Install: " + res.packageName + " success!", Toast.LENGTH_SHORT).show();
+                FileUtils.deleteDir(path);
                 HomeActivity.goHome(context,1);
             }
         } else {
