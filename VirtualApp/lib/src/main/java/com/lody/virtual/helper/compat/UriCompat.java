@@ -101,7 +101,7 @@ public class UriCompat {
             Uri u = fakeFileUri(uri);
             if (u != null) {
                 Log.i(TAG, "fake data uri:" + uri + "->" + u);
-                intent.setData(u);
+                intent.setDataAndType(u, intent.getType());
             }
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
@@ -141,7 +141,7 @@ public class UriCompat {
                 intent.putExtras(extras);
             }
         }
-        if (intent.getAction() == Intent.ACTION_VIEW) {
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
         return intent;
