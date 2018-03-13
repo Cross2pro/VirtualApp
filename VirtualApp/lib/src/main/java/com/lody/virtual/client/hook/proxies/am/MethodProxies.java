@@ -31,6 +31,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
+import android.webkit.MimeTypeMap;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.NativeEngine;
@@ -346,6 +347,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+
             int intentIndex = ArrayUtils.indexOfObject(args, Intent.class, 1);
             if (intentIndex < 0) {
                 return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
@@ -353,43 +355,63 @@ class MethodProxies {
             int resultToIndex = ArrayUtils.indexOfObject(args, IBinder.class, 2);
             String resolvedType = (String) args[intentIndex + 1];
             Intent intent = (Intent) args[intentIndex];
+
+            Log.e("lxf","startActivity intent "+ intent.toString());
+            String action = intent.getAction();
+            if(Intent.ACTION_VIEW.equals(action)&&"*/*".equals(resolvedType)){
+                String suffix = MimeTypeMap.getFileExtensionFromUrl(intent.getDataString());
+                Log.e("lxf","startActivity suffix "+ suffix);
+                if(suffix!=null){
+                    String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix);
+                    if(type!=null)
+                        resolvedType = type;
+                    Log.e("lxf","startActivity resolvedType "+ resolvedType);
+                }
+            }
+
+            Log.e("lxf","startActivity action "+ action);
+            Log.e("lxf","startActivity uri "+ intent.getDataString());
+
             intent.setDataAndType(intent.getData(), resolvedType);
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             int userId = VUserHandle.myUserId();
 
             if (ComponentUtils.isStubComponent(intent)) {
+                Log.e("lxf","startActivity isStubComponent "+ true);
+                Log.e("lxf","startActivity isStubComponent "+ intent.getComponent().getPackageName());
+
                 return method.invoke(who, args);
             }
 
             //xdja swbg
-            if(getAppPkg() != null && getAppPkg().equals("com.xdja.swbg")
-                    &&Intent.ACTION_VIEW.equals(intent.getAction())
-                    &&Intent.FLAG_ACTIVITY_NEW_TASK==intent.getFlags()
-                    &&intent.getType()!=null&&intent.getType().equals("*/*")){
-                Log.d("StartActivity", "lxf "+"this is New Task.");
-
-                boolean hasWps = false;
-                List<PackageInfo> listInfos = VPackageManager.get().getInstalledPackages(0, VUserHandle.myUserId());
-                for (PackageInfo info : listInfos){
-                    if(info.packageName.equals("cn.wps.moffice_eng")){
-                        hasWps = true;
-                        break;
-                    }
-                }
-
-                Log.d("StartActivity", "lxf hasWps "+hasWps);
-                if(hasWps){
-                    intent.setClassName("cn.wps.moffice_eng",
-                            "cn.wps.moffice.documentmanager.PreStartActivity");
-                }else{
-                    CharSequence tips = "Not Have WPS!";
-                    android.widget.Toast toast = Toast.makeText.call(getHostContext(), R.string.noApplications,Toast.LENGTH_SHORT);
-
-                    Log.d("StartActivity", "lxf toast "+toast);
-                    toast.show();
-                    return 0;
-                }
-            }
+//            if(getAppPkg() != null && getAppPkg().equals("com.xdja.swbg")
+//                    &&Intent.ACTION_VIEW.equals(intent.getAction())
+//                    &&Intent.FLAG_ACTIVITY_NEW_TASK==intent.getFlags()
+//                    &&intent.getType()!=null&&intent.getType().equals("*/*")){
+//                Log.d("StartActivity", "lxf "+"this is New Task.");
+//
+//                boolean hasWps = false;
+//                List<PackageInfo> listInfos = VPackageManager.get().getInstalledPackages(0, VUserHandle.myUserId());
+//                for (PackageInfo info : listInfos){
+//                    if(info.packageName.equals("cn.wps.moffice_eng")){
+//                        hasWps = true;
+//                        break;
+//                    }
+//                }
+//
+//                Log.d("StartActivity", "lxf hasWps "+hasWps);
+//                if(hasWps){
+//                    intent.setClassName("cn.wps.moffice_eng",
+//                            "cn.wps.moffice.documentmanager.PreStartActivity");
+//                }else{
+//                    CharSequence tips = "Not Have WPS!";
+//                    android.widget.Toast toast = Toast.makeText.call(getHostContext(), R.string.noApplications,Toast.LENGTH_SHORT);
+//
+//                    Log.d("StartActivity", "lxf toast "+toast);
+//                    toast.show();
+//                    return 0;
+//                }
+//            }
             //xdja
 
             if (Intent.ACTION_INSTALL_PACKAGE.equals(intent.getAction())
