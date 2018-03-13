@@ -90,8 +90,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     public static void goHome(Context context,int value) {
         Intent intent = new Intent(context, HomeActivity.class);
         intent.putExtra("VA_install",value);
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         context.startActivity(intent);
     }
 
