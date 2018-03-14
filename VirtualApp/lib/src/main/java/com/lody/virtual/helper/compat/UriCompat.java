@@ -39,7 +39,7 @@ public class UriCompat {
     }
 
     public static Uri fakeFileUri(Uri uri) {
-        if (uri == null) return null;
+        if (uri == null || AUTH.equals(uri.getAuthority())) return null;
         if ("file".equals(uri.getScheme())) {
             String path = uri.getPath();
             String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
