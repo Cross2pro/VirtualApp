@@ -409,6 +409,7 @@ class MethodProxies {
                 args[intentIndex] = UriCompat.fakeFileUri(intent);
                 return method.invoke(who, args);
             }
+            UriCompat.fakeFileUri(intent);
             int res = VActivityManager.get().startActivity(intent, activityInfo, resultTo, options, resultWho, requestCode, VUserHandle.myUserId());
             if (res != 0 && resultTo != null && requestCode > 0) {
                 VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
@@ -534,6 +535,24 @@ class MethodProxies {
         @Override
         public String getMethodName() {
             return "finishActivity";
+        }
+
+        @Override
+        public boolean beforeCall(Object who, Method method, Object... args) {
+            for (Object o:args) {
+                if (o instanceof Intent) {
+                    Intent intent = (Intent)o;
+                    Uri u = intent.getData();
+                    if (u!=null)
+                    {
+                        Uri newurl = UriCompat.fakeFileUri(u);
+                        if (newurl != null) {
+                            intent.setDataAndType(newurl, intent.getType());
+                        }
+                    }
+                }
+            }
+            return super.beforeCall(who, method, args);
         }
 
         @Override
