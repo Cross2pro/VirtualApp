@@ -142,6 +142,16 @@ public class StubFileProvider extends ContentProvider {
             } else if (OpenableColumns.SIZE.equals(col)) {
                 cols[i] = OpenableColumns.SIZE;
                 values[i++] = file.length();
+            } else if ("_data".equals(col)) {
+                cols[i] = "_data";
+                String path = uri.getEncodedPath();
+                final int splitIndex = path.indexOf('/', 1);
+                final String tag = Uri.decode(path.substring(1, splitIndex));
+                path = Uri.decode(path.substring(splitIndex));
+                if (tag.equals("external") || tag.equals("external_files")) {
+                    path = Environment.getExternalStorageDirectory().getAbsolutePath() + path;
+                }
+                values[i++] = path;
             }
         }
 
