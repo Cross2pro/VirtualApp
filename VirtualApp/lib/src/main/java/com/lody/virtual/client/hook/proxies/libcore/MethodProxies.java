@@ -23,8 +23,39 @@ class MethodProxies {
         public String getMethodName() {
             return "lstat";
         }
+
+        @Override
+        public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+            if (result != null) {
+                Reflect pwd = Reflect.on(result);
+                int uid = pwd.get("st_uid");
+                if (uid == VirtualCore.get().myUid()) {
+                    pwd.set("st_uid", VClientImpl.get().getVUid());
+                }
+            }
+            return result;
+        }
     }
 
+    static class Fstat extends Stat {
+
+        @Override
+        public String getMethodName() {
+            return "fstat";
+        }
+
+        @Override
+        public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+            if (result != null) {
+                Reflect pwd = Reflect.on(result);
+                int uid = pwd.get("st_uid");
+                if (uid == VirtualCore.get().myUid()) {
+                    pwd.set("st_uid", VClientImpl.get().getVUid());
+                }
+            }
+            return result;
+        }
+    }
     static class Getpwnam extends MethodProxy {
             @Override
             public String getMethodName() {

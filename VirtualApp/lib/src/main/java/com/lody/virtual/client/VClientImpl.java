@@ -423,6 +423,7 @@ public final class VClientImpl extends IVClient.Stub {
     private void startIOUniformer() {
         ApplicationInfo info = mBoundApplication.appInfo;
         int userId = VUserHandle.myUserId();
+        int rUserId = VUserHandle.realUserId();
         String wifiMacAddressFile = deviceInfo.getWifiFile(userId).getPath();
         String dataDir = VEnvironment.getDataUserPackageDirectory(userId, info.packageName).getPath();//info.dataDir;
         NativeEngine.redirectDirectory("/sys/class/net/wlan0/address", wifiMacAddressFile);
@@ -430,15 +431,15 @@ public final class VClientImpl extends IVClient.Stub {
         NativeEngine.redirectDirectory("/sys/class/net/wifi/address", wifiMacAddressFile);
 
         NativeEngine.redirectDirectory("/data/data/" + info.packageName, dataDir);
-        NativeEngine.redirectDirectory("/data/user/0/" + info.packageName, dataDir);
+        NativeEngine.redirectDirectory("/data/user/"+rUserId+"/" + info.packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirectDirectory("/data/user_de/0/" + info.packageName, dataDir);
+            NativeEngine.redirectDirectory("/data/user_de/"+rUserId+"/" + info.packageName, dataDir);
         }
         String libPath = VEnvironment.getAppLibDirectory(info.packageName).getAbsolutePath();
         String userLibPath = new File(VEnvironment.getUserSystemDirectory(userId), info.packageName + "/lib").getAbsolutePath();
         NativeEngine.redirectDirectory(userLibPath, libPath);
         NativeEngine.redirectDirectory("/data/data/" + info.packageName + "/lib/", libPath);
-        NativeEngine.redirectDirectory("/data/user/0/" + info.packageName + "/lib/", libPath);
+        NativeEngine.redirectDirectory("/data/user/"+rUserId+"/" + info.packageName + "/lib/", libPath);
 
         VirtualStorageManager vsManager = VirtualStorageManager.get();
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);

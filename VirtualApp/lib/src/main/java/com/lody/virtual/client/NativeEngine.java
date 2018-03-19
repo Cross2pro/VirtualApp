@@ -31,9 +31,11 @@ public class NativeEngine {
 
     private static boolean sFlag = false;
 
+    private static final String LIB_NAME = "va++";
+
     static {
         try {
-            System.loadLibrary("va++");
+            System.loadLibrary(LIB_NAME);
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -124,9 +126,10 @@ public class NativeEngine {
 
     public static void enableIORedirect() {
         try {
-            String soPath = String.format("/data/data/%s/lib/libva++.so", VirtualCore.get().getHostPkg());
+            String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
+                    "lib/lib"+LIB_NAME+".so").getAbsolutePath();
             if (!new File(soPath).exists()) {
-                throw new RuntimeException("Unable to find the so.");
+                throw new RuntimeException("Unable to find the so "+soPath);
             }
             nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {

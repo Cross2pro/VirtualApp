@@ -39,4 +39,5 @@ public class Constants {
 	 */
 	public static String SHORTCUT_PROXY_ACTIVITY_NAME = ShortcutHandleActivity.class.getName();
 
+	public static String SHORTCUT_ACTION = "virtual.action.shortcut";
 }

@@ -52,6 +52,7 @@ import com.lody.virtual.client.hook.proxies.wifi.WifiManagerStub;
 import com.lody.virtual.client.hook.proxies.wifi_scanner.WifiScannerStub;
 import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
 
 import java.util.HashMap;
@@ -118,7 +119,9 @@ public final class InvocationStubManager {
 			return;
 		}
 		if (VirtualCore.get().isVAppProcess()) {
-			addInjector(new LibCoreStub());
+			if(VASettings.ENABLE_HOOK_LIBCORE) {
+				addInjector(new LibCoreStub());
+			}
 			addInjector(new ActivityManagerStub());
 			addInjector(new PackageManagerStub());
 			addInjector(HCallbackStub.getDefault());

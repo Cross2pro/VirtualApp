@@ -10,6 +10,8 @@ import com.lody.virtual.Build;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.os.VUserInfo;
+import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -59,9 +61,46 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public Promise<List<AppData>, Throwable, Void> getVirtualApps() {
+
         return VUiKit.defer().when(() -> {
-            List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
             List<AppData> models = new ArrayList<>();
+            //TODO multi app list by users
+//            List<VUserInfo> vUserInfos = VUserManager.get().getUsers();
+//            if (vUserInfos == null) {
+//                vUserInfos = new ArrayList<>();
+//            }
+//            if (vUserInfos.size() == 0) {
+//                vUserInfos.add(new VUserInfo(0));
+//            }
+//            for(VUserInfo vUserInfo:vUserInfos){
+////                VirtualCore.GET_HIDDEN_APP 全部app
+//                final int userId = vUserInfo.id;
+//                List<InstalledAppInfo> infos = VirtualCore.get().getInstalledAppsAsUser(userId, 0);
+//                for(InstalledAppInfo info : infos){
+//                    PackageAppData data = new PackageAppData(mContext, info);
+//                    if (userId == 0) {
+//                        if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
+//                            models.add(data);
+//                        }
+//                    } else {
+//                        models.add(new MultiplePackageAppData(data, userId));
+//                    }
+//                }
+//                if(!VirtualCore.get().isAppInstalledAsUser(userId, "com.tencent.mobileqq")){
+//                    if (userId != 0) {
+//                        //从来没安装过QQ
+//                        String path = "apk";
+//                        int flags = 0;
+//                        VirtualCore.get().installPackage(path, flags);
+//                  } else {
+//                        //安装过QQ
+//                        VirtualCore.get().installPackageAsUser(userId, "com.tencent.mobileqq");
+//                    }
+//                }
+//            }
+            //TODO load multi app list by pkg
+            List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
+
             for (InstalledAppInfo info : infos) {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;

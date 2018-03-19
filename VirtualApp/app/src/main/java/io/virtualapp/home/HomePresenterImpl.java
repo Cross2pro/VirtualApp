@@ -2,7 +2,9 @@ package io.virtualapp.home;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Environment;
+import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
@@ -91,9 +93,11 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         VUiKit.defer().when(() -> {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
             addResult.justEnableHidden = installedAppInfo != null;
+            //multi app's userId
+            int nextUserId = 0;
             if (addResult.justEnableHidden) {
                 int[] userIds = installedAppInfo.getInstalledUsers();
-                int nextUserId = userIds.length;
+                nextUserId = userIds.length;
                 /*
                   Input : userIds = {0, 1, 3}
                   Output: nextUserId = 2
@@ -123,8 +127,13 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 if (!res.isSuccess) {
                     throw new IllegalStateException();
                 }
+
             }
-            //virtual sdcard
+            //TODO install other app to current user
+//            if(!VirtualCore.get().isAppInstalledAsUser(nextUserId,"QQ")) {
+//                VirtualCore.get().installPackageAsUser(nextUserId, "QQ");
+//            }
+            //TODO virtual sdcard
             VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
                     new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
             VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
@@ -206,10 +215,14 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             }
         };
         if (data instanceof PackageAppData) {
-            VirtualCore.get().createShortcut(0, ((PackageAppData) data).packageName, listener);
+            if(!VirtualCore.get().createShortcut(0, ((PackageAppData) data).packageName, listener)){
+                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
+            }
         } else if (data instanceof MultiplePackageAppData) {
             MultiplePackageAppData appData = (MultiplePackageAppData) data;
-            VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener);
+            if(!VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener)){
+                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

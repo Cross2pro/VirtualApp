@@ -8,6 +8,10 @@ import java.util.Locale;
 
 public class VASettings {
     /**
+     * @see libcore.io.Libcore
+     */
+    public static boolean ENABLE_HOOK_LIBCORE = true;
+    /**
      * userId=0
      */
     public static boolean KEEP_ADMIN_PHONE_INFO = true;

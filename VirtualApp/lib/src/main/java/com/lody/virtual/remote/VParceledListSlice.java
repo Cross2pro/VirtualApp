@@ -78,7 +78,7 @@ public class VParceledListSlice<T extends Parcelable> implements Parcelable {
 			final T parcelable = p.readParcelable(loader);
 			if (listElementClass == null) {
 				listElementClass = parcelable.getClass();
-			} else {
+			} else if (parcelable != null) {
 				verifySameType(listElementClass, parcelable.getClass());
 			}
 
@@ -107,8 +107,11 @@ public class VParceledListSlice<T extends Parcelable> implements Parcelable {
 			while (i < N && reply.readInt() != 0) {
 				// final T parcelable = reply.readCreator(creator, loader);
 				final T parcelable = reply.readParcelable(loader);
-				verifySameType(listElementClass, parcelable.getClass());
+				if (parcelable == null) {
 
+				} else {
+					verifySameType(listElementClass, parcelable.getClass());
+				}
 				mList.add(parcelable);
 
 				if (DEBUG)
@@ -160,10 +163,13 @@ public class VParceledListSlice<T extends Parcelable> implements Parcelable {
 				dest.writeInt(1);
 
 				final T parcelable = mList.get(i);
-				verifySameType(listElementClass, parcelable.getClass());
-				// parcelable.writeToParcel(dest, callFlags);
-				dest.writeParcelable(parcelable, callFlags);
-
+				if (parcelable == null) {
+					dest.writeString(null);
+				} else {
+					verifySameType(listElementClass, parcelable.getClass());
+					// parcelable.writeToParcel(dest, callFlags);
+					dest.writeParcelable(parcelable, callFlags);
+				}
 				if (DEBUG)
 					Log.d(TAG, "Wrote inline #" + i + ": " + mList.get(i));
 				i++;
