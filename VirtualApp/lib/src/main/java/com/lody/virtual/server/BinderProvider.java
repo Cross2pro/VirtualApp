@@ -3,6 +3,7 @@ package com.lody.virtual.server;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -12,8 +13,10 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.DaemonService;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -36,8 +39,6 @@ import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
-
-import mirror.android.app.job.IJobScheduler;
 
 /**
  * @author Lody
@@ -73,6 +74,11 @@ public final class BinderProvider extends ContentProvider {
         VDeviceManagerService.systemReady(context);
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        if(VASettings.SEND_BOOT_COMPLETED) {
+            //send boot completed in inner.
+            Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
+            VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
+        }
         return true;
     }
 

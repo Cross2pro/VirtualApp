@@ -1,19 +1,25 @@
 package com.lody.virtual.helper.compat;
 
 import android.content.ClipData;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class UriCompat {
     private static final String TAG = "UriCompat";
-    public static String AUTH = "virtual.fileprovider";
+    public static String AUTH = "virtual.proxy.provider";
     private final static String[] ACTIONS = {
             Intent.ACTION_SEND,
             Intent.ACTION_SEND_MULTIPLE,
@@ -23,6 +29,16 @@ public class UriCompat {
     };
 
     public static boolean needFake(Intent intent) {
+        String pkg = intent.getPackage();
+        //inside
+        if (pkg != null && VirtualCore.get().isAppInstalled(pkg)) {
+            return false;
+        }
+        //inside
+        ComponentName componentName = intent.getComponent();
+        if (componentName != null && VirtualCore.get().isAppInstalled(componentName.getPackageName())) {
+            return false;
+        }
         for (String act : ACTIONS) {
             if (act.equals(intent.getAction())) {
                 return true;
@@ -34,13 +50,36 @@ public class UriCompat {
     public static Uri fakeFileUri(Uri uri) {
         if (uri == null) return null;
         if ("content".equals(uri.getScheme())) {
-            //TODO: fake file path? sdcard/Android/data/
             //fake auth
             String auth = uri.getAuthority();
             return uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
         } else {
             return null;
         }
+    }
+
+    public static Uri wrapperUri(Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        String auth = uri.getQueryParameter("__va_auth");
+        if (!TextUtils.isEmpty(auth)) {
+            Uri.Builder builder = uri.buildUpon().authority(auth);
+            Set<String> names = uri.getQueryParameterNames();
+            Map<String, String> querys = null;
+            if (names != null && names.size() > 0) {
+                querys = new HashMap<>();
+                for (String name : names) {
+                    querys.put(name, uri.getQueryParameter(name));
+                }
+            }
+            builder.clearQuery();
+            for (Map.Entry<String, String> e : querys.entrySet()) {
+                builder.appendQueryParameter(e.getKey(), e.getValue());
+            }
+            return builder.build();
+        }
+        return uri;
     }
 
     public static Intent fakeFileUri(Intent intent) {

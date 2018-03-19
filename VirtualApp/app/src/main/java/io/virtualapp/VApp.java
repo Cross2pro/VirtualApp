@@ -1,18 +1,12 @@
 package io.virtualapp;
 
-import android.app.LocalActivityManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.support.multidex.MultiDexApplication;
-import android.support.v4.content.FileProvider;
 
 import com.flurry.android.FlurryAgent;
-import com.lody.virtual.Build;
-import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
@@ -36,20 +30,20 @@ public class VApp extends MultiDexApplication {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
-        VASettings.ENABLE_IO_REDIRECT = false;
+        VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
         //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
-        //google测试
-        VASettings.GOOGLE_SUPPOER = true;
-        //
+        //google 支持（beta）
+        VASettings.ENABLE_GMS = true;
+        //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
-        //
-        VASettings.ENABLE_HOOK_LIBCORE = true;
         //日志
         VLog.OPEN_LOG = BuildConfig.DEBUG;
 
-//        VASettings.USE_REAL_DATA_DIR = true;
+        //内部的开机广播
+        VASettings.SEND_BOOT_COMPLETED = false;
+
         try {
             VirtualCore.get().startup(base);
         } catch (Throwable e) {
@@ -66,6 +60,7 @@ public class VApp extends MultiDexApplication {
 
             @Override
             public void onMainProcess() {
+                //宿主初始化
                 Once.initialise(VApp.this);
                 new FlurryAgent.Builder()
                         .withLogEnabled(true)

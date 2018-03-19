@@ -268,7 +268,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private void addRecord(ServiceRecord r) {
-        mHistory.add(r);
+        synchronized (mHistory) {
+            mHistory.add(r);
+        }
     }
 
     private ServiceRecord findRecordLocked(int userId, ServiceInfo serviceInfo) {
@@ -726,6 +728,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         app.pid = pid;
         synchronized (mProcessNames) {
             mProcessNames.put(app.processName, app.vuid, app);
+        }
+        synchronized (mPidsSelfLocked) {
             mPidsSelfLocked.put(app.pid, app);
         }
     }
@@ -806,6 +810,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         Bundle extras = new Bundle();
         BundleCompat.putBinder(extras, "_VA_|_binder_", app);
         extras.putInt("_VA_|_vuid_", vuid);
+        extras.putInt("_VA_|_vpid_", vpid);
         extras.putString("_VA_|_process_", processName);
         extras.putString("_VA_|_pkg_", info.packageName);
         Bundle res = ProviderCall.call(VASettings.getStubAuthority(vpid), "_VA_|_init_process_", null, extras);
@@ -1071,8 +1076,16 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                              PendingResultData result) {
         synchronized (this) {
             ProcessRecord r = findProcessLocked(info.processName, vuid);
-            if (BROADCAST_NOT_STARTED_PKG && r == null) {
-                r = startProcessIfNeedLocked(info.processName, getUserId(vuid), info.packageName);
+            if (r == null) {
+                int userId = getUserId(vuid);
+                if (SpecialComponentList.canStartFromBroadcast(info.packageName)) {
+                    VLog.d(TAG, "startProcess for " + intent.toString() + " userId " + userId);
+                    if (userId != 0) {
+                        VLog.logbug(TAG, VLog.getStackTraceString(new Exception("userId = " + userId)));
+                        userId = 0;
+                    }
+                    r = startProcessIfNeedLocked(info.processName, userId, info.packageName);
+                }
             }
             if (r != null && r.appThread != null) {
                 performScheduleReceiver(r.client, vuid, info, intent,

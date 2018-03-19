@@ -4,10 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.remote.StubActivityRecord;
 
 /**
@@ -30,7 +28,7 @@ public class StubPendingActivity extends Activity {
         if (r.intent == null) {
             return;
         }
-        if(!VASettings.GOOGLE_SUPPOER){
+        if(!VASettings.NEW_INTENTSENDER){
             r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             VActivityManager.get().startActivity(r.intent, r.userId);
         }else {

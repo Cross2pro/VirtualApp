@@ -1,18 +1,11 @@
 package com.lody.virtual.client.hook.proxies.telephony;
 
 import android.content.Context;
-import android.telephony.CellInfo;
-import android.telephony.NeighboringCellInfo;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.Inject;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.ipc.VLocationManager;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 
 import mirror.com.android.internal.telephony.ITelephony;
 
@@ -30,6 +23,7 @@ public class TelephonyStub extends BinderInvocationProxy {
 	@Override
 	protected void onBindMethods() {
 		super.onBindMethods();
+        addMethodProxy(new MethodProxies.GetImeiForSlot());
 		addMethodProxy(new MethodProxies.GetNeighboringCellInfo());
 		addMethodProxy(new MethodProxies.GetAllCellInfo());
 		addMethodProxy(new MethodProxies.GetCellLocation());
@@ -63,4 +57,5 @@ public class TelephonyStub extends BinderInvocationProxy {
 		addMethodProxy(new ReplaceLastPkgMethodProxy("getRadioAccessFamily"));
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("isVideoCallingEnabled"));
 	}
+
 }

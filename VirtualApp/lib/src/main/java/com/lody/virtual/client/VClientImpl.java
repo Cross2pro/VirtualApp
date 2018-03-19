@@ -14,7 +14,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.res.Configuration;
-import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
 import android.os.ConditionVariable;
@@ -23,10 +22,10 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Looper;
 import android.os.Message;
-import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.CrashHandler;
@@ -46,7 +45,6 @@ import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
-import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -61,6 +59,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -98,10 +97,11 @@ public final class VClientImpl extends IVClient.Stub {
     @SuppressLint("StaticFieldLeak")
     private static final VClientImpl gClient = new VClientImpl();
     private final H mH = new H();
-    private ConditionVariable mTempLock;
     private Instrumentation mInstrumentation = AppInstrumentation.getDefault();
     private IBinder token;
     private int vuid;
+    //proxy index
+    private int vpid;
     private VDeviceInfo deviceInfo;
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
@@ -157,6 +157,10 @@ public final class VClientImpl extends IVClient.Stub {
         return vuid;
     }
 
+    public int getVPid() {
+        return vpid;
+    }
+
     public int getBaseVUid() {
         return VUserHandle.getAppId(vuid);
     }
@@ -183,9 +187,10 @@ public final class VClientImpl extends IVClient.Stub {
         return token;
     }
 
-    public void initProcess(IBinder token, int vuid) {
+    public void initProcess(IBinder token, int vuid, int vpid) {
         this.token = token;
         this.vuid = vuid;
+        this.vpid = vpid;
     }
 
     private void handleNewIntent(NewIntentData data) {
@@ -210,20 +215,30 @@ public final class VClientImpl extends IVClient.Stub {
         }
     }
 
-    public void bindApplication(final String packageName, final String processName) {
+    public boolean bindApplication(final String packageName, final String processName) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
-            bindApplicationNoCheck(packageName, processName, new ConditionVariable());
+            if(!VClientImpl.get().isBound()) {
+                bindApplicationNoCheck(packageName, processName, new ConditionVariable());
+                return true;
+            }else{
+                return false;
+            }
         } else {
             final ConditionVariable lock = new ConditionVariable();
+            final AtomicBoolean result = new AtomicBoolean(false);
             VirtualRuntime.getUIHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    bindApplicationNoCheck(packageName, processName, lock);
+                    if(!VClientImpl.get().isBound()) {
+                        bindApplicationNoCheck(packageName, processName, lock);
+                        result.compareAndSet(false, true);
+                    }
                     lock.open();
                 }
             });
             lock.block();
         }
+        return false;
     }
 
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
@@ -231,7 +246,6 @@ public final class VClientImpl extends IVClient.Stub {
         if (processName == null) {
             processName = packageName;
         }
-        mTempLock = lock;
         try {
             setupUncaughtHandler();
         } catch (Throwable e) {
@@ -283,7 +297,7 @@ public final class VClientImpl extends IVClient.Stub {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && targetSdkVersion < Build.VERSION_CODES.LOLLIPOP) {
             mirror.android.os.Message.updateCheckRecycle.call(targetSdkVersion);
         }
-        if (VASettings.ENABLE_IO_REDIRECT) {
+        if (VASettings.ENABLE_IO_REDIRECT && SpecialComponentList.needIORedirect(packageName)) {
             startIOUniformer();
         }
         NativeEngine.launchEngine();
@@ -345,10 +359,7 @@ public final class VClientImpl extends IVClient.Stub {
         if (data.providers != null) {
             installContentProviders(mInitialApplication, data.providers);
         }
-        if (lock != null) {
-            lock.open();
-            mTempLock = null;
-        }
+
         VirtualCore.get().getComponentDelegate().beforeApplicationCreate(mInitialApplication);
         try {
             mInstrumentation.callApplicationOnCreate(mInitialApplication);
@@ -422,24 +433,29 @@ public final class VClientImpl extends IVClient.Stub {
     @SuppressLint("SdCardPath")
     private void startIOUniformer() {
         ApplicationInfo info = mBoundApplication.appInfo;
+        String packageName = info.packageName;
         int userId = VUserHandle.myUserId();
-        int rUserId = VUserHandle.realUserId();
-        String wifiMacAddressFile = deviceInfo.getWifiFile(userId).getPath();
-        String dataDir = VEnvironment.getDataUserPackageDirectory(userId, info.packageName).getPath();//info.dataDir;
-        NativeEngine.redirectDirectory("/sys/class/net/wlan0/address", wifiMacAddressFile);
-        NativeEngine.redirectDirectory("/sys/class/net/eth0/address", wifiMacAddressFile);
-        NativeEngine.redirectDirectory("/sys/class/net/wifi/address", wifiMacAddressFile);
-
-        NativeEngine.redirectDirectory("/data/data/" + info.packageName, dataDir);
-        NativeEngine.redirectDirectory("/data/user/"+rUserId+"/" + info.packageName, dataDir);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirectDirectory("/data/user_de/"+rUserId+"/" + info.packageName, dataDir);
+        File wifiMacAddressFile = deviceInfo.getWifiFile(userId);
+        String wifiMacAddressPath = wifiMacAddressFile != null ? wifiMacAddressFile.getPath() : null;
+        String dataDir = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();//info.dataDir;
+        if (!TextUtils.isEmpty(wifiMacAddressPath)) {
+            NativeEngine.redirectDirectory("/sys/class/net/wlan0/address", wifiMacAddressPath);
+            NativeEngine.redirectDirectory("/sys/class/net/eth0/address", wifiMacAddressPath);
+            NativeEngine.redirectDirectory("/sys/class/net/wifi/address", wifiMacAddressPath);
+        }else{
+            //default wifi mac
         }
-        String libPath = VEnvironment.getAppLibDirectory(info.packageName).getAbsolutePath();
-        String userLibPath = new File(VEnvironment.getUserSystemDirectory(userId), info.packageName + "/lib").getAbsolutePath();
+
+        NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
+        NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, dataDir);
+        }
+        String libPath = VEnvironment.getAppLibDirectory(packageName).getAbsolutePath();
+        String userLibPath = new File(VEnvironment.getUserSystemDirectory(userId), packageName + "/lib").getAbsolutePath();
         NativeEngine.redirectDirectory(userLibPath, libPath);
-        NativeEngine.redirectDirectory("/data/data/" + info.packageName + "/lib/", libPath);
-        NativeEngine.redirectDirectory("/data/user/"+rUserId+"/" + info.packageName + "/lib/", libPath);
+        NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
+        NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
 
         VirtualStorageManager vsManager = VirtualStorageManager.get();
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
@@ -453,6 +469,7 @@ public final class VClientImpl extends IVClient.Stub {
                 }
             }
         }
+
         NativeEngine.enableIORedirect();
     }
 
@@ -511,12 +528,7 @@ public final class VClientImpl extends IVClient.Stub {
 
     @Override
     public IBinder acquireProviderClient(ProviderInfo info) {
-        if (mTempLock != null) {
-            mTempLock.block();
-        }
-        if (!isBound()) {
-            VClientImpl.get().bindApplication(info.packageName, info.processName);
-        }
+        VClientImpl.get().bindApplication(info.packageName, info.processName);
         IInterface provider = null;
         String[] authorities = info.authority.split(";");
         String authority = authorities.length == 0 ? info.authority : authorities[0];

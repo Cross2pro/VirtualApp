@@ -18,6 +18,8 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IAccountManager;
 import com.lody.virtual.server.interfaces.IVirtualStorageService;
 
+import java.util.Map;
+
 import static com.lody.virtual.helper.compat.AccountManagerCompat.KEY_ANDROID_PACKAGE_NAME;
 
 /**
@@ -274,5 +276,100 @@ public class VAccountManager {
                         requiredFeatures, activity != null, optionsIn);
             }
         }.start();
+    }
+
+
+    public boolean setAccountVisibility(Account a, String packageName, int newVisibility) {
+        try {
+            return getService().setAccountVisibility(VUserHandle.myUserId(), a, packageName, newVisibility);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public int getAccountVisibility( Account a, String packageName) {
+        try {
+            return getService().getAccountVisibility(VUserHandle.myUserId(), a, packageName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void startAddAccountSession(IAccountManagerResponse response, String accountType,
+                                       String authTokenType, String[] requiredFeatures, boolean expectActivityLaunch,
+                                       Bundle options) {
+        try {
+            getService().startAddAccountSession(response, accountType, authTokenType, requiredFeatures, expectActivityLaunch, options);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void startUpdateCredentialsSession(IAccountManagerResponse response, Account account,
+                                              String authTokenType, boolean expectActivityLaunch, Bundle options) {
+        try {
+            getService().startUpdateCredentialsSession(response, account, authTokenType, expectActivityLaunch, options);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void registerAccountListener(String[] accountTypes, String opPackageName) {
+        try {
+            getService().registerAccountListener(accountTypes, opPackageName);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void unregisterAccountListener(String[] accountTypes, String opPackageName) {
+        try {
+            getService().unregisterAccountListener(accountTypes, opPackageName);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public Map getPackagesAndVisibilityForAccount(Account account) {
+        try {
+            return getService().getPackagesAndVisibilityForAccount(VUserHandle.myUserId(), account);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public Map getAccountsAndVisibilityForPackage(String packageName, String accountType) {
+        try {
+            return getService().getAccountsAndVisibilityForPackage(VUserHandle.myUserId(), packageName, accountType);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void finishSessionAsUser(IAccountManagerResponse response, Bundle sessionBundle,
+                                    boolean expectActivityLaunch, Bundle appInfo, int userId) {
+        try {
+            getService().finishSessionAsUser(response, sessionBundle, expectActivityLaunch, appInfo, userId);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void isCredentialsUpdateSuggested(IAccountManagerResponse response, Account account,
+                                             String statusToken) {
+        try {
+            getService().isCredentialsUpdateSuggested(response, account, statusToken);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public boolean addAccountExplicitlyWithVisibility(Account account, String password, Bundle extras,
+                                                      Map visibility) {
+        try {
+            return getService().addAccountExplicitlyWithVisibility(VUserHandle.myUserId(), account, password, extras, visibility);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
     }
 }

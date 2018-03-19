@@ -5,10 +5,13 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
+import android.os.IBinder;
+import android.os.Parcelable;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.StubPendingActivity;
 import com.lody.virtual.client.stub.StubPendingReceiver;
 import com.lody.virtual.client.stub.StubPendingService;
@@ -92,9 +95,15 @@ public class ComponentUtils {
     }
 
     public static boolean isSystemApp(ApplicationInfo applicationInfo) {
-        return !GmsSupport.isGmsFamilyPackage(applicationInfo.packageName)
-                && ((ApplicationInfo.FLAG_SYSTEM & applicationInfo.flags) != 0
-                || SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName));
+        if(applicationInfo == null){
+            return false;
+        }
+        if("com.google.android.gsf".equals(applicationInfo.packageName)){
+            return !VirtualCore.get().isAppInstalled("com.google.android.gsf");
+        }else if(GmsSupport.isGoogleAppOrService(applicationInfo.packageName)){
+            return false;
+        }
+        return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0 || SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName);
     }
 
     public static boolean isStubComponent(Intent intent) {
@@ -133,14 +142,24 @@ public class ComponentUtils {
         return newIntent;
     }
 
-    public static Intent redirectIntentSender(int type, String creator, Intent intent) {
+    public static Intent redirectIntentSender(int type, String creator, Intent intent, IBinder iBinder) {
         Intent newIntent = intent.cloneFilter();
         switch (type) {
             case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
                 ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
                 if (info != null) {
                     newIntent.setClass(VirtualCore.get().getContext(), StubPendingActivity.class);
-//                    newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    newIntent.setFlags(intent.getFlags());
+                    if (iBinder != null) {
+                        try {
+                            ComponentName activityForToken = VActivityManager.get().getActivityForToken(iBinder);
+                            if (activityForToken != null) {
+                                newIntent.putExtra("_VA_|_caller_", activityForToken);
+                                break;
+                            }
+                        } catch (Throwable e) {
+                        }
+                    }
                 }
             }
             break;

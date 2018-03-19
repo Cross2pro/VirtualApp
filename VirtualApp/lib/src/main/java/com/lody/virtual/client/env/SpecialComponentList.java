@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 
+import com.lody.virtual.GmsSupport;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +27,8 @@ public final class SpecialComponentList {
     private static final List<String> ACTION_BLACK_LIST = new ArrayList<String>(1);
     private static final Map<String, String> PROTECTED_ACTION_MAP = new HashMap<>(5);
     private static final HashSet<String> WHITE_PERMISSION = new HashSet<>(3);
+    private static final HashSet<String> BROADCAST_START_WHITE_LIST = new HashSet<>();
+    private static final HashSet<String> IO_REDIRECT_BLACK_LIST = new HashSet<>(1);
     private static final HashSet<String> INSTRUMENTATION_CONFLICTING = new HashSet<>(2);
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
@@ -86,6 +90,23 @@ public final class SpecialComponentList {
                 e.printStackTrace();
             }
         }
+
+        IO_REDIRECT_BLACK_LIST.add("com.snapchat.android");
+
+        BROADCAST_START_WHITE_LIST.add("com.facebook.orca");
+        BROADCAST_START_WHITE_LIST.add("com.facebook.katana");
+        BROADCAST_START_WHITE_LIST.add("com.tencent.mm");
+        BROADCAST_START_WHITE_LIST.add("com.whatsapp");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.gsf");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.gms");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.gsf.login");
+//        BROADCAST_START_WHITE_LIST.add("com.android.vending");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.play.games");
+
+    }
+
+    public static void addStaticBroadCastWhiteList(String pkg){
+        BROADCAST_START_WHITE_LIST.add(pkg);
     }
 
     public static boolean isSpecSystemPackage(String pkg) {
@@ -114,13 +135,17 @@ public final class SpecialComponentList {
         ACTION_BLACK_LIST.add(action);
     }
 
-    public static void protectIntentFilter(IntentFilter filter) {
+    public static void protectIntentFilter(IntentFilter filter, String packageName) {
         if (filter != null) {
             List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
             ListIterator<String> iterator = actions.listIterator();
             while (iterator.hasNext()) {
                 String action = iterator.next();
                 if (SpecialComponentList.isActionInBlackList(action)) {
+                    iterator.remove();
+                    continue;
+                }
+                if(GmsSupport.isGoogleAppOrService(packageName)){
                     iterator.remove();
                     continue;
                 }
@@ -181,5 +206,19 @@ public final class SpecialComponentList {
 
     public static boolean isWhitePermission(String permission) {
         return WHITE_PERMISSION.contains(permission);
+    }
+
+    public static boolean needIORedirect(String str) {
+        if (IO_REDIRECT_BLACK_LIST.contains(str)) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean canStartFromBroadcast(String str) {
+        if (BROADCAST_START_WHITE_LIST.contains(str)) {
+            return true;
+        }
+        return false;
     }
 }

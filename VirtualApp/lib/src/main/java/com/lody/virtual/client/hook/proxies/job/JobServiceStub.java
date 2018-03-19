@@ -132,7 +132,7 @@ public class JobServiceStub extends BinderInvocationProxy {
         if (item != null) {
             Intent target = mirror.android.app.job.JobWorkItem.getIntent.call(item);
             Intent intent = ComponentUtils.redirectIntentSender(
-                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target);
+                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target, null);
 
             Object workItem = mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
             int wordId = mirror.android.app.job.JobWorkItem.mWorkId.get(item);

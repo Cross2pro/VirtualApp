@@ -28,6 +28,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.NativeEngine;
@@ -70,6 +71,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -293,6 +295,8 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String creator = (String) args[1];
             String[] resolvedTypes = (String[]) args[6];
+            int indexOfFirst = ArrayUtils.indexOfFirst(args, IBinder.class);
+            IBinder iBinder = indexOfFirst == -1 ? null : (IBinder) args[indexOfFirst];
             int type = (int) args[0];
             int flags = (int) args[7];
             if (args[5] instanceof Intent[]) {
@@ -302,7 +306,7 @@ class MethodProxies {
                     if (resolvedTypes != null && i < resolvedTypes.length) {
                         intent.setDataAndType(intent.getData(), resolvedTypes[i]);
                     }
-                    Intent targetIntent = ComponentUtils.redirectIntentSender(type, creator, intent);
+                    Intent targetIntent = ComponentUtils.redirectIntentSender(type, creator, intent, iBinder);
                     if (targetIntent != null) {
                         intents[i] = targetIntent;
                     }
@@ -353,7 +357,13 @@ class MethodProxies {
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             int userId = VUserHandle.myUserId();
 
-            if (ComponentUtils.isStubComponent(intent)) {
+            if ("android.intent.action.MAIN".equals(intent.getAction()) && intent.hasCategory("android.intent.category.HOME") && (intent.getComponent() == null || intent.getComponent().getClassName().equals("com.google.android.setupwizard.SetupWizardActivity"))) {
+                intent.setComponent(null);
+                intent.removeCategory("android.intent.category.HOME");
+                intent.addCategory("android.intent.category.LAUNCHER");
+                intent.setPackage(getHostPkg());
+                return method.invoke(who, args);
+            } else if (ComponentUtils.isStubComponent(intent)) {
                 return method.invoke(who, args);
             }
 
@@ -815,7 +825,7 @@ class MethodProxies {
          */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VASettings.GOOGLE_SUPPOER) {
+            if (VASettings.NEW_INTENTSENDER) {
                 int intentIndex;
                 int resultToIndex;
                 int resultWhoIndex;
@@ -894,6 +904,16 @@ class MethodProxies {
 
 
     static class StartService extends MethodProxy {
+        private static final HashSet<String> BLOCK_ACTION_LIST = new HashSet<>();
+        private static final HashSet<String> BLOCK_COMPONENT_LIST = new HashSet<>();
+
+        static {
+            BLOCK_ACTION_LIST.add("com.google.android.gms.chimera.container.LOG_LOAD_ATTEMPT");
+            BLOCK_ACTION_LIST.add("com.android.vending.contentfilters.IContentFiltersService.BIND");
+            BLOCK_ACTION_LIST.add("com.google.android.chimera.FileApkManager.DELETE_UNUSED_FILEAPKS");
+            BLOCK_COMPONENT_LIST.add("com.google.android.finsky.contentfilter.impl.ContentFiltersService");
+            BLOCK_COMPONENT_LIST.add("com.google.android.gsf.update.SystemUpdateService");
+        }
 
         @Override
         public String getMethodName() {
@@ -905,6 +925,16 @@ class MethodProxies {
             IInterface appThread = (IInterface) args[0];
             Intent service = (Intent) args[1];
             String resolvedType = (String) args[2];
+            if (service == null) {
+                return null;
+            }
+//            if (service.getComponent() != null && service.getComponent().getClassName().contains(StubService.class.getName())) {
+//                return method.invoke(who, args);
+//            }
+            if (BLOCK_ACTION_LIST.contains(service.getAction())) {
+                return null;
+            }
+
             if (service.getComponent() != null
                     && getHostPkg().equals(service.getComponent().getPackageName())) {
                 // for server process
@@ -922,7 +952,9 @@ class MethodProxies {
             service.setDataAndType(service.getData(), resolvedType);
             ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, VUserHandle.myUserId());
             if (serviceInfo != null) {
-                return VActivityManager.get().startService(appThread, service, resolvedType, userId);
+                if (!BLOCK_COMPONENT_LIST.contains(serviceInfo.name)) {
+                    return VActivityManager.get().startService(appThread, service, resolvedType, userId);
+                }
             }
             return method.invoke(who, args);
         }
@@ -1239,7 +1271,7 @@ class MethodProxies {
             MethodParameterUtils.replaceFirstAppPkg(args);
             args[IDX_RequiredPermission] = null;
             IntentFilter filter = (IntentFilter) args[IDX_IntentFilter];
-            SpecialComponentList.protectIntentFilter(filter);
+            SpecialComponentList.protectIntentFilter(filter, getAppPkg());
             if (args.length > IDX_IIntentReceiver && IIntentReceiver.class.isInstance(args[IDX_IIntentReceiver])) {
                 final IInterface old = (IInterface) args[IDX_IIntentReceiver];
                 if (!IIntentReceiverProxy.class.isInstance(old)) {
@@ -1535,6 +1567,13 @@ class MethodProxies {
 
 
     static class BroadcastIntent extends MethodProxy {
+        private static final HashSet<String> ACTION_BLACK_LIST = new HashSet<>();
+        static {
+            ACTION_BLACK_LIST.add("com.google.android.gms.walletp2p.phenotype.ACTION_PHENOTYPE_REGISTER");
+            ACTION_BLACK_LIST.add("com.facebook.zero.ACTION_ZERO_REFRESH_TOKEN");
+            ACTION_BLACK_LIST.add("com.google.android.gms.magictether.SCANNED_DEVICE");
+            ACTION_BLACK_LIST.add("com.google.android.vending.verifier.intent.action.VERIFY_INSTALLED_PACKAGES");
+        }
 
         @Override
         public String getMethodName() {
@@ -1548,6 +1587,9 @@ class MethodProxies {
             intent.setDataAndType(intent.getData(), type);
             if (VirtualCore.get().getComponentDelegate() != null) {
                 VirtualCore.get().getComponentDelegate().onSendBroadcast(intent);
+            }
+            if (ACTION_BLACK_LIST.contains(intent.getAction())) {
+                return 0;
             }
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {

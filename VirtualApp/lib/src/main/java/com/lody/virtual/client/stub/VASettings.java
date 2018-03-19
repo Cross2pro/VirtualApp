@@ -7,6 +7,8 @@ import java.util.Locale;
  */
 
 public class VASettings {
+
+    public static boolean SEND_BOOT_COMPLETED = false;
     /**
      * @see libcore.io.Libcore
      */
@@ -19,7 +21,9 @@ public class VASettings {
     /**
      * support a new google play service
      */
-    public static boolean GOOGLE_SUPPOER = false;
+    public static boolean ENABLE_GMS = false;
+
+    public static boolean NEW_INTENTSENDER = false;
 
     /**
      * disable startForeground
@@ -38,6 +42,8 @@ public class VASettings {
     public static String STUB_DIALOG = StubDialog.class.getName();
     public static String STUB_CP = StubContentProvider.class.getName();
     public static String STUB_JOB = StubJob.class.getName();
+    public static String STUB_SERVICE = null;//StubService.class.getName();
+
     public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
     public static int STUB_COUNT = 50;
@@ -69,6 +75,10 @@ public class VASettings {
 
     public static String getStubCP(int index) {
         return String.format(Locale.ENGLISH, "%s$C%d", STUB_CP, index);
+    }
+
+    public static String getStubServiceName(int index) {
+        return String.format(Locale.ENGLISH, "%s$S%d", STUB_SERVICE, index);
     }
 
     public static String getStubAuthority(int index) {

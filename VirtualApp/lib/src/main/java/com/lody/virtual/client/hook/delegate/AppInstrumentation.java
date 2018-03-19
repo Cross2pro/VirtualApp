@@ -94,6 +94,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
         }
         super.callActivityOnCreate(activity, icicle);
+        ActivityFixer.fixAfterActivityCreate(activity);
         VirtualCore.get().getComponentDelegate().afterActivityCreate(activity);
     }
 

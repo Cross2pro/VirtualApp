@@ -1301,13 +1301,11 @@
             android:exported="false"
             android:process=":p49" />
         <provider
-            android:name=".client.stub.StubFileProvider"
+            android:name=".client.stub.ProxyContentProvider"
             android:exported="false"
-            android:authorities="${applicationId}.virtual.fileprovider"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/stub_file_paths" />
-        </provider>
+            android:process=":p999"
+            android:authorities="${applicationId}.virtual.proxy.provider"
+            android:grantUriPermissions="true"/>
+
     </application>
 </manifest>

@@ -39,16 +39,16 @@ abstract class StubBinder implements IBinder {
 	}
 
 	protected void fakePackage(Object[] args){
-		if (args != null) {
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] instanceof String) {
-					String str = (String) args[i];
-					if (getHostPkg().equals(str)) {
+//		if (args != null) {
+//			for (int i = 0; i < args.length; i++) {
+//				if (args[i] instanceof String) {
+//					String str = (String) args[i];
+//					if (getHostPkg().equals(str)) {
 //						args[i] = getAppPkg();
-					}
-				}
-			}
-		}
+//					}
+//				}
+//			}
+//		}
 	}
 
 	@Override

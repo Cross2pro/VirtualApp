@@ -61,6 +61,10 @@ public class VirtualRuntime {
         throw new DeadServerException(e);
     }
 
+    public static void exit() {
+        VLog.d(VirtualRuntime.class.getSimpleName(), "Exit process : %s (%s).", getProcessName(), VirtualCore.get().getProcessName());
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
 
     public static boolean isArt() {
         return System.getProperty("java.vm.version").startsWith("2");

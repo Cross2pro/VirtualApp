@@ -36,21 +36,6 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
-								if (args != null && args.length > 0) {
-									for (int i = 0; i < args.length; i++) {
-										if (args[i] instanceof Bundle) {
-											Bundle bundle = (Bundle) args[i];
-											if (bundle.containsKey(e)) {
-												bundle.putString(e, getAppPkg());
-											}
-											if (bundle.containsKey(f)) {
-												bundle.putString(f, getAppPkg());
-											}
-										}
-									}
-								}
-
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {
@@ -75,10 +60,12 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {
+									if (method.getName().equals("isBillingSupported")) {
+										return 0;
+									}
 									if (e.getCause() != null) {
 										throw e.getCause();
 									}
@@ -101,7 +88,6 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {
@@ -128,7 +114,6 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {
@@ -154,7 +139,6 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {
@@ -180,7 +164,6 @@ public class ProxyServiceFactory {
 						return new InvocationHandler() {
 							@Override
 							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								fakePackage(args);
 								try {
 									return method.invoke(base, args);
 								} catch (InvocationTargetException e) {

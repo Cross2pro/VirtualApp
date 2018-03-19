@@ -12,12 +12,11 @@ import android.telephony.NeighboringCellInfo;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.text.TextUtils;
+import android.util.Log;
 
-import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.SkipInject;
-import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;
@@ -44,11 +43,30 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String imei = getDeviceInfo().getDeviceId();
             if(!TextUtils.isEmpty(imei)){
+                Log.w("kk", getMethodName()+" imei="+imei);
                 return imei;
             }
+            Log.w("kk", getMethodName()+" system imei");
             return super.call(who, method, args);
         }
     }
+
+    @FakeDeviceMark("fake device id.")
+    static class GetImeiForSlot extends GetDeviceId{
+        @Override
+        public String getMethodName() {
+            return "getImeiForSlot";
+        }
+    }
+
+    @FakeDeviceMark("fake device id.")
+    static class GetMeidForSlot extends GetDeviceId{
+        @Override
+        public String getMethodName() {
+            return "getMeidForSlot";
+        }
+    }
+
 
     @SkipInject
     @FakeLocMark("cell location")

@@ -56,7 +56,7 @@ public class AppRepository implements AppDataSource {
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
         return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-                && !GmsSupport.isGmsFamilyPackage(packageInfo.packageName);
+                && !GmsSupport.isGoogleAppOrService(packageInfo.packageName);
     }
 
     @Override

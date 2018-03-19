@@ -133,8 +133,9 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
 //            if(!VirtualCore.get().isAppInstalledAsUser(nextUserId,"QQ")) {
 //                VirtualCore.get().installPackageAsUser(nextUserId, "QQ");
 //            }
-            //TODO virtual sdcard
+            //第一次安装之后设置一次就行
             VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
+                    //虚拟sdcard路径
                     new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
             VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
         }).then((res) -> {

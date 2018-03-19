@@ -1,15 +1,19 @@
 package com.lody.virtual.server.pm;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.ArtDexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -37,7 +41,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import dalvik.system.DexFile;
 
@@ -47,7 +50,7 @@ import dalvik.system.DexFile;
 public class VAppManagerService extends IAppManager.Stub {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
-    private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>(){
+    private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>() {
         @Override
         protected VAppManagerService create() {
             return new VAppManagerService();
@@ -81,9 +84,13 @@ public class VAppManagerService extends IAppManager.Stub {
         synchronized (this) {
             mBooting = true;
             mPersistenceLayer.read();
+            if (VASettings.ENABLE_GMS && !GmsSupport.isInstalledGoogleService()) {
+                GmsSupport.installGApps(0);
+            }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
         }
+        upgradeApps();
     }
 
     private void cleanUpResidualFiles(PackageSetting ps) {
@@ -585,4 +592,35 @@ public class VAppManagerService extends IAppManager.Stub {
     public void savePersistenceData() {
         mPersistenceLayer.save();
     }
+
+    private void upgradeApps() {
+        for (String pkg : PackageCacheManager.PACKAGE_CACHE.keySet()) {
+            String apkPath = needUpgrade(pkg);
+            if (apkPath != null) {
+                upgradePackage(pkg, apkPath,
+                        InstallStrategy.DEPEND_SYSTEM_IF_EXIST
+                        | InstallStrategy.COMPARE_VERSION);
+                VLog.logbug(TAG, "upgraded package: " + pkg + " on path:" + apkPath);
+            }
+        }
+    }
+
+    private String needUpgrade(String packageName) {
+        String path = null;
+        try {
+            PackageInfo packageInfo = VPackageManager.get().getPackageInfo(packageName, 0, 0);
+            PackageInfo packageInfo2 = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+            if (!(packageInfo == null || packageInfo2 == null || packageInfo.versionCode == packageInfo2.versionCode)) {
+                path = packageInfo2.applicationInfo.sourceDir;
+            }
+        } catch (Throwable e) {
+            VLog.e(TAG, e);
+        }
+        return path;
+    }
+
+    public InstallResult upgradePackage(String pkg, String path, int flag) {
+        return installPackage(path, flag, false);
+    }
+
 }
