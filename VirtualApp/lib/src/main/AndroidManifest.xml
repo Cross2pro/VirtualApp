@@ -236,9 +236,12 @@
             android:name="com.lody.virtual.client.stub.ShortcutHandleActivity"
             android:exported="true"
             android:process="@string/engine_process_name"
+            android:taskAffinity="virtual.shortcut.task"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" >
             <intent-filter>
-                <action android:name="virtual.action.shortcut"/>
+                <action android:name="${applicationId}.virtual.action.shortcut"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
         </activity>
 
@@ -1304,7 +1307,7 @@
             android:name=".client.stub.ProxyContentProvider"
             android:exported="false"
             android:process=":p999"
-            android:authorities="${applicationId}.virtual.proxy.provider"
+            android:authorities="${applicationId}.virtual.proxy.provider;${applicationId}.virtual.fileprovider"
             android:grantUriPermissions="true"/>
 
     </application>

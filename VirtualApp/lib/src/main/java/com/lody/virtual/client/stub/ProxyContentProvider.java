@@ -12,116 +12,164 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 
 import com.lody.virtual.helper.compat.ContentProviderCompat;
 import com.lody.virtual.helper.compat.UriCompat;
-import com.lody.virtual.helper.utils.VLog;
 
 import java.io.FileNotFoundException;
 
 public class ProxyContentProvider extends ContentProvider {
+    private static final boolean DEBUG = false;
+
     @Override
     public boolean onCreate() {
         return true;
     }
 
-    private Uri wrapperUri(Uri uri) {
+    private Uri wrapperUri(String form, Uri uri) {
+        if(DEBUG) {
+            Log.i("UriCompat", "wrapperUri:" + form);
+        }
         return UriCompat.wrapperUri(uri);
     }
 
+    @Override
     public Cursor query(Uri uri, String[] strArr, String str, String[] strArr2, String str2) {
+        if(VASettings.PROVIDER_ONLY_FILE)return null;
+        Uri a = wrapperUri("query", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), wrapperUri(uri)).query(uri, strArr, str, strArr2, str2);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .query(uri, strArr, str, strArr2, str2);
         } catch (Exception e) {
-            e.printStackTrace();
             return new MatrixCursor(new String[]{});
         }
     }
 
+    @Override
     public String getType(Uri uri) {
-        Uri a = wrapperUri(uri);
+        if(VASettings.PROVIDER_ONLY_FILE)return null;
+        Uri a = wrapperUri("getType", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).getType(a);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .getType(a);
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
 
+    @Override
     public Uri insert(Uri uri, ContentValues contentValues) {
-        Uri a = wrapperUri(uri);
+        if(VASettings.PROVIDER_ONLY_FILE)return uri;
+        Uri a = wrapperUri("insert", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).insert(a, contentValues);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .insert(a, contentValues);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
+    @Override
+    public int bulkInsert(Uri uri, ContentValues[] values) {
+        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        Uri a = wrapperUri("insert", uri);
+        try {
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .bulkInsert(a, values);
+        }catch (Throwable e){
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    @Override
     public int delete(Uri uri, String str, String[] strArr) {
-        Uri a = wrapperUri(uri);
+        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        Uri a = wrapperUri("delete", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).delete(a, str, strArr);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .delete(a, str, strArr);
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
         }
     }
 
+    @Override
     public int update(Uri uri, ContentValues contentValues, String str, String[] strArr) {
-        Uri a = wrapperUri(uri);
+        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        Uri a = wrapperUri("update", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).update(a, contentValues, str, strArr);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .update(a, contentValues, str, strArr);
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
         }
     }
 
+    @Override
     public AssetFileDescriptor openAssetFile(Uri uri, String str) throws FileNotFoundException {
-        Uri a = wrapperUri(uri);
+        Uri a = wrapperUri("openAssetFile", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).openAssetFile(a, str);
-        } catch (Exception e) {
-            e.printStackTrace();
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .openAssetFile(a, str);
+        } catch (Throwable e) {
+            if(DEBUG) {
+                Log.w("UriCompat", "openAssetFile2", e);
+            }
             return null;
         }
     }
 
+    @Override
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public AssetFileDescriptor openAssetFile(Uri uri, String str, CancellationSignal cancellationSignal) throws FileNotFoundException {
-        Uri a = wrapperUri(uri);
+        Uri a = wrapperUri("openAssetFile2", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).openAssetFile(a, str, cancellationSignal);
-        } catch (Exception e) {
-            e.printStackTrace();
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .openAssetFile(a, str, cancellationSignal);
+        } catch (Throwable e) {
+            if(DEBUG) {
+                Log.w("UriCompat", "openAssetFile2", e);
+            }
             return null;
         }
     }
 
+    @Override
     public ParcelFileDescriptor openFile(Uri uri, String str) throws FileNotFoundException {
-        Uri a = wrapperUri(uri);
+        Uri a = wrapperUri("openFile", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).openFile(a, str);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .openFile(a, str);
         } catch (Exception e) {
-            e.printStackTrace();
+            if(DEBUG) {
+                Log.w("UriCompat", "openFile", e);
+            }
             return null;
         }
     }
 
+    @Override
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public ParcelFileDescriptor openFile(Uri uri, String str, CancellationSignal cancellationSignal) throws FileNotFoundException {
-        Uri a = wrapperUri(uri);
+        Uri a = wrapperUri("openFile2", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a).openFile(a, str, cancellationSignal);
+            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+                    .openFile(a, str, cancellationSignal);
         } catch (Exception e) {
-            e.printStackTrace();
+            if(DEBUG) {
+                Log.w("UriCompat", "openFile2", e);
+            }
             return null;
         }
     }
 
+    @Override
     public Bundle call(String str, String str2, Bundle bundle) {
-        VLog.d("ProxyContentProvider", "method: " + str + " arg: " + str2);
         return super.call(str, str2, bundle);
     }
 

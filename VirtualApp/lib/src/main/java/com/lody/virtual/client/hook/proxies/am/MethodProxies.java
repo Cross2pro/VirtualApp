@@ -28,7 +28,6 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.NativeEngine;
@@ -1632,8 +1631,9 @@ class MethodProxies {
                 if (component != null) {
                     String pkg = component.getPackageName();
                     Intent newShortcutIntent = new Intent();
-                    newShortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
                     newShortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                    newShortcutIntent.setAction(Constants.SHORTCUT_ACTION);
+                    newShortcutIntent.setPackage(getHostPkg());
                     newShortcutIntent.putExtra("_VA_|_intent_", shortcut);
                     newShortcutIntent.putExtra("_VA_|_uri_", shortcut.toUri(0));
                     newShortcutIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());

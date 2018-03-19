@@ -1,6 +1,5 @@
 package com.lody.virtual.client.env;
 
-import android.app.PendingIntent;
 import android.content.Intent;
 
 import com.lody.virtual.client.stub.ShortcutHandleActivity;
@@ -39,5 +38,5 @@ public class Constants {
 	 */
 	public static String SHORTCUT_PROXY_ACTIVITY_NAME = ShortcutHandleActivity.class.getName();
 
-	public static String SHORTCUT_ACTION = "virtual.action.shortcut";
+	public static String SHORTCUT_ACTION = ".virtual.action.shortcut";
 }

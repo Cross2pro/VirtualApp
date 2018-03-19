@@ -4,14 +4,10 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.support.v4.view.ViewPager;
 
-import com.lody.virtual.Build;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.os.VUserInfo;
-import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -105,6 +101,9 @@ public class AppRepository implements AppDataSource {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
+                if (GmsSupport.isGoogleAppOrService(info.packageName)) {
+                    continue;
+                }
                 if (info.dependSystem) {
                     //检查是否升级
                     PackageUtils.checkUpdate(mContext, info.packageName);
@@ -126,12 +125,12 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public Promise<List<AppInfo>, Throwable, Void> getInstalledApps(Context context) {
-        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, context.getPackageManager().getInstalledPackages(0), true));
+        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, context.getPackageManager().getInstalledPackages(0), true, true));
     }
 
     @Override
     public Promise<List<AppInfo>, Throwable, Void> getStorageApps(Context context, File rootDir) {
-        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, findAndParseAPKs(context, rootDir, SCAN_PATH_LIST), false));
+        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, findAndParseAPKs(context, rootDir, SCAN_PATH_LIST), false, false));
     }
 
     private List<PackageInfo> findAndParseAPKs(Context context, File rootDir, List<String> paths) {
@@ -160,7 +159,8 @@ public class AppRepository implements AppDataSource {
         return packageList;
     }
 
-    private List<AppInfo> convertPackageInfoToAppData(Context context, List<PackageInfo> pkgList, boolean fastOpen) {
+    private List<AppInfo> convertPackageInfoToAppData(Context context, List<PackageInfo> pkgList,
+                                                      boolean fastOpen, boolean hideGApps) {
         PackageManager pm = context.getPackageManager();
         List<AppInfo> list = new ArrayList<>(pkgList.size());
         String hostPkg = VirtualCore.get().getHostPkg();
@@ -169,11 +169,12 @@ public class AppRepository implements AppDataSource {
             if (hostPkg.equals(pkg.packageName)) {
                 continue;
             }
+            if (hideGApps && GmsSupport.isGoogleAppOrService(pkg.packageName)) {
+                continue;
+            }
             // ignore the System package
             if (isSystemApplication(pkg)) {
-                if ((!pkg.packageName.contains("com.google.")
-                        && !VirtualCore.get().isOutsidePackageVisible(pkg.packageName))
-                        || pm.getLaunchIntentForPackage(pkg.packageName) == null) {
+                if (pm.getLaunchIntentForPackage(pkg.packageName) == null) {
                     continue;
                 }
             }

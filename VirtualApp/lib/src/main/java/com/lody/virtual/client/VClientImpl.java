@@ -101,7 +101,7 @@ public final class VClientImpl extends IVClient.Stub {
     private IBinder token;
     private int vuid;
     //proxy index
-    private int vpid;
+    private int vpid = -1;
     private VDeviceInfo deviceInfo;
     private AppBindData mBoundApplication;
     private Application mInitialApplication;

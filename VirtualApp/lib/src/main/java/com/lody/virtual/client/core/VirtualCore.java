@@ -25,7 +25,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.VClientImpl;
@@ -33,13 +32,11 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
-import com.lody.virtual.client.hook.delegate.PhoneInfoDelegate;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.UriCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
@@ -50,8 +47,8 @@ import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.ServiceCache;
+import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
@@ -59,7 +56,6 @@ import com.lody.virtual.server.interfaces.IUiCallback;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 
 import dalvik.system.DexFile;
@@ -176,15 +172,18 @@ public final class VirtualCore {
 
     public void startup(Context context) throws Throwable {
         if (!isStartUp) {
-            UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
+            Constants.SHORTCUT_ACTION = context.getPackageName() + ".virtual.action.shortcut";
             VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;
             ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;
             this.context = context;
             mainThread = ActivityThread.currentActivityThread.call();
             unHookPackageManager = context.getPackageManager();
+            //TODO compatible StubFileProvider context.getPackageName() + ".virtual.fileprovider";
+            UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";//.virtual.proxy.provider
+
             hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
             IPCBus.initialize(new IServerCache() {
                 @Override
@@ -558,9 +557,9 @@ public final class VirtualCore {
      */
     public Intent wrapperShortcutIntent(Intent intent, Intent splash, int userId) {
         Intent shortcutIntent = new Intent();
-        shortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
         shortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
         shortcutIntent.setAction(Constants.SHORTCUT_ACTION);
+        shortcutIntent.setPackage(getHostPkg());
         if (splash != null) {
             shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
         }

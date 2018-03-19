@@ -8,6 +8,8 @@ import java.util.Locale;
 
 public class VASettings {
 
+    public static boolean PROVIDER_ONLY_FILE = true;
+
     public static boolean SEND_BOOT_COMPLETED = false;
     /**
      * @see libcore.io.Libcore

@@ -29,6 +29,7 @@ import android.widget.Toast;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.virtualapp.R;
+import io.virtualapp.VApp;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
 import io.virtualapp.abs.ui.VActivity;
@@ -341,20 +343,28 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     public void askInstallGms() {
-//        new AlertDialog.Builder(this)
-//                .setTitle("Hi")
-//                .setMessage("We found that your device has been installed the Google service, whether you need to install them?")
-//                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-//                    defer().when(() -> {
-//                        GmsSupport.installGApps(0);
-//                    }).done((res) -> {
-//                        mPresenter.dataChanged();
-//                    });
-//                })
-//                .setNegativeButton(android.R.string.cancel, (dialog, which) ->
-//                        Toast.makeText(HomeActivity.this, "You can also find it in the Settings~", Toast.LENGTH_LONG).show())
-//                .setCancelable(false)
-//                .show();
+        if (VASettings.ENABLE_GMS) {
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.tip_install_gms)
+                .setMessage(R.string.text_install_gms)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    VApp.getApp().getPreferences()
+                            .edit()
+                            .putBoolean(VCommends.PREF_GMS_ENABLE, true)
+                            .commit();
+                    VASettings.ENABLE_GMS = true;
+                    defer().when(() -> {
+                        GmsSupport.installGApps(0);
+                    }).done((res) -> {
+                        mPresenter.dataChanged();
+                    });
+                })
+                .setNegativeButton(android.R.string.cancel, (dialog, which) ->
+                        Toast.makeText(HomeActivity.this, "You can also find it in the Settings~", Toast.LENGTH_LONG).show())
+                .setCancelable(false)
+                .show();
     }
 
     @Override

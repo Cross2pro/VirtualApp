@@ -2,19 +2,15 @@ package io.virtualapp.home;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.os.Build;
-import android.os.Environment;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
-import java.io.File;
 import java.io.IOException;
 
 import io.virtualapp.VCommends;
@@ -134,10 +130,11 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
 //                VirtualCore.get().installPackageAsUser(nextUserId, "QQ");
 //            }
             //第一次安装之后设置一次就行
-            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
-                    //虚拟sdcard路径
-                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
-            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
+            //如果该app需要选择文件，分享文件等与外界app的文件交互，则不能开启，需要在VC
+//            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
+//                    //虚拟sdcard路径
+//                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
+//            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
         }).done(res -> {

@@ -13,12 +13,12 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class UriCompat {
     private static final String TAG = "UriCompat";
+    private static boolean DEBUG = true;
     public static String AUTH = "virtual.proxy.provider";
     private final static String[] ACTIONS = {
             Intent.ACTION_SEND,
@@ -52,7 +52,14 @@ public class UriCompat {
         if ("content".equals(uri.getScheme())) {
             //fake auth
             String auth = uri.getAuthority();
-            return uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
+            if(AUTH.equals(auth)){
+                return uri;
+            }
+            Uri u = uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
+            if (DEBUG) {
+                Log.i(TAG, "fake uri:" + uri + "->" + u);
+            }
+            return u;
         } else {
             return null;
         }
@@ -75,23 +82,33 @@ public class UriCompat {
             }
             builder.clearQuery();
             for (Map.Entry<String, String> e : querys.entrySet()) {
-                builder.appendQueryParameter(e.getKey(), e.getValue());
+                if(!"__va_auth".equals(e.getKey())) {
+                    builder.appendQueryParameter(e.getKey(), e.getValue());
+                }
             }
-            return builder.build();
+            Uri u = builder.build();
+            if (DEBUG) {
+                Log.i(TAG, "wrapperUri uri:" + uri + "->" + u);
+            }
+            return u;
         }
         return uri;
     }
 
     public static Intent fakeFileUri(Intent intent) {
         if (!needFake(intent)) {
-            VLog.i(TAG, "don't need fake intent");
+            if (DEBUG) {
+                VLog.i(TAG, "don't need fake intent");
+            }
             return intent;
         }
         Uri uri = intent.getData();
         if (uri != null) {
             Uri u = fakeFileUri(uri);
             if (u != null) {
-                Log.i(TAG, "fake data uri:" + uri + "->" + u);
+                if (DEBUG) {
+                    Log.i(TAG, "fake data uri:" + uri + "->" + u);
+                }
                 intent.setData(u);
             }
         }

@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.IInterface;
 import android.os.Process;
 
+import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -977,6 +978,10 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, flags, userId);
             if (info != null) {
+                //fix createPckageContext  :p999
+                if(VClientImpl.get().getVUid() <= 0){
+                    info.uid = getRealUid();
+                }
                 return info;
             }
             info = (ApplicationInfo) method.invoke(who, args);

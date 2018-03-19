@@ -42,6 +42,7 @@ import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
+import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
 import com.lody.virtual.client.hook.proxies.usage.UsageStatsManagerStub;
@@ -57,6 +58,8 @@ import com.lody.virtual.helper.compat.BuildCompat;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import mirror.com.android.internal.telephony.IHwTelephony;
 
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
@@ -135,6 +138,11 @@ public final class InvocationStubManager {
 			addInjector(new MountServiceStub());
 			addInjector(new BackupManagerStub());
 			addInjector(new TelephonyStub());
+			if(BuildCompat.isOreo()) {
+			    if(IHwTelephony.TYPE != null) {
+                    addInjector(new HwTelephonyStub());
+                }
+            }
 			addInjector(new TelephonyRegistryStub());
 			addInjector(new PhoneSubInfoStub());
 			addInjector(new PowerManagerStub());

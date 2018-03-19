@@ -35,7 +35,7 @@ public class VApp extends MultiDexApplication {
         //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
         //google 支持（beta）
-        VASettings.ENABLE_GMS = true;
+        VASettings.ENABLE_GMS = mPreferences.getBoolean(VCommends.PREF_GMS_ENABLE, false);
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
@@ -43,6 +43,9 @@ public class VApp extends MultiDexApplication {
 
         //内部的开机广播
         VASettings.SEND_BOOT_COMPLETED = false;
+
+        //外部app访问内部的provider，仅文件
+        VASettings.PROVIDER_ONLY_FILE = true;
 
         try {
             VirtualCore.get().startup(base);
