@@ -2,6 +2,7 @@ package com.lody.virtual.client.hook.proxies.connectivity;
 
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 
 import java.lang.reflect.Method;
@@ -23,7 +24,7 @@ public class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
 
-            args[0] = "io.virtualapp";
+            args[0] = VirtualCore.get().getHostPkg();
 //          args[2] = getRealUid();
 
             String oldname = (String) args[0];
