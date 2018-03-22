@@ -42,7 +42,7 @@ public class VApp extends MultiDexApplication {
         //google测试
         VASettings.GOOGLE_SUPPOER = true;
         //
-        VASettings.DISABLE_FOREGROUND_SERVICE = true;
+        VASettings.DISABLE_FOREGROUND_SERVICE = false;
         //日志
         VLog.OPEN_LOG = BuildConfig.DEBUG;
         try {
