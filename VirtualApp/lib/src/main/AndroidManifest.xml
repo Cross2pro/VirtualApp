@@ -710,7 +710,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubDialog$C0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
-            android:excludeFromRecents="true"android:process=":p0"
+            android:process=":p0"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@android:style/Theme.Dialog" />
 
