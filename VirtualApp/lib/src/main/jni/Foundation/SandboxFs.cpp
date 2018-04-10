@@ -1,6 +1,9 @@
 #include <stdlib.h>
+#include <fb/include/fb/ALog.h>
 #include "SandboxFs.h"
 #include "Path.h"
+
+#define DEBUG_SANDBOX
 
 PathItem *keep_items;
 PathItem *forbidden_items;
@@ -8,6 +11,7 @@ ReplaceItem *replace_items;
 int keep_item_count;
 int forbidden_item_count;
 int replace_item_count;
+
 
 int add_keep_item(const char *path) {
     char keep_env_name[25];
@@ -85,17 +89,21 @@ inline bool match_path(bool is_folder, size_t size, const char *item_path, const
         if (strlen(path) < size) {
             // ignore the last '/'
             return strncmp(item_path, path, size - 1) == 0;
+        } else {
+            return strncmp(item_path, path, size) == 0;
         }
+    } else {
+        return strcmp(item_path, path) == 0;
     }
-    return strncmp(item_path, path, size) == 0;
 }
 
 
-const char *relocate_path(const char *path, int *result) {
-    if (path == NULL) {
+const char *relocate_path(const char *_path, int *result) {
+    if (_path == NULL) {
         *result = NOT_MATCH;
         return NULL;
     }
+    char *path = canonicalize_file_name(_path);
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (strcmp(item.path, path) == 0) {
@@ -116,16 +124,15 @@ const char *relocate_path(const char *path, int *result) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.orig_size, item.orig_path, path)) {
             *result = MATCH;
-            int len = strlen(path);
-            if (len < item.orig_size) {
-                //remove last /
-                std::string redirect_path(item.new_path, 0, item.new_size - 1);
-                return strdup(redirect_path.c_str());
-            } else {
-                std::string redirect_path(item.new_path);
-                redirect_path += path + item.orig_size;
-                return strdup(redirect_path.c_str());
-            }
+            char *replace_path = (char *) malloc(PATH_MAX);
+            memset(replace_path, 0, PATH_MAX);
+            strcpy(replace_path, item.new_path);
+            strcpy(replace_path + item.new_size, path + item.orig_size);
+#ifdef DEBUG_SANDBOX
+            ALOGE("replacePath %s -> %s", path, replace_path);
+#endif
+            free(path);
+            return replace_path;
         }
     }
     *result = NOT_MATCH;
@@ -151,7 +158,7 @@ const char *reverse_relocate_path(const char *_path) {
     if (_path == NULL) {
         return NULL;
     }
-    char *path = canonicalize_filename(_path);
+    char *path = canonicalize_file_name(_path);
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (strcmp(item.path, path) == 0) {
@@ -162,18 +169,12 @@ const char *reverse_relocate_path(const char *_path) {
     for (int i = 0; i < replace_item_count; ++i) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.new_size, item.new_path, path)) {
-            int len = strlen(path);
-            if (len < item.new_size) {
-                //remove last /
-                std::string reverse_path(item.orig_path, 0, item.orig_size - 1);
-                free(path);
-                return strdup(reverse_path.c_str());
-            } else {
-                std::string reverse_path(item.orig_path);
-                reverse_path += path + item.new_size;
-                free(path);
-                return strdup(reverse_path.c_str());
-            }
+            char *reverse_path = (char *) malloc(PATH_MAX);
+            memset(reverse_path, 0, PATH_MAX);
+            strcpy(reverse_path, item.orig_path);
+            strcpy(reverse_path + item.orig_size, path + item.new_size);
+            free(path);
+            return reverse_path;
         }
     }
     return _path;

@@ -24,7 +24,6 @@ import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VParceledListSlice;
-import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -594,6 +593,9 @@ public class VPackageManagerService extends IPackageManager.Stub {
         synchronized (mPackages) {
             for (VPackage.ProviderComponent p : mProvidersByComponent.values()) {
                 PackageSetting ps = (PackageSetting) p.owner.mExtras;
+                if (p.info.multiprocess) {
+                    continue;
+                }
                 if (processName == null || ps.appId == VUserHandle.getAppId(vuid) && p.info.processName.equals(processName)) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(p, flags, ps.readUserState(userId), userId);
                     finalList.add(providerInfo);

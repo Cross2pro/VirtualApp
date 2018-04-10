@@ -6,15 +6,14 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
 import android.os.IBinder;
-import android.os.Parcelable;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
-import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.stub.StubPendingActivity;
-import com.lody.virtual.client.stub.StubPendingReceiver;
-import com.lody.virtual.client.stub.StubPendingService;
+import com.lody.virtual.client.stub.ShadowPendingActivity;
+import com.lody.virtual.client.stub.ShadowPendingReceiver;
+import com.lody.virtual.client.stub.ShadowPendingService;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
@@ -148,7 +147,7 @@ public class ComponentUtils {
             case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
                 ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
                 if (info != null) {
-                    newIntent.setClass(VirtualCore.get().getContext(), StubPendingActivity.class);
+                    newIntent.setClass(VirtualCore.get().getContext(), ShadowPendingActivity.class);
                     newIntent.setFlags(intent.getFlags());
                     if (iBinder != null) {
                         try {
@@ -166,12 +165,12 @@ public class ComponentUtils {
             case ActivityManagerCompat.INTENT_SENDER_SERVICE: {
                 ComponentInfo info = VirtualCore.get().resolveServiceInfo(intent, VUserHandle.myUserId());
                 if (info != null) {
-                    newIntent.setClass(VirtualCore.get().getContext(), StubPendingService.class);
+                    newIntent.setClass(VirtualCore.get().getContext(), ShadowPendingService.class);
                 }
             }
             break;
             case ActivityManagerCompat.INTENT_SENDER_BROADCAST: {
-                newIntent.setClass(VirtualCore.get().getContext(), StubPendingReceiver.class);
+                newIntent.setClass(VirtualCore.get().getContext(), ShadowPendingReceiver.class);
             }
             break;
             default:

@@ -1,7 +1,7 @@
 package com.lody.virtual.client.hook.proxies.libcore;
 
 import com.lody.virtual.client.NativeEngine;
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.helper.utils.Reflect;
@@ -30,7 +30,7 @@ class MethodProxies {
                 Reflect pwd = Reflect.on(result);
                 int uid = pwd.get("st_uid");
                 if (uid == VirtualCore.get().myUid()) {
-                    pwd.set("st_uid", VClientImpl.get().getVUid());
+                    pwd.set("st_uid", VClient.get().getVUid());
                 }
             }
             return result;
@@ -50,7 +50,7 @@ class MethodProxies {
                 Reflect pwd = Reflect.on(result);
                 int uid = pwd.get("st_uid");
                 if (uid == VirtualCore.get().myUid()) {
-                    pwd.set("st_uid", VClientImpl.get().getVUid());
+                    pwd.set("st_uid", VClient.get().getVUid());
                 }
             }
             return result;
@@ -68,7 +68,7 @@ class MethodProxies {
                     Reflect pwd = Reflect.on(result);
                     int uid = pwd.get("pw_uid");
                     if (uid == VirtualCore.get().myUid()) {
-                        pwd.set("pw_uid", VClientImpl.get().getVUid());
+                        pwd.set("pw_uid", VClient.get().getVUid());
                     }
                 }
                 return result;

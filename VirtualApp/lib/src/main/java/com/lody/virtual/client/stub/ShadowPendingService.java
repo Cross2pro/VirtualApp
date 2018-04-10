@@ -1,17 +1,17 @@
 package com.lody.virtual.client.stub;
 
-import com.lody.virtual.client.ipc.VActivityManager;
-
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+
+import com.lody.virtual.client.ipc.VActivityManager;
 
 
 /**
  * @author Lody
  */
 
-public class StubPendingService extends Service {
+public class ShadowPendingService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;

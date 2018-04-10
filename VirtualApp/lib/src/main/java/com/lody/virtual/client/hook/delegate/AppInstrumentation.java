@@ -10,10 +10,12 @@ import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.client.fixer.ContextFixer;
+import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -67,8 +69,14 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
         return !(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) instanceof AppInstrumentation);
     }
 
+    private void checkActivityCallback() {
+        InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
+        InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
+    }
+
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
+        checkActivityCallback();
         if (icicle != null) {
             BundleCompat.clearParcelledData(icicle);
         }
@@ -120,7 +128,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                 IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
                 if (callback != null) {
                     try {
-                        callback.onAppOpened(VClientImpl.get().getCurrentPackage(), VUserHandle.myUserId());
+                        callback.onAppOpened(VClient.get().getCurrentPackage(), VUserHandle.myUserId());
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -147,6 +155,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public void callApplicationOnCreate(Application app) {
+        checkActivityCallback();
         super.callApplicationOnCreate(app);
     }
 

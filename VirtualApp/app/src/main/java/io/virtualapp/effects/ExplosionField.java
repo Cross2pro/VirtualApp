@@ -1,10 +1,5 @@
 package io.virtualapp.effects;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
@@ -21,7 +16,12 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ImageView;
 
-import io.virtualapp.VApp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import io.virtualapp.App;
 import io.virtualapp.abs.ui.VUiKit;
 
 public class ExplosionField extends View {
@@ -94,7 +94,7 @@ public class ExplosionField extends View {
 	}
 
 	private void init() {
-		Arrays.fill(mExpandInset, VUiKit.dpToPx(VApp.getApp(), 32));
+		Arrays.fill(mExpandInset, VUiKit.dpToPx(App.getApp(), 32));
 	}
 
 	@Override

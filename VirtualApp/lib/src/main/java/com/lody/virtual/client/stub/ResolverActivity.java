@@ -22,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PatternMatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +33,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.lody.virtual.R;
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.Reflect;
@@ -375,7 +374,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                             intent.getComponent());
                 } else {
                     try {
-                        Reflect.on(VClientImpl.get().getCurrentApplication().getPackageManager()).call("setLastChosenActivity",
+                        Reflect.on(VClient.get().getCurrentApplication().getPackageManager()).call("setLastChosenActivity",
                                 intent,
                                 intent.resolveTypeIfNeeded(getContentResolver()),
                                 PackageManager.MATCH_DEFAULT_ONLY,

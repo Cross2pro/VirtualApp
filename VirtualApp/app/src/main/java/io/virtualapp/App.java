@@ -11,18 +11,18 @@ import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
-import io.virtualapp.delegate.MyTaskDescriptionDelegate;
+import io.virtualapp.delegate.MyTaskDescDelegate;
 import jonathanfinerty.once.Once;
 
 /**
  * @author Lody
  */
-public class VApp extends MultiDexApplication {
+public class App extends MultiDexApplication {
 
-    private static VApp gApp;
+    private static App gApp;
     private SharedPreferences mPreferences;
 
-    public static VApp getApp() {
+    public static App getApp() {
         return gApp;
     }
 
@@ -39,10 +39,7 @@ public class VApp extends MultiDexApplication {
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
-        VLog.OPEN_LOG = BuildConfig.DEBUG;
-
-        //内部的开机广播
-        VASettings.SEND_BOOT_COMPLETED = false;
+        VLog.OPEN_LOG = true;
 
         //外部app访问内部的provider，仅文件
         VASettings.PROVIDER_ONLY_FILE = true;
@@ -64,13 +61,13 @@ public class VApp extends MultiDexApplication {
             @Override
             public void onMainProcess() {
                 //宿主初始化
-                Once.initialise(VApp.this);
+                Once.initialise(App.this);
                 new FlurryAgent.Builder()
                         .withLogEnabled(true)
                         .withListener(() -> {
                             // nothing
                         })
-                        .build(VApp.this, "48RJJP7ZCZZBB6KMMWW5");
+                        .build(App.this, "48RJJP7ZCZZBB6KMMWW5");
             }
 
             @Override
@@ -78,12 +75,12 @@ public class VApp extends MultiDexApplication {
                 //listener components
                 virtualCore.setComponentDelegate(new MyComponentDelegate());
                 //fake task description's icon and title
-                virtualCore.setTaskDescriptionDelegate(new MyTaskDescriptionDelegate());
+                virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
             }
 
             @Override
             public void onServerProcess() {
-                virtualCore.setAppRequestListener(new MyAppRequestListener(VApp.this));
+                virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
                 virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");
                 virtualCore.addVisibleOutsidePackage("com.tencent.mobileqqi");
                 virtualCore.addVisibleOutsidePackage("com.tencent.minihd.qq");

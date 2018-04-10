@@ -101,10 +101,10 @@ public class AppRepository implements AppDataSource {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
-                if (GmsSupport.isGoogleAppOrService(info.packageName)) {
-                    continue;
-                }
-                if (info.dependSystem) {
+//                if (GmsSupport.isGoogleAppOrService(info.packageName)) {
+//                    continue;
+//                }
+                if (info.notCopyApk) {
                     //检查是否升级
                     PackageUtils.checkUpdate(mContext, info.packageName);
                 }
@@ -160,7 +160,7 @@ public class AppRepository implements AppDataSource {
     }
 
     private List<AppInfo> convertPackageInfoToAppData(Context context, List<PackageInfo> pkgList,
-                                                      boolean fastOpen, boolean hideGApps) {
+                                                      boolean notCopyApk, boolean hideGApps) {
         PackageManager pm = context.getPackageManager();
         List<AppInfo> list = new ArrayList<>(pkgList.size());
         String hostPkg = VirtualCore.get().getHostPkg();
@@ -185,7 +185,7 @@ public class AppRepository implements AppDataSource {
             }
             AppInfo info = new AppInfo();
             info.packageName = pkg.packageName;
-            info.fastOpen = fastOpen;
+            info.fastOpen = notCopyApk;
             info.path = path;
             info.icon = ai.loadIcon(pm);
             info.name = ai.loadLabel(pm);
@@ -200,9 +200,9 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public InstallResult addVirtualApp(AppInfoLite info) {
-        int flags = InstallStrategy.COMPARE_VERSION | InstallStrategy.SKIP_DEX_OPT;
-        if (info.fastOpen) {
-            flags |= InstallStrategy.DEPEND_SYSTEM_IF_EXIST;
+        int flags = InstallStrategy.COMPARE_VERSION;
+        if (info.notCopyApk) {
+            flags |= InstallStrategy.NOT_COPY_APK;
         }
         return VirtualCore.get().installPackage(info.path, flags);
     }

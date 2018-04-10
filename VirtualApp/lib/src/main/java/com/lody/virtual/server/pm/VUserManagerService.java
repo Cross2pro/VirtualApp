@@ -33,12 +33,10 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -687,7 +685,7 @@ public class VUserManagerService extends IUserManager.Stub {
                     long now = System.currentTimeMillis();
                     userInfo.creationTime = (now > EPOCH_PLUS_30_YEARS) ? now : 0;
                     userInfo.partial = true;
-                    VEnvironment.getUserSystemDirectory(userInfo.id).mkdirs();
+                    VAppManagerService.get().onUserCreated(userInfo);
                     mUsers.put(userId, userInfo);
                     writeUserListLocked();
                     writeUserLocked(userInfo);

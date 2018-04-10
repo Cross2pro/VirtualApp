@@ -10,7 +10,5 @@ public interface InstallStrategy {
 	int UPDATE_IF_EXIST = 0x01 << 2;
 	int COMPARE_VERSION = 0X01 << 3;
 	int IGNORE_NEW_VERSION = 0x01 << 4;
-	int DEPEND_SYSTEM_IF_EXIST = 0x01 << 5;
-	int SKIP_DEX_OPT = 0x01 << 6;
-	int MOVE_FILE = 0x01 << 7;
+	int NOT_COPY_APK = 0x01 << 5;
 }

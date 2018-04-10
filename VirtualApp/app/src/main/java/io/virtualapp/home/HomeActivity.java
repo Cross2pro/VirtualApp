@@ -37,8 +37,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.virtualapp.App;
 import io.virtualapp.R;
-import io.virtualapp.VApp;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
 import io.virtualapp.abs.ui.VActivity;
@@ -350,7 +350,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 .setTitle(R.string.tip_install_gms)
                 .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    VApp.getApp().getPreferences()
+                    App.getApp().getPreferences()
                             .edit()
                             .putBoolean(VCommends.PREF_GMS_ENABLE, true)
                             .commit();

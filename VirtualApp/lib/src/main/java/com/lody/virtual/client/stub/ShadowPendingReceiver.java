@@ -11,7 +11,7 @@ import com.lody.virtual.os.VUserHandle;
  * @author Lody
  */
 
-public class StubPendingReceiver extends BroadcastReceiver {
+public class ShadowPendingReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {

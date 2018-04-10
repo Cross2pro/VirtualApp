@@ -15,8 +15,8 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
-import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.helper.collection.SparseArray;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 
 import java.util.Map;
@@ -31,9 +31,9 @@ import static com.lody.virtual.server.job.VJobSchedulerService.get;
  *         This service running on the Server process.
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class StubJob extends Service {
+public class ShadowJobService extends Service {
 
-    private static final String TAG = StubJob.class.getSimpleName();
+    private static final String TAG = ShadowJobService.class.getSimpleName();
     private final SparseArray<JobSession> mJobSessions = new SparseArray<>();
     private JobScheduler mScheduler;
     private final IJobService mService = new IJobService.Stub() {

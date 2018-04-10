@@ -12,11 +12,9 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.stub.DaemonService;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.ipcbus.IPCBus;
-import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -46,13 +44,27 @@ import com.lody.virtual.server.vs.VirtualStorageService;
 public final class BinderProvider extends ContentProvider {
 
     private final ServiceFetcher mServiceFetcher = new ServiceFetcher();
+    private boolean initialized = false;
 
     @Override
     public boolean onCreate() {
+        return init();
+    }
+
+    private boolean init() {
+        if (initialized) {
+            return false;
+        }
         Context context = getContext();
-        DaemonService.startup(context);
+        if (context != null) {
+            try {
+                context.startService(new Intent(context, KeepAliveService.class));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         if (!VirtualCore.get().isStartup()) {
-            return true;
+            return false;
         }
         VPackageManagerService.systemReady();
         IPCBus.register(IPackageManager.class, VPackageManagerService.get());
@@ -74,23 +86,19 @@ public final class BinderProvider extends ContentProvider {
         VDeviceManagerService.systemReady(context);
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
-        if(VASettings.SEND_BOOT_COMPLETED) {
-            //send boot completed in inner.
-            Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
-            VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
-        }
+        initialized = true;
         return true;
     }
 
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
+        if (!initialized) {
+            init();
+        }
         if ("@".equals(method)) {
             Bundle bundle = new Bundle();
             BundleCompat.putBinder(bundle, "_VA_|_binder_", mServiceFetcher);
             return bundle;
-        }
-        if ("register".equals(method)) {
-
         }
         return null;
     }

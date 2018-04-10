@@ -38,19 +38,6 @@ abstract class StubBinder implements IBinder {
 		return VirtualCore.get().getHostPkg();
 	}
 
-	protected void fakePackage(Object[] args){
-//		if (args != null) {
-//			for (int i = 0; i < args.length; i++) {
-//				if (args[i] instanceof String) {
-//					String str = (String) args[i];
-//					if (getHostPkg().equals(str)) {
-//						args[i] = getAppPkg();
-//					}
-//				}
-//			}
-//		}
-	}
-
 	@Override
 	public String getInterfaceDescriptor() throws RemoteException {
 		return mBase.getInterfaceDescriptor();

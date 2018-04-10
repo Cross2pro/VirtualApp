@@ -16,14 +16,12 @@ import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
-import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -280,7 +278,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         ClearTarget clearTarget = ClearTarget.NOTHING;
         boolean clearTop = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
         boolean clearTask = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        boolean receiverForeground =containFlags(intent, Intent.FLAG_RECEIVER_FOREGROUND);
+        boolean receiverForeground = containFlags(intent, Intent.FLAG_RECEIVER_FOREGROUND);
 
         if (intent.getComponent() == null) {
             intent.setComponent(new ComponentName(info.packageName, info.name));
@@ -348,12 +346,12 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 clearTarget = ClearTarget.SPEC_ACTIVITY;
             }
         }
-        if ((sourceTask == null && reuseTarget == ReuseTarget.CURRENT)||receiverForeground) {
+        if ((sourceTask == null && reuseTarget == ReuseTarget.CURRENT) || receiverForeground) {
             reuseTarget = ReuseTarget.AFFINITY;
         }
-        if("com.google.android.gms.games.SIGN_IN".equals(intent.getAction())){
+        if ("com.google.android.gms.games.SIGN_IN".equals(intent.getAction())) {
             String packageName = intent.getStringExtra("com.google.android.gms.games.GAME_PACKAGE_NAME");
-            if(!TextUtils.isEmpty(packageName)){
+            if (!TextUtils.isEmpty(packageName)) {
                 reuseTarget = ReuseTarget.AFFINITY;
             }
         }
@@ -536,15 +534,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
                 isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
                 isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
-            }else{
-                Resources resources=VirtualCore.get().getResources(targetInfo.packageName);
-                if(resources!=null) {
-                    TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
-                    if(typedArray!=null){
-                        showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
-                        isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
-                        isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
-                    }
+            } else {
+                Resources resources = VirtualCore.get().getResources(targetInfo.packageName);
+                TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
+                if (typedArray != null) {
+                    showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                    isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                    isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
                 }
             }
         } catch (Throwable e) {

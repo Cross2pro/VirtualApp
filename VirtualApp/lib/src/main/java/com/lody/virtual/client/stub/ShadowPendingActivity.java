@@ -12,7 +12,7 @@ import com.lody.virtual.remote.StubActivityRecord;
  * @author Lody
  */
 
-public class StubPendingActivity extends Activity {
+public class ShadowPendingActivity extends Activity {
 
     public static final String EXTRA_RESULTTO = "_va|ibinder|resultTo";
     public static final String EXTRA_RESULTWHO = "_va|string|resultWho";

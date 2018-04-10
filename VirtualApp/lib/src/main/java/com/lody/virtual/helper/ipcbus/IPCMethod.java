@@ -14,14 +14,13 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.content.Intent;
-
-import com.lody.virtual.client.core.VirtualCore;
-
 /**
  * @author Lody
  */
 public class IPCMethod {
+
+    private static final int VAL_PARCELABLE = 4;
+    private static final int VAL_PARCELABLEARRAY = 16;
 
     private int code;
     private Method method;
@@ -37,14 +36,20 @@ public class IPCMethod {
         Class<?>[] parameterTypes = method.getParameterTypes();
         converters = new MethodParamConverter[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; i++) {
-            if (isAidlParam(parameterTypes[i])) {
-                converters[i] = new AidlParamConverter(parameterTypes[i]);
-            }
+            converters[i] = getConverter(parameterTypes[i]);
         }
         Class<?> returnType = method.getReturnType();
-        if (isAidlParam(returnType)) {
-            resultConverter = new AidlParamConverter(returnType);
+        resultConverter = getConverter(returnType);
+    }
+
+    private MethodParamConverter getConverter(Class<?> type) {
+        if (isAidlParam(type)) {
+            return new AidlParamConverter(type);
         }
+        if (type.isArray()) {
+            return new ParcelArrayParamConverter(type.getComponentType());
+        }
+        return null;
     }
 
     private boolean isAidlParam(Class<?> type) {
@@ -103,38 +108,87 @@ public class IPCMethod {
         throw new IllegalStateException("Can not found the " + type.getName() + "$Stub.asInterface method.");
     }
 
+
+    private static final Map<Class<?>, String> sAncestorClasses = new HashMap<>();
+
+
+    private static boolean hasClass(String className) {
+        try {
+            IPCMethod.class.getClassLoader().loadClass(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private static String getAncestorClass(Class<?> clazz) {
+        synchronized (sAncestorClasses) {
+            String target = sAncestorClasses.get(clazz);
+            if (target == null) {
+                while (!hasClass(clazz.getName())) {
+                    clazz = clazz.getSuperclass();
+                    if (clazz == Object.class || clazz == null) {
+                        break;
+                    }
+                }
+                if (clazz != null) {
+                    target = clazz.getName();
+                    sAncestorClasses.put(clazz, target);
+                }
+            }
+            return target;
+        }
+    }
+
+    private static void writeParcelable(Parcel data, Parcelable arg) {
+        String className = arg.getClass().getName();
+        if (hasClass(className)) {
+            data.writeValue(arg);
+        } else {
+            data.writeInt(VAL_PARCELABLE);
+            String ancestorClassName = getAncestorClass(arg.getClass());
+            if (ancestorClassName == null) {
+                throw new RuntimeException("Can't find ancestor class for " + arg.getClass());
+            }
+            data.writeString(ancestorClassName);
+            arg.writeToParcel(data, 0);
+        }
+    }
+
+    private static void writeParcelableArray(Parcel data, Parcelable[] array) {
+        data.writeInt(VAL_PARCELABLEARRAY);
+        int N = array.length;
+        data.writeInt(N);
+        for (Parcelable p : array) {
+            writeParcelable(data, p);
+        }
+    }
+
     public Object callRemote(IBinder server, Object[] args) throws RemoteException {
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         Object result;
         try {
             data.writeInterfaceToken(interfaceName);
-//            data.writeArray(args);
             if (args == null) {
                 data.writeInt(-1);
             } else {
                 data.writeInt(args.length);
-                for (int i = 0; i < args.length; i++) {
-                    Object obj = args[i];
-                    if (obj == null) {
-                        data.writeValue(obj);
-                    } else if (obj instanceof Parcelable) {
-                        String clazz = obj.getClass().getName();
-                        if (hostHasClass(clazz)) {
-                            data.writeValue(obj);
-                        } else {
-                            data.writeInt(4);
-                            data.writeString(getPublicClass(obj.getClass()));
-                            ((Parcelable) obj).writeToParcel(data, 0);
-                        }
+                for (Object arg : args) {
+                    if (arg == null) {
+                        data.writeValue(null);
+                    } else if (arg instanceof Parcelable) {
+                        writeParcelable(data, (Parcelable) arg);
+                    } else if (arg instanceof Parcelable[]) {
+                        writeParcelableArray(data, (Parcelable[]) arg);
                     } else {
-                        data.writeValue(obj);
+                        data.writeValue(arg);
                     }
                 }
             }
             server.transact(code, data, reply, 0);
             reply.readException();
-            result = readValue(reply);
+            result = reply.readValue(getClass().getClassLoader());
             if (resultConverter != null) {
                 result = resultConverter.convert(result);
             }
@@ -145,46 +199,6 @@ public class IPCMethod {
         return result;
     }
 
-    private static final Map<Class<?>, String> sPublicClasses = new HashMap<>();
-
-    private String getPublicClass(Class<?> clazz) {
-        String target;
-        synchronized (sPublicClasses) {
-            target = sPublicClasses.get(clazz);
-        }
-        if (target == null) {
-            boolean next = !hostHasClass(clazz.getName());
-            while (next) {
-                clazz = clazz.getSuperclass();
-                next = !hostHasClass(clazz.getName());
-            }
-            target = clazz.getName();
-            synchronized (sPublicClasses) {
-                sPublicClasses.put(clazz, target);
-            }
-        }
-        return target;
-    }
-
-    private boolean hostHasClass(String clazz){
-        try {
-            VirtualCore.get().getContext().getClassLoader().loadClass(clazz);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private Object readValue(Parcel replay) {
-        Object result = replay.readValue(getClass().getClassLoader());
-        if (result instanceof Parcelable[]) {
-            Parcelable[] parcelables = (Parcelable[]) result;
-            Object[] results = (Object[]) Array.newInstance(method.getReturnType().getComponentType(), parcelables.length);
-            System.arraycopy(parcelables, 0, results, 0, results.length);
-            return results;
-        }
-        return result;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -198,6 +212,26 @@ public class IPCMethod {
 
     public interface MethodParamConverter {
         Object convert(Object param);
+    }
+
+    private class ParcelArrayParamConverter implements MethodParamConverter {
+
+        private Class<?> componentType;
+
+        public ParcelArrayParamConverter(Class<?> componentType) {
+            this.componentType = componentType;
+        }
+
+        @Override
+        public Object convert(Object param) {
+            if (param instanceof Parcelable[]) {
+                Parcelable[] parcelables = (Parcelable[]) param;
+                Object[] results = (Object[]) Array.newInstance(componentType, parcelables.length);
+                System.arraycopy(parcelables, 0, results, 0, results.length);
+                return results;
+            }
+            return param;
+        }
     }
 
     private class AidlParamConverter implements MethodParamConverter {

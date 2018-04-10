@@ -127,9 +127,9 @@ public class NativeEngine {
     public static void enableIORedirect() {
         try {
             String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
-                    "lib/lib"+LIB_NAME+".so").getAbsolutePath();
+                    "lib/lib" + LIB_NAME + ".so").getAbsolutePath();
             if (!new File(soPath).exists()) {
-                throw new RuntimeException("Unable to find the so "+soPath);
+                throw new RuntimeException("Cannot find so " + soPath);
             }
             nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {
@@ -150,22 +150,18 @@ public class NativeEngine {
         sFlag = true;
     }
 
-    public static int onKillProcess(int pid, int signal) {
+    public static boolean onKillProcess(int pid, int signal) {
         VLog.e(TAG, "killProcess: pid = %d, signal = %d.", pid, signal);
         if (pid == Process.myPid()) {
             VLog.e(TAG, VLog.getStackTraceString(new Throwable()));
-//            StubService.stop(VirtualCore.get().getContext(), VClientImpl.get().getVPid());
         }
-        if (!VClientImpl.get().getCurrentPackage().equals("com.imo.android.imoim") || pid == Process.myPid()) {
-            return 0;
-        }
-        return 1;
+        return true;
     }
 
     public static int onGetCallingUid(int originUid) {
         int callingPid = Binder.getCallingPid();
         if (callingPid == Process.myPid()) {
-            return VClientImpl.get().getBaseVUid();
+            return VClient.get().getBaseVUid();
         }
         if (callingPid == VirtualCore.get().getSystemPid()) {
             return Process.SYSTEM_UID;
@@ -174,18 +170,18 @@ public class NativeEngine {
         if (vuid != -1) {
             return VUserHandle.getAppId(vuid);
         }
-        VLog.d(TAG, "Unknown uid: " + callingPid);
-        return VClientImpl.get().getBaseVUid();
+        VLog.w(TAG, "Cannot detect real uid: %d", callingPid);
+        return VClient.get().getBaseVUid();
     }
 
     public static void onOpenDexFileNative(String[] params) {
         String dexOrJarPath = params[0];
         String outputPath = params[1];
-        VLog.d(TAG, "DexOrJarPath = %s, OutputPath = %s.", dexOrJarPath, outputPath);
+        VLog.d(TAG, "openDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
         try {
             String canonical = new File(dexOrJarPath).getCanonicalPath();
             InstalledAppInfo info = sDexOverrideMap.get(canonical);
-            if (info != null && !info.dependSystem) {
+            if (info != null) {
                 outputPath = info.getOdexFile().getPath();
                 params[1] = outputPath;
             }
@@ -212,6 +208,6 @@ public class NativeEngine {
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
 
     public static int onGetUid(int uid) {
-        return VClientImpl.get().getBaseVUid();
+        return VClient.get().getBaseVUid();
     }
 }

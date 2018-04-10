@@ -28,7 +28,6 @@ public final class SpecialComponentList {
     private static final Map<String, String> PROTECTED_ACTION_MAP = new HashMap<>(5);
     private static final HashSet<String> WHITE_PERMISSION = new HashSet<>(3);
     private static final HashSet<String> BROADCAST_START_WHITE_LIST = new HashSet<>();
-    private static final HashSet<String> IO_REDIRECT_BLACK_LIST = new HashSet<>(1);
     private static final HashSet<String> INSTRUMENTATION_CONFLICTING = new HashSet<>(2);
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
@@ -60,6 +59,8 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.location.MODE_CHANGED");
 
         ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
+        ACTION_BLACK_LIST.add("com.sina.weibo.action.BACK_TO_FORGROUND");
+        ACTION_BLACK_LIST.add("com.sina.weibo.action.BACK_TO_BACKGROUND");
 
         WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
         WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
@@ -91,8 +92,6 @@ public final class SpecialComponentList {
             }
         }
 
-        IO_REDIRECT_BLACK_LIST.add("com.snapchat.android");
-
         BROADCAST_START_WHITE_LIST.add("com.facebook.orca");
         BROADCAST_START_WHITE_LIST.add("com.facebook.katana");
         BROADCAST_START_WHITE_LIST.add("com.tencent.mm");
@@ -105,7 +104,7 @@ public final class SpecialComponentList {
 
     }
 
-    public static void addStaticBroadCastWhiteList(String pkg){
+    public static void addStaticBroadCastWhiteList(String pkg) {
         BROADCAST_START_WHITE_LIST.add(pkg);
     }
 
@@ -145,7 +144,7 @@ public final class SpecialComponentList {
                     iterator.remove();
                     continue;
                 }
-                if(GmsSupport.isGoogleAppOrService(packageName)){
+                if (GmsSupport.isGoogleAppOrService(packageName)) {
                     iterator.remove();
                     continue;
                 }
@@ -208,17 +207,7 @@ public final class SpecialComponentList {
         return WHITE_PERMISSION.contains(permission);
     }
 
-    public static boolean needIORedirect(String str) {
-        if (IO_REDIRECT_BLACK_LIST.contains(str)) {
-            return false;
-        }
-        return true;
-    }
-
     public static boolean canStartFromBroadcast(String str) {
-        if (BROADCAST_START_WHITE_LIST.contains(str)) {
-            return true;
-        }
-        return false;
+        return BROADCAST_START_WHITE_LIST.contains(str);
     }
 }

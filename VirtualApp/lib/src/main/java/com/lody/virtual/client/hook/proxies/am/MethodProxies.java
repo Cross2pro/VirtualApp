@@ -31,7 +31,7 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.NativeEngine;
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.badger.BadgerManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
@@ -46,7 +46,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
-import com.lody.virtual.client.stub.StubPendingActivity;
+import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -70,6 +70,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -356,13 +357,12 @@ class MethodProxies {
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             int userId = VUserHandle.myUserId();
 
-            if ("android.intent.action.MAIN".equals(intent.getAction()) && intent.hasCategory("android.intent.category.HOME") && (intent.getComponent() == null || intent.getComponent().getClassName().equals("com.google.android.setupwizard.SetupWizardActivity"))) {
-                intent.setComponent(null);
-                intent.removeCategory("android.intent.category.HOME");
-                intent.addCategory("android.intent.category.LAUNCHER");
-                intent.setPackage(getHostPkg());
+            if ("android.intent.action.MAIN".equals(intent.getAction())
+                    && intent.hasCategory("android.intent.category.HOME")) {
                 return method.invoke(who, args);
-            } else if (ComponentUtils.isStubComponent(intent)) {
+            }
+
+            if (ComponentUtils.isStubComponent(intent)) {
                 return method.invoke(who, args);
             }
 
@@ -850,10 +850,10 @@ class MethodProxies {
                     int requestCode = (int) args[requestCodeIndex];
                     Bundle options = (Bundle) args[optionsIndex];
 
-                    intent.putExtra(StubPendingActivity.EXTRA_REQUESTCODE, requestCode);
-                    intent.putExtra(StubPendingActivity.EXTRA_RESULTWHO, resultWho);
-                    intent.putExtra(StubPendingActivity.EXTRA_OPTIONS, options);
-                    mirror.android.content.Intent.putExtra.call(intent, StubPendingActivity.EXTRA_RESULTTO, resultTo);
+                    intent.putExtra(ShadowPendingActivity.EXTRA_REQUESTCODE, requestCode);
+                    intent.putExtra(ShadowPendingActivity.EXTRA_RESULTWHO, resultWho);
+                    intent.putExtra(ShadowPendingActivity.EXTRA_OPTIONS, options);
+                    mirror.android.content.Intent.putExtra.call(intent, ShadowPendingActivity.EXTRA_RESULTTO, resultTo);
                 }
             }
             return super.call(who, method, args);
@@ -1013,10 +1013,14 @@ class MethodProxies {
 
         @Override
         public synchronized Object call(Object who, Method method, Object... args) throws Throwable {
-            List<ActivityManager.RunningAppProcessInfo> infoList = (List<ActivityManager.RunningAppProcessInfo>) method
+            List<ActivityManager.RunningAppProcessInfo> _infoList = (List<ActivityManager.RunningAppProcessInfo>) method
                     .invoke(who, args);
-            if (infoList != null) {
-                for (ActivityManager.RunningAppProcessInfo info : infoList) {
+            if (_infoList == null) {
+                return null;
+            }
+            List<ActivityManager.RunningAppProcessInfo> infoList = new ArrayList<>(_infoList);
+            for (ActivityManager.RunningAppProcessInfo info : infoList) {
+                if (info.uid == VirtualCore.get().myUid()) {
                     if (VActivityManager.get().isAppPid(info.pid)) {
                         List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
                         String processName = VActivityManager.get().getAppProcessName(info.pid);
@@ -1153,7 +1157,7 @@ class MethodProxies {
                 return PackageManager.PERMISSION_GRANTED;
             }
             args[args.length - 1] = getRealUid();
-            return method.invoke(who, args);
+            return PackageManager.PERMISSION_GRANTED;
         }
 
         @Override
@@ -1332,7 +1336,7 @@ class MethodProxies {
             private boolean accept(Intent intent) {
                 int uid = intent.getIntExtra("_VA_|_uid_", -1);
                 if (uid != -1) {
-                    return VClientImpl.get().getVUid() == uid;
+                    return VClient.get().getVUid() == uid;
                 }
                 int userId = intent.getIntExtra("_VA_|_user_id_", -1);
                 if (userId == -1 || userId == VUserHandle.myUserId()) {
@@ -1479,7 +1483,7 @@ class MethodProxies {
             // If the activity label/icon isn't specified, the application's label/icon is shown instead
             // Android usually does that for us, but in this case we want info about the contained app, not VIrtualApp itself
             if (label == null || icon == null) {
-                Application app = VClientImpl.get().getCurrentApplication();
+                Application app = VClient.get().getCurrentApplication();
                 if (app != null) {
                     try {
                         if (label == null) {
@@ -1567,6 +1571,7 @@ class MethodProxies {
 
     static class BroadcastIntent extends MethodProxy {
         private static final HashSet<String> ACTION_BLACK_LIST = new HashSet<>();
+
         static {
             ACTION_BLACK_LIST.add("com.google.android.gms.walletp2p.phenotype.ACTION_PHENOTYPE_REGISTER");
             ACTION_BLACK_LIST.add("com.facebook.zero.ACTION_ZERO_REFRESH_TOKEN");
@@ -1616,11 +1621,38 @@ class MethodProxies {
 
                 handleUninstallShortcutIntent(intent);
 
+            } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
+                return handleMediaScannerIntent(intent);
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
             } else {
                 return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
             }
+            return intent;
+        }
+
+        private Intent handleMediaScannerIntent(Intent intent) {
+            if (intent == null) {
+                return null;
+            }
+            Uri data = intent.getData();
+            if (data == null) {
+                return intent;
+            }
+            String scheme = data.getScheme();
+            if (!"file".equalsIgnoreCase(scheme)) {
+                return intent;
+            }
+            String path = data.getPath();
+            if (path == null) {
+                return intent;
+            }
+            String newPath = NativeEngine.getRedirectedPath(path);
+            File newFile = new File(newPath);
+            if (!newFile.exists()) {
+                return intent;
+            }
+            intent.setData(Uri.fromFile(newFile));
             return intent;
         }
 
@@ -1730,6 +1762,7 @@ class MethodProxies {
             return isAppProcess();
         }
     }
+
     static class CheckGrantUriPermission extends MethodProxy {
 
         @Override
@@ -1793,7 +1826,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VClientImpl.get().isOutSideDiff()) {
+            if (VClient.get().isOutSideDiff()) {
                 //apk res
                 return 0;
             }

@@ -11,8 +11,6 @@ import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
-import java.io.IOException;
-
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.AppData;
@@ -143,27 +141,20 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 PackageAppData data = addResult.appData;
                 data.isLoading = true;
                 mView.addAppToLauncher(data);
-                handleOptApp(data, info.packageName, true);
+                handleLoadingApp(data);
             } else {
                 MultiplePackageAppData data = new MultiplePackageAppData(addResult.appData, addResult.userId);
                 data.isLoading = true;
                 mView.addAppToLauncher(data);
-                handleOptApp(data, info.packageName, false);
+                handleLoadingApp(data);
             }
         });
     }
 
 
-    private void handleOptApp(AppData data, String packageName, boolean needOpt) {
+    private void handleLoadingApp(AppData data) {
         VUiKit.defer().when(() -> {
             long time = System.currentTimeMillis();
-            if (needOpt) {
-                try {
-                    VirtualCore.get().preOpt(packageName);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
             time = System.currentTimeMillis() - time;
             if (time < 1500L) {
                 try {

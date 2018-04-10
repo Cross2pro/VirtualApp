@@ -5,11 +5,7 @@
 #ifndef FOUNDATION_PATH
 #define FOUNDATION_PATH
 
-#include <string.h>
-
-int get_last_slash_pos(char *s);
-
-char* canonicalize_filename(const char *str);
+char *canonicalize_file_name(const char *pathname);
 
 
 #endif //FOUNDATION_PATH

@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
-import android.os.Parcel;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -40,11 +39,9 @@ import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ApplicationThreadCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.compat.IApplicationThreadCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
@@ -52,7 +49,6 @@ import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.interfaces.IActivityManager;
-import com.lody.virtual.server.interfaces.IProcessObserver;
 import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
@@ -76,9 +72,7 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
  */
 public class VActivityManagerService extends IActivityManager.Stub {
 
-    private static final boolean BROADCAST_NOT_STARTED_PKG = false;
-
-    private static final Singleton<VActivityManagerService> sService = new Singleton<VActivityManagerService>(){
+    private static final Singleton<VActivityManagerService> sService = new Singleton<VActivityManagerService>() {
         @Override
         protected VActivityManagerService create() {
             return new VActivityManagerService();
@@ -320,7 +314,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
             VLog.e(TAG, "Unable to start new Process for : " + ComponentUtils.toComponentName(serviceInfo));
             return null;
         }
-        IInterface appThread = targetApp.appThread;
         ServiceRecord r = findRecordLocked(userId, serviceInfo);
         if (r == null) {
             r = new ServiceRecord();
@@ -329,24 +322,40 @@ public class VActivityManagerService extends IActivityManager.Stub {
             r.process = targetApp;
             r.serviceInfo = serviceInfo;
             try {
-                IApplicationThreadCompat.scheduleCreateService(appThread, r, r.serviceInfo, 0);
+                targetApp.client.scheduleCreateService(r, r.serviceInfo);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+            startShadowService(targetApp);
             addRecord(r);
         }
         r.lastActivityTime = SystemClock.uptimeMillis();
         if (scheduleServiceArgs) {
             r.startId++;
-            boolean taskRemoved = serviceInfo.applicationInfo != null
-                    && serviceInfo.applicationInfo.targetSdkVersion < Build.VERSION_CODES.ECLAIR;
             try {
-                IApplicationThreadCompat.scheduleServiceArgs(appThread, r, taskRemoved, r.startId, 0, service);
+                targetApp.client.scheduleServiceArgs(r, r.startId, service);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
         }
         return ComponentUtils.toComponentName(serviceInfo);
+    }
+
+    private void startShadowService(ProcessRecord processRecord) {
+        String serviceName = VASettings.getStubServiceName(processRecord.vpid);
+        Intent intent = new Intent();
+        intent.setClassName(VirtualCore.get().getHostPkg(), serviceName);
+        VirtualCore.get().getContext().bindService(intent, new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                VLog.d(TAG, "Start shadow service: %s", componentName.toString());
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+
+            }
+        }, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -394,13 +403,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
             }
             try {
-                IApplicationThreadCompat.scheduleUnbindService(r.process.appThread, r, bindRecord.intent);
+                r.process.client.scheduleUnbindService(r, bindRecord.intent);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
         }
         try {
-            IApplicationThreadCompat.scheduleStopService(r.process.appThread, r);
+            r.process.client.scheduleStopService(r);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -432,7 +441,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             if (boundRecord != null && boundRecord.binder != null && boundRecord.binder.isBinderAlive()) {
                 if (boundRecord.doRebind) {
                     try {
-                        IApplicationThreadCompat.scheduleBindService(r.process.appThread, r, service, true, 0);
+                        r.process.client.scheduleBindService(r, service, true);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -441,7 +450,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 connectService(connection, componentName, boundRecord, false);
             } else {
                 try {
-                    IApplicationThreadCompat.scheduleBindService(r.process.appThread, r, service, false, 0);
+                    r.process.client.scheduleBindService(r, service, false);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -467,7 +476,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
                 bindRecord.removeConnection(connection);
                 try {
-                    IApplicationThreadCompat.scheduleUnbindService(r.process.appThread, r, bindRecord.intent);
+                    r.process.client.scheduleUnbindService(r, bindRecord.intent);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -475,7 +484,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
             if (r.startId <= 0 && r.getConnectionCount() <= 0) {
                 try {
-                    IApplicationThreadCompat.scheduleStopService(r.process.appThread, r);
+                    r.process.client.scheduleStopService(r);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -1122,7 +1131,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         VirtualCore.get().getContext().sendBroadcast(intent);
     }
 
-    private void killProcess(int pid){
+    private void killProcess(int pid) {
         Process.killProcess(pid);
     }
 }

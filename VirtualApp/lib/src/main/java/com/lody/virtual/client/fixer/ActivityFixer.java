@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.WallpaperManager;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -15,22 +14,19 @@ import android.graphics.drawable.Drawable;
 import android.media.session.MediaController;
 import android.os.Build;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.VLog;
 
 import mirror.com.android.internal.R_Hide;
 
 /**
  * @author Lody
- *
  */
 public final class ActivityFixer {
 
-	private ActivityFixer() {
-	}
+    private ActivityFixer() {
+    }
 
-	public static void fixActivity(Activity activity) {
+    public static void fixActivity(Activity activity) {
         Context baseContext = activity.getBaseContext();
         try {
             TypedArray typedArray = activity.obtainStyledAttributes((R_Hide.styleable.Window.get()));
@@ -73,26 +69,10 @@ public final class ActivityFixer {
             if ("com.google.android.youtube".equals(activity.getPackageName())) {
                 MediaController mediaController = activity.getWindow().getMediaController();
                 if (mediaController != null) {
-                    final String pkg = VirtualCore.get().getHostPkg();
                     Context base = Reflect.on(mediaController).get("mContext");
-                    if (base != null) {
-                        ContextWrapper wrapper = new ContextWrapper(base) {
-                            @Override
-                            public String getPackageName() {
-                                return pkg;
-                            }
-
-                            public String getOpPackageName() {
-                                return pkg;
-                            }
-                        };
-                        Reflect.on(mediaController).set("mContext", wrapper);
-                    }else{
-                        //oppo
-                        VLog.e("MediaController", "no find MediaController's mContext");
-                    }
+                    ContextFixer.fixContext(base);
                 }
             }
         }
-	}
+    }
 }

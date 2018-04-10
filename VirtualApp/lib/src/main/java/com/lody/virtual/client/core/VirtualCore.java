@@ -27,7 +27,7 @@ import android.os.Process;
 import android.os.RemoteException;
 
 import com.lody.virtual.R;
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
@@ -138,7 +138,7 @@ public final class VirtualCore {
     }
 
     public void setCrashHandler(CrashHandler handler) {
-        VClientImpl.get().setCrashHandler(handler);
+        VClient.get().setCrashHandler(handler);
     }
 
     public TaskDescriptionDelegate getTaskDescriptionDelegate() {
@@ -176,7 +176,7 @@ public final class VirtualCore {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
             Constants.SHORTCUT_ACTION = context.getPackageName() + ".virtual.action.shortcut";
-            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;
+            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_CP_AUTHORITY;
             ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;
             this.context = context;
             mainThread = ActivityThread.currentActivityThread.call();
@@ -324,13 +324,13 @@ public final class VirtualCore {
     @Deprecated
     public void preOpt(String pkg) throws IOException {
         InstalledAppInfo info = getInstalledAppInfo(pkg, 0);
-        if (info != null && !info.dependSystem) {
+        if (info != null && !info.notCopyApk) {
             DexFile.loadDex(info.apkPath, info.getOdexFile().getPath(), 0).close();
         }
     }
 
     /**
-     * Is the specified app running in foreground / background?
+     * Check if the specified app running in foreground / background?
      *
      * @param packageName package name
      * @param userId      user id
@@ -354,9 +354,9 @@ public final class VirtualCore {
             inputStream = getContext().getAssets().open(asset);
             return installPackageFromStream(inputStream, flags);
         } catch (Throwable e) {
-            InstallResult result = new InstallResult();
-            result.error = e.getMessage();
-            return result;
+            InstallResult res = new InstallResult();
+            res.error = e.getMessage();
+            return res;
         } finally {
             FileUtils.closeQuietly(inputStream);
         }
@@ -370,13 +370,15 @@ public final class VirtualCore {
             }
             File apkFile = new File(dir, "tmp_" + System.currentTimeMillis() + ".apk");
             FileUtils.writeToFile(inputStream, apkFile);
-            return getService().installPackage(apkFile.getAbsolutePath(), flags | InstallStrategy.MOVE_FILE);
+            InstallResult res = getService().installPackage(apkFile.getAbsolutePath(), flags);
+            apkFile.delete();
+            return res;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         } catch (Throwable e) {
-            InstallResult result = new InstallResult();
-            result.error = e.getMessage();
-            return result;
+            InstallResult res = new InstallResult();
+            res.error = e.getMessage();
+            return res;
         }
     }
 

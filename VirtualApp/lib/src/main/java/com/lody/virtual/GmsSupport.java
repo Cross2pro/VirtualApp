@@ -7,9 +7,7 @@ import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
 
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipFile;
 
@@ -71,7 +69,7 @@ public class GmsSupport {
                 continue;
             }
             if (userId == 0) {
-                core.installPackage(info.sourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                core.installPackage(info.sourceDir, InstallStrategy.NOT_COPY_APK);
             } else {
                 core.installPackageAsUser(userId, packageName);
             }

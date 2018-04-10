@@ -214,7 +214,7 @@ public class PackageParserEx {
             ApplicationInfoL.primaryCpuAbi.set(ai, hostPrimaryCpuAbi);
         }
 
-        if (ps.dependSystem) {
+        if (ps.notCopyApk) {
             String[] sharedLibraryFiles = sSharedLibCache.get(ps.packageName);
             if (sharedLibraryFiles == null) {
                 PackageManager hostPM = VirtualCore.get().getUnHookPackageManager();

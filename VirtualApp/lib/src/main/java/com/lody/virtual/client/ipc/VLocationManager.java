@@ -8,7 +8,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.hook.proxies.location.MockLocationHelper;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.Reflect;
@@ -111,7 +111,7 @@ public class VLocationManager {
     }
 
     public VLocation getCurAppLocation() {
-        return getVirtualLocation(VClientImpl.get().getCurrentPackage(), null, VUserHandle.myUserId());
+        return getVirtualLocation(VClient.get().getCurrentPackage(), null, VUserHandle.myUserId());
     }
 
     public VLocation getVirtualLocation(String packageName, Location loc, int userId) {
@@ -128,7 +128,7 @@ public class VLocationManager {
     }
 
     public String getPackageName() {
-        return VClientImpl.get().getCurrentPackage();
+        return VClient.get().getCurrentPackage();
     }
 
     public void removeGpsStatusListener(final Object[] args) {
