@@ -3,7 +3,6 @@ package com.lody.virtual.remote;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.os.VEnvironment;
 
@@ -162,7 +161,6 @@ public class VDeviceInfo implements Parcelable {
                 }
             }
             String val = checkSum(pre + ot + last);
-            Log.w("kk", "genDeviceId=" +val);
             return val;
         }
     }

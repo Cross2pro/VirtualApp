@@ -3,17 +3,13 @@
 //
 #include <unistd.h>
 #include <stdlib.h>
-#include <fb/include/fb/Environment.h>
 #include <fb/include/fb/ALog.h>
 #include <Substrate/CydiaSubstrate.h>
-#include <Jni/VAJni.h>
 
 #include "IOUniformer.h"
 #include "SandboxFs.h"
+#include "Path.h"
 #include "SymbolFinder.h"
-
-using namespace facebook::jni;
-
 
 bool iu_loaded = false;
 
@@ -455,6 +451,9 @@ HOOK_DEF(int, chdir, const char *pathname) {
 // int __getcwd(char *buf, size_t size);
 HOOK_DEF(int, __getcwd, char *buf, size_t size) {
     int ret = syscall(__NR_getcwd, buf, size);
+    if (!ret) {
+
+    }
     return ret;
 }
 
@@ -633,15 +632,7 @@ HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
-//    JNIEnv *env = Environment::ensureCurrentThreadIsAttached();
-//    if (env) {
-//        jclass clazz = nativeEngineClass.get();
-//        jmethodID method = env->GetStaticMethodID(clazz, "onKillProcess", "(II)Z");
-//        bool res = env->CallStaticBooleanMethod(clazz, method, pid, sig);
-//        if (!res) {
-//            return -1;
-//        }
-//    }
+    ALOGD(">>>>> kill >>> pid: %d, sig: %d.", pid, sig);
     int ret = syscall(__NR_kill, pid, sig);
     return ret;
 }
@@ -718,7 +709,6 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
         HOOK_SYMBOL(handle, symlinkat);
         HOOK_SYMBOL(handle, utimensat);
         HOOK_SYMBOL(handle, __getcwd);
-        HOOK_SYMBOL(handle, kill);
 //        HOOK_SYMBOL(handle, __getdents64);
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);

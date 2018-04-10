@@ -1,9 +1,10 @@
 package io.virtualapp.abs.ui;
 
-import org.jdeferred.android.AndroidDeferredManager;
-
 import android.app.Activity;
+import android.content.Context;
 import android.support.v4.app.Fragment;
+
+import org.jdeferred.android.AndroidDeferredManager;
 
 import io.virtualapp.abs.BasePresenter;
 
@@ -13,6 +14,8 @@ import io.virtualapp.abs.BasePresenter;
 public class VFragment<T extends BasePresenter> extends Fragment {
 
 	protected T mPresenter;
+
+	private boolean mAttach;
 
 	public T getPresenter() {
 		return mPresenter;
@@ -33,7 +36,23 @@ public class VFragment<T extends BasePresenter> extends Fragment {
 		}
 	}
 
-	public void destroy() {
+    public boolean isAttach() {
+        return mAttach;
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        mAttach = true;
+        super.onAttach(context);
+    }
+
+    @Override
+    public void onDetach() {
+        mAttach = false;
+        super.onDetach();
+    }
+
+    public void destroy() {
 		finishActivity();
 	}
 }

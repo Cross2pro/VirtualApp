@@ -8,6 +8,8 @@ import java.util.Locale;
 
 public class VASettings {
 
+    public static boolean CHECK_UPDATE_NOT_COPY_APK = false;
+
     public static boolean PROVIDER_ONLY_FILE = true;
 
     /**

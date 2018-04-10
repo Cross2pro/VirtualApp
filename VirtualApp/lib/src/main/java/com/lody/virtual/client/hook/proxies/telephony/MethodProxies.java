@@ -12,7 +12,6 @@ import android.telephony.NeighboringCellInfo;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
@@ -43,10 +42,8 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String imei = getDeviceInfo().getDeviceId();
             if(!TextUtils.isEmpty(imei)){
-                Log.w("kk", getMethodName()+" imei="+imei);
                 return imei;
             }
-            Log.w("kk", getMethodName()+" system imei");
             return super.call(who, method, args);
         }
     }

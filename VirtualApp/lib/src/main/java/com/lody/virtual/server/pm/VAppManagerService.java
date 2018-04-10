@@ -1,6 +1,7 @@
 package com.lody.virtual.server.pm;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
@@ -11,6 +12,7 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.ArtDexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import dalvik.system.DexFile;
@@ -88,6 +91,9 @@ public class VAppManagerService extends IAppManager.Stub {
             }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
+        }
+        if(VASettings.CHECK_UPDATE_NOT_COPY_APK) {
+            upgradeApps();
         }
     }
 
@@ -584,6 +590,50 @@ public class VAppManagerService extends IAppManager.Stub {
 
     public void savePersistenceData() {
         mPersistenceLayer.save();
+    }
+
+
+    /**
+     * check app update
+     */
+    private void upgradeApps() {
+        for (Map.Entry<String, VPackage> e : PackageCacheManager.PACKAGE_CACHE.entrySet()) {
+            String pkg = e.getKey();
+            VPackage vPackage = e.getValue();
+            if (vPackage == null || vPackage.mExtras == null) {
+                continue;
+            }
+            PackageSetting setting = (PackageSetting)vPackage.mExtras;
+            if(setting.notCopyApk) {
+                String apkPath = needUpgrade(pkg);
+                if (apkPath != null) {
+                    upgradePackage(pkg, apkPath, InstallStrategy.NOT_COPY_APK
+                            | InstallStrategy.COMPARE_VERSION);
+                    VLog.logbug(TAG, "upgraded package: " + pkg + " on path:" + apkPath);
+                }
+            }
+        }
+    }
+
+    private String needUpgrade(String packageName) {
+        String path = null;
+        try {
+
+            PackageInfo packageInfo2 = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+            if(packageInfo2 != null) {
+                PackageInfo packageInfo = VPackageManager.get().getPackageInfo(packageName, 0, 0);
+                if (packageInfo != null && packageInfo.versionCode != packageInfo2.versionCode) {
+                    path = packageInfo2.applicationInfo.sourceDir;
+                }
+            }
+        } catch (Throwable e) {
+            VLog.e(TAG, e);
+        }
+        return path;
+    }
+
+    public InstallResult upgradePackage(String pkg, String path, int flag) {
+        return installPackage(path, flag, false);
     }
 
 }

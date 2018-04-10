@@ -1,7 +1,6 @@
 package com.lody.virtual.client.hook.proxies.phonesubinfo;
 
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
@@ -24,10 +23,8 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String deviceId = getDeviceInfo().getDeviceId();
             if (!TextUtils.isEmpty(deviceId)) {
-                Log.w("kk", getMethodName() + " imei=" + deviceId);
                 return deviceId;
             }
-            Log.w("kk", getMethodName() + " system imei");
             return super.call(who, method, args);
         }
     }

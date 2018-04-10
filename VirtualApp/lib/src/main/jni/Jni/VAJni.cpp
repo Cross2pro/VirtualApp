@@ -1,4 +1,4 @@
-
+#include <elf.h>//
 // VirtualApp Native Project
 //
 #include <Foundation/IOUniformer.h>
@@ -18,30 +18,30 @@ static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject>
 
 static void jni_nativeEnableIORedirect(alias_ref<jclass>, jstring selfSoPath, jint apiLevel,
                                        jint preview_api_level) {
-    ScopeUtfString so_path(Environment::current(), selfSoPath);
+    ScopeUtfString so_path(selfSoPath);
     IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level);
 }
 
 static void jni_nativeIOWhitelist(alias_ref<jclass> jclazz, jstring _path) {
-    ScopeUtfString path(Environment::current(), _path);
+    ScopeUtfString path(_path);
     IOUniformer::whitelist(path.c_str());
 }
 
 static void jni_nativeIOForbid(alias_ref<jclass> jclazz, jstring _path) {
-    ScopeUtfString path(Environment::current(), _path);
+    ScopeUtfString path(_path);
     IOUniformer::forbid(path.c_str());
 }
 
 
 static void jni_nativeIORedirect(alias_ref<jclass> jclazz, jstring origPath, jstring newPath) {
-    ScopeUtfString orig_path(Environment::current(), origPath);
-    ScopeUtfString new_path(Environment::current(), newPath);
+    ScopeUtfString orig_path(origPath);
+    ScopeUtfString new_path(newPath);
     IOUniformer::redirect(orig_path.c_str(), new_path.c_str());
 
 }
 
 static jstring jni_nativeGetRedirectedPath(alias_ref<jclass> jclazz, jstring origPath) {
-    ScopeUtfString orig_path(Environment::current(), origPath);
+    ScopeUtfString orig_path(origPath);
     const char *redirected_path = IOUniformer::query(orig_path.c_str());
     if (redirected_path != NULL) {
         return Environment::current()->NewStringUTF(redirected_path);
@@ -50,7 +50,7 @@ static jstring jni_nativeGetRedirectedPath(alias_ref<jclass> jclazz, jstring ori
 }
 
 static jstring jni_nativeReverseRedirectedPath(alias_ref<jclass> jclazz, jstring redirectedPath) {
-    ScopeUtfString redirected_path(Environment::current(), redirectedPath);
+    ScopeUtfString redirected_path(redirectedPath);
     const char *orig_path = IOUniformer::reverse(redirected_path.c_str());
     return Environment::current()->NewStringUTF(orig_path);
 }

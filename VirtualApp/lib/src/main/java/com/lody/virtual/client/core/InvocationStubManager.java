@@ -5,6 +5,7 @@ import android.os.Build;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
+import com.lody.virtual.client.hook.proxies.accessibility.AccessibilityManagerStub;
 import com.lody.virtual.client.hook.proxies.account.AccountManagerStub;
 import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
@@ -136,6 +137,7 @@ public final class InvocationStubManager {
             addInjector(new MountServiceStub());
             addInjector(new BackupManagerStub());
             addInjector(new TelephonyStub());
+            addInjector(new AccessibilityManagerStub());
             if (BuildCompat.isOreo()) {
                 if (IHwTelephony.TYPE != null) {
                     addInjector(new HwTelephonyStub());

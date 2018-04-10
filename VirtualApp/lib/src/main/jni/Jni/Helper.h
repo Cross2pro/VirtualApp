@@ -11,8 +11,8 @@
 
 class ScopeUtfString {
 public:
-    ScopeUtfString(JNIEnv *env, jstring j_str) : _env(env), _j_str(j_str),
-                                    _c_str(env->GetStringUTFChars(j_str, NULL)) {
+    ScopeUtfString(jstring j_str) : _j_str(j_str),
+                                    _c_str(facebook::jni::Environment::current()->GetStringUTFChars(j_str, NULL)) {
     }
 
     const char *c_str() {
@@ -20,11 +20,10 @@ public:
     }
 
     ~ScopeUtfString() {
-        _env->ReleaseStringUTFChars(_j_str, _c_str);
+        facebook::jni::Environment::current()->ReleaseStringUTFChars(_j_str, _c_str);
     }
 
 private:
-    JNIEnv *_env;
     jstring _j_str;
     const char *_c_str;
 };

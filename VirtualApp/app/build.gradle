@@ -8,8 +8,8 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 24
-        versionName "1.2.5"
+        versionCode 25
+        versionName "1.2.6"
         multiDexEnabled true
         android {
             defaultConfig {

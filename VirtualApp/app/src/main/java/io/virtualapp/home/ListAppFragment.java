@@ -124,6 +124,9 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
 
     @Override
     public void loadFinish(List<AppInfo> infoList) {
+        if(!isAttach()){
+            return;
+        }
         mAdapter.setList(infoList);
         mRecyclerView.setDragSelectActive(false, 0);
         mAdapter.setSelected(0, false);
