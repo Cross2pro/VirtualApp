@@ -38,6 +38,8 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
+import com.xdja.zs.IController;
+import com.xdja.zs.controllerService;
 
 import mirror.android.app.job.IJobScheduler;
 
@@ -77,6 +79,7 @@ public final class BinderProvider extends ContentProvider {
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
         VSafekeyManagerService.systemReady(context);
         IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
+        IPCBus.register(IController.class, controllerService.get());
         return true;
     }
 
