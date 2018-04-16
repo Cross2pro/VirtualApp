@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <fb/include/fb/ALog.h>
 #include <Substrate/CydiaSubstrate.h>
+#include <utils/controllerManagerNative.h>
 
 #include "IOUniformer.h"
 #include "SandboxFs.h"
@@ -690,6 +691,19 @@ void hook_dlopen(int api_level) {
 }
 
 
+HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
+    int ret = -1;
+    if(!controllerManagerNative::isNetworkEnable()){
+        errno = ENETUNREACH;//无法传送数据包至指定的主机.
+        return -1;
+    }
+
+    ret = syscall(__NR_connect, sd, addr, socklen);
+    return ret;
+}
+
+
+
 void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level) {
     char api_level_chars[5];
     setenv("V_SO_PATH", so_path, 1);
@@ -720,6 +734,7 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
 //        HOOK_SYMBOL(handle, __getdents64);
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
+        HOOK_SYMBOL(handle, connect);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
             HOOK_SYMBOL(handle, __open);

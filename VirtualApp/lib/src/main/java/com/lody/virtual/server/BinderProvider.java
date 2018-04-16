@@ -36,6 +36,8 @@ import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
+import com.xdja.zs.IController;
+import com.xdja.zs.controllerService;
 
 import mirror.android.app.job.IJobScheduler;
 
@@ -73,6 +75,7 @@ public final class BinderProvider extends ContentProvider {
         VDeviceManagerService.systemReady(context);
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        IPCBus.register(IController.class, controllerService.get());
         return true;
     }
 

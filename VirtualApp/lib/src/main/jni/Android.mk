@@ -21,6 +21,8 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    Substrate/SubstrateDebug.cpp \
                    Substrate/SubstrateHook.cpp \
                    Substrate/SubstratePosixMemory.cpp \
+                   utils/zJNIEnv.cpp \
+                   utils/controllerManagerNative.cpp \
 
 LOCAL_LDLIBS := -llog -latomic
 LOCAL_STATIC_LIBRARIES := fb

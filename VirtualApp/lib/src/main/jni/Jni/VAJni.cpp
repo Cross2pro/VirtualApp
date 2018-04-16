@@ -5,6 +5,8 @@
 #include <fb/include/fb/Build.h>
 #include <fb/include/fb/ALog.h>
 #include <fb/include/fb/fbjni.h>
+#include <utils/controllerManagerNative.h>
+#include <utils/zJNIEnv.h>
 #include "VAJni.h"
 
 using namespace facebook::jni;
@@ -60,6 +62,10 @@ alias_ref<jclass> nativeEngineClass;
 
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+
+    zJNIEnv::initial(vm);
+    controllerManagerNative::initial();
+
     return initialize(vm, [] {
         nativeEngineClass = findClassStatic("com/lody/virtual/client/NativeEngine");
         nativeEngineClass->registerNatives({
