@@ -11,7 +11,6 @@ import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
@@ -33,7 +32,6 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.webkit.MimeTypeMap;
 
-import com.lody.virtual.R;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.badger.BadgerManager;
@@ -47,6 +45,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
@@ -82,7 +81,6 @@ import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.UserInfo;
-import mirror.android.widget.Toast;
 
 /**
  * @author Lody
@@ -381,6 +379,21 @@ class MethodProxies {
                 Log.e("lxf","startActivity isStubComponent "+ intent.getComponent().getPackageName());
 
                 return method.invoke(who, args);
+            }
+
+            //权限管控
+            VAppPermissionManager vAppPermissionManager = VAppPermissionManager.get();
+            boolean appPermissionEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
+                    , VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+            ComponentName component = intent.getComponent();
+            Log.e("geyao", "component packageName: " + (component == null ? "component is null" : component.getPackageName()));
+            Log.e("geyao", "component className: " + (component == null ? "component is null" : component.getClassName()));
+            Log.e("geyao", "component permissionEnable: " + appPermissionEnable);
+            if (component != null && "com.android.systemui".equals(component.getPackageName())
+                    && "com.android.systemui.media.MediaProjectionPermissionActivity".equals(component.getClassName())
+                    && appPermissionEnable) {
+                vAppPermissionManager.interceptorTriggerCallback(getAppPkg(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+                return 0;
             }
 
             //xdja swbg

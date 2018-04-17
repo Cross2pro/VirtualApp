@@ -3,16 +3,17 @@ package com.xdja.zs;
 /**
  * Created by zhangsong on 18-1-23.
  */
+
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.Singleton;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class controllerService extends IController.Stub
-{
+public class controllerService extends IController.Stub {
     private final String Tag = "controllerService";
 
     private static HashSet<String> GATEWAY_list = new HashSet<String>();
@@ -43,11 +44,10 @@ public class controllerService extends IController.Stub
     @Override
     public boolean isNetworkEnable(String packageName) throws RemoteException {
 
-        boolean ret = true;
-        /*if (!VAppPermissionManager.get().getAppPermissionEnable(packageName,
-                VAppPermissionManager.PROHIBIT_NETWORK)){
-            ret = true;
-        }*/
+        boolean appPermissionEnable = VAppPermissionManager.get().getAppPermissionEnable(packageName,
+                VAppPermissionManager.PROHIBIT_NETWORK);
+        Log.e(Tag, "isNetworkEnable getAppPermissionEnable : " + packageName + " " + appPermissionEnable);
+        boolean ret = !appPermissionEnable;
         Log.e(Tag, "isNetworkEnable : " + packageName + " " + ret);
         return ret;
     }
@@ -56,10 +56,8 @@ public class controllerService extends IController.Stub
     public boolean isGatewayEnable(String packageName) throws RemoteException {
         boolean ret = false;
 
-        for(String item:GATEWAY_list)
-        {
-            if(packageName.startsWith(item))
-            {
+        for (String item : GATEWAY_list) {
+            if (packageName.startsWith(item)) {
                 ret = true;
                 break;
             }
@@ -72,14 +70,12 @@ public class controllerService extends IController.Stub
     @Override
     public boolean isChangeConnect(String packageName, int port, String ip) throws RemoteException {
         boolean ret = false;
-        Log.e(Tag, "PackageName : " + packageName + " Ip "+ ip  + " Port " + port);
+        Log.e(Tag, "PackageName : " + packageName + " Ip " + ip + " Port " + port);
 
-        if(IPMAP.get(packageName) != null){
-            for(String item : IPMAP.get(packageName))
-            {
+        if (IPMAP.get(packageName) != null) {
+            for (String item : IPMAP.get(packageName)) {
                 String str = String.valueOf(port) + ip;
-                if(str.equals(item))
-                {
+                if (str.equals(item)) {
                     ret = true;
                     break;
                 }
@@ -89,7 +85,7 @@ public class controllerService extends IController.Stub
         return ret;
     }
 
-    private static void setIPMAP(){
+    private static void setIPMAP() {
         String serverip_6 = "::ffff:120.194.4.131";
         String serverip_4 = "120.194.4.131";
         IPMAP.put("com.xdja.jxclient", JXIP_list);

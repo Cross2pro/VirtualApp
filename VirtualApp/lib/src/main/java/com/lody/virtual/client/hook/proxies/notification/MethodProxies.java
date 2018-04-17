@@ -8,7 +8,6 @@ import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.helper.utils.ArrayUtils;
-import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.Method;
 
@@ -56,6 +55,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            //TODO geyao
             String pkg = (String) args[0];
             if (getHostPkg().equals(pkg)) {
                 return method.invoke(who, args);

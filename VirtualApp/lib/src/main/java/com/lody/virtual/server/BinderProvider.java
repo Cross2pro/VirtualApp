@@ -17,10 +17,12 @@ import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.apppermission.VAppPermissionManagerService;
 import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IAccountManager;
 import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IAppManager;
+import com.lody.virtual.server.interfaces.IAppPermissionManager;
 import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 import com.lody.virtual.server.interfaces.IJobService;
 import com.lody.virtual.server.interfaces.INotificationManager;
@@ -40,8 +42,6 @@ import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 import com.xdja.zs.IController;
 import com.xdja.zs.controllerService;
-
-import mirror.android.app.job.IJobScheduler;
 
 /**
  * @author Lody
@@ -80,6 +80,8 @@ public final class BinderProvider extends ContentProvider {
         VSafekeyManagerService.systemReady(context);
         IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
         IPCBus.register(IController.class, controllerService.get());
+        VAppPermissionManagerService.systemReady();
+        IPCBus.register(IAppPermissionManager.class, VAppPermissionManagerService.get());
         return true;
     }
 
