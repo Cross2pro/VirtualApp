@@ -11,6 +11,7 @@ import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
 import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
+import com.lody.virtual.client.hook.proxies.appops.FlymePermissionServiceStub;
 import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
@@ -197,6 +198,10 @@ public final class InvocationStubManager {
             }
             if (BuildCompat.isOreo()) {
                 addInjector(new AutoFillManagerStub());
+            }
+            //new
+            if (mirror.oem.IFlymePermissionService.TYPE != null) {
+                addInjector(new FlymePermissionServiceStub());
             }
         }
     }

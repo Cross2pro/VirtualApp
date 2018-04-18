@@ -17,13 +17,14 @@ import java.util.zip.ZipFile;
 public class GmsSupport {
     private static final HashSet<String> GOOGLE_APP = new HashSet<>();
     private static final HashSet<String> GOOGLE_SERVICE = new HashSet<>();
+    public static final String GOOGLE_FRAMEWORK_PACKAGE = "com.google.android.gsf";
 
     static {
         GOOGLE_APP.add("com.android.vending");
         GOOGLE_APP.add("com.google.android.play.games");
         GOOGLE_APP.add("com.google.android.wearable.app");
         GOOGLE_APP.add("com.google.android.wearable.app.cn");
-        GOOGLE_SERVICE.add("com.google.android.gsf");
+        GOOGLE_SERVICE.add(GOOGLE_FRAMEWORK_PACKAGE);
         GOOGLE_SERVICE.add("com.google.android.gms");
         GOOGLE_SERVICE.add("com.google.android.gsf.login");
         GOOGLE_SERVICE.add("com.google.android.backuptransport");
@@ -79,8 +80,8 @@ public class GmsSupport {
     public static void installGApps(int userId) {
         installPackages(GOOGLE_SERVICE, userId);
         installPackages(GOOGLE_APP, userId);
-        if (!VirtualCore.get().isAppInstalled("com.google.android.gsf")) {
-            remove("com.google.android.gsf");
+        if (!VirtualCore.get().isAppInstalled(GOOGLE_FRAMEWORK_PACKAGE)) {
+            remove(GOOGLE_FRAMEWORK_PACKAGE);
         }
     }
 

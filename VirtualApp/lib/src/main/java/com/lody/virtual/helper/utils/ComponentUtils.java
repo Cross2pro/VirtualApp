@@ -101,6 +101,8 @@ public class ComponentUtils {
             return !VirtualCore.get().isAppInstalled("com.google.android.gsf");
         }else if(GmsSupport.isGoogleAppOrService(applicationInfo.packageName)){
             return false;
+        }else if("com.android.chrome".equals(applicationInfo.packageName)){
+            return !VirtualCore.get().isAppInstalled("com.android.chrome");
         }
         return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0 || SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName);
     }

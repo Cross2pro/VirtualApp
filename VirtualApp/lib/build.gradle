@@ -1,5 +1,7 @@
 apply plugin: 'com.android.library'
 
+def version = '2018-04-16-18'
+def versionCode = 2018041618
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
@@ -7,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        buildConfigField 'String', 'VA_VERSION_NAME', '"Build-' + version + '"'
+        buildConfigField 'int', 'VA_VERSION_CODE', ''+versionCode
         externalNativeBuild {
             ndkBuild {
                 abiFilters "armeabi", "armeabi-v7a", "x86"

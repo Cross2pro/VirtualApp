@@ -5,10 +5,6 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
@@ -16,9 +12,9 @@ import android.os.Build;
 import android.widget.RemoteViews;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.OSUtils;
 import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.VLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +39,7 @@ import mirror.com.android.internal.R_Hide;
         } else {
             Icon icon = notification.getSmallIcon();
             if (icon != null) {
-                Bitmap bitmap = drawableToBitMap(icon.loadDrawable(context));
+                Bitmap bitmap = BitmapUtils.drawableToBitmap(icon.loadDrawable(context));
                 if (bitmap != null) {
                     Icon newIcon = Icon.createWithBitmap(bitmap);
                     builder.setSmallIcon(newIcon);
@@ -51,7 +47,7 @@ import mirror.com.android.internal.R_Hide;
             }
             Icon largeIcon = notification.getLargeIcon();
             if (largeIcon != null) {
-                Bitmap bitmap = drawableToBitMap(largeIcon.loadDrawable(context));
+                Bitmap bitmap = BitmapUtils.drawableToBitmap(largeIcon.loadDrawable(context));
                 if (bitmap != null) {
                     Icon newIcon = Icon.createWithBitmap(bitmap);
                     builder.setLargeIcon(newIcon);
@@ -60,22 +56,6 @@ import mirror.com.android.internal.R_Hide;
         }
     }
 
-    private static Bitmap drawableToBitMap(Drawable drawable) {
-        if (drawable == null) {
-            return null;
-        }
-        if (drawable instanceof BitmapDrawable) {
-            BitmapDrawable bitmapDrawable = ((BitmapDrawable) drawable);
-            return bitmapDrawable.getBitmap();
-        } else {
-            Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(),
-                    drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
-            Canvas canvas = new Canvas(bitmap);
-            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-            drawable.draw(canvas);
-            return bitmap;
-        }
-    }
 
     @TargetApi(Build.VERSION_CODES.M)
     void fixIcon(Icon icon, Context appContext, boolean installed) {
@@ -89,7 +69,7 @@ import mirror.com.android.internal.R_Hide;
                 mirror.android.graphics.drawable.Icon.mString1.set(icon, appContext.getPackageName());
             } else {
                 Drawable drawable = icon.loadDrawable(appContext);
-                Bitmap bitmap = drawableToBitMap(drawable);
+                Bitmap bitmap = BitmapUtils.drawableToBitmap(drawable);
                 mirror.android.graphics.drawable.Icon.mObj1.set(icon, bitmap);
                 mirror.android.graphics.drawable.Icon.mString1.set(icon, null);
                 mirror.android.graphics.drawable.Icon.mType.set(icon, mirror.android.graphics.drawable.Icon.TYPE_BITMAP);
@@ -159,7 +139,7 @@ import mirror.com.android.internal.R_Hide;
                         if (methodName.equals("setImageResource")) {
                             //setImageBitmap
                             mNew.add(new BitmapReflectionAction(viewId, "setImageBitmap",
-                                    drawableToBitMap(appContext.getResources().getDrawable((int) value))));
+                                    BitmapUtils.drawableToBitmap(appContext.getResources().getDrawable((int) value))));
                             mActions.remove(action);
                         } else if (methodName.equals("setText") && type == ReflectionActionCompat.INT) {
                             //setText string
@@ -212,7 +192,7 @@ import mirror.com.android.internal.R_Hide;
                 try {
                     drawable = resources.getDrawable(notification.icon);
                     drawable.setLevel(notification.iconLevel);
-                    bitmap =  drawableToBitMap(drawable);
+                    bitmap =  BitmapUtils.drawableToBitmap(drawable);
                 }catch (Throwable e){
                     //no find
                 }

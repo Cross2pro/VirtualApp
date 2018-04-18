@@ -2807,7 +2807,7 @@
 
         <provider
             android:name=".client.stub.ProxyContentProvider"
-            android:authorities="${applicationId}.virtual.proxy.provider;${applicationId}.virtual.fileprovider"
+            android:authorities="${applicationId}.virtual.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true"
             android:process=":x" />

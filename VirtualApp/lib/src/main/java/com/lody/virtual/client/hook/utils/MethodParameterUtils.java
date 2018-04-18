@@ -56,6 +56,16 @@ public class MethodParameterUtils {
 		return null;
 	}
 
+    public static int getParamsIndex(Class[] args, Class<?> type) {
+        for (int i = 0; i < args.length; i++) {
+            Class obj = args[i];
+            if (obj.equals(type)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 	public static int getIndex(Object[] args, Class<?> type) {
 		for (int i = 0; i < args.length; i++) {
 			Object obj = args[i];

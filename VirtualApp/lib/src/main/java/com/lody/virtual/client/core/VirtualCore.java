@@ -26,6 +26,7 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.R;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
@@ -52,6 +53,7 @@ import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
+import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
 import java.io.IOException;
@@ -267,6 +269,17 @@ public final class VirtualCore {
         if (isVAppProcess()) {
             systemPid = VActivityManager.get().getSystemPid();
         }
+        if(isVAppProcess()){
+            if(!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)){
+                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+                addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+            }
+        } else if (isServerProcess()) {
+            if (!VAppManagerService.get().isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
+                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+                VAppManagerService.get().addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+            }
+        }
     }
 
     private IAppManager getService() {
@@ -479,7 +492,7 @@ public final class VirtualCore {
         if (targetIntent == null) {
             return false;
         }
-        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, userId);
+        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, packageName, userId);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ShortcutInfo likeShortcut = null;
@@ -538,7 +551,7 @@ public final class VirtualCore {
         if (targetIntent == null) {
             return false;
         }
-        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, userId);
+        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, packageName, userId);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
         } else {
@@ -555,9 +568,8 @@ public final class VirtualCore {
      * @param intent target activity
      * @param splash loading activity
      * @param userId userId
-     * @return
      */
-    public Intent wrapperShortcutIntent(Intent intent, Intent splash, int userId) {
+    public Intent wrapperShortcutIntent(Intent intent, Intent splash, String packageName, int userId) {
         Intent shortcutIntent = new Intent();
         shortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
         shortcutIntent.setAction(Constants.SHORTCUT_ACTION);
@@ -565,6 +577,7 @@ public final class VirtualCore {
         if (splash != null) {
             shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
         }
+        shortcutIntent.putExtra("_VA_|_pkg_", packageName);
 //        shortcutIntent.putExtra("_VA_|_intent_", (String)null);//targetIntent);
         shortcutIntent.putExtra("_VA_|_uri_", intent.toUri(0));
         shortcutIntent.putExtra("_VA_|_user_id_", userId);

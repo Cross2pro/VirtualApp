@@ -401,7 +401,7 @@ int find_name(pid_t pid, const char *name, const char *libn,
         return -1;
     }
     if (0 > lookup_func_sym(s, (char *) name, addr)) {
-        ALOGD("cannot find function: %s\n", name);
+        ALOGD("cannot find function: %s in %s\n", name, libn);
         return -1;
     }
     *addr += libcaddr;

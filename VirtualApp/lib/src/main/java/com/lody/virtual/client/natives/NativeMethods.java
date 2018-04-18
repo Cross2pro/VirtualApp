@@ -4,6 +4,8 @@ import android.hardware.Camera;
 import android.media.AudioRecord;
 import android.os.Build;
 
+import com.lody.virtual.client.hook.utils.MethodParameterUtils;
+
 import java.lang.reflect.Method;
 
 import dalvik.system.DexFile;
@@ -14,6 +16,7 @@ import dalvik.system.DexFile;
 public class NativeMethods {
 
     public static int gCameraMethodType;
+
     public static Method gCameraNativeSetup;
 
     public static Method gOpenDexFileNative;
@@ -35,40 +38,12 @@ public class NativeMethods {
         gOpenDexFileNative.setAccessible(true);
 
         gCameraMethodType = -1;
-        try {
-            gCameraNativeSetup = Camera.class.getDeclaredMethod("native_setup", Object.class, int.class, String.class);
-            gCameraMethodType = 1;
-        } catch (NoSuchMethodException e) {
-            // ignore
-        }
-        if (gCameraNativeSetup == null) {
-            try {
-                gCameraNativeSetup = Camera.class.getDeclaredMethod("native_setup", Object.class, int.class, int.class, String.class);
-                gCameraMethodType = 2;
-            } catch (NoSuchMethodException e) {
-                // ignore
-            }
-        }
-        // HuaWei common
-        if (gCameraNativeSetup == null) {
-            try {
-                gCameraNativeSetup = Camera.class.getDeclaredMethod("native_setup", Object.class, int.class, int.class, String.class, boolean.class);
-                gCameraMethodType = 3;
-            } catch (NoSuchMethodException e) {
-                // ignore
-            }
-        }
-        // HUAWEI MediaPad X1 7.0
-        if (gCameraNativeSetup == null) {
-            try {
-                gCameraNativeSetup = Camera.class.getDeclaredMethod("native_setup", Object.class, int.class, String.class, boolean.class);
-                gCameraMethodType = 4;
-            } catch (NoSuchMethodException e) {
-                // ignore
-            }
-        }
-        if (gCameraNativeSetup != null) {
-            gCameraNativeSetup.setAccessible(true);
+        Method method = getCameraNativeSetup();
+        if (method != null) {
+            int index = MethodParameterUtils.getParamsIndex(
+                    method.getParameterTypes(), String.class);
+            gCameraNativeSetup = method;
+            gCameraMethodType = 0x10 + index;
         }
 
         for (Method mth : AudioRecord.class.getDeclaredMethods()) {
@@ -80,6 +55,18 @@ public class NativeMethods {
                 break;
             }
         }
+    }
+
+    private static Method getCameraNativeSetup() {
+        Method[] methods = Camera.class.getDeclaredMethods();
+        if (methods != null) {
+            for (Method method : methods) {
+                if ("native_setup".equals(method.getName())) {
+                    return method;
+                }
+            }
+        }
+        return null;
     }
 
 }

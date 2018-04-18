@@ -11,7 +11,7 @@ import mirror.android.service.persistentdata.IPersistentDataBlockService;
 public class PersistentDataBlockServiceStub extends BinderInvocationProxy {
 
 	public PersistentDataBlockServiceStub() {
-		super(IPersistentDataBlockService.Stub.asInterface, "persistent_data_block");
+		super(IPersistentDataBlockService.Stub.TYPE, "persistent_data_block");
 	}
 
 	@Override

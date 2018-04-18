@@ -247,7 +247,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             try {
                 return r.client.acquireProviderClient(info);
             } catch (RemoteException e) {
-                e.printStackTrace();
+                VLog.w(TAG, "acquireProviderClient fail because %s/%s died, try restart process", processName, info.name);
             }
         }
         return null;

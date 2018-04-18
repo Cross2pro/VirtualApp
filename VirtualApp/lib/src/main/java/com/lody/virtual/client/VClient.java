@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
@@ -115,6 +114,7 @@ public final class VClient extends IVClient.Stub {
     private IBinder token;
     private int vuid;
     private int vpid;
+    private ConditionVariable mTempLock;
     private VDeviceInfo deviceInfo;
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
@@ -236,13 +236,11 @@ public final class VClient extends IVClient.Stub {
             return true;
         } else {
             final ConditionVariable lock = new ConditionVariable();
-            final AtomicBoolean result = new AtomicBoolean(false);
             VirtualRuntime.getUIHandler().post(new Runnable() {
                 @Override
                 public void run() {
                     if (!VClient.get().isBound()) {
                         bindApplicationNoCheck(packageName, processName, lock);
-                        result.compareAndSet(false, true);
                     }
                     lock.open();
                 }
@@ -253,6 +251,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
+        mTempLock = lock;
         VDeviceInfo deviceInfo = getDeviceInfo();
         if (processName == null) {
             processName = packageName;
@@ -384,6 +383,10 @@ public final class VClient extends IVClient.Stub {
         }
         VActivityManager.get().appDoneExecuting();
         VirtualCore.get().getComponentDelegate().afterApplicationCreate(mInitialApplication);
+        if (lock != null) {
+            lock.open();
+            mTempLock = null;
+        }
     }
 
     private void fixWeChatRecovery(Application app) {
@@ -535,7 +538,12 @@ public final class VClient extends IVClient.Stub {
 
     @Override
     public IBinder acquireProviderClient(ProviderInfo info) {
-        VClient.get().bindApplication(info.packageName, info.processName);
+        if (mTempLock != null) {
+            mTempLock.block();
+        }
+        if(!isBound()) {
+            VClient.get().bindApplication(info.packageName, info.processName);
+        }
         IInterface provider = null;
         String[] authorities = info.authority.split(";");
         String authority = authorities.length == 0 ? info.authority : authorities[0];

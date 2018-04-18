@@ -10,7 +10,7 @@
 
 
 #include "Helper.h"
-#include "Foundation/VMPatch.h"
+#include "Foundation/VMHook.h"
 #include "Foundation/IOUniformer.h"
 
 extern alias_ref<jclass> nativeEngineClass;

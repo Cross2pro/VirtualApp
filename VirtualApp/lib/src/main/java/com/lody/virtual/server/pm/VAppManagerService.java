@@ -86,8 +86,14 @@ public class VAppManagerService extends IAppManager.Stub {
         synchronized (this) {
             mBooting = true;
             mPersistenceLayer.read();
-            if (VASettings.ENABLE_GMS && !GmsSupport.isInstalledGoogleService()) {
-                GmsSupport.installGApps(0);
+            if (VASettings.ENABLE_GMS) {
+                if (!GmsSupport.isInstalledGoogleService()) {
+                    GmsSupport.installGApps(0);
+                } else {
+                    if (!VirtualCore.get().isAppInstalled("com.google.android.gsf")) {
+                        GmsSupport.remove("com.google.android.gsf");
+                    }
+                }
             }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;

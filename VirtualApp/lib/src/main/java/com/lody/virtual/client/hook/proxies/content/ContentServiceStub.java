@@ -21,7 +21,7 @@ import mirror.android.content.IContentService;
  */
 
 public class ContentServiceStub extends BinderInvocationProxy {
-    private static final String tAG = ContentServiceStub.class.getSimpleName();
+    private static final String TAG = ContentServiceStub.class.getSimpleName();
 
     public ContentServiceStub() {
         super(IContentService.Stub.asInterface, "content");

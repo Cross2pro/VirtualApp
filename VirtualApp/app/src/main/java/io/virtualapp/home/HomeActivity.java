@@ -105,6 +105,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
         filter.addDataScheme("package");
         registerReceiver(mReceiver, filter);
+//        IBinderTool.printAllService();
+//        IBinderTool.printIBinder("android.content.IFlymePermissionService");
     }
 
     @Override

@@ -13,7 +13,7 @@ LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Jni
 
 LOCAL_SRC_FILES := Jni/VAJni.cpp \
 				   Foundation/IOUniformer.cpp \
-				   Foundation/VMPatch.cpp \
+				   Foundation/VMHook.cpp \
 				   Foundation/SymbolFinder.cpp \
 				   Foundation/Path.cpp \
 				   Foundation/SandboxFs.cpp \

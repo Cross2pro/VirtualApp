@@ -12,18 +12,9 @@ namespace FunctionDef {
     typedef jobject (*JNI_openDexNativeFunc_N)(JNIEnv *, jclass, jstring, jstring, jint, jobject,
                                                jobject);
 
-
-    typedef jint (*JNI_cameraNativeSetupFunc_T1)(JNIEnv *, jobject, jobject, jint, jstring);
-
-    typedef jint (*JNI_cameraNativeSetupFunc_T2)(JNIEnv *, jobject, jobject, jint, jint,
-                                                 jstring);
-
-    typedef jint (*JNI_cameraNativeSetupFunc_T3)(JNIEnv *, jobject, jobject, jint, jint,
-                                                 jstring,
-                                                 jboolean);
-
-    typedef jint (*JNI_cameraNativeSetupFunc_T4)(JNIEnv *, jobject, jobject, jint, jstring,
-                                                 jboolean);
+    typedef jint (*JNI_cameraNativeSetupFunc)(JNIEnv *, jobject,
+                                                 jobject, jobject, jobject, jobject, jobject,
+                                                 jobject, jobject, jobject);
 
     typedef jint (*JNI_getCallingUid)(JNIEnv *, jclass);
 
@@ -55,26 +46,29 @@ static struct {
 
     JNI_getCallingUid orig_getCallingUid;
 
-    Function_DalvikBridgeFunc orig_cameraNativeSetup_dvm;
     int cameraMethodType;
-    union {
-        JNI_cameraNativeSetupFunc_T1 t1;
-        JNI_cameraNativeSetupFunc_T2 t2;
-        JNI_cameraNativeSetupFunc_T3 t3;
-        JNI_cameraNativeSetupFunc_T4 t4;
-    } orig_native_cameraNativeSetupFunc;
+    int cameraMethodPkgIndex;
+    Function_DalvikBridgeFunc orig_cameraNativeSetup_dvm;
+    JNI_cameraNativeSetupFunc orig_cameraNativeSetupFunc;
 
-    Function_DalvikBridgeFunc orig_openDexFile_dvm;
     union {
         JNI_openDexNativeFunc beforeN;
         JNI_openDexNativeFunc_N afterN;
     } orig_openDexNativeFunc_art;
 
+    Function_DalvikBridgeFunc orig_openDexFile_dvm;
     JNI_audioRecordNativeCheckPermission orig_audioRecordNativeCheckPermission;
     JNI_nativeLoad orig_nativeLoad;
 
 } patchEnv;
 
+jint dvm_getCallingUid(alias_ref<jclass> clazz) {
+    jint uid = patchEnv.native_getCallingUid(patchEnv.IPCThreadState_self());
+    uid = Environment::ensureCurrentThreadIsAttached()->CallStaticIntMethod(nativeEngineClass.get(),
+                                                                            patchEnv.method_onGetCallingUid,
+                                                                            uid);
+    return uid;
+}
 
 jint new_getCallingUid(JNIEnv *env, jclass clazz) {
     int uid = patchEnv.orig_getCallingUid(Environment::ensureCurrentThreadIsAttached(), clazz);
@@ -89,6 +83,45 @@ jstring new_nativeLoad(JNIEnv *env, jclass clazz, jstring _file, jobject classLo
     return patchEnv.orig_nativeLoad(env, clazz, _file, classLoader, _ld);
 }
 
+static void
+new_bridge_openDexNativeFunc(const void **args, void *pResult, const void *method, void *self) {
+
+    JNIEnv *env = Environment::ensureCurrentThreadIsAttached();
+
+    const char *source = args[0] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[0]);
+    const char *output = args[1] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[1]);
+
+    jstring orgSource = source == NULL ? NULL : env->NewStringUTF(source);
+    jstring orgOutput = output == NULL ? NULL : env->NewStringUTF(output);
+
+    jclass stringClass = env->FindClass("java/lang/String");
+    jobjectArray array = env->NewObjectArray(2, stringClass, NULL);
+    if (orgSource) {
+        env->SetObjectArrayElement(array, 0, orgSource);
+    }
+    if (orgOutput) {
+        env->SetObjectArrayElement(array, 1, orgOutput);
+    }
+    env->CallStaticVoidMethod(nativeEngineClass.get(), patchEnv.method_onOpenDexFileNative, array);
+
+    jstring newSource = (jstring) env->GetObjectArrayElement(array, 0);
+    jstring newOutput = (jstring) env->GetObjectArrayElement(array, 1);
+
+    const char *_newSource = newSource == NULL ? NULL : env->GetStringUTFChars(newSource, NULL);
+    const char *_newOutput = newOutput == NULL ? NULL : env->GetStringUTFChars(newOutput, NULL);
+
+    args[0] = _newSource == NULL ? NULL : patchEnv.GetStringFromCstr(_newSource);
+    args[1] = _newOutput == NULL ? NULL : patchEnv.GetStringFromCstr(_newOutput);
+
+    if (source && orgSource) {
+        env->ReleaseStringUTFChars(orgSource, source);
+    }
+    if (output && orgOutput) {
+        env->ReleaseStringUTFChars(orgOutput, output);
+    }
+
+    patchEnv.orig_openDexFile_dvm(args, pResult, method, self);
+}
 
 static jobject new_native_openDexNativeFunc(JNIEnv *env, jclass jclazz, jstring javaSourceName,
                                             jstring javaOutputName, jint options) {
@@ -132,105 +165,39 @@ static jobject new_native_openDexNativeFunc_N(JNIEnv *env, jclass jclazz, jstrin
 }
 
 static void
-new_bridge_openDexNativeFunc(const void **args, void *pResult, const void *method, void *self) {
-
-    JNIEnv *env = Environment::ensureCurrentThreadIsAttached();
-
-    const char *source = args[0] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[0]);
-    const char *output = args[1] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[1]);
-
-    jstring orgSource = source == NULL ? NULL : env->NewStringUTF(source);
-    jstring orgOutput = output == NULL ? NULL : env->NewStringUTF(output);
-
-    jclass stringClass = env->FindClass("java/lang/String");
-    jobjectArray array = env->NewObjectArray(2, stringClass, NULL);
-    if (orgSource) {
-        env->SetObjectArrayElement(array, 0, orgSource);
-    }
-    if (orgOutput) {
-        env->SetObjectArrayElement(array, 1, orgOutput);
-    }
-    env->CallStaticVoidMethod(nativeEngineClass.get(), patchEnv.method_onOpenDexFileNative, array);
-
-    jstring newSource = (jstring) env->GetObjectArrayElement(array, 0);
-    jstring newOutput = (jstring) env->GetObjectArrayElement(array, 1);
-
-    const char *_newSource = newSource == NULL ? NULL : env->GetStringUTFChars(newSource, NULL);
-    const char *_newOutput = newOutput == NULL ? NULL : env->GetStringUTFChars(newOutput, NULL);
-
-    args[0] = _newSource == NULL ? NULL : patchEnv.GetStringFromCstr(_newSource);
-    args[1] = _newOutput == NULL ? NULL : patchEnv.GetStringFromCstr(_newOutput);
-
-    if (source && orgSource) {
-        env->ReleaseStringUTFChars(orgSource, source);
-    }
-    if (output && orgOutput) {
-        env->ReleaseStringUTFChars(orgOutput, output);
-    }
-
-    patchEnv.orig_openDexFile_dvm(args, pResult, method, self);
-}
-
-static void
 new_bridge_cameraNativeSetupFunc(const void **args, void *pResult, const void *method, void *self) {
-    // args[0] = this
-    switch (patchEnv.cameraMethodType) {
-        case 1:
-            args[4] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-            break;
-        case 2:
-            args[5] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-            break;
-        case 3:
-            args[5] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-            break;
-        case 4:
-            args[4] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-            break;
-    }
+    jint index = patchEnv.cameraMethodPkgIndex + 1;
+    args[index] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
     patchEnv.orig_cameraNativeSetup_dvm(args, pResult, method, self);
 }
 
-static jint new_native_cameraNativeSetupFunc_T1(JNIEnv *env, jobject thiz, jobject camera_this,
-                                                jint cameraId, jstring packageName) {
-
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
-    return patchEnv.orig_native_cameraNativeSetupFunc.t1(env, thiz, camera_this,
-                                                         cameraId,
-                                                         host);
+static jint new_native_cameraNativeSetupFunc_T(JNIEnv *env, jobject thiz,
+                                                 jobject o1, jobject o2, jobject o3, jobject o4, jobject o5,
+                                                 jobject o6, jobject o7, jobject o8) {
+    jint index = patchEnv.cameraMethodPkgIndex;
+    if(index >= 0){
+        jstring host = env->NewStringUTF(patchEnv.host_packageName);
+        switch (index){
+            case 0:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, host, o2, o3, o4, o5, o6, o7, o8);
+            case 1:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, host, o3, o4, o5, o6, o7, o8);
+            case 2:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, host, o4, o5, o6, o7, o8);
+            case 3:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, host, o5, o6, o7, o8);
+            case 4:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, host, o6, o7, o8);
+            case 5:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, host, o7, o8);
+            case 6:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, host, o8);
+            case 7:
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, host);
+        }
+    }
+    return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8);
 }
-
-static jint new_native_cameraNativeSetupFunc_T2(JNIEnv *env, jobject thiz, jobject camera_this,
-                                                jint cameraId, jint halVersion,
-                                                jstring packageName) {
-
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
-    return patchEnv.orig_native_cameraNativeSetupFunc.t2(env, thiz, camera_this, cameraId,
-                                                         halVersion, host);
-}
-
-static jint new_native_cameraNativeSetupFunc_T3(JNIEnv *env, jobject thiz, jobject camera_this,
-                                                jint cameraId, jint halVersion,
-                                                jstring packageName, jboolean option) {
-
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
-    return patchEnv.orig_native_cameraNativeSetupFunc.t3(env, thiz, camera_this, cameraId,
-                                                         halVersion, host, option);
-}
-
-static jint new_native_cameraNativeSetupFunc_T4(JNIEnv *env, jobject thiz, jobject camera_this,
-                                                jint cameraId,
-                                                jstring packageName, jboolean option) {
-
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
-    return patchEnv.orig_native_cameraNativeSetupFunc.t4(env, thiz, camera_this, cameraId, host,
-                                                         option);
-}
-
 
 static jint
 new_native_audioRecordNativeCheckPermission(JNIEnv *env, jobject thiz, jstring _packagename) {
@@ -270,6 +237,9 @@ void measureNativeOffset(bool isArt) {
     }
     if (found) {
         patchEnv.native_offset = offset;
+        if (!isArt) {
+            patchEnv.native_offset += (sizeof(int) + sizeof(void *));
+        }
     }
 }
 
@@ -290,24 +260,32 @@ void hookJNIMethod(jmethodID method, void *new_jni_func, void **orig_jni_func) {
 }
 
 
-void hookGetCallingUid() {
-    JNIEnv *env = Environment::current();
-    jclass binderClass = env->FindClass("android/os/Binder");
-    jmethodID getCallingUid = env->GetStaticMethodID(binderClass, "getCallingUid", "()I");
-    hookJNIMethod(getCallingUid,
-                  (void *) new_getCallingUid,
-                  (void **) &patchEnv.orig_getCallingUid
-    );
+void hookGetCallingUid(jboolean isArt) {
+    if(isArt) {
+        JNIEnv *env = Environment::current();
+        jclass binderClass = env->FindClass("android/os/Binder");
+        jmethodID getCallingUid = env->GetStaticMethodID(binderClass, "getCallingUid", "()I");
+        hookJNIMethod(getCallingUid,
+                      (void *) new_getCallingUid,
+                      (void **) &patchEnv.orig_getCallingUid
+        );
+    }else{
+        auto binderClass = findClassLocal("android/os/Binder");
+        binderClass->registerNatives({makeNativeMethod("getCallingUid", dvm_getCallingUid)});
+    }
 }
 
-void hookOpenDexFileNative(jobject javaMethod,jboolean  isArt, int apiLevel) {
+void hookOpenDexFileNative(jobject javaMethod, jboolean  isArt, int apiLevel) {
 
-    jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
-    void *jniFunc = vmGetJNIFunction(method);
     if (!isArt) {
-        patchEnv.orig_openDexFile_dvm = (Function_DalvikBridgeFunc) (jniFunc);
-        vmUseJNIFunction(method, (void *) new_bridge_openDexNativeFunc);
-    } else {
+        size_t mtd_openDexNative = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+        int nativeFuncOffset = patchEnv.native_offset;
+        void **jniFuncPtr = (void **) (mtd_openDexNative + nativeFuncOffset);
+        patchEnv.orig_openDexFile_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_bridge_openDexNativeFunc;
+    }else{
+        jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
+        void *jniFunc = vmGetJNIFunction(method);
         if (apiLevel < 24) {
             patchEnv.orig_openDexNativeFunc_art.beforeN = (JNI_openDexNativeFunc) (jniFunc);
             vmUseJNIFunction(method, (void *) new_native_openDexNativeFunc);
@@ -335,47 +313,23 @@ void hookRuntimeNativeLoad() {
 
 inline void
 hookCameraNativeSetup(jobject javaMethod, jboolean isArt, int apiLevel) {
-
     if (!javaMethod) {
         return;
     }
-    jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
     if (!isArt) {
-        hookJNIMethod(method,
-                      (void *) new_bridge_cameraNativeSetupFunc,
-                      (void **) &patchEnv.orig_cameraNativeSetup_dvm
-        );
-    } else {
-        switch (patchEnv.cameraMethodType) {
-            case 1:
-                hookJNIMethod(method,
-                              (void *) new_native_cameraNativeSetupFunc_T1,
-                              (void **) &patchEnv.orig_native_cameraNativeSetupFunc.t1
-                );
-                break;
-            case 2:
-                hookJNIMethod(method,
-                              (void *) new_native_cameraNativeSetupFunc_T2,
-                              (void **) &patchEnv.orig_native_cameraNativeSetupFunc.t2
-                );
-                break;
-            case 3:
-                hookJNIMethod(method,
-                              (void *) new_native_cameraNativeSetupFunc_T3,
-                              (void **) &patchEnv.orig_native_cameraNativeSetupFunc.t3
-                );
-                break;
-            case 4:
-                hookJNIMethod(method,
-                              (void *) new_native_cameraNativeSetupFunc_T4,
-                              (void **) &patchEnv.orig_native_cameraNativeSetupFunc.t4
-                );
-                break;
-            default:
-                break;
-        }
-    }
+        size_t mtd_cameraNativeSetup = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+        int nativeFuncOffset = patchEnv.native_offset;
+        void **jniFuncPtr = (void **) (mtd_cameraNativeSetup + nativeFuncOffset);
 
+        patchEnv.orig_cameraNativeSetup_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_bridge_cameraNativeSetupFunc;
+    }else {
+        jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
+        hookJNIMethod(method,
+                      (void *) new_native_cameraNativeSetupFunc_T,
+                      (void **) &patchEnv.orig_cameraNativeSetupFunc
+        );
+    }
 }
 
 void
@@ -423,6 +377,16 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
     }
     patchEnv.is_art = isArt;
     patchEnv.cameraMethodType = cameraMethodType;
+    if (cameraMethodType >= 0x10) {
+        patchEnv.cameraMethodPkgIndex = cameraMethodType - 0x10;
+    } else {
+        if (patchEnv.cameraMethodType == 2 || patchEnv.cameraMethodType == 3) {
+            patchEnv.cameraMethodPkgIndex = 3;
+        } else {
+            patchEnv.cameraMethodPkgIndex = 2;
+        }
+    }
+
     patchEnv.host_packageName = (char *) env->GetStringUTFChars(packageName,
                                                                 NULL);
     patchEnv.api_level = apiLevel;
@@ -432,10 +396,7 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
                                                                  "onOpenDexFileNative",
                                                                  "([Ljava/lang/String;)V");
 
-    void *soInfo = getDvmOrArtSOHandle();
-    if (isArt) {
-        patchEnv.art_work_around_app_jni_bugs = dlsym(soInfo, "art_work_around_app_jni_bugs");
-    }else{
+    if (!isArt) {
         // workaround for dlsym returns null when system has libhoudini
         void *h = dlopen("/system/lib/libandroid_runtime.so", RTLD_LAZY);
         {
@@ -451,7 +412,7 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
         if (h != NULL) {
             dlclose(h);
         }
-
+        void *soInfo = getDvmOrArtSOHandle();
         patchEnv.GetCstrFromString = (char *(*)(void *)) dlsym(soInfo,
                                                                "_Z23dvmCreateCstrFromStringPK12StringObject");
         if (!patchEnv.GetCstrFromString) {
@@ -466,7 +427,7 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
         }
     }
     measureNativeOffset(isArt);
-    hookGetCallingUid();
+    hookGetCallingUid(isArt);
     hookOpenDexFileNative(javaMethods.getElement(OPEN_DEX).get(), isArt, apiLevel);
     hookCameraNativeSetup(javaMethods.getElement(CAMERA_SETUP).get(), isArt, apiLevel);
     hookAudioRecordNativeCheckPermission(
