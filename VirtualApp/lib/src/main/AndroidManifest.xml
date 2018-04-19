@@ -290,6 +290,23 @@
             android:screenOrientation="portrait"
             android:theme="@style/VAAlertTheme" />
 
+        <activity android:name=".client.stub.InstallerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnCloseSystemDialogs="true"
+            android:process="@string/engine_process_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/InstallerTheme" />
+        <activity android:name=".client.stub.UnInstallerActivity"
+        android:configChanges="keyboard|keyboardHidden|orientation"
+        android:excludeFromRecents="true"
+        android:exported="true"
+        android:finishOnCloseSystemDialogs="true"
+        android:process="@string/engine_process_name"
+        android:screenOrientation="portrait"
+        android:theme="@style/InstallerTheme" />
+
         <provider
             android:name="com.lody.virtual.server.BinderProvider"
             android:authorities="${applicationId}.virtual.service.BinderProvider"

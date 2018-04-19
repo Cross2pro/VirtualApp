@@ -28,6 +28,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.NativeEngine;
@@ -36,6 +37,7 @@ import com.lody.virtual.client.badger.BadgerManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
@@ -46,7 +48,9 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
+import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
+import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -360,16 +364,27 @@ class MethodProxies {
             if (Intent.ACTION_INSTALL_PACKAGE.equals(intent.getAction())
                     || (Intent.ACTION_VIEW.equals(intent.getAction())
                     && "application/vnd.android.package-archive".equals(intent.getType()))) {
-                if (handleInstallRequest(intent)) {
+                /*if (handleInstallRequest(intent)) {
                     return 0;
-                }
+                }*/
+                intent.putExtra("source_apk", VirtualRuntime.getInitialPackageName());
+                intent.putExtra("installer_path", parseInstallRequest(intent));
+                intent.setComponent(new ComponentName(getHostContext(), InstallerActivity.class));
+                return method.invoke(who, args);
             } else if ((Intent.ACTION_UNINSTALL_PACKAGE.equals(intent.getAction())
                     || Intent.ACTION_DELETE.equals(intent.getAction()))
                     && "package".equals(intent.getScheme())) {
-
-                if (handleUninstallRequest(intent)) {
+                /*if (handleUninstallRequest(intent)) {
                     return 0;
+                }*/
+                String pkg = "";
+                Uri packageUri = intent.getData();
+                if (SCHEME_PACKAGE.equals(packageUri.getScheme())) {
+                    pkg = packageUri.getSchemeSpecificPart();
                 }
+                intent.putExtra("uninstall_app",pkg);
+                intent.setComponent(new ComponentName(getHostContext(), UnInstallerActivity.class));
+                return method.invoke(who, args);
             }
 
             String resultWho = null;
@@ -439,7 +454,38 @@ class MethodProxies {
             return res;
         }
 
+        private String parseInstallRequest(Intent intent){
+            Uri packageUri = intent.getData();
+            String path = null;
+            if (SCHEME_FILE.equals(packageUri.getScheme())) {
 
+                File sourceFile = new File(packageUri.getPath());
+                path = NativeEngine.getRedirectedPath(sourceFile.getAbsolutePath());
+                VLog.e("wxd", " parseInstallRequest path : " + path);
+            }else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
+                InputStream inputStream = null;
+                OutputStream outputStream = null;
+                File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
+                try {
+                    inputStream = getHostContext().getContentResolver().openInputStream(packageUri);
+                    outputStream = new FileOutputStream(sharedFileCopy);
+                    byte[] buffer = new byte[1024];
+                    int count;
+                    while ((count = inputStream.read(buffer)) > 0) {
+                        outputStream.write(buffer, 0, count);
+                    }
+                    outputStream.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    FileUtils.closeQuietly(inputStream);
+                    FileUtils.closeQuietly(outputStream);
+                }
+                path = sharedFileCopy.getPath();
+                VLog.e("wxd", " parseInstallRequest sharedFileCopy path : " + path);
+            }
+            return path;
+        }
         private boolean handleInstallRequest(Intent intent) {
             IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
             if (listener != null) {
