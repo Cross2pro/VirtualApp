@@ -18,6 +18,7 @@ public class controllerService extends IController.Stub
     private static HashSet<String> GATEWAY_list = new HashSet<String>();
     private static HashMap<String, HashSet<String>> IPMAP = new HashMap<>();
     private static HashSet<String> JXIP_list = new HashSet<String>();
+    private static boolean activitySwitchFlag = true;
 
     static {
 
@@ -87,6 +88,18 @@ public class controllerService extends IController.Stub
         }
         Log.e(Tag, "isChangeConnect : " + ret);
         return ret;
+    }
+
+    @Override
+    public boolean getActivitySwitch() throws RemoteException {
+        Log.e(Tag, "getActivitySwitch : " + activitySwitchFlag);
+        return activitySwitchFlag;
+    }
+
+    @Override
+    public void setActivitySwitch(boolean switchFlag) throws RemoteException {
+        Log.e(Tag, "setActivitySwitch : " + switchFlag);
+        activitySwitchFlag = switchFlag;
     }
 
     private static void setIPMAP(){
