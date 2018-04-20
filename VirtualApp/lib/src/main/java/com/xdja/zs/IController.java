@@ -14,6 +14,9 @@ public interface IController extends IPCInterface {
     boolean isGatewayEnable(String packageName) throws RemoteException;
     boolean isChangeConnect(String packageName, int port, String ip) throws RemoteException;
 
+    boolean getActivitySwitch() throws RemoteException;
+    void setActivitySwitch(boolean switchFlag) throws RemoteException;
+
     abstract class Stub implements IController {
         @Override
         public boolean isBinderAlive() {

@@ -19,6 +19,7 @@ public class controllerService extends IController.Stub {
     private static HashSet<String> GATEWAY_list = new HashSet<String>();
     private static HashMap<String, HashSet<String>> IPMAP = new HashMap<>();
     private static HashSet<String> JXIP_list = new HashSet<String>();
+    private static boolean activitySwitchFlag = true;
 
     static {
 
@@ -85,7 +86,19 @@ public class controllerService extends IController.Stub {
         return ret;
     }
 
-    private static void setIPMAP() {
+    @Override
+    public boolean getActivitySwitch() throws RemoteException {
+        Log.e(Tag, "getActivitySwitch : " + activitySwitchFlag);
+        return activitySwitchFlag;
+    }
+
+    @Override
+    public void setActivitySwitch(boolean switchFlag) throws RemoteException {
+        Log.e(Tag, "setActivitySwitch : " + switchFlag);
+        activitySwitchFlag = switchFlag;
+    }
+
+    private static void setIPMAP(){
         String serverip_6 = "::ffff:120.194.4.131";
         String serverip_4 = "120.194.4.131";
         IPMAP.put("com.xdja.jxclient", JXIP_list);
