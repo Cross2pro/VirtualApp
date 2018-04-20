@@ -16,10 +16,6 @@ import com.lody.virtual.server.interfaces.IAppPermissionManager;
 public class VAppPermissionManager {
     private static final String TAG = VAppPermissionManager.class.getSimpleName();
     /**
-     * 禁止将数据向无防护应用复制
-     */
-    public static final String PROHIBIT_UNPROTECTED_DATA_COPY = "禁止将数据向无防护应用复制";
-    /**
      * 禁止对此应用进行截屏or录屏
      */
     public static final String PROHIBIT_SCREEN_SHORT_RECORDER = "禁止对此应用进行截屏,录屏";
@@ -36,7 +32,6 @@ public class VAppPermissionManager {
      * 目前支持的权限集合
      */
     public static final String[] permissions = new String[]{
-            PROHIBIT_UNPROTECTED_DATA_COPY,//禁止将数据向无防护应用复制
             PROHIBIT_SCREEN_SHORT_RECORDER,//禁止对此应用进行截屏or录屏
             PROHIBIT_NETWORK,//禁止使用网络
             ALLOW_WATER_MARK//启用应用界面水印功能

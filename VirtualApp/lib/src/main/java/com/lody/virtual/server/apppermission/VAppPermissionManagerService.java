@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.interfaces.IAppPermissionCallback;
@@ -75,6 +76,11 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
         Log.e(TAG, "setAppPermission packageName: " + packageName);
         Log.e(TAG, "setAppPermission appPermissionName: " + appPermissionName);
         Log.e(TAG, "setAppPermission isPermissionOpen: " + isPermissionOpen);
+        //若策略是关闭网络 则关闭应用进程的socket长链接
+        if (VAppPermissionManager.PROHIBIT_NETWORK.equals(appPermissionName) && isPermissionOpen) {
+            Log.e(TAG, "close long socket packageName: " + packageName);
+            VActivityManager.get().closeAllLongSocket(packageName, 0);
+        }
         functionMaps.put(buildKey(packageName, appPermissionName), isPermissionOpen);
         Log.e(TAG, "setAppPermission functionMaps: " + functionMaps.toString());
     }

@@ -45,7 +45,7 @@ public class ClipBoardStub extends BinderInvocationProxy {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) {
             addMethodProxy(new ClipBoardMethodProxy("setPrimaryClip"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getPrimaryClipDescription"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("hasPrimaryClip"));
+            addMethodProxy(new ClipBoardMethodProxy("hasPrimaryClip"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("addPrimaryClipChangedListener"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("removePrimaryClipChangedListener"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("hasClipboardText"));
@@ -75,15 +75,6 @@ public class ClipBoardStub extends BinderInvocationProxy {
             String methodName = getMethodName();
             Log.e(TAG, methodName + " appPkg: " + appPkg);
             VAppPermissionManager vAppPermissionManager = VAppPermissionManager.get();
-            boolean appPermissionEnable = vAppPermissionManager.getAppPermissionEnable(
-                    appPkg, VAppPermissionManager.PROHIBIT_UNPROTECTED_DATA_COPY);
-            Log.e(TAG, methodName + " appPermissionEnable: " + appPermissionEnable);
-            if (appPermissionEnable) {
-                Log.e(TAG, methodName + " trigger interceptor");
-                vAppPermissionManager.interceptorTriggerCallback(appPkg,
-                        VAppPermissionManager.PROHIBIT_UNPROTECTED_DATA_COPY);
-                return null;
-            }
             switch (methodName) {
                 case "getPrimaryClip":
                     ClipData data = vAppPermissionManager.getClipData();
@@ -101,6 +92,10 @@ public class ClipBoardStub extends BinderInvocationProxy {
                         }
                     }
                     return null;
+                case "hasPrimaryClip":
+                    ClipData clipData = vAppPermissionManager.getClipData();
+                    Log.e(TAG, methodName + " hasPrimaryClip: " + (clipData != null));
+                    return clipData != null;
                 default:
                     return super.call(who, method, args);
             }
