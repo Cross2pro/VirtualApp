@@ -7,6 +7,7 @@
 #include <fb/include/fb/fbjni.h>
 #include <utils/controllerManagerNative.h>
 #include <utils/zJNIEnv.h>
+#include <utils/utils.h>
 #include "VAJni.h"
 
 using namespace facebook::jni;
@@ -56,7 +57,9 @@ static jstring jni_nativeReverseRedirectedPath(alias_ref<jclass> jclazz, jstring
     const char *orig_path = IOUniformer::reverse(redirected_path.c_str());
     return Environment::current()->NewStringUTF(orig_path);
 }
-
+static jboolean jni_nativeCloseAllSocket(JNIEnv *env, jclass jclazz){
+    return (jboolean)closeAllSockets();
+}
 
 alias_ref<jclass> nativeEngineClass;
 
@@ -83,6 +86,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
                                          jni_nativeReverseRedirectedPath),
                         makeNativeMethod("nativeLaunchEngine",
                                          jni_nativeLaunchEngine),
+                        makeNativeMethod("nativeCloseAllSocket",
+                                         jni_nativeCloseAllSocket),
                 }
         );
     });
