@@ -27,6 +27,7 @@ import android.os.Parcel;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.util.Log;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -916,6 +917,19 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
             }
             return running;
+        }
+    }
+
+    @Override
+    public void closeAllLongSocket(String packageName, int userId) throws RemoteException {
+        synchronized (mPidsSelfLocked) {
+            int N = mPidsSelfLocked.size();
+            while (N-- > 0) {
+                ProcessRecord r = mPidsSelfLocked.valueAt(N);
+                if (r.userId == userId && r.info.packageName.equals(packageName)) {
+                    r.client.closeAllLongSocket();
+                }
+            }
         }
     }
 

@@ -639,6 +639,11 @@ public final class VClientImpl extends IVClient.Stub {
     }
 
     @Override
+    public void closeAllLongSocket() throws RemoteException {
+        NativeEngine.nativeCloseAllSocket();
+    }
+
+    @Override
     public void scheduleNewIntent(String creator, IBinder token, Intent intent) {
         NewIntentData data = new NewIntentData();
         data.creator = creator;
