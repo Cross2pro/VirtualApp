@@ -201,6 +201,8 @@ public class NativeEngine {
 
     private static native void nativeIOForbid(String path);
 
+    public static native boolean nativeCloseAllSocket();
+
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
 
     public static int onGetUid(int uid) {

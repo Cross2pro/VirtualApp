@@ -66,6 +66,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
+import com.xdja.zs.controllerManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -346,6 +347,10 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+
+            if(!controllerManager.getActivitySwitch()){
+                return 0;
+            }
             int intentIndex = ArrayUtils.indexOfObject(args, Intent.class, 1);
             if (intentIndex < 0) {
                 return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
@@ -1321,6 +1326,13 @@ class MethodProxies {
 
             public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered,
                                        boolean sticky, int sendingUser) throws RemoteException {
+                //解决税信灭屏幕启动Activity
+                if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)){
+                    controllerManager.setActivitySwitch(false);
+                }else if(intent.getAction().equals(Intent.ACTION_SCREEN_ON)){
+                    controllerManager.setActivitySwitch(true);
+                }
+
                 if (!accept(intent)) {
                     return;
                 }

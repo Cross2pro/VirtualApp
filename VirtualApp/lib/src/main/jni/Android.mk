@@ -6,6 +6,7 @@ LOCAL_MODULE := va++
 LOCAL_CFLAGS := -Wno-error=format-security -fpermissive -DLOG_TAG=\"VA++\"
 #LOCAL_CFLAGS += -DLOG_ENABLE
 LOCAL_CFLAGS += -fno-rtti -fno-exceptions
+LOCAL_CFLAGS += -D_DEBUG_
 
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Foundation
@@ -23,6 +24,8 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    Substrate/SubstratePosixMemory.cpp \
                    utils/zJNIEnv.cpp \
                    utils/controllerManagerNative.cpp \
+                   utils/utils.cpp \
+
 
 LOCAL_LDLIBS := -llog -latomic
 LOCAL_STATIC_LIBRARIES := fb

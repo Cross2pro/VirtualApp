@@ -11,6 +11,7 @@ interface IVClient {
     void scheduleReceiver(in String processName,in ComponentName component, in Intent intent, in PendingResultData resultData);
     void scheduleNewIntent(in String creator, in IBinder token, in Intent intent);
     void finishActivity(in IBinder token);
+    void closeAllLongSocket();
     IBinder createProxyService(in ComponentName component, in IBinder binder);
     IBinder acquireProviderClient(in ProviderInfo info);
     IBinder getAppThread();

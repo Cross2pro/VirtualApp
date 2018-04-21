@@ -53,4 +53,24 @@ public class controllerManager {
 
         return ret;
     }
+
+    public static boolean getActivitySwitch()
+    {
+        boolean ret = false;
+        try{
+            ret = controllerManager.get().getService().getActivitySwitch();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
+    public static void setActivitySwitch(boolean flag)
+    {
+        try{
+            controllerManager.get().getService().setActivitySwitch(flag);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }
