@@ -44,11 +44,11 @@ public class ClipBoardStub extends BinderInvocationProxy {
         addMethodProxy(new ClipBoardMethodProxy("getPrimaryClip"));
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) {
             addMethodProxy(new ClipBoardMethodProxy("setPrimaryClip"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("getPrimaryClipDescription"));
+            addMethodProxy(new ClipBoardMethodProxy("getPrimaryClipDescription"));
             addMethodProxy(new ClipBoardMethodProxy("hasPrimaryClip"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("addPrimaryClipChangedListener"));
             addMethodProxy(new ReplaceLastPkgMethodProxy("removePrimaryClipChangedListener"));
-            addMethodProxy(new ReplaceLastPkgMethodProxy("hasClipboardText"));
+            addMethodProxy(new ClipBoardMethodProxy("hasClipboardText"));
         }
     }
 
@@ -93,11 +93,16 @@ public class ClipBoardStub extends BinderInvocationProxy {
                     }
                     return null;
                 case "hasPrimaryClip":
+                case "hasClipboardText":
                     ClipData clipData = vAppPermissionManager.getClipData();
-                    Log.e(TAG, methodName + " hasPrimaryClip: " + (clipData != null));
+                    Log.e(TAG, methodName + " clipData: " + (clipData != null));
                     return clipData != null;
+                case "getPrimaryClipDescription":
+                    ClipData cd = vAppPermissionManager.getClipData();
+                    Log.e(TAG, methodName + " clipData: " + (cd != null));
+                    return cd == null ? null : cd.getDescription();
                 default:
-                    return super.call(who, method, args);
+                    return super.beforeCall(who, method, args);
             }
         }
     }
