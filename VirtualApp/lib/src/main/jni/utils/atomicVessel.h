@@ -5,8 +5,6 @@
 #ifndef VIRTUALAPP_ATOMICVESSEL_H
 #define VIRTUALAPP_ATOMICVESSEL_H
 
-#include <cstdint>
-
 /*
  * 容纳一个指针
  * 多该指针的操作 —— 设置、清除、获取，为原子操作
@@ -14,7 +12,7 @@
 class atomicVessel
 {
 private:
-    uint32_t thing;
+    mutable volatile uint32_t thing;
 
 public:
     atomicVessel() : thing(0) {}
