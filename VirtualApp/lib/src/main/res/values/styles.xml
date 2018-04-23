@@ -1,11 +1,5 @@
 <resources>
     <style name="InstallerTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowIsTranslucent">false</item>
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:textAllCaps">false</item>
     </style>
     <style name="notification_layout">
         <item name="android:layout_width">match_parent</item>
@@ -23,5 +17,10 @@
         <item name="android:windowDisablePreview">true</item>
     </style>
     <style name="VAAlertTheme" parent="android:Theme.DeviceDefault.Dialog">
+    </style>
+
+    <style name="BottomDialog" parent="android:Theme.DeviceDefault.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 </resources>

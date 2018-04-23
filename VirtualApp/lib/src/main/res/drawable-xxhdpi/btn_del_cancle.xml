@@ -2,6 +2,6 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- pressed -->
     <!-- default -->
-    <item android:state_pressed="true" android:drawable="@drawable/shape_install_goon_press" />
-    <item android:drawable="@drawable/shape_install_goon" />
+    <item android:state_pressed="true" android:drawable="@drawable/shape_del_cancle_press" />
+    <item android:drawable="@drawable/shape_del_cancle" />
 </selector>
