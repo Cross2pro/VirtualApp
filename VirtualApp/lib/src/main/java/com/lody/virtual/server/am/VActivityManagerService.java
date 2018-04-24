@@ -77,7 +77,7 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
  */
 public class VActivityManagerService extends IActivityManager.Stub {
 
-    private static final boolean BROADCAST_NOT_STARTED_PKG = false;
+    private static final boolean BROADCAST_NOT_STARTED_PKG = true;
 
     private static final Singleton<VActivityManagerService> sService = new Singleton<VActivityManagerService>(){
         @Override
