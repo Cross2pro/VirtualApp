@@ -1,33 +1,34 @@
 package io.virtualapp.delegate;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.pm.ActivityInfo;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
+import com.lody.virtual.server.am.AttributeCache;
+
+import java.lang.reflect.Field;
+
+import mirror.com.android.internal.R_Hide;
 
 public class MyComponentDelegate implements ComponentDelegate {
 
-    public final int watermarkid = 0x7fffffff;//As big as possible
     @Override
     public void beforeApplicationCreate(Application application) {
         Log.e("lxf", "beforeApplicationCreate ");
@@ -46,39 +47,35 @@ public class MyComponentDelegate implements ComponentDelegate {
             @Override
             public void onActivityStarted(Activity activity) {
                 Log.e("lxf", "onActivityStarted "+activity.getLocalClassName());
-                String acname = activity.getLocalClassName();
-                if (acname.equals("com.xdja.jxclient.jingxin.activity.AlertDialogActivity")
-                        || acname.equals("com.xdja.jxclient.main.activity.ConflictActivity")
-                        || acname.equals("com.xdja.jxclient.jingxin.activity.ContextMenu"))
-                    return;
-                boolean appPermissionEnable = true;
-                try{
-                    View v =  activity.findViewById(watermarkid);
 
-                    Log.e("lxf", "onActivityStarted watermark "+(v==null?"FALSE":"TRUE")+" "+appPermissionEnable);
-                    if (v==null&&appPermissionEnable){
-                        WaterMarkBorder _getBorder = new WaterMarkBorder(activity);
-                       ViewGroup.LayoutParams params =
-                                new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                        activity.getWindow().addContentView(_getBorder,params);
-
-                        if(activity.getParent()!=null)
-                        Log.e("lxf", "onActivityStarted 1 "+activity.getParent().getLocalClassName());
-                    }else if(v!=null&&!appPermissionEnable){
-                        ((ViewGroup) activity.getWindow().findViewById(android.R.id.content)).removeView(v);
-                    }
-                }catch (NoSuchMethodError e){
-                    e.printStackTrace();
-                }
             }
             @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onActivityResumed(Activity activity) {
                 Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
-                View v =  activity.findViewById(watermarkid);
-                Log.e("lxf", "onActivityResumed watermark "+(v==null?"FALSE":"TRUE"));
-                if(v!=null)
-                    v.bringToFront();
+                boolean issd = isStubDialog(activity);
+                Log.e("lxf", "isStubDialog "+issd);
+                if(issd)
+                    return;
+                //清除前景水印
+                activity.getWindow().getDecorView().setForeground(null);
+                DisplayMetrics  dm = new DisplayMetrics();
+                activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+                int screenWidth = dm.widthPixels;
+                int screenHeight = dm.heightPixels;
+                View view = activity.getWindow().getDecorView();
+                int mw = view.getMeasuredWidth();
+                int mh = view.getMeasuredHeight();
+                int w = view.getWidth();
+                int h = view.getHeight();
+                Log.e("lxf","sw "+screenWidth+ " mw "+ mw+" w "+w);
+                Log.e("lxf","sh "+screenHeight+ " mh "+ mh+" h "+h);
+//                ColorDrawable colorDrawable = new ColorDrawable(Color.argb(200,255,0,0));
+                Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(mBackgroundBitmap);
+                draw(canvas,screenWidth,screenHeight,"1234");
+                view.setForeground(new BitmapDrawable(mBackgroundBitmap));
+
             }
 
             @Override
@@ -102,6 +99,53 @@ public class MyComponentDelegate implements ComponentDelegate {
         });
     }
 
+
+    public boolean isStubDialog(Activity target){
+        ActivityInfo targetInfo = null;
+        try {
+            Field field=Activity.class.getDeclaredField("mActivityInfo");
+            field.setAccessible(true);//修改访问权限
+            targetInfo = (ActivityInfo)field.get(target);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        if(targetInfo==null)
+            return false;
+        boolean isFloating = false;
+        boolean isTranslucent = false;
+        boolean showWallpaper = false;
+        try {
+            int[] R_Styleable_Window = R_Hide.styleable.Window.get();
+            int R_Styleable_Window_windowIsTranslucent = R_Hide.styleable.Window_windowIsTranslucent.get();
+            int R_Styleable_Window_windowIsFloating = R_Hide.styleable.Window_windowIsFloating.get();
+            int R_Styleable_Window_windowShowWallpaper = R_Hide.styleable.Window_windowShowWallpaper.get();
+            AttributeCache.init(VirtualCore.get().getContext());
+            AttributeCache.Entry ent = AttributeCache.instance().get(targetInfo.packageName, targetInfo.theme,
+                    R_Styleable_Window);
+            if (ent != null && ent.array != null) {
+                showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
+            }else{
+                Resources resources= VirtualCore.get().getResources(targetInfo.packageName);
+                if(resources!=null) {
+                    TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
+                    if(typedArray!=null){
+                        showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                        isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                        isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
+        return isDialogStyle;
+    }
     @Override
     public void beforeActivityCreate(Activity activity) {
         Log.e("lxf", "beforeActivityCreate ");
@@ -127,36 +171,6 @@ public class MyComponentDelegate implements ComponentDelegate {
     @Override
     public void afterActivityCreate(Activity activity) {
         Log.e("lxf", "afterActivityCreate ");
-//        String acname = activity.getLocalClassName();
-//        Log.e("lxf", "getLocalClassName " + acname);
-//        if (acname.equals("com.xdja.jxclient.jingxin.activity.AlertDialogActivity")
-//                || acname.equals("com.xdja.jxclient.main.activity.ConflictActivity")
-//                || acname.equals("com.xdja.jxclient.jingxin.activity.ContextMenu"))
-//            return;
-////        View v = ((ViewGroup)activity.findViewById(android.R.id.content)).getChildAt(0);
-////        if(v!=null){
-////            Drawable dl = v.getForeground();
-////            String f_img_watermark = VirtualCore.get().getContext().getFilesDir().getAbsolutePath()+"/img_watermark.png";
-////            Drawable d = Drawable.createFromPath(f_img_watermark);
-////            if(d!=null&&dl==null){
-////                v.setForeground(d);
-////            }
-////        }
-//        VAppPermissionManager appPermissionManager = VAppPermissionManager.get();
-//        if (appPermissionManager == null) {
-//            return;
-//        }
-//        boolean appPermissionEnable = appPermissionManager.getAppPermissionEnable(
-//                activity.getPackageName(), VAppPermissionManager.ALLOW_WATER_MARK);
-//        if (appPermissionEnable) {
-//            WaterMarkBorder _getBorder = new WaterMarkBorder(activity);
-//            ((ViewGroup) activity.findViewById(android.R.id.content)).addView(_getBorder);
-//        }
-//        boolean appPermissionEnable1 = appPermissionManager.getAppPermissionEnable(
-//                activity.getPackageName(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_OR_RECORDER);
-//        if (appPermissionEnable1) {
-//            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-//        }
     }
 
     @Override
@@ -178,81 +192,49 @@ public class MyComponentDelegate implements ComponentDelegate {
 
     }
 
-    public class WaterMarkBorder extends View {
-        private String Imei = null;
-        private Paint paint;
-
-        @SuppressLint("ResourceType")
-        public WaterMarkBorder(Context context) {
-            super(context);
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                Log.e("lxf", "Application maybe crash . ");
-                Imei = "";
-                return;
-            }
-            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            if (telephonyManager != null) {
-                Imei = telephonyManager.getDeviceId();
-            }
-            paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            setId(watermarkid);
-        }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            if (paint == null) {
-                paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            }
-            int width = getWidth();
-            int height = getHeight();
-            paint.setColor(Color.parseColor("#AEAEAE"));
-            paint.setAntiAlias(true);
+    public static void draw(Canvas canvas,int width, int height,String Imei){
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.parseColor("#AEAEAE"));
+        paint.setAntiAlias(true);
 //          paint.setTextAlign(Paint.Align.CENTER);
-            String logo = "安  全  盒";
-            //绘制文字
+        String logo = "安  全  盒";
+        //绘制文字
+        canvas.save();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setFakeBoldText(true);
+        paint.setAlpha(70);
+        paint.setStrokeWidth(5);
+        paint.setTextSize(100);
+        canvas.rotate(-45);
+        float textWidth = paint.measureText(logo);
+        int index = 0;
+        for (int positionY = height / 4; positionY <= height * 2 + 50; positionY += height / 4) {
+            float fromX = -width + (index++ % 2) * textWidth;
+            for (float positionX = fromX; positionX < width; positionX += textWidth * 2) {
+                canvas.drawText(logo, positionX, positionY, paint);
+            }
+        }
+        canvas.restore();
+
+        //Imei不为空时才绘制Imei
+        if (!TextUtils.isEmpty(Imei)) {
             canvas.save();
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setFakeBoldText(true);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setFakeBoldText(false);
             paint.setAlpha(70);
-            paint.setStrokeWidth(5);
-            paint.setTextSize(100);
+            paint.setTextSize(20);
             canvas.rotate(-45);
-            float textWidth = paint.measureText(logo);
-            int index = 0;
-            for (int positionY = height / 4; positionY <= height * 2 + 50; positionY += height / 4) {
-                float fromX = -width + (index++ % 2) * textWidth;
+            int index1 = 0;
+            for (int positionY = height / 4 + 40; positionY <= height * 2 + 50; positionY += height / 4) {
+                float fromX = -width + (index1++ % 2) * textWidth;
                 for (float positionX = fromX; positionX < width; positionX += textWidth * 2) {
-                    canvas.drawText(logo, positionX, positionY, paint);
+                    canvas.drawText(Imei, positionX, positionY, paint);
                 }
             }
             canvas.restore();
-
-            //Imei不为空时才绘制Imei
-            if (!TextUtils.isEmpty(Imei)) {
-                canvas.save();
-                paint.setStyle(Paint.Style.FILL);
-                paint.setFakeBoldText(false);
-                paint.setAlpha(70);
-                paint.setTextSize(20);
-                canvas.rotate(-45);
-                int index1 = 0;
-                for (int positionY = height / 4 + 40; positionY <= height * 2 + 50; positionY += height / 4) {
-                    float fromX = -width + (index1++ % 2) * textWidth;
-                    for (float positionX = fromX; positionX < width; positionX += textWidth * 2) {
-                        canvas.drawText(Imei, positionX, positionY, paint);
-                    }
-                }
-                canvas.restore();
-            }
-            //TODO 暂时屏蔽绿色边框
-//            //绘制边框
-//            paint.setStyle(Paint.Style.STROKE);//不填充
-//            int lineW = 10;
-//            paint.setStrokeWidth(lineW);
-//            paint.setColor(Color.GREEN);
-//            canvas.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1, paint);
         }
+
+        Log.e("lxf","onDraw end");
     }
 
 }
