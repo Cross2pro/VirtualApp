@@ -3,6 +3,9 @@ package io.virtualapp.delegate;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -16,7 +19,13 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
+import com.lody.virtual.server.am.AttributeCache;
+
+import java.lang.reflect.Field;
+
+import mirror.com.android.internal.R_Hide;
 
 public class MyComponentDelegate implements ComponentDelegate {
 
@@ -35,10 +44,19 @@ public class MyComponentDelegate implements ComponentDelegate {
                 Log.e("lxf", "onActivityCreated "+activity.getLocalClassName());
             }
 
-            @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onActivityStarted(Activity activity) {
                 Log.e("lxf", "onActivityStarted "+activity.getLocalClassName());
+
+            }
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            @Override
+            public void onActivityResumed(Activity activity) {
+                Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
+                boolean issd = isStubDialog(activity);
+                Log.e("lxf", "isStubDialog "+issd);
+                if(issd)
+                    return;
                 //清除前景水印
                 activity.getWindow().getDecorView().setForeground(null);
                 DisplayMetrics  dm = new DisplayMetrics();
@@ -46,16 +64,18 @@ public class MyComponentDelegate implements ComponentDelegate {
                 int screenWidth = dm.widthPixels;
                 int screenHeight = dm.heightPixels;
                 View view = activity.getWindow().getDecorView();
+                int mw = view.getMeasuredWidth();
+                int mh = view.getMeasuredHeight();
+                int w = view.getWidth();
+                int h = view.getHeight();
+                Log.e("lxf","sw "+screenWidth+ " mw "+ mw+" w "+w);
+                Log.e("lxf","sh "+screenHeight+ " mh "+ mh+" h "+h);
 //                ColorDrawable colorDrawable = new ColorDrawable(Color.argb(200,255,0,0));
                 Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
                 Canvas canvas = new Canvas(mBackgroundBitmap);
                 draw(canvas,screenWidth,screenHeight,"1234");
                 view.setForeground(new BitmapDrawable(mBackgroundBitmap));
 
-            }
-            @Override
-            public void onActivityResumed(Activity activity) {
-                Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
             }
 
             @Override
@@ -79,6 +99,53 @@ public class MyComponentDelegate implements ComponentDelegate {
         });
     }
 
+
+    public boolean isStubDialog(Activity target){
+        ActivityInfo targetInfo = null;
+        try {
+            Field field=Activity.class.getField("mActivityInfo");
+            field.setAccessible(true);//修改访问权限
+            targetInfo = (ActivityInfo)field.get(target);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        if(targetInfo==null)
+            return false;
+        boolean isFloating = false;
+        boolean isTranslucent = false;
+        boolean showWallpaper = false;
+        try {
+            int[] R_Styleable_Window = R_Hide.styleable.Window.get();
+            int R_Styleable_Window_windowIsTranslucent = R_Hide.styleable.Window_windowIsTranslucent.get();
+            int R_Styleable_Window_windowIsFloating = R_Hide.styleable.Window_windowIsFloating.get();
+            int R_Styleable_Window_windowShowWallpaper = R_Hide.styleable.Window_windowShowWallpaper.get();
+
+            AttributeCache.Entry ent = AttributeCache.instance().get(targetInfo.packageName, targetInfo.theme,
+                    R_Styleable_Window);
+            if (ent != null && ent.array != null) {
+                showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
+            }else{
+                Resources resources= VirtualCore.get().getResources(targetInfo.packageName);
+                if(resources!=null) {
+                    TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
+                    if(typedArray!=null){
+                        showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                        isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                        isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
+        return isDialogStyle;
+    }
     @Override
     public void beforeActivityCreate(Activity activity) {
         Log.e("lxf", "beforeActivityCreate ");
