@@ -103,7 +103,7 @@ public class MyComponentDelegate implements ComponentDelegate {
     public boolean isStubDialog(Activity target){
         ActivityInfo targetInfo = null;
         try {
-            Field field=Activity.class.getField("mActivityInfo");
+            Field field=Activity.class.getDeclaredField("mActivityInfo");
             field.setAccessible(true);//修改访问权限
             targetInfo = (ActivityInfo)field.get(target);
         } catch (NoSuchFieldException e) {
@@ -121,7 +121,7 @@ public class MyComponentDelegate implements ComponentDelegate {
             int R_Styleable_Window_windowIsTranslucent = R_Hide.styleable.Window_windowIsTranslucent.get();
             int R_Styleable_Window_windowIsFloating = R_Hide.styleable.Window_windowIsFloating.get();
             int R_Styleable_Window_windowShowWallpaper = R_Hide.styleable.Window_windowShowWallpaper.get();
-
+            AttributeCache.init(VirtualCore.get().getContext());
             AttributeCache.Entry ent = AttributeCache.instance().get(targetInfo.packageName, targetInfo.theme,
                     R_Styleable_Window);
             if (ent != null && ent.array != null) {
