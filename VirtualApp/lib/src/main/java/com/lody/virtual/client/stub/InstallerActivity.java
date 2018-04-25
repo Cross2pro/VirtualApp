@@ -1,6 +1,7 @@
 package com.lody.virtual.client.stub;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -221,26 +222,26 @@ public class InstallerActivity extends Activity {
                         }
                         //mHandler.sendEmptyMessage(STATE_INSTALLED);
                         stateChanged(STATE_INSTALLED);
-                        final Dialog delDlg = new Dialog(InstallerActivity.this,R.style.BottomDialog);
-                        View contentView = LayoutInflater.from(InstallerActivity.this).inflate(R.layout.custom_installer_del, null);
-                        Button btn_del_cancle = contentView.findViewById(R.id.btn_del_cancel);
+                        final AlertDialog delDlg = new AlertDialog.Builder(InstallerActivity.this).create();
+                        delDlg.getWindow().setGravity(Gravity.BOTTOM);
+                        delDlg.show();
+                        delDlg.setContentView(R.layout.custom_installer_del);
+
+                        Button btn_del_cancle = delDlg.getWindow().findViewById(R.id.btn_del_cancel);
                         btn_del_cancle.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
-                                delDlg.cancel();
+                                delDlg.dismiss();
                             }
                         });
-                        Button btn_del_del = contentView.findViewById(R.id.btn_del_del);
+                        Button btn_del_del = delDlg.getWindow().findViewById(R.id.btn_del_del);
                         btn_del_del.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
                                 FileUtils.deleteDir(apkinfo.path);
-                                delDlg.cancel();
+                                delDlg.dismiss();
                             }
                         });
-                        delDlg.setContentView(contentView);
-                        delDlg.getWindow().setGravity(Gravity.BOTTOM);
-                        delDlg.show();
                     }else{
                         //mHandler.sendEmptyMessage(STATE_INSTALLFAILED);
                         stateChanged(STATE_INSTALLFAILED);
