@@ -29,11 +29,13 @@ namespace IOUniformer {
 
     void init_env_before_all();
 
-    void startUniformer(const char *so_path, int api_level, int preview_api_level);
+    void startUniformer(const char *so_path, int api_level, int preview_api_level, int need_dlopen);
 
     void redirect(const char *orig_path, const char *new_path);
 
     void whitelist(const char *path);
+
+    void dlopen_whitelist(const char* path);
 
     const char *query(const char *orig_path);
 

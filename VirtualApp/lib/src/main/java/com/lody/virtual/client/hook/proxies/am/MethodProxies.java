@@ -1826,7 +1826,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VClient.get().isOutSideDiff()) {
+            if (!isNotCopyApk()) {
                 //apk res
                 return 0;
             }

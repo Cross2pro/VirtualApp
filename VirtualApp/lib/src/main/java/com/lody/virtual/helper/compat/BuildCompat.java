@@ -24,6 +24,11 @@ public class BuildCompat {
                 || Build.VERSION.SDK_INT > 25;
     }
 
+    public static boolean isP() {
+        return (Build.VERSION.SDK_INT == 27 && getPreviewSDKInt() > 0)
+                || Build.VERSION.SDK_INT > 27;
+    }
+
     public static boolean isSamsung() {
         return "samsung".equalsIgnoreCase(Build.BRAND) || "samsung".equalsIgnoreCase(Build.MANUFACTURER);
     }

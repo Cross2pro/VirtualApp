@@ -20,6 +20,10 @@ public class Constants {
 	 * patches/android_frameworks_base-M.patch.
 	 */
 	public static final String FEATURE_FAKE_SIGNATURE = "fake-signature";
+    /**
+     * wait Constants.ACTION_PACKAGE_ADDED
+     */
+    public static final String ACTION_PACKAGE_WILL_ADDED = "_VA_pre." + Intent.ACTION_PACKAGE_ADDED;
 	public static final String ACTION_PACKAGE_ADDED = "virtual." + Intent.ACTION_PACKAGE_ADDED;
 	public static final String ACTION_PACKAGE_REMOVED = "virtual." + Intent.ACTION_PACKAGE_REMOVED;
 	public static final String ACTION_PACKAGE_CHANGED = "virtual." + Intent.ACTION_PACKAGE_CHANGED;

@@ -10,21 +10,9 @@ import com.lody.virtual.client.hook.delegate.ComponentDelegate;
 
 public class MyComponentDelegate implements ComponentDelegate {
     Activity mProcessTopActivity;
+
     @Override
     public void beforeApplicationCreate(Application application) {
-//        Context mBase = application.getBaseContext();
-//        ApplicationInfo applicationInfo = mBase.getApplicationInfo();
-//        //
-//        String realDataDir = VirtualCore.get().getContext().getApplicationInfo().dataDir
-//                .replace(VirtualCore.get().getHostPkg(), applicationInfo.packageName);
-//        applicationInfo.dataDir = realDataDir;
-//        ContextWrapper wrapper = new ContextWrapper(mBase) {
-//            @Override
-//            public ApplicationInfo getApplicationInfo() {
-//                return applicationInfo;
-//            }
-//        };
-//        Reflect.on(application).set("mBase", wrapper);
     }
 
     @Override

@@ -11,7 +11,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
@@ -45,6 +44,7 @@ import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
@@ -119,11 +119,10 @@ public final class VClient extends IVClient.Stub {
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
     private CrashHandler crashHandler;
+    private InstalledAppInfo mAppInfo;
 
-    private boolean outSideDiff;
-
-    public boolean isOutSideDiff() {
-        return outSideDiff;
+    public InstalledAppInfo getAppInfo() {
+        return mAppInfo;
     }
 
     public static VClient get() {
@@ -132,6 +131,11 @@ public final class VClient extends IVClient.Stub {
 
     public boolean isBound() {
         return mBoundApplication != null;
+    }
+
+    public boolean isNotCopyApk() {
+        InstalledAppInfo appInfo = getAppInfo();
+        return appInfo != null && appInfo.notCopyApk;
     }
 
     public VDeviceInfo getDeviceInfo() {
@@ -279,20 +283,7 @@ public final class VClient extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
-        //check version
-        PackageInfo outside = null;
-        try {
-            outside = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
-        } catch (Throwable e) {
-            //ignore
-        }
-        if (outside != null) {
-            PackageInfo inside = VPackageManager.get().getPackageInfo(packageName, 0, getUserId(vuid));
-            outSideDiff = inside.versionCode != outside.versionCode;
-        } else {
-            outSideDiff = false;
-        }
-        //end check
+        mAppInfo = info;
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
@@ -462,6 +453,21 @@ public final class VClient extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
 
+        if(isNotCopyApk()) {
+            ApplicationInfo outside = null;
+            try {
+                outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+            } catch (Throwable e) {
+                //ignore
+            }
+            if (outside != null) {
+                String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
+                if (path != null) {
+                    NativeEngine.dlOpenWhitelist(path);
+                }
+            }
+        }
+
         VirtualStorageManager vsManager = VirtualStorageManager.get();
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
@@ -475,7 +481,7 @@ public final class VClient extends IVClient.Stub {
             }
         }
 
-        NativeEngine.enableIORedirect();
+        NativeEngine.enableIORedirect(!VirtualCore.get().isDisableDlOpen(info.packageName));
     }
 
     @SuppressLint("SdCardPath")

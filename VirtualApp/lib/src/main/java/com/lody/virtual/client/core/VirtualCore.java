@@ -53,7 +53,6 @@ import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
-import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
 import java.io.IOException;
@@ -103,8 +102,24 @@ public final class VirtualCore {
     private ConditionVariable initLock = new ConditionVariable();
     private ComponentDelegate componentDelegate;
     private TaskDescriptionDelegate taskDescriptionDelegate;
+    private SettingHandler mSettingHandler;
 
     private VirtualCore() {
+    }
+
+    public boolean isDisableDlOpen(String packageName){
+        return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName);
+    }
+
+    public boolean isUseRealDir(String packageName){
+        if(VASettings.USE_REAL_DATA_DIR){
+            return true;
+        }
+        return mSettingHandler != null && mSettingHandler.isUseRealDataDir(packageName);
+    }
+
+    public void setSettingHandler(SettingHandler settingHandler) {
+        mSettingHandler = settingHandler;
     }
 
     public static VirtualCore get() {
@@ -269,15 +284,10 @@ public final class VirtualCore {
         if (isVAppProcess()) {
             systemPid = VActivityManager.get().getSystemPid();
         }
-        if(isVAppProcess()){
-            if(!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)){
+        if (isVAppProcess()) {
+            if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
                 GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
                 addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-            }
-        } else if (isServerProcess()) {
-            if (!VAppManagerService.get().isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
-                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-                VAppManagerService.get().addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
             }
         }
     }

@@ -36,6 +36,10 @@ public abstract class MethodProxy {
         return VClient.get().getCurrentPackage();
     }
 
+    public static boolean isNotCopyApk() {
+        return  VClient.get().isNotCopyApk();
+    }
+
     protected static Context getHostContext() {
         return VirtualCore.get().getContext();
     }

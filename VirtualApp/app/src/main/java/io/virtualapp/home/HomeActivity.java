@@ -3,6 +3,7 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -81,7 +82,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private TextView mDeleteAppTextView;
     private LaunchpadAdapter mLaunchpadAdapter;
     private Handler mUiHandler;
-    private boolean mReload = false;
 
     public static void goHome(Context context) {
         Intent intent = new Intent(context, HomeActivity.class);
@@ -100,11 +100,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Constants.ACTION_PACKAGE_ADDED);
-        filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
-        filter.addDataScheme("package");
-        registerReceiver(mReceiver, filter);
 //        IBinderTool.printAllService();
 //        IBinderTool.printIBinder("android.content.IFlymePermissionService");
     }
@@ -112,22 +107,48 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     @Override
     protected void onResume() {
         super.onResume();
-        if(mReload){
-            mReload = false;
-            mPresenter.dataChanged();
-        }
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.ACTION_PACKAGE_ADDED);
+        filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Constants.ACTION_PACKAGE_WILL_ADDED);
+        filter.addDataScheme("package");
+        registerReceiver(mReceiver, filter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mReceiver);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mReceiver);
+        if (mDialog != null && mDialog.isShowing()) {
+            mDialog.dismiss();
+            mDialog = null;
+        }
     }
 
+    ProgressDialog mDialog = null;
     BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mReload = true;
+            if (Constants.ACTION_PACKAGE_WILL_ADDED.equals(intent.getAction())) {
+                String pkg = intent.getData().getSchemeSpecificPart();
+                String msg = "wait update " + mPresenter.getLabel(pkg);
+                if (mDialog != null) {
+                    mDialog.setMessage(msg);
+                } else {
+                    mDialog = ProgressDialog.show(context, null, msg);
+                }
+            } else {
+                mPresenter.dataChanged();
+                if (mDialog != null && mDialog.isShowing()) {
+                    mDialog.dismiss();
+                    mDialog = null;
+                }
+            }
         }
     };
 
@@ -163,8 +184,12 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             Toast.makeText(this, "The coming", Toast.LENGTH_SHORT).show();
             return false;
         });
-        menu.add("Virtual Location").setIcon(R.drawable.ic_notification).setOnMenuItemClickListener(item -> {
+        menu.add("Virtual Location").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
             startActivity(new Intent(this, LocationSettingsActivity.class));
+            return true;
+        });
+        menu.add("Install Google Support").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+            askInstallGms();
             return true;
         });
         menu.add("Settings").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
@@ -455,7 +480,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 AppData data = mLaunchpadAdapter.getList().get(target.getAdapterPosition());
                 return data.canReorder();
             } catch (IndexOutOfBoundsException e) {
-                e.printStackTrace();
+                //ignore
             }
             return false;
         }

@@ -18,12 +18,16 @@ void IOUniformer::init_env_before_all() {
         return;
     char *api_level_chars = getenv("V_API_LEVEL");
     char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
+    char *need_dlopen_chars = getenv("V_NEED_DLOPEN");
     if (api_level_chars) {
         int api_level = atoi(api_level_chars);
         int preview_api_level;
         preview_api_level = atoi(preview_api_level_chars);
+        int need_dlopen = atoi(need_dlopen_chars);
+
         char keep_env_name[25];
         char forbid_env_name[25];
+        char dlopen_keep_env_name[25];
         char replace_src_env_name[25];
         char replace_dst_env_name[25];
         int i = 0;
@@ -34,6 +38,16 @@ void IOUniformer::init_env_before_all() {
                 break;
             }
             add_keep_item(item);
+            i++;
+        }
+        i = 0;
+        while (true) {
+            sprintf(dlopen_keep_env_name, "V_DLOPEN_KEEP_ITEM_%d", i);
+            char *item = getenv(dlopen_keep_env_name);
+            if (!item) {
+                break;
+            }
+            add_dlopen_keep_item(item);
             i++;
         }
         i = 0;
@@ -58,7 +72,7 @@ void IOUniformer::init_env_before_all() {
             add_replace_item(item_src, item_dst);
             i++;
         }
-        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level);
+        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level, need_dlopen);
         iu_loaded = true;
     }
 }
@@ -87,6 +101,10 @@ const char *IOUniformer::query(const char *orig_path) {
 
 void IOUniformer::whitelist(const char *_path) {
     add_keep_item(_path);
+}
+
+void IOUniformer::dlopen_whitelist(const char *_path){
+    add_dlopen_keep_item(_path);
 }
 
 void IOUniformer::forbid(const char *_path) {
@@ -521,7 +539,8 @@ char **build_new_env(char *const envp[]) {
     int new_envp_count = orig_envp_count
                          + get_keep_item_count()
                          + get_forbidden_item_count()
-                         + get_replace_item_count() * 2 + 1;
+                         + get_replace_item_count() * 2 + 1
+                         + get_dlopen_keep_item_count();
     if (provided_ld_preload) {
         new_envp_count--;
     }
@@ -549,7 +568,6 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
      *
      * We will support 64Bit to adopt it.
      */
-    ALOGE("execve : %s", pathname);
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     char *ld = getenv("LD_PRELOAD");
@@ -575,7 +593,7 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
 
 const char *relocate_path_dlopen(const char *path, int *result) {
     if (path[0] == '/' || path[0] == '.') {
-        return relocate_path(path, result);
+        return relocate_path(path, result, 1);
     }
     *result = NOT_MATCH;
     return path;
@@ -682,9 +700,11 @@ void hook_dlopen(int api_level) {
 }
 
 
-void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level) {
+void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level,int need_dlopen) {
     char api_level_chars[5];
     setenv("V_SO_PATH", so_path, 1);
+    sprintf(api_level_chars, "%i", need_dlopen);
+    setenv("V_NEED_DLOPEN", api_level_chars, 1);
     sprintf(api_level_chars, "%i", api_level);
     setenv("V_API_LEVEL", api_level_chars, 1);
     sprintf(api_level_chars, "%i", preview_api_level);
@@ -733,5 +753,7 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
         }
         dlclose(handle);
     }
-    hook_dlopen(api_level);
+    if(need_dlopen == 1){
+        hook_dlopen(api_level);
+    }
 }

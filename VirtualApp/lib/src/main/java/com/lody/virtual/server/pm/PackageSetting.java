@@ -69,7 +69,7 @@ public class PackageSetting implements Parcelable {
         state.installed = installed;
     }
 
-    PackageUserState readUserState(int userId) {
+    public PackageUserState readUserState(int userId) {
         PackageUserState state = userState.get(userId);
         if (state != null) {
             return state;

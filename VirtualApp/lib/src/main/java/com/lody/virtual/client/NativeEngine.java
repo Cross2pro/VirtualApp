@@ -15,7 +15,6 @@ import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +75,17 @@ public class NativeEngine {
         return origPath;
     }
 
+    public static void dlOpenWhitelist(String path){
+        if (!path.endsWith("/")) {
+            path = path + "/";
+        }
+        try {
+            nativeDlOpenWhitelist(path);
+        } catch (Throwable e) {
+            VLog.e(TAG, VLog.getStackTraceString(e));
+        }
+    }
+
     public static void redirectDirectory(String origPath, String newPath) {
         if (!origPath.endsWith("/")) {
             origPath = origPath + "/";
@@ -124,14 +134,14 @@ public class NativeEngine {
         }
     }
 
-    public static void enableIORedirect() {
+    public static void enableIORedirect(boolean needDlOpen) {
         try {
             String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
                     "lib/lib" + LIB_NAME + ".so").getAbsolutePath();
             if (!new File(soPath).exists()) {
                 throw new RuntimeException("Cannot find so " + soPath);
             }
-            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
+            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt(), needDlOpen);
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -141,7 +151,7 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
+        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {
@@ -205,7 +215,9 @@ public class NativeEngine {
 
     private static native void nativeIOForbid(String path);
 
-    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
+    private static native void nativeDlOpenWhitelist(String path);
+
+    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel, boolean needDlOpen);
 
     public static int onGetUid(int uid) {
         return VClient.get().getBaseVUid();

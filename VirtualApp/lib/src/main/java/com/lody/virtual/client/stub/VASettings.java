@@ -8,7 +8,7 @@ import java.util.Locale;
 
 public class VASettings {
 
-    public static boolean CHECK_UPDATE_NOT_COPY_APK = false;
+    public static boolean CHECK_UPDATE_NOT_COPY_APK = true;
 
     public static boolean PROVIDER_ONLY_FILE = true;
 
@@ -29,6 +29,9 @@ public class VASettings {
     public static boolean DISABLE_FOREGROUND_SERVICE = false;
 
     /**
+     * @deprecated
+     * @see com.lody.virtual.client.core.VirtualCore#setSettingHandler
+     * @see com.lody.virtual.client.core.SettingHandler#isUseRealDataDir(String)
      * /data/data/va/virtual/data/xxx/->/data/data/xxxx/
      */
     public static boolean USE_REAL_DATA_DIR = false;

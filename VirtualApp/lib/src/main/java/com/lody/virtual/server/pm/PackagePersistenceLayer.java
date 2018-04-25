@@ -3,7 +3,6 @@ package com.lody.virtual.server.pm;
 import android.os.Parcel;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.PersistenceLayer;
 import com.lody.virtual.os.VEnvironment;
@@ -65,9 +64,6 @@ class PackagePersistenceLayer extends PersistenceLayer {
                     this.mService.loadPackage(setting);
                 }
             }
-        }
-        if (!VirtualCore.get().isAppInstalled("com.google.android.gsf")) {
-            GmsSupport.remove("com.google.android.gsf");
         }
     }
 

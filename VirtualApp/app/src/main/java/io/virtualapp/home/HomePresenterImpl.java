@@ -53,6 +53,11 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     }
 
     @Override
+    public String getLabel(String packageName) {
+        return mRepo.getLabel(packageName);
+    }
+
+    @Override
     public void launchApp(AppData data) {
         try {
             if (data instanceof PackageAppData) {
@@ -74,7 +79,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         mView.showLoading();
         mRepo.getVirtualApps().done(mView::loadFinish).fail(mView::loadError);
     }
-
 
     @Override
     public void addApp(AppInfoLite info) {

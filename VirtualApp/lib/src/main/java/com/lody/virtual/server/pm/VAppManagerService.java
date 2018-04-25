@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
@@ -95,19 +96,21 @@ public class VAppManagerService extends IAppManager.Stub {
                     }
                 }
             }
+            upgradeApps();
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
-        }
-        if(VASettings.CHECK_UPDATE_NOT_COPY_APK) {
-            upgradeApps();
         }
     }
 
     private void cleanUpResidualFiles(PackageSetting ps) {
-        File dataAppDir = VEnvironment.getDataAppPackageDirectory(ps.packageName);
+        cleanUpResidualFilesByPackageName(ps.packageName);
+    }
+
+    private void cleanUpResidualFilesByPackageName(String packageName) {
+        File dataAppDir = VEnvironment.getDataAppPackageDirectory(packageName);
         FileUtils.deleteDir(dataAppDir);
         for (int userId : VUserManagerService.get().getUserIds()) {
-            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, packageName));
         }
     }
 
@@ -136,7 +139,8 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean loadPackageInnerLocked(PackageSetting ps) {
-        if (!FileUtils.isExist(ps.apkPath)) {
+        if (!FileUtils.isExist(ps.apkPath) && !ps.notCopyApk) {
+            //android 8.0 ps.notCopyApk need update
             return false;
         }
         File cacheFile = VEnvironment.getPackageCacheFile(ps.packageName);
@@ -321,6 +325,9 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean canUpdate(VPackage existOne, VPackage newOne, int flags) {
+        if ((flags & InstallStrategy.FORCE_UPDATE) != 0) {
+            return true;
+        }
         if ((flags & InstallStrategy.COMPARE_VERSION) != 0) {
             if (existOne.mVersionCode < newOne.mVersionCode) {
                 return true;
@@ -600,9 +607,10 @@ public class VAppManagerService extends IAppManager.Stub {
 
 
     /**
-     * check app update
+     * check app update on va's startup
      */
     private void upgradeApps() {
+        List<String> removes = new ArrayList<>();
         for (Map.Entry<String, VPackage> e : PackageCacheManager.PACKAGE_CACHE.entrySet()) {
             String pkg = e.getKey();
             VPackage vPackage = e.getValue();
@@ -611,31 +619,37 @@ public class VAppManagerService extends IAppManager.Stub {
             }
             PackageSetting setting = (PackageSetting)vPackage.mExtras;
             if(setting.notCopyApk) {
-                String apkPath = needUpgrade(pkg);
-                if (apkPath != null) {
-                    upgradePackage(pkg, apkPath, InstallStrategy.NOT_COPY_APK
-                            | InstallStrategy.COMPARE_VERSION);
-                    VLog.logbug(TAG, "upgraded package: " + pkg + " on path:" + apkPath);
+                PackageInfo outside = null;
+                try {
+                    outside = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg, 0);
+                } catch (Throwable ex) {
+                    //ignore
+                }
+                if (outside == null) {
+                    removes.add(pkg);
+                    continue;
+                }
+                if (!FileUtils.isExist(setting.apkPath)) {
+                    upgradePackage(pkg, outside.applicationInfo.publicSourceDir,
+                            InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE);
+                } else {
+                    PackageInfo inside = VPackageManager.get().getPackageInfo(pkg, 0, 0);
+                    if (inside == null || (inside.versionCode < outside.versionCode)
+                            || !TextUtils.equals(
+                            inside.applicationInfo.publicSourceDir,
+                            outside.applicationInfo.publicSourceDir)) {
+                        //1.lose,2.version,3.8.0 apk
+                        upgradePackage(pkg, outside.applicationInfo.publicSourceDir,
+                                InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE);
+                    }
                 }
             }
         }
-    }
 
-    private String needUpgrade(String packageName) {
-        String path = null;
-        try {
-
-            PackageInfo packageInfo2 = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
-            if(packageInfo2 != null) {
-                PackageInfo packageInfo = VPackageManager.get().getPackageInfo(packageName, 0, 0);
-                if (packageInfo != null && packageInfo.versionCode != packageInfo2.versionCode) {
-                    path = packageInfo2.applicationInfo.sourceDir;
-                }
-            }
-        } catch (Throwable e) {
-            VLog.e(TAG, e);
+        for (String pkg : removes) {
+            PackageCacheManager.PACKAGE_CACHE.remove(pkg);
+            cleanUpResidualFilesByPackageName(pkg);
         }
-        return path;
     }
 
     public InstallResult upgradePackage(String pkg, String path, int flag) {

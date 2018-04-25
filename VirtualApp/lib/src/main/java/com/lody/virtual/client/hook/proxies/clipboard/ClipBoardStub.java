@@ -7,7 +7,6 @@ import android.os.IInterface;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.helper.compat.BuildCompat;
 
 import mirror.android.content.ClipboardManager;
 import mirror.android.content.ClipboardManagerOreo;
@@ -23,15 +22,18 @@ public class ClipBoardStub extends BinderInvocationProxy {
     }
 
     private static IInterface getInterface() {
-        if (BuildCompat.isOreo() && !BuildCompat.isSamsung()
-                || ClipboardManager.getService == null) {
-
+        // android < 26
+        if (ClipboardManager.getService != null) {
+            return ClipboardManager.getService.call();
+        } else if (ClipboardManagerOreo.mService != null) {
             android.content.ClipboardManager cm = (android.content.ClipboardManager)
                     VirtualCore.get().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             return ClipboardManagerOreo.mService.get(cm);
-            
+        } else if (ClipboardManagerOreo.sService != null) {
+            //samsung
+            return ClipboardManagerOreo.sService.get();
         } else {
-            return ClipboardManager.getService.call();
+            return null;
         }
     }
 
@@ -52,12 +54,13 @@ public class ClipBoardStub extends BinderInvocationProxy {
     @Override
     public void inject() throws Throwable {
         super.inject();
-        if (BuildCompat.isOreo()) {
+        if (ClipboardManagerOreo.mService != null) {
             android.content.ClipboardManager cm = (android.content.ClipboardManager)
                     VirtualCore.get().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             ClipboardManagerOreo.mService.set(cm, getInvocationStub().getProxyInterface());
-        } else {
-            ClipboardManager.sService.set(getInvocationStub().getProxyInterface());
+        } else if (ClipboardManagerOreo.sService != null) {
+            //samsung 8.0
+            ClipboardManagerOreo.sService.set(getInvocationStub().getProxyInterface());
         }
     }
 }

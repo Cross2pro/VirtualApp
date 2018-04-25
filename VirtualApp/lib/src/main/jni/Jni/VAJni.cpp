@@ -9,7 +9,7 @@
 
 using namespace facebook::jni;
 
-static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject> javaMethods,
+static void jni_nativeLaunchEngine(alias_ref<jclass> clazz,JArrayClass<jobject> javaMethods,
                                    jstring packageName,
                                    jboolean isArt, jint apiLevel, jint cameraMethodType) {
     hookAndroidVM(javaMethods, packageName, isArt, apiLevel, cameraMethodType);
@@ -17,14 +17,19 @@ static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject>
 
 
 static void jni_nativeEnableIORedirect(alias_ref<jclass>, jstring selfSoPath, jint apiLevel,
-                                       jint preview_api_level) {
+                                       jint preview_api_level, jboolean need_dlopen) {
     ScopeUtfString so_path(selfSoPath);
-    IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level);
+    IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level, need_dlopen ? 1 : 0);
 }
 
 static void jni_nativeIOWhitelist(alias_ref<jclass> jclazz, jstring _path) {
     ScopeUtfString path(_path);
     IOUniformer::whitelist(path.c_str());
+}
+
+static void jni_nativeDlOpenWhitelist(alias_ref<jclass> jclazz, jstring _path){
+    ScopeUtfString path(_path);
+    IOUniformer::dlopen_whitelist(path.c_str());
 }
 
 static void jni_nativeIOForbid(alias_ref<jclass> jclazz, jstring _path) {
@@ -77,6 +82,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
                                          jni_nativeReverseRedirectedPath),
                         makeNativeMethod("nativeLaunchEngine",
                                          jni_nativeLaunchEngine),
+                        makeNativeMethod("nativeDlOpenWhitelist",
+                                         jni_nativeDlOpenWhitelist),
                 }
         );
     });

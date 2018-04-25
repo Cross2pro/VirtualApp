@@ -23,6 +23,8 @@ import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IUiCallback;
 
+import java.lang.reflect.Field;
+
 import mirror.android.app.ActivityThread;
 
 /**
@@ -66,7 +68,38 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public boolean isEnvBad() {
-        return !(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) instanceof AppInstrumentation);
+        return !checkInstrumentation(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()));
+    }
+
+    private boolean checkInstrumentation(Instrumentation instrumentation) {
+        if (instrumentation instanceof AppInstrumentation) {
+            return true;
+        }
+        Class<?> clazz = instrumentation.getClass();
+        if(Instrumentation.class.equals(clazz)){
+            return false;
+        }
+        do {
+            Field[] fields = clazz.getDeclaredFields();
+            if (fields != null) {
+                for (Field field : fields) {
+                    if (Instrumentation.class.isAssignableFrom(field.getType())) {
+                        field.setAccessible(true);
+                        Object obj = null;
+                        try {
+                            obj = field.get(instrumentation);
+                        } catch (IllegalAccessException e) {
+                            return false;
+                        }
+                        if(obj != null && (obj instanceof AppInstrumentation)){
+                            return true;
+                        }
+                    }
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }while (!Instrumentation.class.equals(clazz));
+        return false;
     }
 
     private void checkActivityCallback() {

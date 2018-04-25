@@ -8,18 +8,13 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 25
-        versionName "1.2.6"
+        versionCode 2018042410
+        versionName "1.5.0"
         multiDexEnabled true
-        android {
-            defaultConfig {
-                ndk {
-                    abiFilters "armeabi", "armeabi-v7a", "x86"
-                }
-            }
+        ndk {
+            abiFilters "armeabi", "armeabi-v7a", "x86"
         }
     }
-
     sourceSets {
         main {
             jniLibs.srcDirs = ['libs']
@@ -32,7 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules-debug.pro'
         }
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -42,9 +37,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-}
-
-android {
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -52,7 +44,6 @@ android {
         abortOnError false
     }
 }
-
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile project(':lib')

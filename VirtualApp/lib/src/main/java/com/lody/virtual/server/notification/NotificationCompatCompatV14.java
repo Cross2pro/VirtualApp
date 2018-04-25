@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 
 /**
@@ -29,7 +30,8 @@ class NotificationCompatCompatV14 extends NotificationCompat {
         if (appContext == null) {
             return false;
         }
-        if (VirtualCore.get().isOutsideInstalled(packageName)) {
+        //need check outside version
+        if (VClient.get().isNotCopyApk() && VirtualCore.get().isOutsideInstalled(packageName)) {
             if(notification.icon != 0) {
                 getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {

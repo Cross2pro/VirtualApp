@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -17,8 +18,10 @@ import java.io.File;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.AppData;
@@ -33,6 +36,7 @@ import io.virtualapp.home.models.PackageAppData;
 public class AppRepository implements AppDataSource {
 
     private static final Collator COLLATOR = Collator.getInstance(Locale.CHINA);
+    private final Map<String, String> mLabels = new HashMap<>();
     private static final List<String> SCAN_PATH_LIST = Arrays.asList(
             ".",
             "wandoujia/app",
@@ -51,7 +55,7 @@ public class AppRepository implements AppDataSource {
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
         return ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-        || (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0)
+                || (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0)
                 && !GmsSupport.isGoogleAppOrService(packageInfo.packageName);
     }
 
@@ -96,22 +100,15 @@ public class AppRepository implements AppDataSource {
 //            }
             //TODO load multi app list by pkg
             List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
-
             for (InstalledAppInfo info : infos) {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
-                }
-//                if (GmsSupport.isGoogleAppOrService(info.packageName)) {
-//                    continue;
-//                }
-                if (info.notCopyApk) {
-                    //检查是否升级,TODO 自动检测更新
-//                    PackageUtils.checkUpdate(mContext, info.packageName);
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
                     models.add(data);
                 }
+                mLabels.put(info.packageName, data.name);
                 int[] userIds = info.getInstalledUsers();
                 for (int userId : userIds) {
                     if (userId != 0) {
@@ -178,6 +175,10 @@ public class AppRepository implements AppDataSource {
                     continue;
                 }
             }
+            if (!NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo)) {
+                //don't support 32
+                continue;
+            }
             ApplicationInfo ai = pkg.applicationInfo;
             String path = ai.publicSourceDir != null ? ai.publicSourceDir : ai.sourceDir;
             if (path == null) {
@@ -212,4 +213,12 @@ public class AppRepository implements AppDataSource {
         return VirtualCore.get().uninstallPackageAsUser(packageName, userId);
     }
 
+    @Override
+    public String getLabel(String packageName) {
+        String label = mLabels.get(packageName);
+        if (label == null) {
+            return packageName;
+        }
+        return label;
+    }
 }
