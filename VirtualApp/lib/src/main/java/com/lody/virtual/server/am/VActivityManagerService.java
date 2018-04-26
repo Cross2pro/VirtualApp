@@ -77,7 +77,7 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
  */
 public class VActivityManagerService extends IActivityManager.Stub {
 
-    private static final boolean BROADCAST_NOT_STARTED_PKG = true;
+    private static final boolean BROADCAST_NOT_STARTED_PKG = false;
 
     private static final Singleton<VActivityManagerService> sService = new Singleton<VActivityManagerService>(){
         @Override
@@ -885,6 +885,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public void killAppByPkg(final String pkg, int userId) {
         synchronized (mProcessNames) {
+            Log.e("wxd", " killAppByPkg ");
             ArrayMap<String, SparseArray<ProcessRecord>> map = mProcessNames.getMap();
             int N = map.size();
             while (N-- > 0) {
@@ -913,6 +914,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                             Log.e("zhangsong", "kill service " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
                             stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
                         }
+                        Log.e("wxd", " killProcess  " + r.pid);
                         killProcess(r.pid);
                     }
                 }
@@ -1101,7 +1103,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                              PendingResultData result) {
         synchronized (this) {
             ProcessRecord r = findProcessLocked(info.processName, vuid);
-            if (BROADCAST_NOT_STARTED_PKG && r == null) {
+            if ((BROADCAST_NOT_STARTED_PKG || "android.intent.action.MEDIA_SCANNER_SCAN_FILE".equals(intent.getAction())) 
+                    && r == null) {
+                Log.e("wxd", " BROADCAST_NOT_STARTED_PKG " + info.processName + " intent " + intent.getAction());
                 r = startProcessIfNeedLocked(info.processName, getUserId(vuid), info.packageName);
             }
             if (r != null && r.appThread != null) {
