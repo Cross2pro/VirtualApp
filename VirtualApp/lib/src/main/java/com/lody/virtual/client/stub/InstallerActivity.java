@@ -48,6 +48,7 @@ public class InstallerActivity extends Activity {
     LinearLayout ll_installed;
     LinearLayout ll_installed_1;
     TextView tv_warn;
+    Button btn_open;
     boolean tv_warn_isshow = false;
     private AppInfo apkinfo;
     private AppInfo sourceapkinfo;
@@ -65,7 +66,7 @@ public class InstallerActivity extends Activity {
 
         Button btn_install = (Button) findViewById(R.id.btn_install);
         Button btn_quit = (Button) findViewById(R.id.btn_quit);
-        Button btn_open = (Button) findViewById(R.id.btn_open);
+        btn_open = (Button) findViewById(R.id.btn_open);
         Button btn_cancle = (Button) findViewById(R.id.btn_cancle);
         ImageView img_appicon = (ImageView) findViewById(R.id.img_appicon);
         TextView tv_appname = (TextView) findViewById(R.id.tv_appname);
@@ -110,7 +111,8 @@ public class InstallerActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
-                VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
+                if(intent!=null)
+                    VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
                 finish();
             }
         });
@@ -142,18 +144,18 @@ public class InstallerActivity extends Activity {
                 tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALLED:
-                ll_install.setVisibility(View.INVISIBLE);
-                ll_installing.setVisibility(View.INVISIBLE);
-                ll_installed.setVisibility(View.VISIBLE);
-                ll_installed_1.setVisibility(View.VISIBLE);
-                tv_warn.setVisibility(View.INVISIBLE);
-                break;
             case STATE_INSTALLFAILED:
                 ll_install.setVisibility(View.INVISIBLE);
                 ll_installing.setVisibility(View.INVISIBLE);
                 ll_installed.setVisibility(View.VISIBLE);
                 ll_installed_1.setVisibility(View.VISIBLE);
                 tv_warn.setVisibility(View.INVISIBLE);
+                Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
+                if(intent==null){
+                    btn_open.setText("完成");
+                }else {
+                    btn_open.setText("打开");
+                }
                 break;
         }
 
