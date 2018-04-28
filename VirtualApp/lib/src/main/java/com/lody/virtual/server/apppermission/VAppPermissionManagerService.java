@@ -1,6 +1,7 @@
 package com.lody.virtual.server.apppermission;
 
 import android.content.ClipData;
+import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -35,6 +36,10 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * 缓存剪切板信息
      */
     private static ClipData clipDataCache;
+    /**
+     * 缓存剪切板变化监听
+     */
+    private static IOnPrimaryClipChangedListener pcListener;
 
     public static void systemReady() {
         sInstance = new VAppPermissionManagerService();
@@ -152,6 +157,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     @Override
     public void cacheClipData(ClipData clipData) throws RemoteException {
+        Log.d(TAG, "cacheClipData clipData: " + (clipData == null ? "is null" : clipData.toString()));
         clipDataCache = clipData;
     }
 
@@ -162,7 +168,40 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     @Override
     public ClipData getClipData() throws RemoteException {
+        Log.d(TAG, "getClipData clipDataCache: " + (clipDataCache == null ? "is null" : clipDataCache.toString()));
         return clipDataCache;
+    }
+
+    /**
+     * 缓存剪切板数据改变监听
+     *
+     * @param listener 监听
+     */
+    @Override
+    public void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) throws RemoteException {
+        Log.d(TAG, "cachePrimaryClipChangedListener");
+        pcListener = listener;
+    }
+
+    /**
+     * 获取剪切板数据改变监听
+     */
+    @Override
+    public void callPrimaryClipChangedListener() throws RemoteException {
+        Log.d(TAG, "callPrimaryClipChangedListener pcListener: " + (pcListener == null ? " listener is null " : " listener is not null"));
+        if (pcListener == null) {
+            return;
+        }
+        pcListener.dispatchPrimaryClipChanged();
+    }
+
+    /**
+     * 移除剪切板数据改变监听
+     */
+    @Override
+    public void removePrimaryClipChangedListener() throws RemoteException {
+        Log.d(TAG, "removePrimaryClipChangedListener");
+        pcListener = null;
     }
 
     /**

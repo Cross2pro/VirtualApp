@@ -1,6 +1,7 @@
 package com.lody.virtual.server.interfaces;
 
 import android.content.ClipData;
+import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
 
 /**
@@ -72,6 +73,25 @@ public interface IAppPermissionManager extends IPCInterface {
      * @return 剪切板信息
      */
     ClipData getClipData() throws RemoteException;
+
+    /**
+     * 缓存剪切板数据改变监听
+     *
+     * @param listener 监听
+     */
+    void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) throws RemoteException;
+
+    /**
+     * 响应剪切板数据改变监听
+     */
+    void callPrimaryClipChangedListener() throws RemoteException;
+
+    /**
+     * 移除剪切板数据改变监听
+     *
+     * @return 监听
+     */
+    void removePrimaryClipChangedListener() throws RemoteException;
 
     abstract class Stub implements IAppPermissionManager {
         @Override

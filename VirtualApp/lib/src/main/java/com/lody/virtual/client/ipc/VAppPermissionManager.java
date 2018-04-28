@@ -1,6 +1,7 @@
 package com.lody.virtual.client.ipc;
 
 import android.content.ClipData;
+import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -181,6 +182,47 @@ public class VAppPermissionManager {
         } catch (RemoteException e) {
             e.printStackTrace();
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 缓存剪切板数据改变监听
+     *
+     * @param listener 监听
+     */
+    public void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) {
+        Log.d(TAG, "cachePrimaryClipChangedListener");
+        try {
+            getService().cachePrimaryClipChangedListener(listener);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 响应剪切板数据改变监听
+     */
+    public void callPrimaryClipChangedListener() {
+        Log.d(TAG, "callPrimaryClipChangedListener");
+        try {
+            getService().callPrimaryClipChangedListener();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 移除剪切板数据改变监听
+     */
+    public void removePrimaryClipChangedListener() {
+        Log.d(TAG, "removePrimaryClipChangedListener");
+        try {
+            getService().removePrimaryClipChangedListener();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            VirtualRuntime.crash(e);
         }
     }
 }
