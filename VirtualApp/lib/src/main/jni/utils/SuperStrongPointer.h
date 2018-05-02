@@ -7,6 +7,8 @@
 
 #include "RefBase.h"
 
+#include <map>
+
 namespace xdja
 {
     namespace zs

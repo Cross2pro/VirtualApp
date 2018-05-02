@@ -4,9 +4,9 @@
 
 #include <pthread.h>
 #include "mylog.h"
+typedef pthread_mutex_t Mutex;
 
 class Autolock {
-    typedef pthread_mutex_t Mutex;
     public:
         inline Autolock(Mutex& mutex, char * func = 0, int line = 0) : mLock(mutex),mFunc(func),mLine(line)  {
 #ifdef _LOCK_DEBUG_

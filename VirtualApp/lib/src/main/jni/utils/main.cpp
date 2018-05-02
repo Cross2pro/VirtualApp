@@ -9,6 +9,7 @@
 #include "StrongPointer.h"
 #include "SuperStrongPointer.h"
 #include "atomicVessel.h"
+#include "releaser.h"
 
 //自动释放类
 class refTest : public xdja::zs::LightRefBase<refTest>
@@ -30,10 +31,11 @@ int myRandom()
 }
 
 atomicVessel tmp;
+releaser<refTest> rl;
 
 bool isHit()
 {
-  int hitpoints[] = {17, 64, 28, 87, 99, 33, 44, 55, 77};
+  int hitpoints[] = {17, 64, 28, 87, 99, 33, 44, 55, 77, 11, 22, 55, 66, 88};
   int rand = myRandom() % 100;
   for(int i = 0; i < sizeof(hitpoints)/sizeof(hitpoints[0]); i++)
   {
@@ -49,27 +51,23 @@ void * threadfun(void * param)
   do 
   {
     {
-    xdja::zs::sp<xdja::zs::ssp<refTest>> sp((xdja::zs::ssp<refTest> *)tmp.get());
+    xdja::zs::sp<refTest> sp((refTest *)tmp.get());
 
     if(sp.get() == nullptr)
     {
-      //printf("atomicVessel.get() return null, so thread %ld return ! \n", (long int)syscall(224));
+      printf("atomicVessel.get() return null, so thread %ld return ! \n", (long int)syscall(224));
       return 0;
     }
 
     //关闭几率 5%
     if(isHit())
     {
-      printf("ssp release in thread %ld!\n", (long int)syscall(224));
+      printf("release in thread %ld!\n", (long int)syscall(224));
 
       //清空 防止后续得到
       tmp.reset();
-printf("1 %ld\n", (long int)syscall(224));
       //释放
-      usleep(1000 * 2);
-printf("2 %ld\n", (long int)syscall(224));
-      sp->decStrong(0);
-printf("3 %ld\n", (long int)syscall(224));
+      rl.release(sp.get());
     }
     else
     {
@@ -91,13 +89,11 @@ int main(int argc, char * argv[])
   do
   {
     refTest * p = new refTest();
-    xdja::zs::ssp<refTest> * s = new xdja::zs::ssp<refTest>(p);
-    s->incStrong(0);
-
+    p->incStrong(0);
     
-    printf("p = %p, s = %p\n", p, s);
+    printf("p = %p\n", p);
 
-    tmp.set((uint32_t)s);
+    tmp.set((uint32_t)p);
 
     //跑线程
     {
@@ -116,6 +112,7 @@ int main(int argc, char * argv[])
     printf("test process %0.2lf%%\n", ((1 - ((double)test_times) / TEST_TIMES) * 100));
   }while(--test_times > 0);
 
+  rl.finish();
   printf("main exit !\n");
 
   return 0;
