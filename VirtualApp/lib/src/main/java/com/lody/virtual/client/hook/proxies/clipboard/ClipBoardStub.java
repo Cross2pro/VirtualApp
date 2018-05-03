@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.IOnPrimaryClipChangedListener;
 import android.os.Build;
 import android.os.IInterface;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -73,13 +74,12 @@ public class ClipBoardStub extends BinderInvocationProxy {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String appPkg = getAppPkg();
-            String methodName = getMethodName();
-            Log.e(TAG, methodName + " appPkg: " + appPkg);
+            Log.e(TAG, getMethodName() + " appPkg: " + appPkg);
             VAppPermissionManager vAppPermissionManager = VAppPermissionManager.get();
-            switch (methodName) {
+            switch (getMethodName()) {
                 case "getPrimaryClip":
                     ClipData data = vAppPermissionManager.getClipData();
-                    Log.e(TAG, methodName + " ClipData: " + (data == null ? "cache ClipData is null" : data.toString()));
+                    Log.e(TAG, getMethodName() + " ClipData: " + (data == null ? "cache ClipData is null" : data.toString()));
                     return data;
                 case "setPrimaryClip":
                     for (Object arg : args) {
@@ -88,20 +88,26 @@ public class ClipBoardStub extends BinderInvocationProxy {
                         }
                         if (arg instanceof ClipData) {
                             ClipData clipData = (ClipData) arg;
-                            Log.e(TAG, methodName + " cache ClipData: " + (clipData == null ? "is null" : clipData.toString()));
+                            CharSequence text = clipData.getItemAt(0).getText();
+                            if (TextUtils.isEmpty(text)) {
+                                Log.e(TAG, getMethodName() + " clip data is null do not cache");
+                                continue;
+                            }
+                            Log.e(TAG, getMethodName() + " cache ClipData: " + (clipData == null ? "is null" : clipData.toString()));
                             vAppPermissionManager.cacheClipData(clipData);
                         }
                     }
+                    Log.e(TAG, getMethodName() + " call Primary Clip Changed Listener");
                     vAppPermissionManager.callPrimaryClipChangedListener();
                     return null;
                 case "hasPrimaryClip":
                 case "hasClipboardText":
                     ClipData clipData = vAppPermissionManager.getClipData();
-                    Log.e(TAG, methodName + " clipData: " + (clipData != null));
+                    Log.e(TAG, getMethodName() + " clipData: " + (clipData != null));
                     return clipData != null;
                 case "getPrimaryClipDescription":
                     ClipData cd = vAppPermissionManager.getClipData();
-                    Log.e(TAG, methodName + " clipData: " + (cd != null));
+                    Log.e(TAG, getMethodName() + " clipData: " + (cd != null));
                     return cd == null ? null : cd.getDescription();
                 case "addPrimaryClipChangedListener":
                     for (Object arg : args) {
@@ -110,16 +116,17 @@ public class ClipBoardStub extends BinderInvocationProxy {
                         }
                         if (arg instanceof IOnPrimaryClipChangedListener.Stub) {
                             IOnPrimaryClipChangedListener listener = (IOnPrimaryClipChangedListener) arg;
-                            Log.e(TAG, methodName + " addPrimaryClipChangedListener ok");
+                            Log.e(TAG, getMethodName() + " addPrimaryClipChangedListener ok");
                             vAppPermissionManager.cachePrimaryClipChangedListener(listener);
                         }
                     }
-                    return null;
+                    return super.call(who, method, args);
                 case "removePrimaryClipChangedListener":
+                    Log.e(TAG, getMethodName() + " removePrimaryClipChangedListener ok");
                     vAppPermissionManager.removePrimaryClipChangedListener();
-                    return null;
+                    return super.call(who, method, args);
                 default:
-                    return super.beforeCall(who, method, args);
+                    return super.call(who, method, args);
             }
         }
     }
