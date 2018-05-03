@@ -47,6 +47,7 @@ import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -339,6 +340,13 @@ public final class VClientImpl extends IVClient.Stub {
         if (!conflict) {
             InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
         }
+
+        if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
+                && "com.tencent.mm".equals(data.appInfo.processName)){
+            ClassLoader originClassLoader = context.getClassLoader();
+            fixWeChatTinker(context, data.appInfo, originClassLoader);
+        }
+
         mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
@@ -384,6 +392,26 @@ public final class VClientImpl extends IVClient.Stub {
             field.set(null, app.getBaseContext());
         } catch (Throwable e) {
             e.printStackTrace();
+        }
+    }
+
+    private void fixWeChatTinker(Context context, ApplicationInfo applicationInfo, ClassLoader appClassLoader)
+    {
+        String dataDir = applicationInfo.dataDir;
+        File tinker = new File(dataDir, "tinker");
+        if(tinker.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker.getPath());
+            FileUtils.deleteDir(tinker);
+        }
+        File tinker_temp = new File(dataDir, "tinker_temp");
+        if(tinker_temp.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker_temp.getPath());
+            FileUtils.deleteDir(tinker_temp);
+        }
+        File tinker_server = new File(dataDir, "tinker_server");
+        if(tinker_server.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker_server.getPath());
+            FileUtils.deleteDir(tinker_server);
         }
     }
 

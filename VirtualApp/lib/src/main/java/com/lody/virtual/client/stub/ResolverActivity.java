@@ -192,7 +192,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     }
 
     Drawable loadIconForResolveInfo(ResolveInfo ri) {
-        Drawable dr;
+        /*Drawable dr;
         try {
             if (ri.resolvePackageName != null && ri.icon != 0) {
                 dr = getIcon(mPm.getResourcesForApplication(ri.resolvePackageName), ri.icon);
@@ -209,7 +209,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
             }
         } catch (PackageManager.NameNotFoundException e) {
             VLog.e(TAG, "Couldn't find resources for package\n" + VLog.getStackTraceString(e));
-        }
+        }*/
         return ri.loadIcon(mPm);
     }
 
