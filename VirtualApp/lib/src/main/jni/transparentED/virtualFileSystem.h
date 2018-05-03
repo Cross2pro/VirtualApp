@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <utils/RefBase.h>
 #include <utils/StrongPointer.h>
-#include <utils/SuperStrongPointer.h>
+#include <utils/atomicVessel.h>
 
 #include "EncryptFile.h"
 #include "TemplateFile.h"
@@ -46,7 +46,7 @@ public:
  */
 class virtualFileDescribeSet
 {
-    mutable virtualFileDescribe * items[1024];
+    atomicVessel items[1024];
 
 public:
     void reset(int idx);

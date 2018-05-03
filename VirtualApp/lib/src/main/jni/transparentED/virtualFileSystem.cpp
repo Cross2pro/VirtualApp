@@ -18,7 +18,7 @@ void virtualFileDescribeSet::reset(int idx) {
         return ;
     }
 
-    __sync_fetch_and_and(&items[idx], 0);
+    items[idx].reset();
 }
 void virtualFileDescribeSet::set(int idx, virtualFileDescribe *vfd) {
     if(idx < 0 || idx > 1023)
@@ -26,7 +26,7 @@ void virtualFileDescribeSet::set(int idx, virtualFileDescribe *vfd) {
         return;
     }
 
-    __sync_fetch_and_or(&items[idx], vfd);
+    items[idx].set((uint32_t)vfd);
 }
 
 virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
@@ -35,7 +35,7 @@ virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
         return 0;
     }
 
-    return items[idx];
+    return (virtualFileDescribe*)items[idx].get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
