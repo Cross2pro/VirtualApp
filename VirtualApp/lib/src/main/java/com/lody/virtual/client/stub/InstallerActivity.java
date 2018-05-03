@@ -11,6 +11,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,6 +21,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.core.InstallStrategy;
@@ -29,6 +31,7 @@ import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
@@ -113,13 +116,13 @@ public class InstallerActivity extends Activity {
                 Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
                 if(intent!=null)
                     VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
-                finish();
+                showDelDialog();
             }
         });
         btn_cancle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                finish();
+                showDelDialog();
             }
         });
 
@@ -217,33 +220,18 @@ public class InstallerActivity extends Activity {
                     if (res.isSuccess) {
                         if (res.isUpdate) {
                             VAppManagerService.get().sendUpdateBroadcast(res.packageName, VUserHandle.ALL);
-                            FileUtils.deleteDir(apkinfo.path);
                         } else {
                             VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
-                            FileUtils.deleteDir(apkinfo.path);
+                        }
+
+                        try {
+                            IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
+                            listener.onRequestInstall(apkinfo.packageName);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
                         }
                         //mHandler.sendEmptyMessage(STATE_INSTALLED);
                         stateChanged(STATE_INSTALLED);
-                        final AlertDialog delDlg = new AlertDialog.Builder(InstallerActivity.this).create();
-                        delDlg.getWindow().setGravity(Gravity.BOTTOM);
-                        delDlg.show();
-                        delDlg.setContentView(R.layout.custom_installer_del);
-
-                        Button btn_del_cancle = delDlg.getWindow().findViewById(R.id.btn_del_cancel);
-                        btn_del_cancle.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                delDlg.dismiss();
-                            }
-                        });
-                        Button btn_del_del = delDlg.getWindow().findViewById(R.id.btn_del_del);
-                        btn_del_del.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                FileUtils.deleteDir(apkinfo.path);
-                                delDlg.dismiss();
-                            }
-                        });
                     }else{
                         //mHandler.sendEmptyMessage(STATE_INSTALLFAILED);
                         stateChanged(STATE_INSTALLFAILED);
@@ -256,6 +244,35 @@ public class InstallerActivity extends Activity {
 
             }
         }
+    }
+    private void showDelDialog(){
+
+        final AlertDialog delDlg = new AlertDialog.Builder(InstallerActivity.this).create();
+        delDlg.getWindow().setGravity(Gravity.BOTTOM);
+        delDlg.show();
+        delDlg.setContentView(R.layout.custom_installer_del);
+
+        Button btn_del_cancle = delDlg.getWindow().findViewById(R.id.btn_del_cancel);
+        btn_del_cancle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                delDlg.dismiss();
+                finish();
+            }
+        });
+        Button btn_del_del = delDlg.getWindow().findViewById(R.id.btn_del_del);
+        btn_del_del.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                boolean delsuc = FileUtils.deleteDir(apkinfo.path);
+                if(delsuc){
+                    Toast.makeText(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT).show();
+                }
+                delDlg.dismiss();
+                finish();
+            }
+        });
     }
 
 }

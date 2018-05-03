@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +19,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.util.List;
@@ -182,9 +184,16 @@ public class UnInstallerActivity extends Activity {
                     if ((boolean)msg.obj) {
                         VAppManagerService.get().sendUninstalledBroadcast(apkinfo.packageName, VUserHandle.ALL);
                         stateChanged(STATE_INSTALLED);
+                        try {
+                            IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
+                            listener.onRequestUninstall(apkinfo.packageName);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
                     } else {
                         stateChanged(STATE_INSTALLFAILED);
                     }
+
                     break;
                 case STATE_INSTALLED:
                     break;
