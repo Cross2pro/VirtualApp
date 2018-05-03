@@ -164,6 +164,16 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
     vfileState vfs = VFS_IGNORE;
     *pErrno = 0;                                //默认无错误发生
 
+    /*
+     * 首先获取vfd，获取不到一定是发生异常，返回错误
+     */
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr)
+    {
+        *pErrno = -1;
+        return 0;
+    }
+
     Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
     do {
         VFMap::iterator iterator = _vfmap.find(std::string(path));
@@ -173,7 +183,6 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
 
             LOGE("judge : found virtualFile [%s]", vf->getPath());
 
-            virtualFileDescribe * vfd = virtualFileDescribeSet::getVFDSet().get(fd);
             vfd->_vf = vf;
             vfd->cur_state = vf->getVFS();  //记录最初的状态
 
@@ -237,7 +246,6 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
                     else {
                         LOGE("judge : create virtualFile [%s]", vf->getPath());
 
-                        virtualFileDescribe * vfd = virtualFileDescribeSet::getVFDSet().get(fd);
                         vfd->_vf = vf;
                         vfd->cur_state = vf->getVFS();  //记录最初的状态
 
