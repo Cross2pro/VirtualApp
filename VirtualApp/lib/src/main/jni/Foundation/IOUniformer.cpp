@@ -629,7 +629,11 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
         AutoWLock wLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
+
+        /*******************only here**********************/
         virtualFileDescribe *vfd = new virtualFileDescribe();
+        vfd->incStrong(0);
+        /***************************************************/
         virtualFileDescribeSet::getVFDSet().set(ret, vfd);
 
         int _Errno;
@@ -639,8 +643,10 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
             vfd->_vf = vf;
             vf->vlseek(ret, 0, SEEK_SET);
         } else {
-            virtualFileDescribeSet::getVFDSet().set(ret, 0);
-            delete vfd;
+            virtualFileDescribeSet::getVFDSet().reset(ret);
+            /******through this way to release vfd *********/
+            virtualFileDescribeSet::getVFDSet().release(vfd);
+            /***********************************************/
 
             if(_Errno < 0)
             {
@@ -671,14 +677,17 @@ HOOK_DEF(int, close, int __fd) {
     doFileTrace(path.toString(), zlog.toString());
 
     int ret;
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(__fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoWLock wLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(__fd);
-        if (vfd != NULL) {
-            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
-            delete vfd;
-            virtualFileDescribeSet::getVFDSet().set(__fd, 0);
-        }
+
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
+
+        virtualFileDescribeSet::getVFDSet().reset(__fd);
+        /******through this way to release vfd *********/
+        virtualFileDescribeSet::getVFDSet().release(vfd.get());
+        /***********************************************/
     }
 
     ret = syscall(__NR_close, __fd);
@@ -931,14 +940,13 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != NULL) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vpread64(fd, (char *) buf, count, offset);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vpread64(fd, (char *) buf, count, offset);
+        flag = true;
     }
 
     if(!flag)
@@ -958,14 +966,13 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != NULL) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vpwrite64(fd, (char *) buf, count, offset);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vpwrite64(fd, (char *) buf, count, offset);
+        flag = true;
     }
 
     if(!flag)
@@ -985,14 +992,13 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != NULL) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vread(fd, (char *) buf, count);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vread(fd, (char *) buf, count);
+        flag = true;
     }
 
     if(!flag)
@@ -1012,14 +1018,13 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != NULL) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vwrite(fd, (char *) buf, count);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vwrite(fd, (char *) buf, count);
+        flag = true;
     }
 
     if(!flag)
@@ -1041,10 +1046,12 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
 HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd, size_t pgoffset) {
     void * ret = 0;
     bool flag = false;
-    {
+
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != 0 && vfd->_vf->getVFS() == VFS_ENCRYPT) {
+        if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
             flags |= MAP_ANONYMOUS;     //申请匿名内存
             ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
 
@@ -1071,7 +1078,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
         zString path;
         getPathFromFd(fd, path);
 
-        zString op("__mmap2 length %d flags %p pgoffset %p", length, flags, pgoffset);
+        zString op("%c__mmap2 length %d flags %p pgoffset %p", flag?'v':' ', length, flags, pgoffset);
         doFileTrace(path.toString(), op.toString());
     }
 
@@ -1089,14 +1096,13 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != 0) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vfstat(fd, buf);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vfstat(fd, buf);
+        flag = true;
     }
 
     if(!flag)
@@ -1116,14 +1122,13 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != 0) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vlseek(fd, offset, whence);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vlseek(fd, offset, whence);
+        flag = true;
     }
 
     if(!flag)
@@ -1151,14 +1156,13 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != 0) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vllseek(fd, offset_high, offset_low, result, whence);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vllseek(fd, offset_high, offset_low, result, whence);
+        flag = true;
     }
 
     if(!flag)
@@ -1179,14 +1183,13 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     zString path;
     getPathFromFd(fd, path);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    if(vfd.get() == nullptr) {
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *vfd = virtualFileDescribeSet::getVFDSet().get(fd);
-        if (vfd != 0) {
-            path.format("%s", vfd->_vf->getPath());
-            ret = vfd->_vf->vftruncate64(fd, length);
-            flag = true;
-        }
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vftruncate64(fd, length);
+        flag = true;
     }
 
     if(!flag)
@@ -1207,16 +1210,15 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
     if(offset != 0)
         off = *offset;
 
-    {
+    xdja::zs::sp<virtualFileDescribe> in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
+    xdja::zs::sp<virtualFileDescribe> out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
+    if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        //完全不管
+        ret = orig_sendfile(out_fd, in_fd, offset, count);
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FILE__, __LINE__);
-        virtualFileDescribe *in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
-        virtualFileDescribe *out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
 
-        if(in_vfd == 0 && out_vfd == 0) //完全不管
-        {
-            ret = orig_sendfile(out_fd, in_fd, offset, count);
-        }
-        else if(in_vfd != 0 && out_vfd != 0) //完全管理
+        if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             if(offset != 0)
             {
@@ -1240,7 +1242,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
             }
         }
-        else if(in_vfd == 0 && out_vfd != 0)
+        else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
         {
             if(offset != 0)
             {
@@ -1264,7 +1266,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 ignoreFile::lseek(in_fd, off, SEEK_SET);
             }
         }
-        else if(in_vfd != 0 && out_vfd == 0)
+        else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
         {
             if(offset != 0)
             {
@@ -1312,16 +1314,15 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
     unsigned long off_hi = static_cast<unsigned long>(off >> 32);
     unsigned long off_lo = static_cast<unsigned long>(off);
 
-    {
+    xdja::zs::sp<virtualFileDescribe> in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
+    xdja::zs::sp<virtualFileDescribe> out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
+    if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        //完全不管
+        ret = orig_sendfile64(out_fd, in_fd, offset, count);
+    } else {
         AutoRLock rLock(virtualFileDescribeSet::getVFDSet()._rw_lock, (char*)__FUNCTION__, __LINE__);
-        virtualFileDescribe *in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
-        virtualFileDescribe *out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
 
-        if(in_vfd == 0 && out_vfd == 0) //完全不管
-        {
-            ret = orig_sendfile64(out_fd, in_fd, offset, count);
-        }
-        else if(in_vfd != 0 && out_vfd != 0) //完全管理
+        if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             if(offset != 0)
             {
@@ -1347,7 +1348,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
             }
         }
-        else if(in_vfd == 0 && out_vfd != 0)
+        else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
         {
             if(offset != 0)
             {
@@ -1373,7 +1374,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 ignoreFile::llseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
             }
         }
-        else if(in_vfd != 0 && out_vfd == 0)
+        else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
         {
             if(offset != 0)
             {

@@ -61,7 +61,7 @@ public:
     virtual ~virtualFileDescribeSet() {
         pthread_rwlock_destroy(&_rw_lock);
         rl.finish();
-    }   
+    }
     pthread_rwlock_t _rw_lock;
 
     static virtualFileDescribeSet & getVFDSet();
