@@ -11,6 +11,7 @@
 #include <utils/RefBase.h>
 #include <utils/StrongPointer.h>
 #include <utils/atomicVessel.h>
+#include <utils/releaser.h>
 
 #include "EncryptFile.h"
 #include "TemplateFile.h"
@@ -47,14 +48,20 @@ public:
 class virtualFileDescribeSet
 {
     atomicVessel items[1024];
+    releaser<virtualFileDescribe> rl;
 
 public:
     void reset(int idx);
     void set(int idx, virtualFileDescribe * vfd);
     virtualFileDescribe * get(int idx);
 
+    void release(virtualFileDescribe * vfd) { rl.release(vfd); }
+
     virtualFileDescribeSet() {pthread_rwlock_init(&_rw_lock, NULL);}
-    virtual ~virtualFileDescribeSet() {pthread_rwlock_destroy(&_rw_lock);}
+    virtual ~virtualFileDescribeSet() {
+        pthread_rwlock_destroy(&_rw_lock);
+        rl.finish();
+    }   
     pthread_rwlock_t _rw_lock;
 
     static virtualFileDescribeSet & getVFDSet();
