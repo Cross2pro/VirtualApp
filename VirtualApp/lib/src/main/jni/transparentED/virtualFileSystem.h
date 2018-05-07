@@ -57,12 +57,11 @@ public:
 
     void release(virtualFileDescribe * vfd) { rl.release(vfd); }
 
-    virtualFileDescribeSet() {pthread_rwlock_init(&_rw_lock, NULL);}
+    virtualFileDescribeSet()
+    {}
     virtual ~virtualFileDescribeSet() {
-        pthread_rwlock_destroy(&_rw_lock);
         rl.finish();
     }
-    pthread_rwlock_t _rw_lock;
 
     static virtualFileDescribeSet & getVFDSet();
 };
