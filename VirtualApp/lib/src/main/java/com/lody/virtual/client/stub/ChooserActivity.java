@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.view.Window;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.env.Constants;
@@ -68,5 +69,6 @@ public class ChooserActivity extends ResolverActivity {
             }
         }
         super.onCreate(savedInstanceState, target, title, initialIntents, null, false, userId);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
     }
 }

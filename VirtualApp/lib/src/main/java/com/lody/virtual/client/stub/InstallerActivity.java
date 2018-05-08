@@ -113,16 +113,13 @@ public class InstallerActivity extends Activity {
         btn_open.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
-                if(intent!=null)
-                    VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
-                showDelDialog();
+                showDelDialog(true);
             }
         });
         btn_cancle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showDelDialog();
+                showDelDialog(false);
             }
         });
 
@@ -245,7 +242,7 @@ public class InstallerActivity extends Activity {
             }
         }
     }
-    private void showDelDialog(){
+    private void showDelDialog(final boolean open){
 
         final AlertDialog delDlg = new AlertDialog.Builder(InstallerActivity.this).create();
         delDlg.getWindow().setGravity(Gravity.BOTTOM);
@@ -257,6 +254,11 @@ public class InstallerActivity extends Activity {
             @Override
             public void onClick(View view) {
                 delDlg.dismiss();
+                if(open){
+                    Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
+                    if(intent!=null)
+                        VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
+                }
                 finish();
             }
         });
@@ -266,10 +268,18 @@ public class InstallerActivity extends Activity {
             public void onClick(View view) {
 
                 boolean delsuc = FileUtils.deleteDir(apkinfo.path);
+                Log.e("lxf","Installer delete apk "+ apkinfo.path);
                 if(delsuc){
                     Toast.makeText(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT).show();
+                }else{
+//                    Toast.makeText(InstallerActivity.this,"安装包删除失败",Toast.LENGTH_SHORT).show();
                 }
                 delDlg.dismiss();
+                if(open){
+                    Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
+                    if(intent!=null)
+                        VActivityManager.get().startActivity(intent, VirtualCore.get().myUserId());
+                }
                 finish();
             }
         });
