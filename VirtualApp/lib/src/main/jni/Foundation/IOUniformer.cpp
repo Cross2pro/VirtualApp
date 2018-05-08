@@ -673,12 +673,12 @@ HOOK_DEF(int, close, int __fd) {
     doFileTrace(path.toString(), zlog.toString());
 
     int ret;
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(__fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if(vfd.get() == nullptr) {
     } else {
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
-
         virtualFileDescribeSet::getVFDSet().reset(__fd);
+
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
         /******through this way to release vfd *********/
         virtualFileDescribeSet::getVFDSet().release(vfd.get());
         /***********************************************/
@@ -934,7 +934,7 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -959,7 +959,7 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -984,7 +984,7 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1009,7 +1009,7 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1037,7 +1037,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
     void * ret = 0;
     bool flag = false;
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
@@ -1085,7 +1085,7 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1110,7 +1110,7 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1143,7 +1143,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1169,7 +1169,7 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     zString path;
     getPathFromFd(fd, path);
 
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1195,8 +1195,8 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
     if(offset != 0)
         off = *offset;
 
-    xdja::zs::sp<virtualFileDescribe> in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
-    xdja::zs::sp<virtualFileDescribe> out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
+    xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
+    xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
         //完全不管
         ret = orig_sendfile(out_fd, in_fd, offset, count);
@@ -1297,8 +1297,8 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
     unsigned long off_hi = static_cast<unsigned long>(off >> 32);
     unsigned long off_lo = static_cast<unsigned long>(off);
 
-    xdja::zs::sp<virtualFileDescribe> in_vfd = virtualFileDescribeSet::getVFDSet().get(in_fd);
-    xdja::zs::sp<virtualFileDescribe> out_vfd = virtualFileDescribeSet::getVFDSet().get(out_fd);
+    xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
+    xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
         //完全不管
         ret = orig_sendfile64(out_fd, in_fd, offset, count);

@@ -167,7 +167,7 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
     /*
      * 首先获取vfd，获取不到一定是发生异常，返回错误
      */
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr)
     {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
@@ -403,7 +403,7 @@ void virtualFile::forceTranslate() {
 
 int virtualFile::vpread64(int fd, char * buf, size_t len, off64_t from) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -448,7 +448,7 @@ int virtualFile::vpread64(int fd, char * buf, size_t len, off64_t from) {
 
 int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -517,7 +517,7 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
 
 int virtualFile::vread(int fd, char * buf, size_t len) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -562,7 +562,7 @@ int virtualFile::vread(int fd, char * buf, size_t len) {
 
 int virtualFile::vwrite(int fd, char * buf, size_t len) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -630,7 +630,7 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
 
 int virtualFile::vfstat(int fd, struct stat *buf) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -675,7 +675,7 @@ int virtualFile::vfstat(int fd, struct stat *buf) {
 
 off_t virtualFile::vlseek(int fd, off_t offset, int whence){
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -721,7 +721,7 @@ off_t virtualFile::vlseek(int fd, off_t offset, int whence){
 int virtualFile::vllseek(int fd, unsigned long offset_high, unsigned long offset_low, loff_t *result,
                          unsigned int whence) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -767,7 +767,7 @@ int virtualFile::vllseek(int fd, unsigned long offset_high, unsigned long offset
 
 int virtualFile::vftruncate(int fd, off_t length) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
@@ -813,7 +813,7 @@ int virtualFile::vftruncate(int fd, off_t length) {
 
 int virtualFile::vftruncate64(int fd, off64_t length) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd = virtualFileDescribeSet::getVFDSet().get(fd);
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
         slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
         return 0;
