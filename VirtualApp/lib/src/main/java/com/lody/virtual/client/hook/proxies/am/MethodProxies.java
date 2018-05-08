@@ -1897,11 +1897,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VClientImpl.get().isOutSideDiff()) {
+            /*if (VClientImpl.get().isOutSideDiff()) {
                 //apk res
                 return 0;
             }
-            return super.call(who, method, args);
+            return super.call(who, method, args);*/
+            return 0;
         }
     }
 }
