@@ -51,7 +51,8 @@ bool getPathFromFd(int fd, zString & path) {
 
 const char * TED_packageVector[] =
         {
-                "com.tencent.mm"
+                "com.tencent.mm",
+                "cn.wps.moffice"
         };
 
 bool is_TED_Enable()
@@ -84,7 +85,8 @@ bool is_TED_Enable()
 
 const char * FT_packageVector[] =
         {
-                "com.tencent.mm"
+                "com.tencent.mm",
+                "cn.wps.moffice"
         };
 
 static bool is_FT_Enable()
@@ -136,7 +138,7 @@ bool isEncryptPath(const char *_path) {
 }
 
 const char * magicPath[] = {
-        "/sdcard/magic.mgc",
+        "/system/magic.mgc",
 };
 
 const char * getMagicPath()
