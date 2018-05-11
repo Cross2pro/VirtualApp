@@ -861,7 +861,8 @@ class MethodProxies {
              * which will throw an exception on :x process thus crash the application
              */
             if (notification != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung"))) {
+                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung")
+                        ||Build.BRAND.equalsIgnoreCase("HUAWEI") || Build.MANUFACTURER.equalsIgnoreCase("HUAWEI"))) {
                 notification.icon = getHostContext().getApplicationInfo().icon;
                 Icon icon = Icon.createWithResource(getHostPkg(), notification.icon);
                 Reflect.on(notification).call("setSmallIcon", icon);
