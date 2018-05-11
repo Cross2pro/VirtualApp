@@ -222,7 +222,9 @@ public final class VClientImpl extends IVClient.Stub {
             VirtualRuntime.getUIHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    bindApplicationNoCheck(packageName, processName, lock);
+                    if (!isBound()) {
+                        bindApplicationNoCheck(packageName, processName, lock);
+                    }
                     lock.open();
                 }
             });
