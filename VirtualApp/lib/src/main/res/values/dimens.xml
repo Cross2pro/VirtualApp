@@ -12,4 +12,5 @@
     <dimen name="notification_padding">4dp</dimen>
     <!-- Height of a medium notification in the status bar -->
     <dimen name="notification_mid_height">128dp</dimen>
+    <dimen name="dp_110">110dp</dimen>
 </resources>

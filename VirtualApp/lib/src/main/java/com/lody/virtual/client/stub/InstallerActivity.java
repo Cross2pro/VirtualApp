@@ -3,6 +3,7 @@ package com.lody.virtual.client.stub;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -267,13 +268,20 @@ public class InstallerActivity extends Activity {
             @Override
             public void onClick(View view) {
 
-                boolean delsuc = FileUtils.deleteDir(apkinfo.path);
-                Log.e("lxf","Installer delete apk "+ apkinfo.path);
-                if(delsuc){
-                    Toast.makeText(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT).show();
+                File file = new File(apkinfo.path);
+                boolean apkexit = file.exists();
+                if(apkexit){
+                    boolean delsuc = FileUtils.deleteDir(apkinfo.path);
+                    Log.e("lxf","Installer delete apk "+ apkinfo.path + " "+delsuc);
+                    if(delsuc){
+                        showToast(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT);
+                    }else{
+                        showToast(InstallerActivity.this,"安装包删除失败",Toast.LENGTH_SHORT);
+                    }
                 }else{
-//                    Toast.makeText(InstallerActivity.this,"安装包删除失败",Toast.LENGTH_SHORT).show();
+                    showToast(InstallerActivity.this,"安装包已被删除",Toast.LENGTH_SHORT);
                 }
+
                 delDlg.dismiss();
                 if(open){
                     Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
@@ -283,6 +291,17 @@ public class InstallerActivity extends Activity {
                 finish();
             }
         });
+    }
+    private static void showToast(Context context, String message, int duration) {
+        Toast toast = new Toast(context);
+        View toastView = LayoutInflater.from(context).inflate(R.layout.toast_install_del, null);
+        TextView contentView = toastView.findViewById(R.id.TextViewInfo);
+        contentView.setText(message);
+        toast.setView(toastView);
+        toast.setDuration(duration);
+        toast.setGravity(Gravity.BOTTOM, 0,
+                context.getResources().getDimensionPixelOffset(R.dimen.dp_110));
+        toast.show();
     }
 
 }
