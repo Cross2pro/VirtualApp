@@ -443,6 +443,7 @@ class MethodProxies {
                 intent.putExtra("installer_path", parseInstallRequest(intent));
                 intent.setComponent(new ComponentName(getHostContext(), InstallerActivity.class));
                 intent.setData(null);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                 return method.invoke(who, args);
             } else if ((Intent.ACTION_UNINSTALL_PACKAGE.equals(intent.getAction())
                     || Intent.ACTION_DELETE.equals(intent.getAction()))
@@ -458,6 +459,7 @@ class MethodProxies {
                 intent.putExtra("uninstall_app",pkg);
                 intent.setComponent(new ComponentName(getHostContext(), UnInstallerActivity.class));
                 intent.setData(null);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                 return method.invoke(who, args);
             }
 
