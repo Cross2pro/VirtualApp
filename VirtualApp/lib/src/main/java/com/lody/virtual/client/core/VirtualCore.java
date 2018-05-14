@@ -107,12 +107,16 @@ public final class VirtualCore {
     private VirtualCore() {
     }
 
-    public boolean isDisableDlOpen(String packageName){
+    public boolean isDisableDlOpen(String packageName) {
         return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName);
     }
 
-    public boolean isUseRealDir(String packageName){
-        if(VASettings.USE_REAL_DATA_DIR){
+    public boolean isDisableNotCopyApk(String packageName) {
+        return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName);
+    }
+
+    public boolean isUseRealDir(String packageName) {
+        if (VASettings.USE_REAL_DATA_DIR) {
             return true;
         }
         return mSettingHandler != null && mSettingHandler.isUseRealDataDir(packageName);

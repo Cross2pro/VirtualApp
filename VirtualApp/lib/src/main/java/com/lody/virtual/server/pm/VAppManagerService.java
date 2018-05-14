@@ -87,16 +87,12 @@ public class VAppManagerService extends IAppManager.Stub {
         synchronized (this) {
             mBooting = true;
             mPersistenceLayer.read();
-            if (VASettings.ENABLE_GMS) {
-                if (!GmsSupport.isInstalledGoogleService()) {
-                    GmsSupport.installGApps(0);
-                } else {
-                    if (!VirtualCore.get().isAppInstalled("com.google.android.gsf")) {
-                        GmsSupport.remove("com.google.android.gsf");
-                    }
-                }
+            if(VASettings.CHECK_UPDATE_NOT_COPY_APK) {
+                upgradeApps();
             }
-            upgradeApps();
+            if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
+                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+            }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
         }
@@ -139,9 +135,12 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean loadPackageInnerLocked(PackageSetting ps) {
-        if (!FileUtils.isExist(ps.apkPath) && !ps.notCopyApk) {
-            //android 8.0 ps.notCopyApk need update
-            return false;
+        if (!FileUtils.isExist(ps.apkPath)) {
+            if(VASettings.CHECK_UPDATE_NOT_COPY_APK && ps.notCopyApk){
+                //android 8.0 ps.notCopyApk need update
+            }else{
+                return false;
+            }
         }
         File cacheFile = VEnvironment.getPackageCacheFile(ps.packageName);
         VPackage pkg = null;
@@ -230,6 +229,9 @@ public class VAppManagerService extends IAppManager.Stub {
         if (existSetting != null && existSetting.notCopyApk) {
             notCopyApk = false;
         }
+        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName)){
+            notCopyApk = false;
+        }
 
         NativeLibraryHelperCompat.copyNativeBinaries(new File(path), libDir);
         linkUserAppLib(0, pkg.packageName);
@@ -272,17 +274,19 @@ public class VAppManagerService extends IAppManager.Stub {
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
-        if (VirtualRuntime.isArt()) {
-            try {
-                ArtDexOptimizer.interpretDex2Oat(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                DexFile.loadDex(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath(), 0).close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (!notCopyApk) {
+            if (VirtualRuntime.isArt()) {
+                try {
+                    ArtDexOptimizer.interpretDex2Oat(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    DexFile.loadDex(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath(), 0).close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         BroadcastSystem.get().startApp(pkg);

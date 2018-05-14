@@ -1434,6 +1434,11 @@ class MethodProxies {
                 }
                 return holder;
             }
+            if(SpecialComponentList.isDisableOutsideContentProvider(name)){
+                return null;
+            }else{
+                VLog.w("ActivityManger", "getContentProvider:%s", name);
+            }
             Object holder = method.invoke(who, args);
             if (holder != null) {
                 if (BuildCompat.isOreo()) {

@@ -70,10 +70,6 @@ inline void logf(const char* tag, const char* msg, ARGS... args) noexcept {
 # define ALOGW(...) ::facebook::alog::logw(LOG_TAG, __VA_ARGS__)
 # define ALOGE(...) ::facebook::alog::loge(LOG_TAG, __VA_ARGS__)
 # define ALOGF(...) ::facebook::alog::logf(LOG_TAG, __VA_ARGS__)
-#endif
-
-}}
-
 #else
 # define ALOGV(...) ((void)0)
 # define ALOGD(...) ((void)0)
@@ -81,4 +77,10 @@ inline void logf(const char* tag, const char* msg, ARGS... args) noexcept {
 # define ALOGW(...) ((void)0)
 # define ALOGE(...) ((void)0)
 # define ALOGF(...) ((void)0)
+#endif
+
+}}
+
+#else
+
 #endif

@@ -1,17 +1,16 @@
 package io.virtualapp;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.support.multidex.MultiDexApplication;
 
 import com.flurry.android.FlurryAgent;
-import com.lody.virtual.client.core.SettingHandler;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
+import io.virtualapp.delegate.MySettingHandler;
 import io.virtualapp.delegate.MyTaskDescDelegate;
 import jonathanfinerty.once.Once;
 
@@ -21,7 +20,6 @@ import jonathanfinerty.once.Once;
 public class App extends MultiDexApplication {
 
     private static App gApp;
-    private SharedPreferences mPreferences;
 
     public static App getApp() {
         return gApp;
@@ -30,13 +28,10 @@ public class App extends MultiDexApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
         VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
         //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
-        //google 支持（beta）
-        VASettings.ENABLE_GMS = mPreferences.getBoolean(VCommends.PREF_GMS_ENABLE, false);
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
@@ -50,7 +45,8 @@ public class App extends MultiDexApplication {
 
         //双开的app，根据用户升级，自动升级内部的app，需要监听
         //false则只有va的服务启动才去检查更新
-        VASettings.CHECK_UPDATE_NOT_COPY_APK = true;
+        //如果是游戏，则建议关闭，
+        VASettings.CHECK_UPDATE_NOT_COPY_APK = false;
 
         try {
             VirtualCore.get().startup(base);
@@ -64,19 +60,8 @@ public class App extends MultiDexApplication {
         gApp = this;
         super.onCreate();
         VirtualCore virtualCore = VirtualCore.get();
-        virtualCore.setSettingHandler(new SettingHandler() {
-            @Override
-            public boolean isDisableDlOpen(String packageName) {
-                return "com.facebook.katana".equals(packageName)
-                        || "jianghu2.lanjing.com".equals(packageName)
-                        || packageName.startsWith("jianghu2.lanjing.com.");
-            }
-
-            @Override
-            public boolean isUseRealDataDir(String packageName) {
-                return false;
-            }
-        });
+        //special app
+        virtualCore.setSettingHandler(new MySettingHandler());
         virtualCore.initialize(new VirtualCore.VirtualInitializer() {
 
             @Override
@@ -97,6 +82,7 @@ public class App extends MultiDexApplication {
                 virtualCore.setComponentDelegate(new MyComponentDelegate());
                 //fake task description's icon and title
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
+//                SpecialComponentList.addDisableOutsideContentProvider("");
             }
 
             @Override
@@ -112,10 +98,6 @@ public class App extends MultiDexApplication {
                 virtualCore.addVisibleOutsidePackage("com.immomo.momo");
             }
         });
-    }
-
-    public static SharedPreferences getPreferences() {
-        return getApp().mPreferences;
     }
 
 }

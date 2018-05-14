@@ -30,7 +30,6 @@ import android.widget.Toast;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 
@@ -38,7 +37,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.virtualapp.App;
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
@@ -134,8 +132,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            String pkg = intent.getData() == null ? null : intent.getData().getSchemeSpecificPart();
             if (Constants.ACTION_PACKAGE_WILL_ADDED.equals(intent.getAction())) {
-                String pkg = intent.getData().getSchemeSpecificPart();
                 String msg = "wait update " + mPresenter.getLabel(pkg);
                 if (mDialog != null) {
                     mDialog.setMessage(msg);
@@ -143,9 +141,9 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                     mDialog = ProgressDialog.show(context, null, msg);
                 }
             } else {
-                mPresenter.dataChanged();
                 if (mDialog != null && mDialog.isShowing()) {
                     mDialog.dismiss();
+                    mPresenter.dataChanged();
                     mDialog = null;
                 }
             }
@@ -370,18 +368,10 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     public void askInstallGms() {
-        if (VASettings.ENABLE_GMS) {
-            return;
-        }
         new AlertDialog.Builder(this)
                 .setTitle(R.string.tip_install_gms)
                 .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    App.getApp().getPreferences()
-                            .edit()
-                            .putBoolean(VCommends.PREF_GMS_ENABLE, true)
-                            .commit();
-                    VASettings.ENABLE_GMS = true;
                     defer().when(() -> {
                         GmsSupport.installGApps(0);
                     }).done((res) -> {

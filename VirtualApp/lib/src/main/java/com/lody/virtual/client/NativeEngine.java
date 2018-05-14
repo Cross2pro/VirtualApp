@@ -191,7 +191,7 @@ public class NativeEngine {
         try {
             String canonical = new File(dexOrJarPath).getCanonicalPath();
             InstalledAppInfo info = sDexOverrideMap.get(canonical);
-            if (info != null) {
+            if (info != null && !info.notCopyApk) {
                 outputPath = info.getOdexFile().getPath();
                 params[1] = outputPath;
             }

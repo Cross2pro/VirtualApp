@@ -2,8 +2,6 @@ package com.lody.virtual.server.pm;
 
 import android.os.Parcel;
 
-import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.PersistenceLayer;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.server.pm.parser.VPackage;
@@ -59,10 +57,8 @@ class PackagePersistenceLayer extends PersistenceLayer {
         int count = p.readInt();
         while (count-- > 0) {
             PackageSetting setting = new PackageSetting(p);
-            if (VASettings.ENABLE_GMS || !GmsSupport.isGoogleAppOrService(setting.packageName)) {
-                if (!"android".equals(setting.packageName) && GmsSupport.hasDex(setting.apkPath)) {
-                    this.mService.loadPackage(setting);
-                }
+            if (!"android".equals(setting.packageName)){
+                this.mService.loadPackage(setting);
             }
         }
     }

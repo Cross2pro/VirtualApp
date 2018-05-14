@@ -17,6 +17,10 @@ public class VASettings {
      */
     public static boolean KEEP_ADMIN_PHONE_INFO = true;
 
+    /**
+     * support google services
+     * @deprecated
+     */
     public static boolean ENABLE_GMS = false;
 
     public static boolean NEW_INTENTSENDER = false;

@@ -31,6 +31,7 @@ public final class SpecialComponentList {
     private static final HashSet<String> INSTRUMENTATION_CONFLICTING = new HashSet<>(2);
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
+    private static final Set<String> DISABLE_OUTSIDE_CONTENTPROVIDER = new HashSet<>();
     private static String PROTECT_ACTION_PREFIX = "_VA_protected_";
 
     static {
@@ -102,6 +103,14 @@ public final class SpecialComponentList {
 //        BROADCAST_START_WHITE_LIST.add("com.android.vending");
         BROADCAST_START_WHITE_LIST.add("com.google.android.play.games");
 
+    }
+
+    public static boolean isDisableOutsideContentProvider(String name) {
+        return DISABLE_OUTSIDE_CONTENTPROVIDER.contains(name);
+    }
+
+    public static void addDisableOutsideContentProvider(String name) {
+        DISABLE_OUTSIDE_CONTENTPROVIDER.add(name);
     }
 
     public static void addStaticBroadCastWhiteList(String pkg) {

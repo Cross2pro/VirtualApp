@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -29,6 +30,7 @@ import io.virtualapp.home.models.AppInfo;
 import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.home.models.MultiplePackageAppData;
 import io.virtualapp.home.models.PackageAppData;
+import io.virtualapp.utils.PackageUtils;
 
 /**
  * @author Lody
@@ -104,6 +106,9 @@ public class AppRepository implements AppDataSource {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
+                if(!VASettings.CHECK_UPDATE_NOT_COPY_APK && info.notCopyApk){
+                    PackageUtils.checkUpdate(mContext, info, info.packageName);
+                }
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
                     models.add(data);
@@ -170,13 +175,16 @@ public class AppRepository implements AppDataSource {
                 continue;
             }
             // ignore the System package
-            if (isSystemApplication(pkg)) {
+            if (notCopyApk && isSystemApplication(pkg)) {
                 if (pm.getLaunchIntentForPackage(pkg.packageName) == null) {
                     continue;
                 }
             }
             if (!NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo)) {
                 //don't support 32
+                continue;
+            }
+            if(notCopyApk && !GmsSupport.hasDex(pkg.applicationInfo.publicSourceDir)){
                 continue;
             }
             ApplicationInfo ai = pkg.applicationInfo;

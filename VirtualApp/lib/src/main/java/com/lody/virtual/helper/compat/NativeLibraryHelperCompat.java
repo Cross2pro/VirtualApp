@@ -68,7 +68,9 @@ public class NativeLibraryHelperCompat {
             try {
                 String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
                 String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
-
+                if(primaryCpuAbi == null){
+                    return null;
+                }
                 boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
                 if (!TextUtils.isEmpty(secondaryCpuAbi)) {
                     // Multi-arch case.

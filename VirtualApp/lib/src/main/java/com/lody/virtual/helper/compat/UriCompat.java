@@ -20,13 +20,6 @@ public class UriCompat {
     private static final String TAG = "UriCompat";
     private static boolean DEBUG = false;
     public static String AUTH = "virtual.fileprovider";
-//    private final static String[] ACTIONS = {
-//            Intent.ACTION_SEND,
-//            Intent.ACTION_SEND_MULTIPLE,
-//            Intent.ACTION_SENDTO,
-//            "android.media.action.IMAGE_CAPTURE",
-//            "com.android.camera.action.CROP",
-//    };
 
     public static boolean needFake(Intent intent) {
         String pkg = intent.getPackage();
@@ -39,11 +32,7 @@ public class UriCompat {
         if (componentName != null && VirtualCore.get().isAppInstalled(componentName.getPackageName())) {
             return false;
         }
-//        for (String act : ACTIONS) {
-//            if (act.equals(intent.getAction())) {
-//                return true;
-//            }
-//        }
+        //fake all intent's uri
         return true;
     }
 
