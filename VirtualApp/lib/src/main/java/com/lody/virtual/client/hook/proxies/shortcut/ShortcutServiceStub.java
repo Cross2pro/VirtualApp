@@ -16,6 +16,7 @@ import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
@@ -47,7 +48,12 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getManifestShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getDynamicShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("setDynamicShortcuts"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("addDynamicShortcuts"));
+        addMethodProxy(new StaticMethodProxy("addDynamicShortcuts") {
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                return true;
+            }
+        });
         addMethodProxy(new ReplaceCallingPkgMethodProxy("createShortcutResultIntent"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("disableShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("enableShortcuts"));

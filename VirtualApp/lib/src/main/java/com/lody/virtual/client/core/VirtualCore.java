@@ -111,8 +111,12 @@ public final class VirtualCore {
         return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName);
     }
 
-    public boolean isDisableNotCopyApk(String packageName) {
-        return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName);
+    public boolean isDisableNotCopyApk(String packageName, File apkPath) {
+        return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName, apkPath);
+    }
+
+    public boolean isUseVirtualLibraryFiles(String packageName, String apkPath){
+        return mSettingHandler == null || mSettingHandler.isUseVirtualLibraryFiles(packageName, apkPath);
     }
 
     public boolean isUseRealDir(String packageName) {

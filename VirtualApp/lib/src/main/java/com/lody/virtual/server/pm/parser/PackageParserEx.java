@@ -240,8 +240,8 @@ public class PackageParserEx {
             ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
         }
 
-        if (VASettings.ENABLE_IO_REDIRECT && notCopyApk) {
-            //native lib
+        if (VASettings.ENABLE_IO_REDIRECT && notCopyApk
+                && !VirtualCore.get().isUseVirtualLibraryFiles(ai.packageName, ai.publicSourceDir)) {
             ApplicationInfo outside = VPackageManagerService.get()
                     .getOutSideApplicationInfo(ai.packageName, false);
             if (outside != null) {

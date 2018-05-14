@@ -182,4 +182,30 @@ public class NativeLibraryHelperCompat {
 		return null;
 	}
 
+
+    public static Set<String> getSoListFromApk(File apk) {
+        try {
+            ZipFile apkFile = new ZipFile(apk);
+            Enumeration<? extends ZipEntry> entries = apkFile.entries();
+            Set<String> solist = new HashSet<String>();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                String name = entry.getName();
+                if (name.contains("../")) {
+                    continue;
+                }
+                if (name.startsWith("lib/") && !entry.isDirectory() && name.endsWith(".so")) {
+                    String so = name.substring(name.lastIndexOf("/")+1);
+                    if(!solist.contains(so)){
+                        solist.add(so);
+                    }
+                }
+            }
+            return solist;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

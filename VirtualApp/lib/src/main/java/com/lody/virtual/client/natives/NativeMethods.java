@@ -24,6 +24,12 @@ public class NativeMethods {
     public static Method gAudioRecordNativeCheckPermission;
 
     public static void init() {
+//       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class, String.class}
+//       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class}
+
+//       AudioRecord.class, "native_setup", new Class[]{Object.class, Object.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class})
+//       AudioRecord.class, "native_setup", new Class[]{Object.class, Object.class, int[].class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class, Long.TYPE});
+
         String methodName =
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
         for (Method method : DexFile.class.getDeclaredMethods()) {

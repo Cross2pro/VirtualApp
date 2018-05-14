@@ -8,7 +8,6 @@ import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.helper.utils.ArrayUtils;
-import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.Method;
 
@@ -169,6 +168,22 @@ class MethodProxies {
             boolean enable = (boolean) args[enableIndex];
             VNotificationManager.get().setNotificationsEnabledForPackage(pkg, enable, getAppUserId());
             return 0;
+        }
+    }
+
+    static class GetAppActiveNotifications  extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "getAppActiveNotifications";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            args[0] = getHostPkg();
+            if (args.length > 1) {
+                args[1] = 0;
+            }
+            return method.invoke(who, args);
         }
     }
 }

@@ -8,7 +8,7 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 2018042410
+        versionCode 18042410
         versionName "1.5.0"
         multiDexEnabled true
         ndk {

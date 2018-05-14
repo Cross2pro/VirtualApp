@@ -25,6 +25,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IUserManager;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -133,6 +134,16 @@ public class VUserManagerService extends IUserManager.Stub {
                     VUserInfo ui = mUsers.valueAt(i);
                     if (ui.partial && i != 0) {
                         partials.add(ui);
+                    }
+                    //check systemui
+                    File path = new File(VEnvironment.getUserSystemDirectory(ui.id), "build.prop");
+                    if (!path.exists()) {
+                        try {
+                            Runtime.getRuntime().exec("cat /system/build.prop > " + path.getAbsolutePath());
+                            VDeviceManagerService.get().fillBuildProp(path);
+                        } catch (Throwable ex) {
+                            //VLog.e("VDeviceInfo", "cat build.prop fail\n%s", Log.getStackTraceString(ex));
+                        }
                     }
                 }
                 for (int i = 0; i < partials.size(); i++) {

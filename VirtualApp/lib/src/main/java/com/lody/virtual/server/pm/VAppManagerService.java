@@ -229,7 +229,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (existSetting != null && existSetting.notCopyApk) {
             notCopyApk = false;
         }
-        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName)){
+        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName, packageFile)){
             notCopyApk = false;
         }
 

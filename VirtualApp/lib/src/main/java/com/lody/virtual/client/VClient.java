@@ -443,6 +443,10 @@ public final class VClient extends IVClient.Stub {
         } else {
             //default wifi mac
         }
+        File buildProp = new File(VEnvironment.getUserSystemDirectory(userId), "build.prop");
+        if(buildProp.exists()) {
+            NativeEngine.redirectDirectory("/system/build.prop", buildProp.getAbsolutePath());
+        }
 
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
@@ -453,14 +457,14 @@ public final class VClient extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
 
-        if(isNotCopyApk()) {
+        if(isNotCopyApk() && !VirtualCore.get().isUseVirtualLibraryFiles(packageName, info.publicSourceDir)) {
             ApplicationInfo outside = null;
             try {
                 outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
             } catch (Throwable e) {
                 //ignore
             }
-            if (outside != null) {
+            if (outside != null && NativeLibraryHelperCompat.isSupportNative32(outside)) {
                 String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
                 if (path != null) {
                     NativeEngine.dlOpenWhitelist(path);

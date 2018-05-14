@@ -140,27 +140,32 @@ public class IPCMethod {
         }
     }
 
-    private static void writeParcelable(Parcel data, Parcelable arg) {
-        String className = arg.getClass().getName();
-        if (hasClass(className)) {
-            data.writeValue(arg);
-        } else {
-            data.writeInt(VAL_PARCELABLE);
-            String ancestorClassName = getAncestorClass(arg.getClass());
-            if (ancestorClassName == null) {
-                throw new RuntimeException("Can't find ancestor class for " + arg.getClass());
+    private static void writeParcelable(Parcel data, Parcelable arg,int parcelableFlags) {
+        if(arg == null){
+            data.writeValue(null);
+        }else {
+            String className = arg.getClass().getName();
+            if (!hasClass(className)) {
+                String ancestorClassName = getAncestorClass(arg.getClass());
+                if (ancestorClassName == null) {
+                    throw new RuntimeException("Can't find ancestor class for " + arg.getClass());
+                }
+                className = ancestorClassName;
             }
-            data.writeString(ancestorClassName);
-            arg.writeToParcel(data, 0);
+            data.writeString(className);
+            arg.writeToParcel(data, parcelableFlags);
         }
     }
 
-    private static void writeParcelableArray(Parcel data, Parcelable[] array) {
-        data.writeInt(VAL_PARCELABLEARRAY);
-        int N = array.length;
-        data.writeInt(N);
-        for (Parcelable p : array) {
-            writeParcelable(data, p);
+    private static void writeParcelableArray(Parcel data, Parcelable[] array,int parcelableFlags) {
+        if(array != null) {
+            int N = array.length;
+            data.writeInt(N);
+            for (int i=0; i<N; i++) {
+                writeParcelable(data, array[i], parcelableFlags);
+            }
+        }else{
+            data.writeInt(-1);
         }
     }
 
@@ -171,16 +176,18 @@ public class IPCMethod {
         try {
             data.writeInterfaceToken(interfaceName);
             if (args == null) {
-                data.writeInt(-1);
+                data.writeValue(null);
             } else {
                 data.writeInt(args.length);
                 for (Object arg : args) {
                     if (arg == null) {
                         data.writeValue(null);
                     } else if (arg instanceof Parcelable) {
-                        writeParcelable(data, (Parcelable) arg);
+                        data.writeInt(VAL_PARCELABLE);
+                        writeParcelable(data, (Parcelable) arg, 0);
                     } else if (arg instanceof Parcelable[]) {
-                        writeParcelableArray(data, (Parcelable[]) arg);
+                        data.writeInt(VAL_PARCELABLEARRAY);
+                        writeParcelableArray(data, (Parcelable[]) arg, 0);
                     } else {
                         data.writeValue(arg);
                     }
@@ -258,6 +265,8 @@ public class IPCMethod {
                 } catch (Throwable e) {
                     throw new IllegalStateException(e);
                 }
+            } else if (type == int.class || type == Integer.class) {
+                return -1;
             }
             return null;
         }
