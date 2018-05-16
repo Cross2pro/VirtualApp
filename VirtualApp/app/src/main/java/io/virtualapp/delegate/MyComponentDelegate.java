@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 
@@ -53,28 +52,25 @@ public class MyComponentDelegate implements ComponentDelegate {
             @Override
             public void onActivityResumed(Activity activity) {
                 Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
-                boolean issd = isStubDialog(activity);
-                Log.e("lxf", "isStubDialog "+issd);
-                if(issd)
-                    return;
+//                boolean issd = isStubDialog(activity);
+//                Log.e("lxf", "isStubDialog "+issd);
+//                if(issd)
+//                    return;
                 //清除前景水印
-                activity.getWindow().getDecorView().setForeground(null);
-                DisplayMetrics  dm = new DisplayMetrics();
-                activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
-                int screenWidth = dm.widthPixels;
-                int screenHeight = dm.heightPixels;
                 View view = activity.getWindow().getDecorView();
-                int mw = view.getMeasuredWidth();
-                int mh = view.getMeasuredHeight();
-                int w = view.getWidth();
-                int h = view.getHeight();
-                Log.e("lxf","sw "+screenWidth+ " mw "+ mw+" w "+w);
-                Log.e("lxf","sh "+screenHeight+ " mh "+ mh+" h "+h);
-//                ColorDrawable colorDrawable = new ColorDrawable(Color.argb(200,255,0,0));
-                Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(mBackgroundBitmap);
-                draw(canvas,screenWidth,screenHeight,"1234");
-                view.setForeground(new BitmapDrawable(mBackgroundBitmap));
+                view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                        Log.e("lxf", "onLayoutChange w "+v.getMeasuredWidth()+" h "+v.getMeasuredHeight());
+                        view.setForeground(null);
+                        int screenWidth = v.getMeasuredWidth();
+                        int screenHeight = v.getMeasuredHeight();
+                        Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+                        Canvas canvas = new Canvas(mBackgroundBitmap);
+                        draw(canvas,screenWidth,screenHeight,"8ik7uj6yh5tg4rf");
+                        view.setForeground(new BitmapDrawable(mBackgroundBitmap));
+                    }
+                });
 
             }
 
