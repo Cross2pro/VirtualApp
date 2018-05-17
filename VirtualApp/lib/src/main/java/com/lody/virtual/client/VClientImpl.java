@@ -27,6 +27,7 @@ import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
+import android.os.Environment;
 import android.util.Log;
 
 import com.lody.virtual.client.core.CrashHandler;
@@ -46,6 +47,7 @@ import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -53,6 +55,8 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceInfo;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -218,7 +222,9 @@ public final class VClientImpl extends IVClient.Stub {
             VirtualRuntime.getUIHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    bindApplicationNoCheck(packageName, processName, lock);
+                    if (!isBound()) {
+                        bindApplicationNoCheck(packageName, processName, lock);
+                    }
                     lock.open();
                 }
             });
@@ -336,6 +342,13 @@ public final class VClientImpl extends IVClient.Stub {
         if (!conflict) {
             InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
         }
+
+        if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
+                && "com.tencent.mm".equals(data.appInfo.processName)){
+            ClassLoader originClassLoader = context.getClassLoader();
+            fixWeChatTinker(context, data.appInfo, originClassLoader);
+        }
+
         mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
@@ -384,6 +397,26 @@ public final class VClientImpl extends IVClient.Stub {
         }
     }
 
+    private void fixWeChatTinker(Context context, ApplicationInfo applicationInfo, ClassLoader appClassLoader)
+    {
+        String dataDir = applicationInfo.dataDir;
+        File tinker = new File(dataDir, "tinker");
+        if(tinker.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker.getPath());
+            FileUtils.deleteDir(tinker);
+        }
+        File tinker_temp = new File(dataDir, "tinker_temp");
+        if(tinker_temp.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker_temp.getPath());
+            FileUtils.deleteDir(tinker_temp);
+        }
+        File tinker_server = new File(dataDir, "tinker_server");
+        if(tinker_server.exists()){
+            Log.e("wxd", " deleteWechatTinker " + tinker_server.getPath());
+            FileUtils.deleteDir(tinker_server);
+        }
+    }
+
     private void setupUncaughtHandler() {
         ThreadGroup root = Thread.currentThread().getThreadGroup();
         while (root.getParent() != null) {
@@ -424,14 +457,15 @@ public final class VClientImpl extends IVClient.Stub {
         ApplicationInfo info = mBoundApplication.appInfo;
         int userId = VUserHandle.myUserId();
         String wifiMacAddressFile = deviceInfo.getWifiFile(userId).getPath();
+        String dataDir = VEnvironment.getDataUserPackageDirectory(userId, info.packageName).getPath();//info.dataDir;
         NativeEngine.redirectDirectory("/sys/class/net/wlan0/address", wifiMacAddressFile);
         NativeEngine.redirectDirectory("/sys/class/net/eth0/address", wifiMacAddressFile);
         NativeEngine.redirectDirectory("/sys/class/net/wifi/address", wifiMacAddressFile);
 
-        NativeEngine.redirectDirectory("/data/data/" + info.packageName, info.dataDir);
-        NativeEngine.redirectDirectory("/data/user/0/" + info.packageName, info.dataDir);
+        NativeEngine.redirectDirectory("/data/data/" + info.packageName, dataDir);
+        NativeEngine.redirectDirectory("/data/user/0/" + info.packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirectDirectory("/data/user_de/0/" + info.packageName, info.dataDir);
+            NativeEngine.redirectDirectory("/data/user_de/0/" + info.packageName, dataDir);
         }
         String libPath = VEnvironment.getAppLibDirectory(info.packageName).getAbsolutePath();
         String userLibPath = new File(VEnvironment.getUserSystemDirectory(userId), info.packageName + "/lib").getAbsolutePath();
@@ -439,14 +473,38 @@ public final class VClientImpl extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + info.packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + info.packageName + "/lib/", libPath);
 
+        //safekey adapter
+        String subPathData = "/Android/data/"+info.packageName;
+        File[] efd = VEnvironment.getTFRoots();
+        for(File f:efd){
+            if(f==null)
+                continue;
+            String filename = f.getAbsolutePath();
+            if(filename.contains("/emulated/0/"))
+                continue;
+            Log.e("lxf","XXX " + f.getAbsolutePath());
+            String tfRoot = VEnvironment.getTFRoot(f.getAbsolutePath()).getAbsolutePath();
+            NativeEngine.redirectDirectory(tfRoot+subPathData
+                    ,VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
+            Log.e("lxf","XXX " + tfRoot+subPathData);
+            Log.e("lxf","XXX " + VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
+        }
+
         VirtualStorageManager vsManager = VirtualStorageManager.get();
+        vsManager.setVirtualStorage(info.packageName, userId, VEnvironment.getExternalStorageDirectory(userId).getAbsolutePath());
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
+
         if (enable && vsPath != null) {
             File vsDirectory = new File(vsPath);
             if (vsDirectory.exists() || vsDirectory.mkdirs()) {
                 HashSet<String> mountPoints = getMountPoints();
                 for (String mountPoint : mountPoints) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
+                            continue;
+                        }
+                    }
                     NativeEngine.redirectDirectory(mountPoint, vsPath);
                 }
             }
@@ -608,6 +666,11 @@ public final class VClientImpl extends IVClient.Stub {
     @Override
     public void finishActivity(IBinder token) {
         VActivityManager.get().finishActivity(token);
+    }
+
+    @Override
+    public void closeAllLongSocket() throws RemoteException {
+        NativeEngine.nativeCloseAllSocket();
     }
 
     @Override

@@ -22,6 +22,32 @@ public class VEnvironment {
     private static final File DATA_DIRECTORY;
     private static final File USER_DIRECTORY;
     private static final File DALVIK_CACHE_DIRECTORY;
+    private static final File EXTERNAL_STORAGE_DIRECTORY;
+    private static final File EMULATED_DIRECTORY;
+
+    private static final String DIRECTORY_MUSIC = "Music";
+    private static final String DIRECTORY_PODCASTS = "Podcasts";
+    private static final String DIRECTORY_RINGTONES = "Ringtones";
+    private static final String DIRECTORY_ALARMS = "Alarms";
+    private static final String DIRECTORY_NOTIFICATIONS = "Notifications";
+    private static final String DIRECTORY_PICTURES = "Pictures";
+    private static final String DIRECTORY_MOVIES = "Movies";
+    private static final String DIRECTORY_DOWNLOADS = "Download";
+    private static final String DIRECTORY_DCIM = "DCIM";
+    private static final String DIRECTORY_DOCUMENTS = "Documents";
+
+    public static final String[] STANDARD_DIRECTORIES = {
+            DIRECTORY_MUSIC,
+            DIRECTORY_PODCASTS,
+            DIRECTORY_RINGTONES,
+            DIRECTORY_ALARMS,
+            DIRECTORY_NOTIFICATIONS,
+            DIRECTORY_PICTURES,
+            DIRECTORY_MOVIES,
+            DIRECTORY_DOWNLOADS,
+            DIRECTORY_DCIM,
+            DIRECTORY_DOCUMENTS
+    };
 
     static {
         File host = new File(getContext().getApplicationInfo().dataDir);
@@ -33,9 +59,15 @@ public class VEnvironment {
         USER_DIRECTORY = ensureCreated(new File(DATA_DIRECTORY, "user"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
+        // Point to: /storage/
+        EXTERNAL_STORAGE_DIRECTORY = ensureCreated(new File(ROOT, "storage"));
+        // Point to: /storage/emulated
+        EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
     }
 
     public static void systemReady() {
+        //create private dir at SdCard & all of TFCard
+        getContext().getExternalFilesDir(null).getAbsolutePath();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 FileUtils.chmod(ROOT.getAbsolutePath(), FileUtils.FileMode.MODE_755);
@@ -158,5 +190,60 @@ public class VEnvironment {
 
     public static File getPackageInstallerStageDir() {
         return ensureCreated(new File(DATA_DIRECTORY, ".session_dir"));
+    }
+
+    /**
+     * get all of data dir of current context
+     * @return
+     */
+    public static File[] getTFRoots(){
+        return getContext().getExternalFilesDirs(null);
+    }
+    /**
+     * get TFCard root dir
+     * @param Dir  /storage/XXXXX/Android/data/@packagename
+     * @return /storage/XXXXX
+     */
+    public static File getTFRoot(String Dir){
+        int lastIndex = Dir.lastIndexOf("/Android/data/");
+        return ensureCreated(new File(Dir.substring(0,lastIndex)));
+    }
+    /**
+     * create and return virtual dir of safetybox at TFCard
+     * @param tfroot /storage/XXXXXX
+     * @return  /storage/XXXXXX/Android/daa/com.xdja/safetybox/virtual/
+     */
+    public static File getTFVirtualRoot(String tfroot){
+        String appFileDir = tfroot + "/Android/data/"+getContext().getPackageName()+"";
+        return ensureCreated(new File(appFileDir, "virtual"));
+    }
+    public static File getTFVirtualRoot(String tfroot,String Dir) {
+        return ensureCreated(new File(getTFVirtualRoot(tfroot).getAbsolutePath(), Dir));
+    }
+
+    public static File getExternalStorageDirectory(int userId) {
+        File storage_dir = ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+        for (String sdir : STANDARD_DIRECTORIES) {
+            ensureCreated(new File(storage_dir, sdir));
+        }
+        //return ensureCreated(new File(EMULATED_DIRECTORY, String.valueOf(userId)));
+        return storage_dir;
+    }
+
+    public static File buildPath(File base, String... segments) {
+        File cur = base;
+        for (String segment : segments) {
+            if (cur == null) {
+                cur = new File(segment);
+            } else {
+                cur = new File(cur, segment);
+            }
+        }
+
+        return cur;
+    }
+
+    public static File getExternalStorageAppDataDir(int userId, String packageName) {
+        return buildPath(getExternalStorageDirectory(userId), "Android", "data", packageName);
     }
 }

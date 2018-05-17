@@ -20,7 +20,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.VClientImpl;
@@ -28,7 +27,6 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
-import com.lody.virtual.client.hook.delegate.PhoneInfoDelegate;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -44,11 +42,13 @@ import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.ServiceCache;
+import com.lody.virtual.server.interfaces.IAppManager;
+import com.lody.virtual.server.interfaces.IAppPermissionCallback;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
+import com.lody.virtual.server.interfaces.IVSCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -533,6 +533,12 @@ public final class VirtualCore {
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {
+    }
+
+    public abstract static class VSCallback extends IVSCallback.Stub {
+    }
+
+    public abstract static class AppPermissionCallback extends IAppPermissionCallback.Stub {
     }
 
     public void setUiCallback(Intent intent, IUiCallback callback) {

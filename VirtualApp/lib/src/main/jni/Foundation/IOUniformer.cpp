@@ -8,6 +8,7 @@
 #include <asm/mman.h>
 #include <sys/mman.h>
 #include <utils/zMd5.h>
+#include <utils/controllerManagerNative.h>
 
 #include "IOUniformer.h"
 #include "SandboxFs.h"
@@ -1413,6 +1414,17 @@ HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
     return syscall(__NR_dup3, oldfd, newfd, flags);
 }
 
+HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
+    int ret = -1;
+    if(!controllerManagerNative::isNetworkEnable()){
+        errno = ENETUNREACH;//无法传送数据包至指定的主机.
+        return -1;
+    }
+
+    ret = syscall(__NR_connect, sd, addr, socklen);
+    return ret;
+}
+
 __END_DECLS
 // end IO DEF
 
@@ -1452,7 +1464,6 @@ void hook_dlopen(int api_level) {
         }
     }
 }
-
 
 void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_api_level) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
@@ -1502,6 +1513,7 @@ void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_
         HOOK_SYMBOL(handle, sendfile64);
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
+        HOOK_SYMBOL(handle, connect);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
             HOOK_SYMBOL(handle, __open);

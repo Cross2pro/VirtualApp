@@ -35,7 +35,7 @@ import java.util.Set;
 public class ChooseTypeAndAccountActivity extends Activity
         implements AccountManagerCallback<Bundle> {
     private static final String TAG = "AccountChooser";
-
+    private static final boolean DEBUG = false;
     /**
      * A Parcelable ArrayList of Account objects that limits the choosable accounts to those
      * in this list, if this parameter is supplied.
@@ -375,7 +375,9 @@ public class ChooseTypeAndAccountActivity extends Activity
     }
 
     private void startChooseAccountTypeActivity() {
-        VLog.v(TAG, "ChooseAccountTypeActivity.startChooseAccountTypeActivity()");
+        if(DEBUG){
+            VLog.v(TAG, "ChooseAccountTypeActivity.startChooseAccountTypeActivity()");
+        }
         final Intent intent = new Intent(this, ChooseAccountTypeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         intent.putExtra(EXTRA_ALLOWABLE_ACCOUNT_TYPES_STRING_ARRAY,
@@ -519,7 +521,9 @@ public class ChooseTypeAndAccountActivity extends Activity
                 });
         if (mSelectedItemIndex != SELECTED_ITEM_NONE) {
             list.setItemChecked(mSelectedItemIndex, true);
-            VLog.v(TAG, "List item " + mSelectedItemIndex + " should be selected");
+            if(DEBUG){
+                VLog.v(TAG, "List item " + mSelectedItemIndex + " should be selected");
+            }
         }
     }
 }

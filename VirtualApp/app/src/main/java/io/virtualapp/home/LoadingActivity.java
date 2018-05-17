@@ -61,13 +61,13 @@ public class LoadingActivity extends VActivity {
         }
         VirtualCore.get().setUiCallback(intent, mUiCallback);
         VUiKit.defer().when(() -> {
-            if (!appModel.fastOpen) {
-                try {
-                    VirtualCore.get().preOpt(appModel.packageName);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+//            if (!appModel.fastOpen) {
+//                try {
+//                    VirtualCore.get().preOpt(appModel.packageName);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
             VActivityManager.get().startActivity(intent, userId);
         });
 

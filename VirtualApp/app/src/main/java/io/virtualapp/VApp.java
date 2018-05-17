@@ -9,6 +9,7 @@ import android.support.v4.content.FileProvider;
 
 import com.flurry.android.FlurryAgent;
 import com.lody.virtual.Build;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.Reflect;
@@ -42,9 +43,11 @@ public class VApp extends MultiDexApplication {
         //google测试
         VASettings.GOOGLE_SUPPOER = true;
         //
-        VASettings.DISABLE_FOREGROUND_SERVICE = true;
+        VASettings.DISABLE_FOREGROUND_SERVICE = false;
         //日志
         VLog.OPEN_LOG = BuildConfig.DEBUG;
+
+//        VASettings.USE_REAL_DATA_DIR = true;
         try {
             VirtualCore.get().startup(base);
         } catch (Throwable e) {

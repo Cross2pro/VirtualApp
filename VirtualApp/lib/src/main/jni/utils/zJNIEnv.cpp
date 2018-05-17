@@ -13,11 +13,12 @@ void zJNIEnv::initial(_JavaVM *vm) {
 zJNIEnv::zJNIEnv() {
     isAttached = false;
 
+    _jniEnv = 0;
+    if(_jvm == 0)
+      return ;
+
     int status = 0;
     _jniEnv = 0;
-
-    if(_jvm == 0)
-        return;
 
     status = zJNIEnv::_jvm->GetEnv((void **)&_jniEnv, JNI_VERSION_1_6);
     if(status < 0)

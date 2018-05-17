@@ -277,6 +277,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         ClearTarget clearTarget = ClearTarget.NOTHING;
         boolean clearTop = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
         boolean clearTask = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        boolean receiverForeground =containFlags(intent, Intent.FLAG_RECEIVER_FOREGROUND);
 
         if (intent.getComponent() == null) {
             intent.setComponent(new ComponentName(info.packageName, info.name));
@@ -344,7 +345,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 clearTarget = ClearTarget.SPEC_ACTIVITY;
             }
         }
-        if (sourceTask == null && reuseTarget == ReuseTarget.CURRENT) {
+        if ((sourceTask == null && reuseTarget == ReuseTarget.CURRENT)||receiverForeground) {
             reuseTarget = ReuseTarget.AFFINITY;
         }
 

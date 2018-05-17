@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.view.Window;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.env.Constants;
@@ -44,7 +45,7 @@ public class ChooserActivity extends ResolverActivity {
         mResultTo =  mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
-            VLog.w("ChooseActivity", "Target is not an intent: " + targetParcelable);
+            VLog.w("ChooseActivity", "Target is not an intent: %s", targetParcelable);
             finish();
             return;
         }
@@ -60,7 +61,7 @@ public class ChooserActivity extends ResolverActivity {
             for (int i = 0; i < pa.length; i++) {
                 if (!(pa[i] instanceof Intent)) {
                     VLog.w("ChooseActivity", "Initial intent #" + i
-                            + " not an Intent: " + pa[i]);
+                            + " not an Intent: %s", pa[i]);
                     finish();
                     return;
                 }
@@ -68,5 +69,6 @@ public class ChooserActivity extends ResolverActivity {
             }
         }
         super.onCreate(savedInstanceState, target, title, initialIntents, null, false, userId);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
     }
 }

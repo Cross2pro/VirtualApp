@@ -43,7 +43,7 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    utils/utils.cpp \
                    utils/md5.c \
                    utils/zMd5.cpp \
-
+                   utils/controllerManagerNative.cpp \
 
 LOCAL_LDLIBS := -llog -latomic
 LOCAL_STATIC_LIBRARIES := fb

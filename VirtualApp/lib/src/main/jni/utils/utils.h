@@ -14,5 +14,6 @@ bool is_TED_Enable();
 void doFileTrace(const char* path, char* operation);
 bool isEncryptPath(const char *_path);
 const char * getMagicPath();
+bool closeAllSockets();
 
 #endif //VIRTUALAPP_UTILS_H

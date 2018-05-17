@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <root-path name="root-path" />
     <files-path name="files" />
     <external-path name="external" />
+    <external-files-path name="external_files" />
+    <eoa-external-cache-path name="file_path" package="com.xdja.eoa" subpath="cache" />
 </paths>

@@ -37,6 +37,7 @@ import com.lody.virtual.R;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
@@ -70,6 +71,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     private int mLastSelected = ListView.INVALID_POSITION;
     private AlertDialog dialog;
     private boolean mRegistered;
+    private Context mContext;
 
     private Intent makeMyIntent() {
         Intent intent = new Intent(getIntent());
@@ -190,7 +192,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     }
 
     Drawable loadIconForResolveInfo(ResolveInfo ri) {
-        Drawable dr;
+        /*Drawable dr;
         try {
             if (ri.resolvePackageName != null && ri.icon != 0) {
                 dr = getIcon(mPm.getResourcesForApplication(ri.resolvePackageName), ri.icon);
@@ -207,7 +209,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
             }
         } catch (PackageManager.NameNotFoundException e) {
             VLog.e(TAG, "Couldn't find resources for package\n" + VLog.getStackTraceString(e));
-        }
+        }*/
         return ri.loadIcon(mPm);
     }
 
@@ -456,6 +458,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         public ResolveListAdapter(Context context, Intent intent,
                                   Intent[] initialIntents, List<ResolveInfo> rList, int launchedFromUid) {
             mIntent = new Intent(intent);
+            mContext = context;
             mInitialIntents = initialIntents;
             mBaseResolveList = rList;
             mLaunchedFromUid = launchedFromUid;
@@ -495,9 +498,14 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 currentResolveList = mBaseResolveList;
                 mOrigResolveList = null;
             } else {
-                currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
+                /*currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
                         mIntent, PackageManager.MATCH_DEFAULT_ONLY
-                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));
+                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));*/
+
+                currentResolveList = mOrigResolveList = VPackageManager.get().queryIntentActivities(
+                        mIntent, mIntent.resolveType(mContext), PackageManager.MATCH_DEFAULT_ONLY
+                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0), 0);
+
                 // Filter out any activities that the launched uid does not
                 // have permission for.  We don't do this when we have an explicit
                 // list of resolved activities, because that only happens when
@@ -526,12 +534,14 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 ResolveInfo r0 = currentResolveList.get(0);
                 for (int i = 1; i < N; i++) {
                     ResolveInfo ri = currentResolveList.get(i);
-                    if (DEBUG) VLog.v(
-                            "ResolveListActivity",
-                            r0.activityInfo.name + "=" +
-                                    r0.priority + "/" + r0.isDefault + " vs " +
-                                    ri.activityInfo.name + "=" +
-                                    ri.priority + "/" + ri.isDefault);
+                    if (DEBUG) {
+                        VLog.v(
+                                "ResolveListActivity",
+                                r0.activityInfo.name + "=" +
+                                        r0.priority + "/" + r0.isDefault + " vs " +
+                                        ri.activityInfo.name + "=" +
+                                        ri.priority + "/" + ri.isDefault);
+                    }
                     if (r0.priority != ri.priority ||
                             r0.isDefault != ri.isDefault) {
                         while (i < N) {

@@ -19,6 +19,7 @@ import android.text.TextUtils;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
@@ -231,7 +232,13 @@ public class PackageParserEx {
     }
 
     private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
-        ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+        if (VASettings.USE_REAL_DATA_DIR) {
+            ai.dataDir = VirtualCore.get().getContext().getApplicationInfo().dataDir
+                    .replace(VirtualCore.get().getHostPkg(), ai.packageName);
+        } else {
+            ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             ApplicationInfoL.scanSourceDir.set(ai, ai.dataDir);
             ApplicationInfoL.scanPublicSourceDir.set(ai, ai.dataDir);

@@ -11,7 +11,7 @@
 #include <cstring>
 
 class zString {
-#define BUF_SIZE 256 * 2
+#define BUF_SIZE 256 * 3
 private:
     char *buf;
 

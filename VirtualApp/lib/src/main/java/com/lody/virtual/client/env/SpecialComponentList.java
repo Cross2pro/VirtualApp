@@ -34,7 +34,7 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SCREEN_ON);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SCREEN_OFF);
-        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_NEW_OUTGOING_CALL);
+        //SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_NEW_OUTGOING_CALL);  //适配警信，安装警信后打电话慢
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_TIME_TICK);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_TIME_CHANGED);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_TIMEZONE_CHANGED);
@@ -54,9 +54,10 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.SIM_STATE_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.location.PROVIDERS_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.location.MODE_CHANGED");
+        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SHUTDOWN);
 
         ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
-
+        WHITE_PERMISSION.add("android.permission.USE_XDJA_SIP_swbg");//税务办公
         WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
         WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
         WHITE_PERMISSION.add(Manifest.permission.ACCOUNT_MANAGER);

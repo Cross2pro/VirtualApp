@@ -1,5 +1,6 @@
 package com.lody.virtual.client.hook.proxies.window.session;
 
+import android.util.Log;
 import android.view.WindowManager;
 
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
@@ -19,6 +20,7 @@ import java.lang.reflect.Method;
     @Override
     public Object call(Object who, Method method, Object... args) throws Throwable {
         int index = ArrayUtils.indexOfFirst(args, WindowManager.LayoutParams.class);
+        Log.e("lxf_watermark","method "+getMethodName());
         if (index != -1) {
             WindowManager.LayoutParams attrs = (WindowManager.LayoutParams) args[index];
             if (attrs != null) {

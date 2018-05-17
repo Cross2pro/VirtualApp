@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.os.VEnvironment;
+
 import static org.xmlpull.v1.XmlPullParser.END_DOCUMENT;
 import static org.xmlpull.v1.XmlPullParser.START_TAG;
 
@@ -44,6 +47,7 @@ public class StubFileProvider extends ContentProvider {
     private static final String TAG_EXTERNAL = "external-path";
     private static final String TAG_EXTERNAL_FILES = "external-files-path";
     private static final String TAG_EXTERNAL_CACHE = "external-cache-path";
+    private static final String TAG_EOA_EXTERNAL_CACHE = "eoa-external-cache-path";
 
     private static final String ATTR_NAME = "name";
     private static final String ATTR_PATH = "path";
@@ -138,6 +142,16 @@ public class StubFileProvider extends ContentProvider {
             } else if (OpenableColumns.SIZE.equals(col)) {
                 cols[i] = OpenableColumns.SIZE;
                 values[i++] = file.length();
+            } else if ("_data".equals(col)) {
+                cols[i] = "_data";
+                String path = uri.getEncodedPath();
+                final int splitIndex = path.indexOf('/', 1);
+                final String tag = Uri.decode(path.substring(1, splitIndex));
+                path = Uri.decode(path.substring(splitIndex));
+                if (tag.equals("external") || tag.equals("external_files")) {
+                    path = Environment.getExternalStorageDirectory().getAbsolutePath() + path;
+                }
+                values[i++] = path;
             }
         }
 
@@ -293,16 +307,32 @@ public class StubFileProvider extends ContentProvider {
                 } else if (TAG_CACHE_PATH.equals(tag)) {
                     target = context.getCacheDir();
                 } else if (TAG_EXTERNAL.equals(tag)) {
-                    target = Environment.getExternalStorageDirectory();
+                    int userId = VUserHandle.myUserId();
+                    //target = Environment.getExternalStorageDirectory();
+                    target = VEnvironment.getExternalStorageDirectory(userId);
                 } else if (TAG_EXTERNAL_FILES.equals(tag)) {
+                    int userId = VUserHandle.myUserId();
+                    target = VEnvironment.getExternalStorageDirectory(userId);
+                    /*
                     File[] externalFilesDirs = getExternalFilesDirs(context, null);
                     if (externalFilesDirs.length > 0) {
                         target = externalFilesDirs[0];
                     }
+                    */
                 } else if (TAG_EXTERNAL_CACHE.equals(tag)) {
                     File[] externalCacheDirs = getExternalCacheDirs(context);
                     if (externalCacheDirs.length > 0) {
                         target = externalCacheDirs[0];
+                    }
+                } else if (TAG_EOA_EXTERNAL_CACHE.equals(tag)) {
+                    String pkg = in.getAttributeValue(null, "package");
+                    String subpath = in.getAttributeValue(null, "subpath");
+                    if (pkg != null) {
+                        int userId = VUserHandle.myUserId();
+                        File pkg_root = VEnvironment.getExternalStorageAppDataDir(userId, pkg);
+                        if (subpath != null) {
+                            target = new File(pkg_root, subpath);
+                        }
                     }
                 }
 

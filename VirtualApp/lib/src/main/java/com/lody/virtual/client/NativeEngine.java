@@ -134,7 +134,7 @@ public class NativeEngine {
         }
     }
 
-    static void launchEngine() {
+    public static void launchEngine() {
         if (sFlag) {
             return;
         }
@@ -200,6 +200,8 @@ public class NativeEngine {
     private static native void nativeIOWhitelist(String path);
 
     private static native void nativeIOForbid(String path);
+
+    public static native boolean nativeCloseAllSocket();
 
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
 

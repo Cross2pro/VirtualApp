@@ -218,12 +218,23 @@
         android:name="android.permission.WRITE_APN_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
 
     <application>
+        <!--safekey adapter-->
+        <service android:name="com.xdja.safeclient.TunVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+        </service>
+        <!--safekey adapter-->
+
         <service
             android:name="com.lody.virtual.client.stub.DaemonService"
             android:process="@string/engine_process_name" />
@@ -290,6 +301,23 @@
             android:screenOrientation="portrait"
             android:theme="@style/VAAlertTheme" />
 
+        <activity android:name=".client.stub.InstallerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnCloseSystemDialogs="true"
+            android:process="@string/engine_process_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/InstallerTheme" />
+        <activity android:name=".client.stub.UnInstallerActivity"
+        android:configChanges="keyboard|keyboardHidden|orientation"
+        android:excludeFromRecents="true"
+        android:exported="true"
+        android:finishOnCloseSystemDialogs="true"
+        android:process="@string/engine_process_name"
+        android:screenOrientation="portrait"
+        android:theme="@style/InstallerTheme" />
+
         <provider
             android:name="com.lody.virtual.server.BinderProvider"
             android:authorities="${applicationId}.virtual.service.BinderProvider"
@@ -299,6 +327,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p0"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -306,6 +335,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p1"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -313,6 +343,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p2"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -320,6 +351,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C3"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p3"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -327,6 +359,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C4"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p4"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -334,6 +367,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C5"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p5"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -341,6 +375,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C6"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p6"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -348,6 +383,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C7"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p7"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -355,6 +391,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C8"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p8"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -362,6 +399,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C9"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p9"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -369,6 +407,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C10"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p10"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -376,6 +415,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C11"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p11"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -383,6 +423,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C12"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p12"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -390,6 +431,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C13"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p13"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -397,6 +439,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C14"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p14"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -404,6 +447,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C15"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p15"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -411,6 +455,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C16"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p16"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -418,6 +463,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C17"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p17"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -425,6 +471,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C18"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p18"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -432,6 +479,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C19"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p19"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -439,6 +487,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C20"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p20"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -446,6 +495,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C21"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p21"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -453,6 +503,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C22"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p22"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -460,6 +511,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C23"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p23"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -467,6 +519,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C24"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p24"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -474,6 +527,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C25"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p25"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -481,6 +535,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C26"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p26"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -488,6 +543,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C27"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p27"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -495,6 +551,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C28"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p28"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -502,6 +559,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C29"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p29"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -509,6 +567,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C30"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p30"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -516,6 +575,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C31"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p31"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -523,6 +583,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C32"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p32"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -530,6 +591,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C33"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p33"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -537,7 +599,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C34"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
-
+            android:excludeFromRecents="true"
             android:process=":p34"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -545,6 +607,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C35"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p35"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -552,6 +615,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C36"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p36"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -559,6 +623,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C37"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p37"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -566,6 +631,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C38"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p38"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -573,6 +639,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C39"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p39"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -580,6 +647,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C40"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p40"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -587,6 +655,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C41"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p41"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -594,6 +663,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C42"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p42"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -601,6 +671,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C43"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p43"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -608,6 +679,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C44"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p44"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -615,6 +687,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C45"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p45"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -622,6 +695,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C46"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p46"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -629,6 +703,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C47"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p47"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -636,6 +711,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C48"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p48"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -643,6 +719,7 @@
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C49"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
             android:process=":p49"
             android:taskAffinity="com.lody.virtual.vt"
             android:theme="@style/VATheme" />
@@ -1298,6 +1375,7 @@
             android:process=":p49" />
         <provider
             android:name=".client.stub.StubFileProvider"
+            android:exported="false"
             android:authorities="${applicationId}.virtual.fileprovider"
             android:grantUriPermissions="true">
             <meta-data

@@ -104,6 +104,8 @@ public interface IActivityManager extends IPCInterface {
 
     void notifyBadgerChange(BadgerInfo info) throws RemoteException;
 
+    void closeAllLongSocket(String packageName, int userId) throws RemoteException;
+
     abstract class Stub implements IActivityManager {
         @Override
         public boolean isBinderAlive() {

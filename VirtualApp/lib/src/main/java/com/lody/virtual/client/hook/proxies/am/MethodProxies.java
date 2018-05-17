@@ -28,7 +28,9 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
+import android.webkit.MimeTypeMap;
 
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClientImpl;
@@ -36,6 +38,7 @@ import com.lody.virtual.client.badger.BadgerManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
@@ -43,10 +46,13 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
+import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
+import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -62,6 +68,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
+import com.xdja.zs.controllerManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -342,6 +349,9 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            if(!controllerManager.getActivitySwitch()){
+                return 0;
+            }
             int intentIndex = ArrayUtils.indexOfObject(args, Intent.class, 1);
             if (intentIndex < 0) {
                 return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
@@ -349,31 +359,112 @@ class MethodProxies {
             int resultToIndex = ArrayUtils.indexOfObject(args, IBinder.class, 2);
             String resolvedType = (String) args[intentIndex + 1];
             Intent intent = (Intent) args[intentIndex];
+
+            Log.e("lxf","startActivity intent "+ intent.toString());
+            String action = intent.getAction();
+            if(Intent.ACTION_VIEW.equals(action)&&"*/*".equals(resolvedType)){
+                String suffix = MimeTypeMap.getFileExtensionFromUrl(intent.getDataString());
+                Log.e("lxf","startActivity suffix "+ suffix);
+                if(suffix!=null){
+                    String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix);
+                    if(type!=null)
+                        resolvedType = type;
+                    Log.e("lxf","startActivity resolvedType "+ resolvedType);
+                }
+            }
+
+            Log.e("lxf","startActivity action "+ action);
+            Log.e("lxf","startActivity uri "+ intent.getDataString());
+
             intent.setDataAndType(intent.getData(), resolvedType);
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             int userId = VUserHandle.myUserId();
 
             if (ComponentUtils.isStubComponent(intent)) {
+                Log.e("lxf","startActivity isStubComponent "+ true);
+                Log.e("lxf","startActivity isStubComponent "+ intent.getComponent().getPackageName());
+
                 return method.invoke(who, args);
             }
+
+            //权限管控
+            VAppPermissionManager vAppPermissionManager = VAppPermissionManager.get();
+            boolean appPermissionEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
+                    , VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+            ComponentName component = intent.getComponent();
+            Log.e("geyao", "component packageName: " + (component == null ? "component is null" : component.getPackageName()));
+            Log.e("geyao", "component className: " + (component == null ? "component is null" : component.getClassName()));
+            Log.e("geyao", "component permissionEnable: " + appPermissionEnable);
+            if (component != null && "com.android.systemui".equals(component.getPackageName())
+                    && "com.android.systemui.media.MediaProjectionPermissionActivity".equals(component.getClassName())
+                    && appPermissionEnable) {
+                vAppPermissionManager.interceptorTriggerCallback(getAppPkg(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+                return 0;
+            }
+
+            //xdja swbg
+//            if(getAppPkg() != null && getAppPkg().equals("com.xdja.swbg")
+//                    &&Intent.ACTION_VIEW.equals(intent.getAction())
+//                    &&Intent.FLAG_ACTIVITY_NEW_TASK==intent.getFlags()
+//                    &&intent.getType()!=null&&intent.getType().equals("*/*")){
+//                Log.d("StartActivity", "lxf "+"this is New Task.");
+//
+//                boolean hasWps = false;
+//                List<PackageInfo> listInfos = VPackageManager.get().getInstalledPackages(0, VUserHandle.myUserId());
+//                for (PackageInfo info : listInfos){
+//                    if(info.packageName.equals("cn.wps.moffice_eng")){
+//                        hasWps = true;
+//                        break;
+//                    }
+//                }
+//
+//                Log.d("StartActivity", "lxf hasWps "+hasWps);
+//                if(hasWps){
+//                    intent.setClassName("cn.wps.moffice_eng",
+//                            "cn.wps.moffice.documentmanager.PreStartActivity");
+//                }else{
+//                    CharSequence tips = "Not Have WPS!";
+//                    android.widget.Toast toast = Toast.makeText.call(getHostContext(), R.string.noApplications,Toast.LENGTH_SHORT);
+//
+//                    Log.d("StartActivity", "lxf toast "+toast);
+//                    toast.show();
+//                    return 0;
+//                }
+//            }
+            //xdja
 
             if (Intent.ACTION_INSTALL_PACKAGE.equals(intent.getAction())
                     || (Intent.ACTION_VIEW.equals(intent.getAction())
                     && "application/vnd.android.package-archive".equals(intent.getType()))) {
-                if (handleInstallRequest(intent)) {
+                /*if (handleInstallRequest(intent)) {
                     return 0;
-                }
+                }*/
+                intent.putExtra("source_apk", VirtualRuntime.getInitialPackageName());
+                intent.putExtra("installer_path", parseInstallRequest(intent));
+                intent.setComponent(new ComponentName(getHostContext(), InstallerActivity.class));
+                intent.setData(null);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                return method.invoke(who, args);
             } else if ((Intent.ACTION_UNINSTALL_PACKAGE.equals(intent.getAction())
                     || Intent.ACTION_DELETE.equals(intent.getAction()))
                     && "package".equals(intent.getScheme())) {
-
-                if (handleUninstallRequest(intent)) {
+                /*if (handleUninstallRequest(intent)) {
                     return 0;
+                }*/
+                String pkg = "";
+                Uri packageUri = intent.getData();
+                if (SCHEME_PACKAGE.equals(packageUri.getScheme())) {
+                    pkg = packageUri.getSchemeSpecificPart();
                 }
+                intent.putExtra("uninstall_app",pkg);
+                intent.setComponent(new ComponentName(getHostContext(), UnInstallerActivity.class));
+                intent.setData(null);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                return method.invoke(who, args);
             }
 
             String resultWho = null;
-            int requestCode = 0;
+            int requestCode = -1;
             Bundle options = ArrayUtils.getFirst(args, Bundle.class);
             if (resultTo != null) {
                 resultWho = (String) args[resultToIndex + 1];
@@ -401,7 +492,7 @@ class MethodProxies {
 
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
-                VLog.e("VActivityManager", "Unable to resolve activityInfo : " + intent);
+                VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
                 if (intent.getPackage() != null && isAppPkg(intent.getPackage())) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
@@ -409,6 +500,7 @@ class MethodProxies {
                 args[intentIndex] = UriCompat.fakeFileUri(intent);
                 return method.invoke(who, args);
             }
+            UriCompat.fakeFileUri(intent);
             int res = VActivityManager.get().startActivity(intent, activityInfo, resultTo, options, resultWho, requestCode, VUserHandle.myUserId());
             if (res != 0 && resultTo != null && requestCode > 0) {
                 VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
@@ -439,7 +531,38 @@ class MethodProxies {
             return res;
         }
 
+        private String parseInstallRequest(Intent intent){
+            Uri packageUri = intent.getData();
+            String path = null;
+            if (SCHEME_FILE.equals(packageUri.getScheme())) {
 
+                File sourceFile = new File(packageUri.getPath());
+                path = NativeEngine.getRedirectedPath(sourceFile.getAbsolutePath());
+                VLog.e("wxd", " parseInstallRequest path : " + path);
+            }else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
+                InputStream inputStream = null;
+                OutputStream outputStream = null;
+                File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
+                try {
+                    inputStream = getHostContext().getContentResolver().openInputStream(packageUri);
+                    outputStream = new FileOutputStream(sharedFileCopy);
+                    byte[] buffer = new byte[1024];
+                    int count;
+                    while ((count = inputStream.read(buffer)) > 0) {
+                        outputStream.write(buffer, 0, count);
+                    }
+                    outputStream.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    FileUtils.closeQuietly(inputStream);
+                    FileUtils.closeQuietly(outputStream);
+                }
+                path = sharedFileCopy.getPath();
+                VLog.e("wxd", " parseInstallRequest sharedFileCopy path : " + path);
+            }
+            return path;
+        }
         private boolean handleInstallRequest(Intent intent) {
             IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
             if (listener != null) {
@@ -534,6 +657,24 @@ class MethodProxies {
         @Override
         public String getMethodName() {
             return "finishActivity";
+        }
+
+        @Override
+        public boolean beforeCall(Object who, Method method, Object... args) {
+            for (Object o:args) {
+                if (o instanceof Intent) {
+                    Intent intent = (Intent)o;
+                    Uri u = intent.getData();
+                    if (u!=null)
+                    {
+                        Uri newurl = UriCompat.fakeFileUri(u);
+                        if (newurl != null) {
+                            intent.setDataAndType(newurl, intent.getType());
+                        }
+                    }
+                }
+            }
+            return super.beforeCall(who, method, args);
         }
 
         @Override
@@ -664,6 +805,15 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+//            for (int i = 0; i < args.length; i++) {
+//                Object obj = args[i];
+//                if (obj instanceof Uri) {
+//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+//                    if (uri != null) {
+//                        args[i] = uri;
+//                    }
+//                }
+//            }
             return method.invoke(who, args);
         }
 
@@ -682,7 +832,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.DISABLE_FOREGROUND_SERVICE){
+            if (VASettings.DISABLE_FOREGROUND_SERVICE) {
                 return 0;
             }
             ComponentName component = (ComponentName) args[0];
@@ -711,7 +861,8 @@ class MethodProxies {
              * which will throw an exception on :x process thus crash the application
              */
             if (notification != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung"))) {
+                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung")
+                        ||Build.BRAND.equalsIgnoreCase("HUAWEI") || Build.MANUFACTURER.equalsIgnoreCase("HUAWEI"))) {
                 notification.icon = getHostContext().getApplicationInfo().icon;
                 Icon icon = Icon.createWithResource(getHostPkg(), notification.icon);
                 Reflect.on(notification).call("setSmallIcon", icon);
@@ -806,7 +957,7 @@ class MethodProxies {
          */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(VASettings.GOOGLE_SUPPOER) {
+            if (VASettings.GOOGLE_SUPPOER) {
                 int intentIndex;
                 int resultToIndex;
                 int resultWhoIndex;
@@ -1275,6 +1426,13 @@ class MethodProxies {
 
             public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered,
                                        boolean sticky, int sendingUser) throws RemoteException {
+                //解决税信灭屏幕启动Activity
+                if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)){
+                    controllerManager.setActivitySwitch(false);
+                }else if(intent.getAction().equals(Intent.ACTION_SCREEN_ON)){
+                    controllerManager.setActivitySwitch(true);
+                }
+
                 if (!accept(intent)) {
                     return;
                 }
@@ -1652,7 +1810,33 @@ class MethodProxies {
         }
     }
 
+    static class GrantUriPermission extends MethodProxy {
 
+        @Override
+        public String getMethodName() {
+            return "grantUriPermission";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            MethodParameterUtils.replaceFirstAppPkg(args);
+            for (int i = 0; i < args.length; i++) {
+                Object obj = args[i];
+                if (obj instanceof Uri) {
+                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+                    if (uri != null) {
+                        args[i] = uri;
+                    }
+                }
+            }
+            return method.invoke(who, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
     static class CheckGrantUriPermission extends MethodProxy {
 
         @Override
@@ -1663,6 +1847,15 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+//            for (int i = 0; i < args.length; i++) {
+//                Object obj = args[i];
+//                if (obj instanceof Uri) {
+//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+//                    if (uri != null) {
+//                        args[i] = uri;
+//                    }
+//                }
+//            }
             return method.invoke(who, args);
         }
 
@@ -1707,11 +1900,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VClientImpl.get().isOutSideDiff()) {
+            /*if (VClientImpl.get().isOutSideDiff()) {
                 //apk res
                 return 0;
             }
-            return super.call(who, method, args);
+            return super.call(who, method, args);*/
+            return 0;
         }
     }
 }

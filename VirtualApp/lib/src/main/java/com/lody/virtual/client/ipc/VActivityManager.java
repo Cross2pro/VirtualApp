@@ -473,4 +473,14 @@ public class VActivityManager {
             VirtualRuntime.crash(e);
         }
     }
+
+    public void closeAllLongSocket(String packageName, int userId) {
+        try {
+            getService().closeAllLongSocket(packageName, userId);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+
 }

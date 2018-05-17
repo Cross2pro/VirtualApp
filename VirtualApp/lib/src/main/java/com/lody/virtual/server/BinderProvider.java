@@ -17,16 +17,19 @@ import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.apppermission.VAppPermissionManagerService;
 import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IAccountManager;
 import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IAppManager;
+import com.lody.virtual.server.interfaces.IAppPermissionManager;
 import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 import com.lody.virtual.server.interfaces.IJobService;
 import com.lody.virtual.server.interfaces.INotificationManager;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
 import com.lody.virtual.server.interfaces.IUserManager;
+import com.lody.virtual.server.interfaces.IVSafekeyManager;
 import com.lody.virtual.server.interfaces.IVirtualLocationManager;
 import com.lody.virtual.server.interfaces.IVirtualStorageService;
 import com.lody.virtual.server.job.VJobSchedulerService;
@@ -35,9 +38,10 @@ import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
+import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
-
-import mirror.android.app.job.IJobScheduler;
+import com.xdja.zs.IController;
+import com.xdja.zs.controllerService;
 
 /**
  * @author Lody
@@ -73,6 +77,11 @@ public final class BinderProvider extends ContentProvider {
         VDeviceManagerService.systemReady(context);
         IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
         IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        VSafekeyManagerService.systemReady(context);
+        IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
+        IPCBus.register(IController.class, controllerService.get());
+        VAppPermissionManagerService.systemReady();
+        IPCBus.register(IAppPermissionManager.class, VAppPermissionManagerService.get());
         return true;
     }
 
