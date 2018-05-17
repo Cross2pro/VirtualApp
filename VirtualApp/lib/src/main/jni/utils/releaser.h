@@ -10,7 +10,7 @@
 
 template <class T> class releaser
 {
-#define TIME_OUT 6//0 * 2
+#define TIME_OUT 60
 private:
     std::map<T*, time_t> record;
     Mutex lock;
