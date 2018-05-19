@@ -131,17 +131,25 @@ void doFileTrace(const char* path, char* operation)
 }
 
 const char* EncryptPathMap[] =
-        {"/sdcard/",
-        "/storage/"};
+        {
+                "/data/data/io.virtualapp/virtual/storage",
+                "/data/user/0/io.virtualapp/virtual/storage/emulated"
+        };
 
 bool isEncryptPath(const char *_path) {
 
+    bool result = false;
     for(int i = 0; i < sizeof(EncryptPathMap)/sizeof(EncryptPathMap[0]); i++)
     {
-        if(startWith(std::string(_path), std::string(EncryptPathMap[i])))
-            return true;
+        if(startWith(std::string(_path), std::string(EncryptPathMap[i]))) {
+            result = true;
+            break;
+        }
     }
-    return false;
+
+    slog("%s isEncryptPath %s", _path, result == 1 ? "true" : "false");
+
+    return result;
 }
 
 const char * magicPath[] = {
