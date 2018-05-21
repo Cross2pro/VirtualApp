@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -877,6 +878,22 @@ public class VActivityManagerService extends IActivityManager.Stub {
         synchronized (mPidsSelfLocked) {
             for (int i = 0; i < mPidsSelfLocked.size(); i++) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(i);
+                ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
+                synchronized (mHistory)
+                {
+                    for (ServiceRecord sr : mHistory) {
+                        if (sr.process == r)
+                        {
+                            tmprecord.add(sr);
+                        }
+                    }
+                }
+                for(ServiceRecord tsr : tmprecord)
+                {
+                    Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
+                    stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
+                }
+                Log.e("wxd", " killAllApps " + r.processName + " pid : " + r.pid);
                 killProcess(r.pid);
             }
         }
@@ -911,10 +928,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
                         for(ServiceRecord tsr : tmprecord)
                         {
-                            Log.e("zhangsong", "kill service " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
+                            Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
                             stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
                         }
-                        Log.e("wxd", " killProcess  " + r.pid);
+                        Log.e("wxd", " killAppByPkg  " + r.pid);
                         killProcess(r.pid);
                     }
                 }
@@ -929,12 +946,31 @@ public class VActivityManagerService extends IActivityManager.Stub {
             int N = mPidsSelfLocked.size();
             while (N-- > 0) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(N);
+
                 if (r.userId == userId && r.info.packageName.equals(packageName)) {
                     running = true;
                     break;
                 }
             }
             return running;
+        }
+    }
+
+    @Override
+    public int getRunningAppMemorySize(String packageName, int userId) throws RemoteException {
+        synchronized (mPidsSelfLocked) {
+            int size = 0;
+            int N = mPidsSelfLocked.size();
+            while (N-- > 0) {
+                ProcessRecord r = mPidsSelfLocked.valueAt(N);
+                if (r.userId == userId && r.info.packageName.equals(packageName)) {
+                    int[] pids = new int[] {r.pid};
+                    Debug.MemoryInfo[] memoryInfo = am.getProcessMemoryInfo(pids);
+                    size = size + memoryInfo[0].dalvikPrivateDirty;
+                }
+            }
+            Log.i("wxd", " getRunningAppMemorySize : " + size);
+            return size;
         }
     }
 
