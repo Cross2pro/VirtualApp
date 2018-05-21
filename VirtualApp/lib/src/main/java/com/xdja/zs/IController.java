@@ -11,6 +11,7 @@ import com.lody.virtual.server.interfaces.IPCInterface;
 public interface IController extends IPCInterface {
 
     boolean isNetworkEnable(String packageName) throws RemoteException;
+    boolean isCameraEnable(String packageName) throws RemoteException;
     boolean isGatewayEnable(String packageName) throws RemoteException;
     boolean isChangeConnect(String packageName, int port, String ip) throws RemoteException;
 

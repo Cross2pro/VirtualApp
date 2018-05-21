@@ -54,6 +54,11 @@ public class controllerService extends IController.Stub {
     }
 
     @Override
+    public boolean isCameraEnable(String packageName) throws RemoteException {
+        return true;
+    }
+
+    @Override
     public boolean isGatewayEnable(String packageName) throws RemoteException {
         boolean ret = false;
 
