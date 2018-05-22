@@ -3,7 +3,7 @@ package com.lody.virtual.server.apppermission;
 import android.content.ClipData;
 import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
-import android.util.Log;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VAppPermissionManager;
@@ -63,6 +63,18 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
     }
 
     /**
+     * 是否支持加解密
+     *
+     * @param packageName 应用名称
+     * @return 是否支持加解密 true:支持 false:不支持
+     */
+    @Override
+    public boolean isSupportEncrypt(String packageName) {
+        return !TextUtils.isEmpty(packageName) &&
+                (packageName.equals("com.tencent.mm") || packageName.equals("cn.wps.moffice_eng"));
+    }
+
+    /**
      * 清除权限数据
      */
     @Override
@@ -78,16 +90,12 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     @Override
     public void setAppPermission(String packageName, String appPermissionName, boolean isPermissionOpen) {
-        Log.e(TAG, "setAppPermission packageName: " + packageName);
-        Log.e(TAG, "setAppPermission appPermissionName: " + appPermissionName);
-        Log.e(TAG, "setAppPermission isPermissionOpen: " + isPermissionOpen);
         //若策略是关闭网络 则关闭应用进程的socket长链接
         if (VAppPermissionManager.PROHIBIT_NETWORK.equals(appPermissionName) && isPermissionOpen) {
-            Log.e(TAG, "close long socket packageName: " + packageName);
+            VLog.e(TAG, "close long socket packageName: " + packageName);
             VActivityManager.get().closeAllLongSocket(packageName, 0);
         }
         functionMaps.put(buildKey(packageName, appPermissionName), isPermissionOpen);
-        Log.e(TAG, "setAppPermission functionMaps: " + functionMaps.toString());
     }
 
     /**
@@ -97,16 +105,13 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * @return 应用权限开关状态
      */
     @Override
-    public boolean getAppPermissionEnable(String packageName, String appPermissionName) throws RemoteException {
-        Log.e(TAG, "getAppPermissionEnable packageName: " + packageName);
-        Log.e(TAG, "getAppPermissionEnable appPermissionName: " + appPermissionName);
-        Log.e(TAG, functionMaps == null ? "getAppPermissionEnable map is null" : "getAppPermissionEnable map: " + functionMaps.toString());
+    public boolean getAppPermissionEnable(String packageName, String appPermissionName) {
         Boolean aBoolean = functionMaps.get(buildKey(packageName, appPermissionName));
         if (aBoolean == null) {
-            Log.e(TAG, "result is null return false");
+            VLog.e(TAG, "result is null return false");
             return false;
         }
-        Log.e(TAG, "result: " + aBoolean);
+        VLog.e(TAG, "result: " + aBoolean);
         return aBoolean;
     }
 
@@ -116,8 +121,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * @param iAppPermissionCallback 监听
      */
     @Override
-    public void registerCallback(IAppPermissionCallback iAppPermissionCallback) throws RemoteException {
-        VLog.e(TAG, "registerCallback");
+    public void registerCallback(IAppPermissionCallback iAppPermissionCallback) {
         if (iAppPermissionCallback == null) {
             this.iAppPermissionCallback = null;
             return;
@@ -129,8 +133,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * 解除监听注册
      */
     @Override
-    public void unregisterCallback() throws RemoteException {
-        VLog.e(TAG, "unregisterCallback");
+    public void unregisterCallback() {
         iAppPermissionCallback = null;
     }
 
@@ -142,9 +145,8 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     @Override
     public void interceptorTriggerCallback(String appPackageName, String permissionName) throws RemoteException {
-        Log.d(TAG, "interceptorTriggerCallback appPackageName: " + appPackageName + " permissionName: " + permissionName);
         if (iAppPermissionCallback == null) {
-            Log.d(TAG, "callback is null");
+            VLog.d(TAG, "callback is null");
             return;
         }
         iAppPermissionCallback.onPermissionTrigger(appPackageName, permissionName);
@@ -156,8 +158,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * @param clipData 剪切板信息
      */
     @Override
-    public void cacheClipData(ClipData clipData) throws RemoteException {
-        Log.d(TAG, "cacheClipData clipData: " + (clipData == null ? "is null" : clipData.toString()));
+    public void cacheClipData(ClipData clipData) {
         clipDataCache = clipData;
     }
 
@@ -167,8 +168,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * @return 剪切板信息
      */
     @Override
-    public ClipData getClipData() throws RemoteException {
-        Log.d(TAG, "getClipData clipDataCache: " + (clipDataCache == null ? "is null" : clipDataCache.toString()));
+    public ClipData getClipData() {
         return clipDataCache;
     }
 
@@ -178,8 +178,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * @param listener 监听
      */
     @Override
-    public void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) throws RemoteException {
-        Log.d(TAG, "cachePrimaryClipChangedListener");
+    public void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) {
         pcListener = listener;
     }
 
@@ -188,7 +187,6 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     @Override
     public void callPrimaryClipChangedListener() throws RemoteException {
-        Log.d(TAG, "callPrimaryClipChangedListener pcListener: " + (pcListener == null ? " listener is null " : " listener is not null"));
         if (pcListener == null) {
             return;
         }
@@ -199,8 +197,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      * 移除剪切板数据改变监听
      */
     @Override
-    public void removePrimaryClipChangedListener() throws RemoteException {
-        Log.d(TAG, "removePrimaryClipChangedListener");
+    public void removePrimaryClipChangedListener() {
         pcListener = null;
     }
 

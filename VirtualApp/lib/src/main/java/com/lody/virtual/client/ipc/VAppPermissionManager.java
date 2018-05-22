@@ -3,10 +3,10 @@ package com.lody.virtual.client.ipc;
 import android.content.ClipData;
 import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.interfaces.IAppPermissionCallback;
 import com.lody.virtual.server.interfaces.IAppPermissionManager;
 
@@ -55,9 +55,25 @@ public class VAppPermissionManager {
      * @return 是否是支持的权限
      */
     public boolean isSupportPermission(String permissionName) {
-        Log.d(TAG, "isSupportPermission permissionName: " + permissionName);
+        VLog.d(TAG, "isSupportPermission permissionName: " + permissionName);
         try {
             return getService().isSupportPermission(permissionName);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 是否支持加解密
+     *
+     * @param packageName 应用名称
+     * @return 是否支持加解密 true:支持 false:不支持
+     */
+    public boolean isSupportEncrypt(String packageName) {
+        VLog.d(TAG, "isSupportEncrypt packageName: " + packageName);
+        try {
+            return getService().isSupportEncrypt(packageName);
         } catch (RemoteException e) {
             e.printStackTrace();
             return VirtualRuntime.crash(e);
@@ -68,7 +84,7 @@ public class VAppPermissionManager {
      * 清除权限信息
      */
     public void clearPermissionData() {
-        Log.d(TAG, "clearPermissionData");
+        VLog.d(TAG, "clearPermissionData");
         try {
             getService().clearPermissionData();
         } catch (RemoteException e) {
@@ -85,7 +101,7 @@ public class VAppPermissionManager {
      * @param isPermissionOpen  权限开关
      */
     public void setAppPermission(String packageName, String appPermissionName, boolean isPermissionOpen) {
-        Log.d(TAG, "setAppPermission packageName: " + packageName + " appPermissionName: " + appPermissionName + " isPermissionOpen: " + isPermissionOpen);
+        VLog.d(TAG, "setAppPermission packageName: " + packageName + " appPermissionName: " + appPermissionName + " isPermissionOpen: " + isPermissionOpen);
         try {
             getService().setAppPermission(packageName, appPermissionName, isPermissionOpen);
         } catch (RemoteException e) {
@@ -102,10 +118,10 @@ public class VAppPermissionManager {
      * @return 权限开关状态
      */
     public boolean getAppPermissionEnable(String packageName, String appPermissionName) {
-        Log.d(TAG, "getAppPermissionEnable packageName: " + packageName + " appPermissionName: " + appPermissionName);
+        VLog.d(TAG, "getAppPermissionEnable packageName: " + packageName + " appPermissionName: " + appPermissionName);
         try {
             boolean appPermissionEnable = getService().getAppPermissionEnable(packageName, appPermissionName);
-            Log.d(TAG, "getAppPermissionEnable result: " + appPermissionEnable);
+            VLog.d(TAG, "getAppPermissionEnable result: " + appPermissionEnable);
             return appPermissionEnable;
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -119,7 +135,7 @@ public class VAppPermissionManager {
      * @param iAppPermissionCallback 回调监听
      */
     public void registerCallback(IAppPermissionCallback iAppPermissionCallback) {
-        Log.d(TAG, "registerCallback");
+        VLog.d(TAG, "registerCallback");
         try {
             getService().registerCallback(iAppPermissionCallback);
         } catch (RemoteException e) {
@@ -132,7 +148,7 @@ public class VAppPermissionManager {
      * 接触回调监听注册
      */
     public void unregisterCallback() {
-        Log.d(TAG, "unregisterCallback");
+        VLog.d(TAG, "unregisterCallback");
         try {
             getService().unregisterCallback();
         } catch (RemoteException e) {
@@ -148,7 +164,7 @@ public class VAppPermissionManager {
      * @param permissionName 权限名称
      */
     public void interceptorTriggerCallback(String appPackageName, String permissionName) {
-        Log.d(TAG, "interceptorTriggerCallback");
+        VLog.d(TAG, "interceptorTriggerCallback");
         try {
             getService().interceptorTriggerCallback(appPackageName, permissionName);
         } catch (RemoteException e) {
@@ -163,7 +179,7 @@ public class VAppPermissionManager {
      * @param clipData 剪切板信息
      */
     public void cacheClipData(ClipData clipData) {
-        Log.d(TAG, "cacheClipData");
+        VLog.d(TAG, "cacheClipData");
         try {
             getService().cacheClipData(clipData);
         } catch (RemoteException e) {
@@ -176,7 +192,7 @@ public class VAppPermissionManager {
      * 获取缓存的剪切板信息
      */
     public ClipData getClipData() {
-        Log.d(TAG, "getClipData");
+        VLog.d(TAG, "getClipData");
         try {
             return getService().getClipData();
         } catch (RemoteException e) {
@@ -191,7 +207,7 @@ public class VAppPermissionManager {
      * @param listener 监听
      */
     public void cachePrimaryClipChangedListener(IOnPrimaryClipChangedListener listener) {
-        Log.d(TAG, "cachePrimaryClipChangedListener");
+        VLog.d(TAG, "cachePrimaryClipChangedListener");
         try {
             getService().cachePrimaryClipChangedListener(listener);
         } catch (RemoteException e) {
@@ -204,7 +220,7 @@ public class VAppPermissionManager {
      * 响应剪切板数据改变监听
      */
     public void callPrimaryClipChangedListener() {
-        Log.d(TAG, "callPrimaryClipChangedListener");
+        VLog.d(TAG, "callPrimaryClipChangedListener");
         try {
             getService().callPrimaryClipChangedListener();
         } catch (RemoteException e) {
@@ -217,7 +233,7 @@ public class VAppPermissionManager {
      * 移除剪切板数据改变监听
      */
     public void removePrimaryClipChangedListener() {
-        Log.d(TAG, "removePrimaryClipChangedListener");
+        VLog.d(TAG, "removePrimaryClipChangedListener");
         try {
             getService().removePrimaryClipChangedListener();
         } catch (RemoteException e) {
