@@ -25,6 +25,10 @@ public class VAppPermissionManager {
      */
     public static final String PROHIBIT_NETWORK = "禁止使用网络";
     /**
+     * 禁止使用摄像头
+     */
+    public static final String PROHIBIT_CAMERA = "禁止使用摄像头";
+    /**
      * 启用应用界面水印功能
      */
     public static final String ALLOW_WATER_MARK = "启用水印功能";
@@ -35,6 +39,7 @@ public class VAppPermissionManager {
     public static final String[] permissions = new String[]{
             PROHIBIT_SCREEN_SHORT_RECORDER,//禁止对此应用进行截屏or录屏
             PROHIBIT_NETWORK,//禁止使用网络
+            PROHIBIT_CAMERA,//禁止使用摄像头
             ALLOW_WATER_MARK//启用应用界面水印功能
     };
     private static final VAppPermissionManager sInstance = new VAppPermissionManager();

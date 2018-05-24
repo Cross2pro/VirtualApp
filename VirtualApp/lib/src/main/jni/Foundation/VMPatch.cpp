@@ -199,6 +199,10 @@ static jint new_native_cameraNativeSetupFunc_T2(JNIEnv *env, jobject thiz, jobje
 static jint new_native_cameraNativeSetupFunc_T3(JNIEnv *env, jobject thiz, jobject camera_this,
                                                 jint cameraId, jint halVersion,
                                                 jstring packageName, jboolean option) {
+    if (!controllerManagerNative::isCameraEnable()) {
+        ALOGE("cameraNativeSetupFunc");
+        return -19;
+    }
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
     return patchEnv.orig_native_cameraNativeSetupFunc.t3(env, thiz, camera_this, cameraId,
                                                          halVersion, host, option);
@@ -213,6 +217,10 @@ static jint new_native_cameraNativeSetupFunc_T4(JNIEnv *env, jobject thiz, jobje
 }
 
 static void new_native_cameraStartPreviewFunc(JNIEnv *env, jobject thiz) {
+    if (!controllerManagerNative::isCameraEnable()) {
+        ALOGE("cameraStartPreviewFunc");
+        return;
+    }
     patchEnv.orig_native_cameraStartPreviewFunc(env, thiz);
 }
 

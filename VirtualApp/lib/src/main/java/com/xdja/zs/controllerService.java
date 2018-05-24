@@ -55,7 +55,16 @@ public class controllerService extends IController.Stub {
 
     @Override
     public boolean isCameraEnable(String packageName) throws RemoteException {
-        return true;
+        VAppPermissionManager vapm = VAppPermissionManager.get();
+        boolean appPermissionEnable = vapm.getAppPermissionEnable(packageName,
+                VAppPermissionManager.PROHIBIT_CAMERA);
+        Log.e(Tag, "isCameraEnable getAppPermissionEnable : " + packageName + " " + appPermissionEnable);
+        if (appPermissionEnable) {
+            vapm.interceptorTriggerCallback(packageName, VAppPermissionManager.PROHIBIT_CAMERA);
+        }
+        boolean ret = !appPermissionEnable;
+        Log.e(Tag, "isCameraEnable : " + packageName + " " + ret);
+        return ret;
     }
 
     @Override
@@ -103,7 +112,7 @@ public class controllerService extends IController.Stub {
         activitySwitchFlag = switchFlag;
     }
 
-    private static void setIPMAP(){
+    private static void setIPMAP() {
         String serverip_6 = "::ffff:120.194.4.131";
         String serverip_4 = "120.194.4.131";
         IPMAP.put("com.xdja.jxclient", JXIP_list);
