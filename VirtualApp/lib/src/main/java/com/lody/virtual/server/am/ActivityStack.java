@@ -11,10 +11,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
@@ -201,6 +203,27 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
+    void finishAllActivity(ProcessRecord record) {
+        synchronized (mHistory) {
+            int N = mHistory.size();
+            while (N-- > 0) {
+                TaskRecord task = mHistory.valueAt(N);
+                synchronized (task.activities) {
+                    for (ActivityRecord r : task.activities) {
+                        if (r.process.pid == record.pid) {
+                            Log.e("wxd", " finishActivity : " + r.component);
+                            try {
+                                task.activities.remove(r);
+                                r.process.client.finishActivity(r.token);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder token, Bundle options) {
         optimizeTasksLocked();

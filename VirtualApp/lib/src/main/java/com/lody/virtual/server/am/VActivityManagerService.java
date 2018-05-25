@@ -234,6 +234,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
+    public void finishAllActivity(ProcessRecord record) {
+        mMainStack.finishAllActivity(record);
+    }
+
 
     @Override
     public IBinder acquireProviderClient(int userId, ProviderInfo info) {
@@ -877,24 +881,27 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public void killAllApps() {
         synchronized (mPidsSelfLocked) {
             for (int i = 0; i < mPidsSelfLocked.size(); i++) {
-                ProcessRecord r = mPidsSelfLocked.valueAt(i);
-                ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
-                synchronized (mHistory)
-                {
-                    for (ServiceRecord sr : mHistory) {
-                        if (sr.process == r)
-                        {
-                            tmprecord.add(sr);
+                try {
+                    ProcessRecord r = mPidsSelfLocked.valueAt(i);
+                    ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
+                    synchronized (mHistory) {
+                        for (ServiceRecord sr : mHistory) {
+                            if (sr.process == r) {
+                                tmprecord.add(sr);
+                            }
                         }
                     }
+                    for (ServiceRecord tsr : tmprecord) {
+                        Log.e("wxd", " killService " + tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
+                        stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
+                    }
+                    Log.e("wxd", " killAllApps " + r.processName + " pid : " + r.pid);
+                    r.client.clearSettingProvider();
+                    finishAllActivity(r);
+                    killProcess(r.pid);
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
-                for(ServiceRecord tsr : tmprecord)
-                {
-                    Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
-                    stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
-                }
-                Log.e("wxd", " killAllApps " + r.processName + " pid : " + r.pid);
-                killProcess(r.pid);
             }
         }
     }
@@ -915,24 +922,31 @@ public class VActivityManagerService extends IActivityManager.Stub {
                         }
                     }
                     if (r.pkgList.contains(pkg)) {
-                        ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
-                        synchronized (mHistory)
-                        {
-                            for (ServiceRecord sr : mHistory) {
-                                if (sr.process == r)
-                                {
-                                    tmprecord.add(sr);
+                        try {
+                            ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
+                            synchronized (mHistory)
+                            {
+                                for (ServiceRecord sr : mHistory) {
+                                    if (sr.process == r)
+                                    {
+                                        tmprecord.add(sr);
+                                    }
                                 }
                             }
+                            for(ServiceRecord tsr : tmprecord)
+                            {
+                                Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
+                                stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
+                            }
+                            Log.e("wxd", " killAppByPkg  " + r.pid);
+
+                            r.client.clearSettingProvider();
+                            finishAllActivity(r);
+                            killProcess(r.pid);
+                        }catch (Exception e){
+                            e.printStackTrace();
                         }
 
-                        for(ServiceRecord tsr : tmprecord)
-                        {
-                            Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
-                            stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
-                        }
-                        Log.e("wxd", " killAppByPkg  " + r.pid);
-                        killProcess(r.pid);
                     }
                 }
             }

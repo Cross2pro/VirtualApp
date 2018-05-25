@@ -8,13 +8,14 @@ import com.lody.virtual.remote.AppTaskInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Lody
  */
 
 class TaskRecord {
-    public final List<ActivityRecord> activities = Collections.synchronizedList(new ArrayList<ActivityRecord>());
+    public final List<ActivityRecord> activities = Collections.synchronizedList(new CopyOnWriteArrayList<ActivityRecord>());
     public int taskId;
     public int userId;
     public String affinity;
