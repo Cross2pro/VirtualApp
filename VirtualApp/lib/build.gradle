@@ -14,7 +14,7 @@ android {
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + version + '"'
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi", "armeabi-v7a", "x86"
+                abiFilters "armeabi-v7a"
             }
         }
     }
