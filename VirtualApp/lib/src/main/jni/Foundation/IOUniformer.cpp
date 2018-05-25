@@ -1425,11 +1425,23 @@ HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     return ret;
 }
 
+HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
+{
+    slog_wx("%s", _log);
+
+    orig_xlogger_Write(_info, _log);
+}
+
 __END_DECLS
 // end IO DEF
 
 
 void onSoLoaded(const char *name, void *handle) {
+    if(strcmp(name, "/data/user/0/io.virtualapp/virtual/data/app/com.tencent.mm/lib/libwechatxlog.so") == 0) {
+
+            slog("fuck, hook libwechatxlog");
+            HOOK_SYMBOL(handle, xlogger_Write);
+    }
 }
 
 int findSymbol(const char *name, const char *libn,
@@ -1535,6 +1547,7 @@ void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_
         }
         dlclose(handle);
     }
+
     hook_dlopen(api_level);
 
     originalInterface::original_lseek = orig_lseek;
