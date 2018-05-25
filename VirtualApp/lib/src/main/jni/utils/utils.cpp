@@ -5,18 +5,44 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <linux/fcntl.h>
+#include <string>
+#include <list>
 #include <fcntl.h>
 #include <dirent.h>
 #include <sys/socket.h>
 #include <cstdlib>
-#include "utils.h"
-#include "controllerManagerNative.h"
-#include "mylog.h"
 #include <string.h>
+
+#include "transparentED/originalInterface.h"
+#include "utils.h"
+#include "mylog.h"
+#include "controllerManagerNative.h"
+
+static inline bool startWith(const std::string &str, const std::string &prefix) {
+    return str.compare(0, prefix.length(), prefix) == 0;
+}
+
 
 static int my_readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
     int ret = syscall(__NR_readlinkat, dirfd, pathname, buf, bufsiz);
     return ret;
+}
+
+bool getSelfProcessName(zString & name)
+{
+    int fd = originalInterface::original_openat(AT_FDCWD, "/proc/self/cmdline", O_RDONLY, 0);
+    if(!fd)
+        return false;
+
+    int len = originalInterface::original_read(fd, name.getBuf(), name.getSize());
+    if(len <= 0) {
+        originalInterface::original_close(fd);
+        return false;
+    }
+
+    originalInterface::original_close(fd);
+
+    return true;
 }
 
 bool getPathFromFd(int fd, zString & path) {
@@ -28,6 +54,126 @@ bool getPathFromFd(int fd, zString & path) {
     }
 
     return ret > 0;
+}
+
+const char * TED_packageVector[] =
+        {
+                "com.tencent.mm",
+                "cn.wps.moffice"
+        };
+
+bool is_TED_Enable()
+{
+    static int temp_result = -1;
+    zString pname;
+
+    if(!getSelfProcessName(pname))
+    {
+        slog("getSelfProcessName fail !");
+        return false;
+    }
+
+    if(temp_result == -1)
+    {
+        temp_result = 0;
+
+        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
+            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
+                temp_result = 1;
+                break;
+            }
+        }
+
+        slog("%s is_TED_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
+    }
+
+    return temp_result == 1;
+}
+
+const char * FT_packageVector[] =
+        {
+                "com.tencent.mm",
+                "cn.wps.moffice"
+        };
+
+static bool is_FT_Enable()
+{
+    static int temp_result = -1;
+    zString pname;
+
+    if(!getSelfProcessName(pname))
+    {
+        slog("getSelfProcessName fail !");
+        return false;
+    }
+
+    if(temp_result == -1)
+    {
+        temp_result = 0;
+
+        for(int i = 0; i < sizeof(FT_packageVector)/sizeof(FT_packageVector[0]); i++) {
+            if (startWith(std::string(pname.toString()), std::string(FT_packageVector[i]))) {
+                temp_result = 1;
+                break;
+            }
+        }
+
+        slog("%s is_FT_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
+    }
+
+    return temp_result == 1;
+}
+
+void doFileTrace(const char* path, char* operation)
+{
+    if(is_FT_Enable())
+        slog("%s %s", path, operation);
+}
+
+const char* EncryptPathMap[] =
+        {
+                "/data/data/io.virtualapp/virtual/storage",
+                "/data/user/0/io.virtualapp/virtual/storage/emulated"
+        };
+
+bool isEncryptPath(const char *_path) {
+
+    bool result = false;
+    for(int i = 0; i < sizeof(EncryptPathMap)/sizeof(EncryptPathMap[0]); i++)
+    {
+        if(startWith(std::string(_path), std::string(EncryptPathMap[i]))) {
+            result = true;
+            break;
+        }
+    }
+
+    slog("%s isEncryptPath %s", _path, result == 1 ? "true" : "false");
+
+    return result;
+}
+
+const char * magicPath[] = {
+        "/data/user/0/io.virtualapp/files/magic.mgc"
+        //"/system/magic.mgc",
+
+};
+
+const char * getMagicPath()
+{
+    for(int i = 0; i < sizeof(magicPath) / sizeof(magicPath[0]); i++)
+    {
+        int fd = originalInterface::original_openat(AT_FDCWD, magicPath[i], O_RDONLY, 0);
+        if( fd > 0)
+        {
+            originalInterface::original_close(fd);
+
+            return magicPath[i];
+        }
+    }
+
+    slog("magic file not found !");
+
+    return "unknow";
 }
 
 void getStrMidle(char* buf,char* inote){

@@ -19,6 +19,7 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.View;
@@ -32,6 +33,11 @@ import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,12 +110,46 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
+        initMagic();
         IntentFilter filter = new IntentFilter();
         filter.addAction(Constants.ACTION_PACKAGE_ADDED);
         filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
         filter.addDataScheme("package");
         registerReceiver(mReceiver, filter);
 
+    }
+    private void initMagic() {
+        try {
+            String filePath = getApplicationContext().getFilesDir().getAbsolutePath();
+            String fileName = filePath + "/magic.mgc";
+            Log.e("lxf","magic file at "+ fileName);
+            File f = new File(fileName);
+            if (!f.exists()) {
+                new File(filePath).mkdirs();
+                new Thread().sleep(500);
+                copyBigDataToSD(fileName);
+            }
+        } catch (IOException e) {
+            Log.e("lxf", "copy magicto sdcard is failed!");
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void copyBigDataToSD(String strOutFileName) throws IOException {
+        InputStream myInput;
+        OutputStream myOutput = new FileOutputStream(strOutFileName);
+        myInput = this.getAssets().open("magic.mgc");
+        byte[] buffer = new byte[1024];
+        int length = myInput.read(buffer);
+        while (length > 0) {
+            myOutput.write(buffer, 0, length);
+            length = myInput.read(buffer);
+        }
+        myOutput.flush();
+        myInput.close();
+        myOutput.close();
     }
 
     @Override

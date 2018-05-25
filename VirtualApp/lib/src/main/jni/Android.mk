@@ -22,10 +22,28 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    Substrate/SubstrateDebug.cpp \
                    Substrate/SubstrateHook.cpp \
                    Substrate/SubstratePosixMemory.cpp \
+                   transparentED/ff_Recognizer.cpp \
+                   transparentED/EncryptFile.cpp \
+                   transparentED/originalInterface.cpp \
+                   transparentED/ctr/caesar_cipher.cpp \
+                   transparentED/ctr/crypter.cpp \
+                   transparentED/ctr/ctr.cpp \
+                   transparentED/ctr/rng.cpp \
+                   transparentED/ctr/SpookyV2.cpp \
+                   transparentED/ctr/util.cpp \
+                   transparentED/ctr/sm4.c \
+                   transparentED/ctr/sm4_cipher.cpp \
+                   transparentED/virtualFileSystem.cpp \
+                   transparentED/fileCoder1.cpp \
+                   transparentED/TemplateFile.cpp \
+                   transparentED/IgnoreFile.cpp \
+                   transparentED/encryptInfoMgr.cpp \
+                   safekey/safekey_jni.cpp \
                    utils/zJNIEnv.cpp \
-                   utils/controllerManagerNative.cpp \
                    utils/utils.cpp \
-
+                   utils/md5.c \
+                   utils/zMd5.cpp \
+                   utils/controllerManagerNative.cpp \
 
 LOCAL_LDLIBS := -llog -latomic
 LOCAL_STATIC_LIBRARIES := fb

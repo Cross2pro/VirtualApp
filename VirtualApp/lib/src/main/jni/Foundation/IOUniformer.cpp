@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <fb/include/fb/ALog.h>
 #include <Substrate/CydiaSubstrate.h>
+#include <asm/mman.h>
+#include <sys/mman.h>
+#include <utils/zMd5.h>
 #include <utils/controllerManagerNative.h>
 
 #include "IOUniformer.h"
@@ -14,9 +17,22 @@
 
 bool iu_loaded = false;
 
+#include "transparentED/originalInterface.h"
+#include "transparentED/ff_Recognizer.h"
+
+
+#include "utils/zString.h"
+#include "utils/utils.h"
+#include "utils/Autolock.h"
+#include "transparentED/virtualFileSystem.h"
+#include "utils/mylog.h"
+
+using namespace xdja;
+
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
         return;
+
     char *api_level_chars = getenv("V_API_LEVEL");
     char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
     if (api_level_chars) {
@@ -62,7 +78,7 @@ void IOUniformer::init_env_before_all() {
             add_replace_item(item_src, item_dst);
             i++;
         }
-        startUniformer(getenv("V_SO_PATH"),api_level, preview_api_level);
+        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level);
         iu_loaded = true;
     }
 }
@@ -102,7 +118,6 @@ const char *IOUniformer::reverse(const char *_path) {
     return reverse_relocate_path(_path);
 }
 
-
 __BEGIN_DECLS
 
 #define FREE(ptr, org_ptr) { if ((void*) ptr != NULL && (void*) ptr != (void*) org_ptr) { free((void*) ptr); } }
@@ -112,6 +127,10 @@ HOOK_DEF(int, faccessat, int dirfd, const char *pathname, int mode, int flags) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_faccessat, dirfd, redirect_path, mode, flags);
+
+    zString op("faccessat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -122,6 +141,10 @@ HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags)
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fchmodat, dirfd, redirect_path, mode, flags);
+
+    zString op("fchmodat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -130,6 +153,10 @@ HOOK_DEF(int, fchmod, const char *pathname, mode_t mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chmod, redirect_path, mode);
+
+    zString op("fchmod mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -140,35 +167,23 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
+
+    zString op("fstatat flags %p ret %d err %s", flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
-
-// int fstatat64(int dirfd, const char *pathname, struct stat *buf, int flags);
-HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int flags) {
-    int res;
-    const char *redirect_path = relocate_path(pathname, &res);
-    int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
-    FREE(redirect_path, pathname);
-    return ret;
-}
-
-
-// int fstat(const char *pathname, struct stat *buf, int flags);
-HOOK_DEF(int, fstat, const char *pathname, struct stat *buf) {
-    int res;
-    const char *redirect_path = relocate_path(pathname, &res);
-    int ret = syscall(__NR_fstat64, redirect_path, buf);
-    FREE(redirect_path, pathname);
-    return ret;
-}
-
 
 // int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 HOOK_DEF(int, mknodat, int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mknodat, dirfd, redirect_path, mode, dev);
+
+    zString op("mknodat mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -177,6 +192,10 @@ HOOK_DEF(int, mknod, const char *pathname, mode_t mode, dev_t dev) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mknod, redirect_path, mode, dev);
+
+    zString op("mknod mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -188,6 +207,10 @@ HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec 
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_utimensat, dirfd, redirect_path, times, flags);
+
+    zString op("utimensat flags %p ret %d err %s", flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -198,6 +221,10 @@ HOOK_DEF(int, fchownat, int dirfd, const char *pathname, uid_t owner, gid_t grou
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fchownat, dirfd, redirect_path, owner, group, flags);
+
+    zString op("fchownat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -207,6 +234,10 @@ HOOK_DEF(int, chroot, const char *pathname) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chroot, redirect_path);
+
+    zString op("chroot ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -218,7 +249,37 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
     int res_new;
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
+    virtualFile * vf2 = virtualFileManager::getVFM().queryVF((char *) redirect_path_old);
+    if(vf2 != NULL)
+    {
+        slog(" *** need to force translate virtual File [%s] *** ", vf2->getPath());
+
+        vf2->lockWhole();
+        vf2->forceTranslate();
+        vf2->unlockWhole();
+        vf2->delRef();
+    }
+
+    {
+        /**？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？**/
+        virtualFileManager::getVFM().deleted((char *) redirect_path_old);
+    }
+
     int ret = syscall(__NR_renameat, olddirfd, redirect_path_old, newdirfd, redirect_path_new);
+
+    virtualFile * vf3 = virtualFileManager::getVFM().queryVF((char *) redirect_path_new);
+    if(vf3 != NULL)
+    {
+        slog(" *** update virtual file [%s] *** ", vf3->getPath());
+        vf3->lockWhole();
+        virtualFileManager::getVFM().updateVF(*vf3);
+        vf3->unlockWhole();
+        vf3->delRef();
+    }
+
+    zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -230,6 +291,10 @@ HOOK_DEF(int, rename, const char *oldpath, const char *newpath) {
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_rename, redirect_path_old, redirect_path_new);
+
+    zString op("rename to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -241,6 +306,16 @@ HOOK_DEF(int, unlinkat, int dirfd, const char *pathname, int flags) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_unlinkat, dirfd, redirect_path, flags);
+
+    if(ret == 0)
+    {
+        /***？？？？？？？？？？？？？？？？？？？？？？？？？？？？？***/
+        virtualFileManager::getVFM().deleted((char *)redirect_path);
+    }
+
+    zString op("unlinkat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -249,6 +324,10 @@ HOOK_DEF(int, unlink, const char *pathname) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_unlink, redirect_path);
+
+    zString op("unlink ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -261,6 +340,10 @@ HOOK_DEF(int, symlinkat, const char *oldpath, int newdirfd, const char *newpath)
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_symlinkat, redirect_path_old, newdirfd, redirect_path_new);
+
+    zString op("symlinkat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -272,6 +355,10 @@ HOOK_DEF(int, symlink, const char *oldpath, const char *newpath) {
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_symlink, redirect_path_old, redirect_path_new);
+
+    zString op("symlink to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -286,6 +373,10 @@ HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const cha
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_linkat, olddirfd, redirect_path_old, newdirfd, redirect_path_new, flags);
+
+    zString op("linkat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -297,6 +388,10 @@ HOOK_DEF(int, link, const char *oldpath, const char *newpath) {
     const char *redirect_path_old = relocate_path(oldpath, &res_old);
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_link, redirect_path_old, redirect_path_new);
+
+    zString op("link to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());
+
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
     return ret;
@@ -308,6 +403,10 @@ HOOK_DEF(int, utimes, const char *pathname, const struct timeval *tvp) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_utimes, redirect_path, tvp);
+
+    zString op("utimes ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -318,6 +417,10 @@ HOOK_DEF(int, access, const char *pathname, int mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_access, redirect_path, mode);
+
+    zString op("access ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -328,6 +431,10 @@ HOOK_DEF(int, chmod, const char *pathname, mode_t mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chmod, redirect_path, mode);
+
+    zString op("chmod ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -338,6 +445,10 @@ HOOK_DEF(int, chown, const char *pathname, uid_t owner, gid_t group) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chown, redirect_path, owner, group);
+
+    zString op("chown ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -348,6 +459,10 @@ HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_lstat64, redirect_path, buf);
+
+    zString op("lstat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -358,6 +473,10 @@ HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_stat64, redirect_path, buf);
+
+    zString op("stat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -368,6 +487,10 @@ HOOK_DEF(int, mkdirat, int dirfd, const char *pathname, mode_t mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mkdirat, dirfd, redirect_path, mode);
+
+    zString op("mkdirat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -376,6 +499,10 @@ HOOK_DEF(int, mkdir, const char *pathname, mode_t mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mkdir, redirect_path, mode);
+
+    zString op("mkdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -386,6 +513,10 @@ HOOK_DEF(int, rmdir, const char *pathname) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_rmdir, redirect_path);
+
+    zString op("rmdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -396,6 +527,10 @@ HOOK_DEF(int, readlinkat, int dirfd, const char *pathname, char *buf, size_t buf
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_readlinkat, dirfd, redirect_path, buf, bufsiz);
+
+    zString op("readlinkat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -404,6 +539,10 @@ HOOK_DEF(ssize_t, readlink, const char *pathname, char *buf, size_t bufsiz) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     ssize_t ret = syscall(__NR_readlink, redirect_path, buf, bufsiz);
+
+    zString op("readlink ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -414,6 +553,10 @@ HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_statfs64, redirect_path, size, stat);
+
+    zString op("__statfs64 ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -424,6 +567,10 @@ HOOK_DEF(int, truncate, const char *pathname, off_t length) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_truncate, redirect_path, length);
+
+    zString op("truncate length %ld ret %d err %s", length, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -436,6 +583,10 @@ HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
     const char *redirect_path = relocate_path(pathname, &res);
     RETURN_IF_FORBID
     int ret = syscall(__NR_truncate64, redirect_path, length);
+
+    zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -447,6 +598,10 @@ HOOK_DEF(int, chdir, const char *pathname) {
     const char *redirect_path = relocate_path(pathname, &res);
     RETURN_IF_FORBID
     int ret = syscall(__NR_chdir, redirect_path);
+
+    zString op("chdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -467,14 +622,109 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_openat, fd, redirect_path, flags, mode);
+
+    zString op("openat fd = %d err = %s", ret, strerror(errno));
+    doFileTrace(redirect_path, op.toString());
+
+    if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
+        /*******************only here**********************/
+        virtualFileDescribe *vfd = new virtualFileDescribe();
+        vfd->incStrong(0);
+        /***************************************************/
+        virtualFileDescribeSet::getVFDSet().set(ret, vfd);
+
+        int _Errno;
+        virtualFile *vf = virtualFileManager::getVFM().getVF(ret, (char *) redirect_path, &_Errno);
+        if (vf != NULL) {
+            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
+            vfd->_vf = vf;
+            vf->vlseek(ret, 0, SEEK_SET);
+        } else {
+            virtualFileDescribeSet::getVFDSet().reset(ret);
+            /******through this way to release vfd *********/
+            virtualFileDescribeSet::getVFDSet().release(vfd);
+            /***********************************************/
+
+            if(_Errno < 0)
+            {
+                //这种情况需要让openat 返回失败
+                originalInterface::original_close(ret);
+                ret = -1;
+                errno = EACCES;
+
+                if(flags & O_CREAT)
+                {
+                    originalInterface::original_unlinkat(AT_FDCWD, redirect_path, 0);
+                }
+
+                LOGE("judge : **** force openat fail !!! ****");
+            }
+        }
+    }
     FREE(redirect_path, pathname);
     return ret;
 }
+
+HOOK_DEF(int, close, int __fd) {
+
+    zString path;
+    getPathFromFd(__fd, path);
+
+    zString zlog("close %d", __fd);
+    doFileTrace(path.toString(), zlog.toString());
+
+    int ret;
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        virtualFileDescribeSet::getVFDSet().reset(__fd);
+
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
+        /******through this way to release vfd *********/
+        virtualFileDescribeSet::getVFDSet().release(vfd.get());
+        /***********************************************/
+    }
+
+    ret = syscall(__NR_close, __fd);
+    return ret;
+}
+
+// int fstatat64(int dirfd, const char *pathname, struct stat *buf, int flags);
+HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int flags) {
+    int res;
+    const char *redirect_path = relocate_path(pathname, &res);
+    int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
+
+    int fd = originalInterface::original_openat(AT_FDCWD, redirect_path, O_RDONLY, 0);
+
+    if(fd > 0)
+    {
+        if(EncryptFile::isEncryptFile(fd)) {
+            EncryptFile ef(redirect_path);
+            if(ef.create(fd, ENCRYPT_READ))
+            {
+                ef.fstat(fd, buf);
+            }
+        }
+        originalInterface::original_close(fd);
+    }
+
+    zString op("fstatat64 ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
+    FREE(redirect_path, pathname);
+    return ret;
+}
+
 // int __open(const char *pathname, int flags, int mode);
 HOOK_DEF(int, __open, const char *pathname, int flags, int mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_open, redirect_path, flags, mode);
+
+    zString op("__open ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -484,6 +734,10 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
     int res;
     const char *redirect_path = relocate_path(__file, &res);
     int ret = syscall(__NR_statfs, redirect_path, __buf);
+
+    zString op("__statfs ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, __file);
     return ret;
 }
@@ -493,6 +747,10 @@ HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_lchown, redirect_path, owner, group);
+
+    zString op("lchown ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -573,6 +831,10 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
         return ret;
     }
     int ret = syscall(__NR_execve, redirect_path, argv, envp);
+
+    zString op("execve ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -582,6 +844,10 @@ HOOK_DEF(void*, dlopen, const char *filename, int flag) {
     int res;
     const char *redirect_path = relocate_path(filename, &res);
     void *ret = orig_dlopen(redirect_path, flag);
+
+    zString op("dlopen ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     onSoLoaded(filename, ret);
 #ifdef LOG_ENABLE
     ALOGD("dlopen : %s, return : %p.", redirect_path, ret);
@@ -594,6 +860,10 @@ HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extin
     int res;
     const char *redirect_path = relocate_path(filename, &res);
     void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
+
+    zString op("do_dlopen_V19 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     onSoLoaded(filename, ret);
 #ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -607,6 +877,10 @@ HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
     int res;
     const char *redirect_path = relocate_path(name, &res);
     void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
+
+    zString op("do_dlopen_V24 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     onSoLoaded(name, ret);
 #ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -620,6 +894,10 @@ HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
     int res;
     const char *redirect_path = relocate_path(name, &res);
     void *ret = orig_do_dlopen_V26(redirect_path, flags, extinfo, caller_addr);
+
+    zString op("do_dlopen_V26 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());
+
     onSoLoaded(name, ret);
 #ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -650,11 +928,520 @@ HOOK_DEF(pid_t, vfork) {
     return fork();
 }
 
+HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
+    ssize_t ret = 0;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vpread64(fd, (char *) buf, count, offset);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig_pread64(fd, buf, count, offset);
+
+    zMd5 ms;
+    zString op("%cpread64 offset [fd %d] [%lld] count [%d] ret [%d] content[%s]", flag?'v':' ', fd, offset, count, ret, ms.getSig((char *)buf, ret));
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offset) {
+    ssize_t ret = 0;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vpwrite64(fd, (char *) buf, count, offset);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig_pwrite64(fd, buf, count, offset);
+
+    zMd5 ms;
+    zString op("%cpwrite64 offset [fd %d] [%lld] count [%d] ret [%d] content[%s]", flag?'v':' ', fd, offset, count, ret, ms.getSig((char *)buf, ret));
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
+    ssize_t ret = 0;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vread(fd, (char *) buf, count);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = syscall(__NR_read, fd, buf, count);
+
+    zMd5 ms;
+    zString op("%cread count [fd %d] [%d] ret [%d] content[%s]", flag?'v':' ', fd, count, ret, ms.getSig((char *)buf, ret));
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
+    ssize_t ret = 0;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vwrite(fd, (char *) buf, count);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = syscall(__NR_write, fd, buf, count);
+
+    zMd5 ms;
+    zString op("%cwrite count [fd %d] [%d] ret [%d] content[%s]", flag?'v':' ', fd, count, ret, ms.getSig((char *)buf, ret));
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(int, munmap, void *addr, size_t length) {
+    int ret = -1;
+    ret = syscall(__NR_munmap, addr, length);
+    return ret;
+}
+
+HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd, size_t pgoffset) {
+    void * ret = 0;
+    bool flag = false;
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
+            flags |= MAP_ANONYMOUS;     //申请匿名内存
+            ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
+
+            bool nowrite = (prot & PROT_WRITE) == 0;
+            if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
+                LOGE("__mmap2 mprotect failed.");
+            } else {
+                off64_t pos = pgoffset * 4096;
+                vfd->_vf->vpread64(fd, (char *) ret, length, pos);
+
+                if (nowrite) {
+                    if (0 != mprotect(ret, length, prot)) {
+                        LOGE("__mmap2 mprotect restore prot fails.");
+                    }
+                }
+
+                flag = true;
+            }
+        }
+    }
+
+    if(fd > 0)
+    {
+        zString path;
+        getPathFromFd(fd, path);
+
+        zString op("%c__mmap2 length %d flags %p pgoffset %p", flag?'v':' ', length, flags, pgoffset);
+        doFileTrace(path.toString(), op.toString());
+    }
+
+    if(!flag)
+        ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, fd, pgoffset);
+
+    return ret;
+}
+
+HOOK_DEF(int, fstat, int fd, struct stat *buf)
+{
+    int ret;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vfstat(fd, buf);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig_fstat(fd, buf);
+
+    zString op("%cfstat [fd %d] ret %d err %s", flag?'v':' ', fd, ret, getErr);
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
+{
+    off_t ret;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vlseek(fd, offset, whence);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig_lseek(fd, offset, whence);
+
+    zString op("%clseek [fd %d] offset %ld whence %d ret %ld err %s", flag?'v':' ', fd, offset, whence, ret, getErr);
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
+         unsigned long offset_low, off64_t *result,
+         unsigned int whence)
+{
+    off64_t rel_offset = 0;
+    bool flag = false;
+
+    rel_offset |= offset_high;
+    rel_offset <<= 32;
+    rel_offset |= offset_low;
+
+    int ret;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vllseek(fd, offset_high, offset_low, result, whence);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig___llseek(fd, offset_high, offset_low, result, whence);
+
+    zString op("%cllseek [fd %d] offset %lld whence %d ret %lld err %s", flag?'v':' ', fd, rel_offset, whence, *result, getErr);
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+//int ftruncate64(int, off_t)
+HOOK_DEF(int, ftruncate64, int fd, off64_t length)
+{
+    int ret;
+    bool flag = false;
+
+    zString path;
+    getPathFromFd(fd, path);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    if(vfd.get() == nullptr) {
+    } else {
+        path.format("%s", vfd->_vf->getPath());
+        ret = vfd->_vf->vftruncate64(fd, length);
+        flag = true;
+    }
+
+    if(!flag)
+        ret = orig_ftruncate64(fd, length);
+
+    zString op("%cftruncate64 [fd %d] length %lld ret %d err %s", flag?'v':' ', fd, length, ret, getErr);
+    doFileTrace(path.toString(), op.toString());
+
+    return ret;
+}
+
+//ssize_t sendfile(int out_fd, int in_fd, off_t* offset, size_t count)
+HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
+{
+    ssize_t ret;
+
+    off_t off = 0;
+    if(offset != 0)
+        off = *offset;
+
+    xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
+    xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
+    if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        //完全不管
+        ret = orig_sendfile(out_fd, in_fd, offset, count);
+    } else {
+        if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
+        {
+            if(offset != 0)
+            {
+                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+            } else {
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                out_vfd->_vf->vwrite(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+            }
+        }
+        else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
+        {
+            if(offset != 0)
+            {
+                ignoreFile::lseek(in_fd, off, SEEK_SET);
+            } else {
+                ignoreFile::lseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = ignoreFile::read(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                out_vfd->_vf->vwrite(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                ignoreFile::lseek(in_fd, off, SEEK_SET);
+            }
+        }
+        else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
+        {
+            if(offset != 0)
+            {
+                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+            } else {
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                ignoreFile::write(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+            }
+        }
+    }
+
+    zString path1, path2;
+    getPathFromFd(out_fd, path1);
+    getPathFromFd(in_fd, path2);
+
+    zString zlog("from %s to %s, count = %d, ret = %d", path2.toString(), path1.toString(), count, ret);
+    doFileTrace("sendfile", zlog.toString());
+
+    return ret;
+}
+
+//ssize_t sendfile64(int out_fd, int in_fd, off64_t* offset, size_t count)
+HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t count)
+{
+    ssize_t ret;
+
+    off64_t off = 0;
+    if(offset != 0)
+        off = *offset;
+
+    unsigned long off_hi = static_cast<unsigned long>(off >> 32);
+    unsigned long off_lo = static_cast<unsigned long>(off);
+
+    xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
+    xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
+    if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        //完全不管
+        ret = orig_sendfile64(out_fd, in_fd, offset, count);
+    } else {
+        if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
+        {
+            if(offset != 0)
+            {
+                loff_t result;
+                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            } else {
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                out_vfd->_vf->vwrite(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                loff_t result;
+                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            }
+        }
+        else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
+        {
+            if(offset != 0)
+            {
+                loff_t result;
+                ignoreFile::llseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            } else {
+                ignoreFile::lseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = ignoreFile::read(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                out_vfd->_vf->vwrite(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                loff_t result;
+                ignoreFile::llseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            }
+        }
+        else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
+        {
+            if(offset != 0)
+            {
+                loff_t result;
+                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            } else {
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+            }
+
+            char * buf = new char[1024];
+            ret = 0;
+            int rl;
+            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            {
+                ret += rl;
+                ignoreFile::write(out_fd, buf, rl);
+            }
+            delete []buf;
+
+            if(offset != 0)
+            {
+                loff_t result;
+                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+            }
+        }
+    }
+
+    zString path1, path2;
+    getPathFromFd(out_fd, path1);
+    getPathFromFd(in_fd, path2);
+
+    zString zlog("from %s to %s, count = %d, ret = %d", path2.toString(), path1.toString(), count, ret);
+    doFileTrace("sendfile64", zlog.toString());
+
+    return ret;
+}
+
+//int dup(int oldfd);
+HOOK_DEF(int, dup, int oldfd)
+{
+    zString path;
+    getPathFromFd(oldfd, path);
+    doFileTrace(path.toString(), (char *)"dup");
+
+    return syscall(__NR_dup, oldfd);
+}
+
+//int dup3(int oldfd, int newfd, int flags);
+HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
+{
+    zString path;
+    getPathFromFd(oldfd, path);
+    doFileTrace(path.toString(), (char *)"dup3");
+
+    return syscall(__NR_dup3, oldfd, newfd, flags);
+}
+
+HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
+    int ret = -1;
+    if(!controllerManagerNative::isNetworkEnable()){
+        errno = ENETUNREACH;//无法传送数据包至指定的主机.
+        return -1;
+    }
+
+    ret = syscall(__NR_connect, sd, addr, socklen);
+    return ret;
+}
+
+HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
+{
+    slog_wx("%s", _log);
+
+    orig_xlogger_Write(_info, _log);
+}
+
 __END_DECLS
 // end IO DEF
 
 
 void onSoLoaded(const char *name, void *handle) {
+    if(strcmp(name, "/data/user/0/io.virtualapp/virtual/data/app/com.tencent.mm/lib/libwechatxlog.so") == 0) {
+
+            slog("fuck, hook libwechatxlog");
+            HOOK_SYMBOL(handle, xlogger_Write);
+    }
 }
 
 int findSymbol(const char *name, const char *libn,
@@ -690,21 +1477,10 @@ void hook_dlopen(int api_level) {
     }
 }
 
+void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_api_level) {
+    bool ret = ff_Recognizer::getFFR().init(getMagicPath());
+    LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
 
-HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
-    int ret = -1;
-    if(!controllerManagerNative::isNetworkEnable()){
-        errno = ENETUNREACH;//无法传送数据包至指定的主机.
-        return -1;
-    }
-
-    ret = syscall(__NR_connect, sd, addr, socklen);
-    return ret;
-}
-
-
-
-void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level) {
     char api_level_chars[5];
     setenv("V_SO_PATH", so_path, 1);
     sprintf(api_level_chars, "%i", api_level);
@@ -734,6 +1510,21 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
 //        HOOK_SYMBOL(handle, __getdents64);
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
+        HOOK_SYMBOL(handle, close);
+        HOOK_SYMBOL(handle, read);
+        HOOK_SYMBOL(handle, write);
+        HOOK_SYMBOL(handle, __mmap2);
+        HOOK_SYMBOL(handle, munmap);
+        HOOK_SYMBOL(handle, pread64);
+        HOOK_SYMBOL(handle, pwrite64);
+        HOOK_SYMBOL(handle, fstat);
+        HOOK_SYMBOL(handle, __llseek);
+        HOOK_SYMBOL(handle, lseek);
+        HOOK_SYMBOL(handle, ftruncate64);
+        HOOK_SYMBOL(handle, sendfile);
+        HOOK_SYMBOL(handle, sendfile64);
+        HOOK_SYMBOL(handle, dup);
+        HOOK_SYMBOL(handle, dup3);
         HOOK_SYMBOL(handle, connect);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
@@ -756,5 +1547,14 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
         }
         dlclose(handle);
     }
+
     hook_dlopen(api_level);
+
+    originalInterface::original_lseek = orig_lseek;
+    originalInterface::original_llseek = orig___llseek;
+    originalInterface::original_fstat = orig_fstat;
+    originalInterface::original_pwrite64 = orig_pwrite64;
+    originalInterface::original_pread64 = orig_pread64;
+    originalInterface::original_ftruncate64 = orig_ftruncate64;
+    originalInterface::original_sendfile = orig_sendfile;
 }
