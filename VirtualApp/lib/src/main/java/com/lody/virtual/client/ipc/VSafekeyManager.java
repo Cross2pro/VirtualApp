@@ -1,9 +1,11 @@
 package com.lody.virtual.client.ipc;
 
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.interfaces.IVSCallback;
 import com.lody.virtual.server.interfaces.IVSafekeyManager;
 
@@ -65,26 +67,27 @@ public class VSafekeyManager {
     }
 
 
-    public static int encryptKey(byte[] key, int keylen, byte[] seckey, int seckeylen) {
+    public static byte[] encryptKey(byte[] key, int keylen) {
         try {
-            return get().getService().encryptKey(key, keylen, seckey, seckeylen);
+            return get().getService().encryptKey(key, keylen);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
     }
 
 
-    public static int decryptKey(byte[] seckey, int seckeylen, byte[] key, int keylen) {
+    public static byte[] decryptKey(byte[] seckey, int seckeylen) {
         try {
-            return get().getService().decryptKey(seckey, seckeylen, key, keylen);
+            return get().getService().decryptKey(seckey, seckeylen);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
     }
 
-    public static int getRandom(int len, byte[] random) {
+    public static byte[] getRandom(int len) {
         try {
-            return get().getService().getRandom(len, random);
+            return get().getService().getRandom(len);
+
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
