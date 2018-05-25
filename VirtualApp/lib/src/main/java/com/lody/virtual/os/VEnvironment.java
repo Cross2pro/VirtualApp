@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.helper.utils.EncodeUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -96,8 +96,8 @@ public class VEnvironment {
         return ensureCreated(new File(getUserSystemDirectory(userId), packageName));
     }
 
-    public static File getPackageResourcePath(String packgeName) {
-        return new File(getDataAppPackageDirectory(packgeName), "base.apk");
+    public static File getPackageResourcePath(String packageName) {
+        return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
 
     public static File getDataAppDirectory() {
@@ -114,6 +114,10 @@ public class VEnvironment {
 
     public static File getAccountConfigFile() {
         return new File(getSystemSecureDirectory(), "account-list.ini");
+    }
+
+    public static File getAccountVisibilityConfigFile() {
+        return new File(getSystemSecureDirectory(), "account-visibility-list.ini");
     }
 
     public static File getVirtualLocationFile() {
@@ -158,6 +162,10 @@ public class VEnvironment {
 
     public static File getAppLibDirectory(String packageName) {
         return ensureCreated(new File(getDataAppPackageDirectory(packageName), "lib"));
+    }
+
+    public static File getUserAppLibDirectory(int userId, String packageName) {
+        return ensureCreated(new File(getDataUserPackageDirectory(userId, packageName), "lib"));
     }
 
     public static File getPackageCacheFile(String packageName) {

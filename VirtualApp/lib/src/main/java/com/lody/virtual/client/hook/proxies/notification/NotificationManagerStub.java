@@ -1,6 +1,5 @@
 package com.lody.virtual.client.hook.proxies.notification;
 
-import android.app.NotificationChannel;
 import android.os.Build;
 import android.os.IInterface;
 
@@ -36,6 +35,8 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
             addMethodProxy(new ReplaceCallingPkgMethodProxy("areNotificationsEnabled"));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("setNotificationPolicy"));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationPolicy"));
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("setNotificationPolicyAccessGranted"));
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGranted"));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGrantedForPackage"));
         }
         if ("samsung".equalsIgnoreCase(Build.BRAND) || "samsung".equalsIgnoreCase(Build.MANUFACTURER)) {
@@ -52,7 +53,8 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
             addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationChannel"));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("deleteNotificationChannel"));
         }
-
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("setInterruptionFilter"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("getPackageImportance"));
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ProviderInfo;
+import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -98,5 +99,13 @@ public class ActivityThread {
         public static RefStaticInt LAUNCH_ACTIVITY;
         public static RefStaticInt CREATE_SERVICE;
         public static RefStaticInt SCHEDULE_CRASH;
+    }
+
+    public static class CreateServiceData {
+        public static Class<?> TYPE = RefClass.load(CreateServiceData.class, "android.app.ActivityThread$CreateServiceData");
+        public static RefObject<Object> compatInfo;
+        public static RefObject<ServiceInfo> info;
+        public static RefObject<Intent> intent;
+        public static RefObject<IBinder> token;
     }
 }

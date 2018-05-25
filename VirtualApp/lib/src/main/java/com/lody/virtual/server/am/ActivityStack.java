@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.text.TextUtils;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -277,7 +278,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         ClearTarget clearTarget = ClearTarget.NOTHING;
         boolean clearTop = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
         boolean clearTask = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        boolean receiverForeground =containFlags(intent, Intent.FLAG_RECEIVER_FOREGROUND);
+        boolean receiverForeground = containFlags(intent, Intent.FLAG_RECEIVER_FOREGROUND);
 
         if (intent.getComponent() == null) {
             intent.setComponent(new ComponentName(info.packageName, info.name));
@@ -345,10 +346,15 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 clearTarget = ClearTarget.SPEC_ACTIVITY;
             }
         }
-        if ((sourceTask == null && reuseTarget == ReuseTarget.CURRENT)||receiverForeground) {
+        if ((sourceTask == null && reuseTarget == ReuseTarget.CURRENT) || receiverForeground) {
             reuseTarget = ReuseTarget.AFFINITY;
         }
-
+        if ("com.google.android.gms.games.SIGN_IN".equals(intent.getAction())) {
+            String packageName = intent.getStringExtra("com.google.android.gms.games.GAME_PACKAGE_NAME");
+            if (!TextUtils.isEmpty(packageName)) {
+                reuseTarget = ReuseTarget.AFFINITY;
+            }
+        }
         String affinity = ComponentUtils.getTaskAffinity(info);
         TaskRecord reuseTask = null;
         switch (reuseTarget) {
@@ -528,15 +534,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
                 isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
                 isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
-            }else{
-                Resources resources=VirtualCore.get().getResources(targetInfo.packageName);
-                if(resources!=null) {
-                    TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
-                    if(typedArray!=null){
-                        showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
-                        isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
-                        isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
-                    }
+            } else {
+                Resources resources = VirtualCore.get().getResources(targetInfo.packageName);
+                TypedArray typedArray = resources.newTheme().obtainStyledAttributes(targetInfo.theme, R_Styleable_Window);
+                if (typedArray != null) {
+                    showWallpaper = typedArray.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+                    isTranslucent = typedArray.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+                    isFloating = typedArray.getBoolean(R_Styleable_Window_windowIsFloating, false);
                 }
             }
         } catch (Throwable e) {
@@ -580,7 +584,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 mHistory.put(taskId, task);
             }
             ActivityRecord record = new ActivityRecord(task, component, caller, token, targetApp.userId, targetApp,
-                    launchMode, flags, affinity);
+                    launchMode, flags, affinity, taskRoot);
             synchronized (task.activities) {
                 task.activities.add(record);
             }
@@ -649,23 +653,50 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     ComponentName getCallingActivity(int userId, IBinder token) {
+        ComponentName componentName;
         synchronized (mHistory) {
             ActivityRecord r = findActivityByToken(userId, token);
             if (r != null) {
-                return r.caller != null ? r.caller : r.component;
+                if (r.caller == null && r.component != null && r.component.getClassName().equals("com.google.android.gms.games.ui.signin.SignInActivity")) {
+                    String pkg = r.intent.getStringExtra("com.google.android.gms.games.GAME_PACKAGE_NAME");
+                    componentName = r.intent.getParcelableExtra("_VA_|_caller_");
+                    if (componentName != null) {
+                        r.caller = componentName;
+                    } else if (pkg != null) {
+                        Intent intent = VirtualCore.get().getLaunchIntent(pkg, 0);
+                        if (intent != null && intent.getComponent() != null) {
+                            r.caller = intent.getComponent();
+                        } else {
+                            r.caller = new ComponentName(pkg, ".MainActivity");
+                        }
+                    }
+                }
+                componentName = r.caller != null ? r.caller : r.component;
+            } else {
+                componentName = null;
             }
-            return null;
+            return componentName;
         }
     }
 
     public String getCallingPackage(int userId, IBinder token) {
+        String packageName = "android";
         synchronized (mHistory) {
             ActivityRecord r = findActivityByToken(userId, token);
             if (r != null) {
-                return r.caller != null ? r.caller.getPackageName() : "android";
+                if (r.caller == null && r.component != null && r.component.getClassName().equals("com.google.android.gms.games.ui.signin.SignInActivity")) {
+                    String pkg = r.intent.getStringExtra("com.google.android.gms.games.GAME_PACKAGE_NAME");
+                    ComponentName componentName = r.intent.getParcelableExtra("_VA_|_caller_");
+                    if (componentName != null) {
+                        r.caller = componentName;
+                    } else if (pkg != null) {
+                        r.caller = new ComponentName(pkg, "PLIB_FAKE_CLASS");
+                    }
+                }
+                packageName = r.caller != null ? r.caller.getPackageName() : "android";
             }
-            return "android";
         }
+        return packageName;
     }
 
     AppTaskInfo getTaskInfo(int taskId) {

@@ -39,7 +39,7 @@ public class PackageUtils {
 
     public static boolean checkUpdate(Context context, String packageName) {
         InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(packageName, 0);
-        if (installedAppInfo == null || !installedAppInfo.dependSystem) {
+        if (installedAppInfo == null || !installedAppInfo.notCopyApk) {
             return false;
         }
         return checkUpdate(context, installedAppInfo, packageName);
@@ -64,7 +64,7 @@ public class PackageUtils {
         if (!new File(installedAppInfo.apkPath).exists() || vpackageInfo == null || packageInfo.versionCode != vpackageInfo.versionCode) {
             VirtualCore.get().killApp(packageName, VUserHandle.USER_ALL);
             InstallResult result = VirtualCore.get().installPackage(packageInfo.applicationInfo.publicSourceDir,
-                    InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                    InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.NOT_COPY_APK);
             if (!result.isSuccess) {
                 return false;
             }

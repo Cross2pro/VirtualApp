@@ -171,4 +171,20 @@ class MethodProxies {
             return 0;
         }
     }
+
+    static class GetAppActiveNotifications  extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "getAppActiveNotifications";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            args[0] = getHostPkg();
+            if (args.length > 1) {
+                args[1] = 0;
+            }
+            return method.invoke(who, args);
+        }
+    }
 }

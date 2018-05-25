@@ -31,12 +31,18 @@ public class ClipBoardStub extends BinderInvocationProxy {
     }
 
     private static IInterface getInterface() {
-        if (BuildCompat.isOreo()) {
+        // android < 26
+        if (ClipboardManager.getService != null) {
+            return ClipboardManager.getService.call();
+        } else if (ClipboardManagerOreo.mService != null) {
             android.content.ClipboardManager cm = (android.content.ClipboardManager)
                     VirtualCore.get().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             return ClipboardManagerOreo.mService.get(cm);
+        } else if (ClipboardManagerOreo.sService != null) {
+            //samsung
+            return ClipboardManagerOreo.sService.get();
         } else {
-            return ClipboardManager.getService.call();
+            return null;
         }
     }
 
@@ -57,12 +63,13 @@ public class ClipBoardStub extends BinderInvocationProxy {
     @Override
     public void inject() throws Throwable {
         super.inject();
-        if (BuildCompat.isOreo()) {
+        if (ClipboardManagerOreo.mService != null) {
             android.content.ClipboardManager cm = (android.content.ClipboardManager)
                     VirtualCore.get().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
             ClipboardManagerOreo.mService.set(cm, getInvocationStub().getProxyInterface());
-        } else {
-            ClipboardManager.sService.set(getInvocationStub().getProxyInterface());
+        } else if (ClipboardManagerOreo.sService != null) {
+            //samsung 8.0
+            ClipboardManagerOreo.sService.set(getInvocationStub().getProxyInterface());
         }
     }
 

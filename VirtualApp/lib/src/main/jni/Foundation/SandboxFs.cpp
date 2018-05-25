@@ -5,9 +5,11 @@
 PathItem *keep_items;
 PathItem *forbidden_items;
 ReplaceItem *replace_items;
+PathItem *dlopen_keep_items;
 int keep_item_count;
 int forbidden_item_count;
 int replace_item_count;
+int dlopen_keep_items_count;
 
 int add_keep_item(const char *path) {
     char keep_env_name[25];
@@ -19,6 +21,18 @@ int add_keep_item(const char *path) {
     item.path = strdup(path);
     item.size = strlen(path);
     return ++keep_item_count;
+}
+
+int add_dlopen_keep_item(const char *path){
+    char keep_env_name[25];
+    sprintf(keep_env_name, "V_DLOPEN_KEEP_ITEM_%d", dlopen_keep_items_count);
+    setenv(keep_env_name, path, 1);
+    dlopen_keep_items = (PathItem *) realloc(dlopen_keep_items,
+                                      dlopen_keep_items_count * sizeof(PathItem) + sizeof(PathItem));
+    PathItem &item = dlopen_keep_items[dlopen_keep_items_count];
+    item.path = strdup(path);
+    item.size = strlen(path);
+    return ++dlopen_keep_items_count;
 }
 
 int add_forbidden_item(const char *path) {
@@ -55,7 +69,6 @@ int add_replace_item(const char *orig_path, const char *new_path) {
     return ++replace_item_count;
 }
 
-
 PathItem *get_keep_items() {
     return keep_items;
 }
@@ -80,22 +93,40 @@ int get_replace_item_count() {
     return replace_item_count;
 }
 
+int get_dlopen_keep_item_count(){
+    return dlopen_keep_items_count;
+}
+
 inline bool match_path(bool is_folder, size_t size, const char *item_path, const char *path) {
     if (is_folder) {
         if (strlen(path) < size) {
             // ignore the last '/'
             return strncmp(item_path, path, size - 1) == 0;
+        } else {
+            return strncmp(item_path, path, size) == 0;
         }
+    } else {
+        return strcmp(item_path, path) == 0;
     }
-    return strncmp(item_path, path, size) == 0;
 }
 
 
-const char *relocate_path(const char *path, int *result) {
+const char *relocate_path(const char *path, int *result, int dlopen) {
     if (path == NULL) {
         *result = NOT_MATCH;
         return NULL;
     }
+
+    if(dlopen == 1){
+        for (int i = 0; i < dlopen_keep_items_count; ++i) {
+            PathItem &item = dlopen_keep_items[i];
+            if (strcmp(item.path, path) == 0) {
+                *result = KEEP;
+                return path;
+            }
+        }
+    }
+
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (strcmp(item.path, path) == 0) {
@@ -103,6 +134,7 @@ const char *relocate_path(const char *path, int *result) {
             return path;
         }
     }
+
     for (int i = 0; i < forbidden_item_count; ++i) {
         PathItem &item = forbidden_items[i];
         if (match_path(item.is_folder, item.size, item.path, path)) {
@@ -112,6 +144,7 @@ const char *relocate_path(const char *path, int *result) {
             return NULL;
         }
     }
+
     for (int i = 0; i < replace_item_count; ++i) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.orig_size, item.orig_path, path)) {

@@ -20,5 +20,7 @@ public class ContextHubServiceStub extends BinderInvocationProxy {
     protected void onBindMethods() {
         super.onBindMethods();
         addMethodProxy(new ResultStaticMethodProxy("registerCallback", 0));
+        addMethodProxy(new ResultStaticMethodProxy("getContextHubInfo", null));
+        addMethodProxy(new ResultStaticMethodProxy("getContextHubHandles",new int[]{}));
     }
 }

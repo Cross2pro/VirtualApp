@@ -117,7 +117,7 @@ final class ProviderIntentResolver extends IntentResolver<VPackage.ProviderInten
     protected ResolveInfo newResult(VPackage.ProviderIntentInfo filter, int match, int userId) {
         final VPackage.ProviderComponent provider = filter.provider;
         PackageSetting ps = (PackageSetting) provider.owner.mExtras;
-        ProviderInfo pi = PackageParserEx.generateProviderInfo(provider, mFlags, ps.readUserState(userId), userId);
+        ProviderInfo pi = PackageParserEx.generateProviderInfo(provider, mFlags, ps.readUserState(userId), userId, ps.notCopyApk);
         if (pi == null) {
             return null;
         }

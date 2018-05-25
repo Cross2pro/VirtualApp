@@ -77,7 +77,7 @@ public class ContextFixer {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
             AppOpsManager appOpsManager = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
             BinderInvocationStub appopsBinder = InvocationStubManager.getInstance().getInvocationStub(AppOpsManagerStub.class);
-            if (appopsBinder != null) {
+            if (appopsBinder != null && appopsBinder.getProxyInterface() != null) {
                 try {
                     Reflect.on(appOpsManager).set("mService", appopsBinder.getProxyInterface());
                 } catch (ReflectException e) {
@@ -87,7 +87,7 @@ public class ContextFixer {
         }
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         BinderInvocationStub alarmBinder = InvocationStubManager.getInstance().getInvocationStub(AlarmManagerStub.class);
-        if (alarmBinder != null) {
+        if (alarmBinder != null && alarmBinder.getProxyInterface() != null) {
             try {
                 Reflect.on(alarmManager).set("mService", alarmBinder.getProxyInterface());
             } catch (ReflectException e) {
@@ -101,7 +101,7 @@ public class ContextFixer {
         }
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         BinderInvocationStub wifiBinder = InvocationStubManager.getInstance().getInvocationStub(WifiManagerStub.class);
-        if (wifiBinder != null) {
+        if (wifiBinder != null && wifiBinder.getProxyInterface() != null ) {
             try {
                 Reflect.on(wifiManager).set("mService", wifiBinder.getProxyInterface());
             } catch (ReflectException e) {

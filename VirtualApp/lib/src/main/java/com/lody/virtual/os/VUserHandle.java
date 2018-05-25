@@ -16,12 +16,13 @@
 
 package com.lody.virtual.os;
 
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Process;
 import android.util.SparseArray;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 
 import java.io.PrintWriter;
 
@@ -229,7 +230,7 @@ public final class VUserHandle implements Parcelable {
     }
 
     public static int myAppId() {
-        return getAppId(VClientImpl.get().getVUid());
+        return getAppId(VClient.get().getVUid());
     }
 
     /**
@@ -307,7 +308,14 @@ public final class VUserHandle implements Parcelable {
      * @hide
      */
     public static int myUserId() {
-        return getUserId(VClientImpl.get().getVUid());
+        return getUserId(VClient.get().getVUid());
+    }
+
+    public static int realUserId(){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            return 0;
+        }
+        return getUserId(Process.myUid());
     }
 
     /**

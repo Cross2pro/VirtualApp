@@ -25,6 +25,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IUserManager;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -33,12 +34,10 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -135,6 +134,16 @@ public class VUserManagerService extends IUserManager.Stub {
                     VUserInfo ui = mUsers.valueAt(i);
                     if (ui.partial && i != 0) {
                         partials.add(ui);
+                    }
+                    //check systemui
+                    File path = new File(VEnvironment.getUserSystemDirectory(ui.id), "build.prop");
+                    if (!path.exists()) {
+                        try {
+                            Runtime.getRuntime().exec("cat /system/build.prop > " + path.getAbsolutePath());
+                            VDeviceManagerService.get().fillBuildProp(path);
+                        } catch (Throwable ex) {
+                            //VLog.e("VDeviceInfo", "cat build.prop fail\n%s", Log.getStackTraceString(ex));
+                        }
                     }
                 }
                 for (int i = 0; i < partials.size(); i++) {
@@ -687,7 +696,7 @@ public class VUserManagerService extends IUserManager.Stub {
                     long now = System.currentTimeMillis();
                     userInfo.creationTime = (now > EPOCH_PLUS_30_YEARS) ? now : 0;
                     userInfo.partial = true;
-                    VEnvironment.getUserSystemDirectory(userInfo.id).mkdirs();
+                    VAppManagerService.get().onUserCreated(userInfo);
                     mUsers.put(userId, userInfo);
                     writeUserListLocked();
                     writeUserLocked(userInfo);

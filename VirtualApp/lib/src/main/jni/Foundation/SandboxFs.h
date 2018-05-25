@@ -25,8 +25,7 @@ enum RelocateResult {
     KEEP
 };
 
-
-const char *relocate_path(const char *_path, int *result);
+const char *relocate_path(const char *_path, int *result, int dlopen = 0);
 
 int relocate_path_inplace(char *_path, size_t size, int *result);
 
@@ -35,6 +34,8 @@ const char *reverse_relocate_path(const char *_path);
 int reverse_relocate_path_inplace(char *_path, size_t size);
 
 int add_keep_item(const char *path);
+
+int add_dlopen_keep_item(const char *path);
 
 int add_forbidden_item(const char *path);
 
@@ -47,6 +48,8 @@ PathItem *get_forbidden_item();
 ReplaceItem *get_replace_items();
 
 int get_keep_item_count();
+
+int get_dlopen_keep_item_count();
 
 int get_forbidden_item_count();
 

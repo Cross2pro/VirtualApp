@@ -21,4 +21,6 @@
     <string name="external_storage">External Storage</string>
     <string name="install_d">Install (%d)</string>
     <string name="install_too_much_once_time">No more then 9 apps can be chosen at a time!</string>
+    <string name="tip_install_gms">Hi</string>
+    <string name="text_install_gms">We found that your device has been installed the Google service, whether you need to install them?</string>
 </resources>

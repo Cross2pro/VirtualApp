@@ -50,7 +50,11 @@ public class BinderInvocationStub extends MethodInvocationStub<IInterface> imple
 
     private static IInterface asInterface(Class<?> stubClass, IBinder binder) {
         try {
-            if (stubClass == null || binder == null) {
+            if (stubClass == null) {
+                return null;
+            }
+            if (binder == null) {
+                Log.w(TAG, "Could not create stub because binder = null, stubClass=" + stubClass);
                 return null;
             }
             Method asInterface = stubClass.getMethod("asInterface", IBinder.class);

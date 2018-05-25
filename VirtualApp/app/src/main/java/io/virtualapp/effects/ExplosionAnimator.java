@@ -1,7 +1,5 @@
 package io.virtualapp.effects;
 
-import java.util.Random;
-
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -12,17 +10,19 @@ import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 
-import io.virtualapp.VApp;
+import java.util.Random;
+
+import io.virtualapp.App;
 import io.virtualapp.abs.ui.VUiKit;
 
 public class ExplosionAnimator extends ValueAnimator {
 
 	private static final Interpolator DEFAULT_INTERPOLATOR = new AccelerateInterpolator(0.6f);
 	private static final float END_VALUE = 1.4f;
-	private static final float X = VUiKit.dpToPx(VApp.getApp(), 5);
-	private static final float Y = VUiKit.dpToPx(VApp.getApp(), 20);
-	private static final float V = VUiKit.dpToPx(VApp.getApp(), 2);
-	private static final float W = VUiKit.dpToPx(VApp.getApp(), 1);
+	private static final float X = VUiKit.dpToPx(App.getApp(), 5);
+	private static final float Y = VUiKit.dpToPx(App.getApp(), 20);
+	private static final float V = VUiKit.dpToPx(App.getApp(), 2);
+	private static final float W = VUiKit.dpToPx(App.getApp(), 1);
 	static long DEFAULT_DURATION = 0x450;
 	private Paint mPaint;
 	private Particle[] mParticles;

@@ -15,7 +15,6 @@ import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +30,11 @@ public class NativeEngine {
 
     private static boolean sFlag = false;
 
+    private static final String LIB_NAME = "va++";
+
     static {
         try {
-            System.loadLibrary("va++");
+            System.loadLibrary(LIB_NAME);
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -72,6 +73,17 @@ public class NativeEngine {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
         return origPath;
+    }
+
+    public static void dlOpenWhitelist(String path){
+        if (!path.endsWith("/")) {
+            path = path + "/";
+        }
+        try {
+            nativeDlOpenWhitelist(path);
+        } catch (Throwable e) {
+            VLog.e(TAG, VLog.getStackTraceString(e));
+        }
     }
 
     public static void redirectDirectory(String origPath, String newPath) {
@@ -122,13 +134,14 @@ public class NativeEngine {
         }
     }
 
-    public static void enableIORedirect() {
+    public static void enableIORedirect(boolean needDlOpen) {
         try {
-            String soPath = String.format("/data/data/%s/lib/libva++.so", VirtualCore.get().getHostPkg());
+            String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
+                    "lib/lib" + LIB_NAME + ".so").getAbsolutePath();
             if (!new File(soPath).exists()) {
-                throw new RuntimeException("Unable to find the so.");
+                throw new RuntimeException("Cannot find so " + soPath);
             }
-            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
+            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt(), needDlOpen);
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -138,7 +151,7 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
+        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {
@@ -147,17 +160,18 @@ public class NativeEngine {
         sFlag = true;
     }
 
-    public static void onKillProcess(int pid, int signal) {
+    public static boolean onKillProcess(int pid, int signal) {
         VLog.e(TAG, "killProcess: pid = %d, signal = %d.", pid, signal);
-        if (pid == android.os.Process.myPid()) {
+        if (pid == Process.myPid()) {
             VLog.e(TAG, VLog.getStackTraceString(new Throwable()));
         }
+        return true;
     }
 
     public static int onGetCallingUid(int originUid) {
         int callingPid = Binder.getCallingPid();
         if (callingPid == Process.myPid()) {
-            return VClientImpl.get().getBaseVUid();
+            return VClient.get().getBaseVUid();
         }
         if (callingPid == VirtualCore.get().getSystemPid()) {
             return Process.SYSTEM_UID;
@@ -166,18 +180,18 @@ public class NativeEngine {
         if (vuid != -1) {
             return VUserHandle.getAppId(vuid);
         }
-        VLog.d(TAG, "Unknown uid: " + callingPid);
-        return VClientImpl.get().getBaseVUid();
+        VLog.w(TAG, "Cannot detect real uid: %d", callingPid);
+        return VClient.get().getBaseVUid();
     }
 
     public static void onOpenDexFileNative(String[] params) {
         String dexOrJarPath = params[0];
         String outputPath = params[1];
-        VLog.d(TAG, "DexOrJarPath = %s, OutputPath = %s.", dexOrJarPath, outputPath);
+        VLog.d(TAG, "openDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
         try {
             String canonical = new File(dexOrJarPath).getCanonicalPath();
             InstalledAppInfo info = sDexOverrideMap.get(canonical);
-            if (info != null && !info.dependSystem) {
+            if (info != null && !info.notCopyApk) {
                 outputPath = info.getOdexFile().getPath();
                 params[1] = outputPath;
             }
@@ -203,9 +217,11 @@ public class NativeEngine {
 
     public static native boolean nativeCloseAllSocket();
 
-    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
+    private static native void nativeDlOpenWhitelist(String path);
+
+    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel, boolean needDlOpen);
 
     public static int onGetUid(int uid) {
-        return VClientImpl.get().getBaseVUid();
+        return VClient.get().getBaseVUid();
     }
 }

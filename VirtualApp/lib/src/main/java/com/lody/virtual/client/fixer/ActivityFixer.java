@@ -11,52 +11,68 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.session.MediaController;
 import android.os.Build;
+
+import com.lody.virtual.helper.utils.Reflect;
 
 import mirror.com.android.internal.R_Hide;
 
 /**
  * @author Lody
- *
  */
 public final class ActivityFixer {
 
-	private ActivityFixer() {
-	}
+    private ActivityFixer() {
+    }
 
-	public static void fixActivity(Activity activity) {
-		Context baseContext = activity.getBaseContext();
-		try {
-			TypedArray typedArray = activity.obtainStyledAttributes((R_Hide.styleable.Window.get()));
-			if (typedArray != null) {
-				boolean showWallpaper = typedArray.getBoolean(R_Hide.styleable.Window_windowShowWallpaper.get(),
-						false);
-				if (showWallpaper) {
-					activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
-				}
-				typedArray.recycle();
-			}
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
+    public static void fixActivity(Activity activity) {
+        Context baseContext = activity.getBaseContext();
+        try {
+            TypedArray typedArray = activity.obtainStyledAttributes((R_Hide.styleable.Window.get()));
+            if (typedArray != null) {
+                boolean showWallpaper = typedArray.getBoolean(R_Hide.styleable.Window_windowShowWallpaper.get(),
+                        false);
+                if (showWallpaper) {
+                    activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
+                }
+                typedArray.recycle();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			Intent intent = activity.getIntent();
-			ApplicationInfo applicationInfo = baseContext.getApplicationInfo();
-			PackageManager pm = activity.getPackageManager();
-			if (intent != null && activity.isTaskRoot()) {
-				try {
-					String label = applicationInfo.loadLabel(pm) + "";
-					Bitmap icon = null;
-					Drawable drawable = applicationInfo.loadIcon(pm);
-					if (drawable instanceof BitmapDrawable) {
-						icon = ((BitmapDrawable) drawable).getBitmap();
-					}
-					activity.setTaskDescription(new ActivityManager.TaskDescription(label, icon));
-				} catch (Throwable e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Intent intent = activity.getIntent();
+            ApplicationInfo applicationInfo = baseContext.getApplicationInfo();
+            PackageManager pm = activity.getPackageManager();
+            if (intent != null && activity.isTaskRoot()) {
+                try {
+                    String label = applicationInfo.loadLabel(pm) + "";
+                    Bitmap icon = null;
+                    Drawable drawable = applicationInfo.loadIcon(pm);
+                    if (drawable instanceof BitmapDrawable) {
+                        icon = ((BitmapDrawable) drawable).getBitmap();
+                    }
+                    activity.setTaskDescription(new ActivityManager.TaskDescription(label, icon));
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+    public static void fixAfterActivityCreate(Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            //fix crash of youtube#sound keys
+            if ("com.google.android.youtube".equals(activity.getPackageName())) {
+                MediaController mediaController = activity.getWindow().getMediaController();
+                if (mediaController != null) {
+                    Context base = Reflect.on(mediaController).get("mContext");
+                    ContextFixer.fixContext(base);
+                }
+            }
+        }
+    }
 }

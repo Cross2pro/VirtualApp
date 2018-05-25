@@ -1,8 +1,8 @@
 package com.lody.virtual.remote;
 
-import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
 
 import com.lody.virtual.os.VEnvironment;
 
@@ -120,6 +120,9 @@ public class VDeviceInfo implements Parcelable {
     };
 
     public File getWifiFile(int userId) {
+        if(TextUtils.isEmpty(wifiMac)){
+            return null;
+        }
         File wifiMacFie = VEnvironment.getWifiMacFile(userId);
         if (!wifiMacFie.exists()) {
             try {
@@ -157,7 +160,8 @@ public class VDeviceInfo implements Parcelable {
                     last = "0" + last;
                 }
             }
-            return checkSum(pre + ot + last);
+            String val = checkSum(pre + ot + last);
+            return val;
         }
     }
 

@@ -21,6 +21,7 @@
 -keepclassmembers class * implements android.io.Parcelable {*;}
 -keep class * implements android.os.Parcelable {*;}
 
+-dontwarn android.**
 -dontwarn org.eclipse.**
 -dontwarn com.google.**
 -dontwarn org.slf4j.**

@@ -57,7 +57,9 @@ class PackagePersistenceLayer extends PersistenceLayer {
         int count = p.readInt();
         while (count-- > 0) {
             PackageSetting setting = new PackageSetting(p);
-            mService.loadPackage(setting);
+            if (!"android".equals(setting.packageName)){
+                this.mService.loadPackage(setting);
+            }
         }
     }
 

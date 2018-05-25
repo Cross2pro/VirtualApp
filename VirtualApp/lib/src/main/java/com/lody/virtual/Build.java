@@ -7,10 +7,9 @@ package com.lody.virtual;
  * @author Lody
  *
  */
-
 public class Build {
 
-    public static final String VERSION_NAME = "Build-823-01";
+    public static final String VERSION_NAME = BuildConfig.VA_VERSION_NAME;
 
-    public static final int VERSION_CODE = 8230001;
+    public static final int VERSION_CODE = BuildConfig.VERSION_CODE;
 }

@@ -49,6 +49,8 @@ import io.virtualapp.home.models.AppInfoLite;
 		void deleteApp(AppData data);
 
         void createShortcut(AppData data);
+
+        String getLabel(String packageName);
     }
 
 }

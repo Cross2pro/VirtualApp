@@ -2,18 +2,14 @@ package io.virtualapp.home;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.os.Environment;
+import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-
-import java.io.File;
-import java.io.IOException;
 
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VUiKit;
@@ -57,6 +53,11 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     }
 
     @Override
+    public String getLabel(String packageName) {
+        return mRepo.getLabel(packageName);
+    }
+
+    @Override
     public void launchApp(AppData data) {
         try {
             if (data instanceof PackageAppData) {
@@ -79,7 +80,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         mRepo.getVirtualApps().done(mView::loadFinish).fail(mView::loadError);
     }
 
-
     @Override
     public void addApp(AppInfoLite info) {
         class AddResult {
@@ -91,9 +91,11 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         VUiKit.defer().when(() -> {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
             addResult.justEnableHidden = installedAppInfo != null;
+            //multi app's userId
+            int nextUserId = 0;
             if (addResult.justEnableHidden) {
                 int[] userIds = installedAppInfo.getInstalledUsers();
-                int nextUserId = userIds.length;
+                nextUserId = userIds.length;
                 /*
                   Input : userIds = {0, 1, 3}
                   Output: nextUserId = 2
@@ -123,11 +125,18 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 if (!res.isSuccess) {
                     throw new IllegalStateException();
                 }
+
             }
-            //virtual sdcard
-            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
-                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
-            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
+            //TODO install other app to current user
+//            if(!VirtualCore.get().isAppInstalledAsUser(nextUserId,"QQ")) {
+//                VirtualCore.get().installPackageAsUser(nextUserId, "QQ");
+//            }
+            //第一次安装之后设置一次就行
+            //如果该app需要选择文件，分享文件等与外界app的文件交互，则不能开启，需要在VC
+//            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
+//                    //虚拟sdcard路径
+//                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
+//            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
         }).done(res -> {
@@ -136,27 +145,20 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 PackageAppData data = addResult.appData;
                 data.isLoading = true;
                 mView.addAppToLauncher(data);
-                handleOptApp(data, info.packageName, true);
+                handleLoadingApp(data);
             } else {
                 MultiplePackageAppData data = new MultiplePackageAppData(addResult.appData, addResult.userId);
                 data.isLoading = true;
                 mView.addAppToLauncher(data);
-                handleOptApp(data, info.packageName, false);
+                handleLoadingApp(data);
             }
         });
     }
 
 
-    private void handleOptApp(AppData data, String packageName, boolean needOpt) {
+    private void handleLoadingApp(AppData data) {
         VUiKit.defer().when(() -> {
             long time = System.currentTimeMillis();
-            if (needOpt) {
-                try {
-                    VirtualCore.get().preOpt(packageName);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
             time = System.currentTimeMillis() - time;
             if (time < 1500L) {
                 try {
@@ -206,10 +208,14 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             }
         };
         if (data instanceof PackageAppData) {
-            VirtualCore.get().createShortcut(0, ((PackageAppData) data).packageName, listener);
+            if(!VirtualCore.get().createShortcut(0, ((PackageAppData) data).packageName, listener)){
+                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
+            }
         } else if (data instanceof MultiplePackageAppData) {
             MultiplePackageAppData appData = (MultiplePackageAppData) data;
-            VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener);
+            if(!VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener)){
+                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
