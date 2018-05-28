@@ -737,10 +737,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private void onProcessDead(ProcessRecord record) {
-        mProcessNames.remove(record.processName, record.vuid);
-        mPidsSelfLocked.remove(record.pid);
-        processDead(record);
-        record.lock.open();
+
+        synchronized (mProcessNames) {
+            mProcessNames.remove(record.processName, record.vuid);
+            mPidsSelfLocked.remove(record.pid);
+            processDead(record);
+            record.lock.open();
+        }
     }
 
     @Override
