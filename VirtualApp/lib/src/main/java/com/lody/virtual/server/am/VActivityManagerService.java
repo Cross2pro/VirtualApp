@@ -737,13 +737,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private void onProcessDead(ProcessRecord record) {
-
         synchronized (mProcessNames) {
             mProcessNames.remove(record.processName, record.vuid);
-            mPidsSelfLocked.remove(record.pid);
-            processDead(record);
-            record.lock.open();
         }
+        synchronized (mPidsSelfLocked) {
+            mPidsSelfLocked.remove(record.pid);
+        }
+        processDead(record);
+        record.lock.open();
     }
 
     @Override
@@ -942,7 +943,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                 stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
                             }
                             Log.e("wxd", " killAppByPkg  " + r.pid);
-
                             r.client.clearSettingProvider();
                             finishAllActivity(r);
                             killProcess(r.pid);
