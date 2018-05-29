@@ -5,6 +5,7 @@
 #ifndef VIRTUALAPP_TEMPLATEFILE_H
 #define VIRTUALAPP_TEMPLATEFILE_H
 
+#include <utils/zString.h>
 #include "EncryptFile.h"
 
 #define CHECK_BUF_SIZE 100
@@ -42,6 +43,8 @@ public:
 private:
     bool flag_for_check[CHECK_BUF_SIZE];
     char buf_for_check[CHECK_BUF_SIZE];
+
+    int createTempFile(char * path, zString & tpath);
 
 public:
     bool canCheck();
