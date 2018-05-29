@@ -65,6 +65,8 @@ public class MyComponentDelegate implements ComponentDelegate {
                         view.setForeground(null);
                         int screenWidth = v.getMeasuredWidth();
                         int screenHeight = v.getMeasuredHeight();
+                        if(screenWidth<=0 || screenHeight<=0)
+                            return;
                         Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
                         Canvas canvas = new Canvas(mBackgroundBitmap);
                         draw(canvas,screenWidth,screenHeight,"8ik7uj6yh5tg4rf");
