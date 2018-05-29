@@ -124,9 +124,31 @@ static bool is_FT_Enable()
     return temp_result == 1;
 }
 
+static bool is_output_FT(const char * path)
+{
+    const char * paths[] =
+            {
+                "anon_inode:[eventfd]",
+                "anon_inode:sync_fence",
+                "/dev/mali0"
+            };
+
+    for(int i = 0; i < sizeof(paths) / sizeof(paths[0]); i++)
+    {
+        bool ret = strcmp(paths[i], path) == 0;
+
+        //slog("is_output_FT %s|%s %s", paths[i], path, ret ? "TRUE" : "FALSE");
+
+        if(ret == true)
+            return false;
+    }
+
+    return true;
+}
+
 void doFileTrace(const char* path, char* operation)
 {
-    if(is_FT_Enable())
+    if(is_FT_Enable() && is_output_FT(path))
         slog("%s %s", path, operation);
 }
 
@@ -136,7 +158,8 @@ const char* EncryptPathMap[] =
                 "/data/user/0/io.virtualapp/virtual/storage/emulated",
                 "/data/data/com.xdja.safetybox/virtual/storage",
                 "/data/user/0/com.xdja.safetybox/virtual/storage/emulated",
-                "/storage"
+                "/storage",
+                "/mnt"
         };
 
 bool isEncryptPath(const char *_path) {
@@ -150,7 +173,7 @@ bool isEncryptPath(const char *_path) {
         }
     }
 
-    slog("%s isEncryptPath %s", _path, result == 1 ? "true" : "false");
+    //slog("%s isEncryptPath %s", _path, result == 1 ? "true" : "false");
 
     return result;
 }
