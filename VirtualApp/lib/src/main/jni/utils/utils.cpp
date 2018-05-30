@@ -59,7 +59,8 @@ bool getPathFromFd(int fd, zString & path) {
 const char * TED_packageVector[] =
         {
                 "com.tencent.mm",
-                "cn.wps.moffice"
+                "cn.wps.moffice",
+                "com.android.gallery3d"
         };
 
 bool is_TED_Enable()
@@ -93,7 +94,8 @@ bool is_TED_Enable()
 const char * FT_packageVector[] =
         {
                 "com.tencent.mm",
-                "cn.wps.moffice"
+                "cn.wps.moffice",
+                "com.android.gallery3d"
         };
 
 static bool is_FT_Enable()
