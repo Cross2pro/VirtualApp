@@ -8,6 +8,8 @@
 
 #include <sys/sendfile.h>
 #include <errno.h>
+#include <utils/timeStamp.h>
+#include <android/legacy_stdlib_inlines.h>
 
 #include "utils/mylog.h"
 
@@ -74,12 +76,16 @@ int TemplateFile::createTempFile(char *path, zString & tpath) {
     }
     name += 1;
 
+    timeStamp ts;
+    srandom((unsigned int)ts.get());
+    long rd = random() % 1000;
+
     int i, fd = -1;
     int num = sizeof(dirs) / sizeof(dirs[0]);
     for (i = 0; i < num; i++)
     {
         char newpath[260] = {0};
-        sprintf(newpath, "%s/%s.xt", dirs[i], name);
+        sprintf(newpath, "%s/%s_%04ld.xt", dirs[i], name, rd);
         tpath.format("%s", newpath);
 
         log("judge : TemplateFile::createTempFile newpaht = %s", newpath);
