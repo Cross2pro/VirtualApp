@@ -227,15 +227,15 @@ bool TemplateFile::translate(int fd) {
     log("judge : _ef_fd len = %d\n", len);
     int ret = originalInterface::original_sendfile(fd, _ef_fd, 0, len);
     originalInterface::original_lseek(fd, ori_pos, SEEK_SET);
-    log("judge : translate [%s] sendfile return %d\n", _path, ret);
+    log("judge : translate [%s] sendfile return %d error %s\n", _path, ret, strerror(errno));
     fsync(fd);
 
     return ret == len;
 }
 
-void TemplateFile::close(bool flag) {
+void TemplateFile::close(bool checkWhenClose, int fd) {
 
-    if(flag) {
+    if(checkWhenClose) {
         int i;
         for (i = 0; i < CHECK_BUF_SIZE; i++) {
             if (flag_for_check[i] == false)
@@ -245,7 +245,7 @@ void TemplateFile::close(bool flag) {
             i--;
 
         if (doControl(i)) {
-            translate(0);
+            translate(fd);
         }
     }
 

@@ -262,7 +262,7 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
     return vf;
 }
 
-void virtualFileManager::releaseVF(char *path) {
+void virtualFileManager::releaseVF(char *path, int __fd) {
     Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
 
     VFMap::iterator iter = _vfmap.find(std::string(path));
@@ -279,7 +279,7 @@ void virtualFileManager::releaseVF(char *path) {
                 originalInterface::original_close(fd);
             }
             log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
-            vf->vclose();
+            vf->vclose(__fd);
             delete vf;
             _vfmap.erase(iter);
         }
@@ -372,7 +372,7 @@ bool virtualFile::create(int fd) {
     return false;
 }
 
-int virtualFile::vclose() {
+int virtualFile::vclose(int fd) {
     /*
      * 如果VFS == VFS_TESTING
      * 那么这里需要做最后一次检查
@@ -383,7 +383,7 @@ int virtualFile::vclose() {
     } else if(vfs == VFS_TESTING) {
         if(tf != NULL)
         {
-            tf->close();
+            tf->close(true, fd);
         }
     } else {
     }
@@ -502,7 +502,7 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
                         setVFS(VFS_IGNORE);
                     }
 
-                    tf->close(false);
+                    tf->close(false, fd);
                     delete tf;
                     tf = 0;
                 }
@@ -615,7 +615,7 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
                         setVFS(VFS_IGNORE);
                     }
 
-                    tf->close(false);
+                    tf->close(false, fd);
                     delete tf;
                     tf = 0;
                 }

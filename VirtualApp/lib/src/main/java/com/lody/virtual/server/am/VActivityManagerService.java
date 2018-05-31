@@ -930,46 +930,41 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public void killAppByPkg(final String pkg, int userId) {
-        synchronized (mProcessNames) {
-            Log.e("wxd", " killAppByPkg ");
-            ArrayMap<String, SparseArray<ProcessRecord>> map = mProcessNames.getMap();
-            int N = map.size();
+        synchronized (mPidsSelfLocked) {
+            int N = mPidsSelfLocked.size();
             while (N-- > 0) {
-                SparseArray<ProcessRecord> uids = map.valueAt(N);
-                if(uids != null) {
-                    for (int i = 0; i < uids.size(); i++) {
-                        ProcessRecord r = uids.valueAt(i);
-                        if (userId != VUserHandle.USER_ALL) {
-                            if (r.userId != userId) {
-                                continue;
-                            }
-                        }
-                        if (r.pkgList.contains(pkg)) {
-                            try {
-                                ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
-                                synchronized (mHistory)
-                                {
-                                    for (ServiceRecord sr : mHistory) {
-                                        if (sr.process == r)
-                                        {
-                                            tmprecord.add(sr);
-                                        }
+                ProcessRecord r = mPidsSelfLocked.valueAt(N);
+                if (r.userId == userId && r.info.packageName.equals(pkg)) {
+                    for (String pkgName : r.pkgList){
+                        Log.e("wxd", " killAppByPkg item " +pkgName);
+                    }
+                    Log.e("wxd", " killAppByPkg package" +pkg);
+                    Log.e("wxd", " killAppByPkg pid" +r.pid);
+                    {
+                        try {
+                            ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
+                            synchronized (mHistory)
+                            {
+                                for (ServiceRecord sr : mHistory) {
+                                    if (sr.process == r)
+                                    {
+                                        tmprecord.add(sr);
                                     }
                                 }
-                                for(ServiceRecord tsr : tmprecord)
-                                {
-                                    Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
-                                    stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
-                                }
-                                Log.e("wxd", " killAppByPkg  " + r.pid);
-                                r.client.clearSettingProvider();
-                                finishAllActivity(r);
-                                killProcess(r.pid);
-                            }catch (Exception e){
-                                e.printStackTrace();
                             }
-
+                            for(ServiceRecord tsr : tmprecord)
+                            {
+                                Log.e("wxd", " killService " +  tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
+                                stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
+                            }
+                            Log.e("wxd", " killAppByPkg  " + r.pid);
+                            r.client.clearSettingProvider();
+                            finishAllActivity(r);
+                            killProcess(r.pid);
+                        }catch (Exception e){
+                            e.printStackTrace();
                         }
+
                     }
                 }
             }
