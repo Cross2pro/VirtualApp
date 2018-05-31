@@ -34,7 +34,7 @@ public:
     int fstat(int fd, struct stat *buf);
 
     bool create(const char * path);
-    void close(bool flag = true);
+    void close(bool checkWhenClose, int fd);
     void forceTranslate();
 
     TemplateFile ();

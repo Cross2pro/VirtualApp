@@ -151,7 +151,7 @@ public:
     bool create(int fd);
 
 
-    int vclose();
+    int vclose(int fd);
 
     void forceTranslate();
 
@@ -191,7 +191,7 @@ public:
     virtualFile * queryVF(char *path);
     void updateVF(virtualFile & vf);
 
-    void releaseVF(char *path);
+    void releaseVF(char *path, int fd);
 
     /*void forceClean(char * path);*/
 

@@ -679,7 +679,7 @@ HOOK_DEF(int, close, int __fd) {
     } else {
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath());
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), __fd);
         /******through this way to release vfd *********/
         virtualFileDescribeSet::getVFDSet().release(vfd.get());
         /***********************************************/
