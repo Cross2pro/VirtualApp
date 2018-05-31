@@ -30,6 +30,18 @@ public class controllerManager {
         return ret;
     }
 
+    public static boolean isCameraEnable()
+    {
+        boolean ret = false;
+        try{
+            ret = controllerManager.get().getService().isCameraEnable(VirtualRuntime.getInitialPackageName());
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+
+        return ret;
+    }
+
     public static boolean isGatewayEnable()
     {
         boolean ret = false;

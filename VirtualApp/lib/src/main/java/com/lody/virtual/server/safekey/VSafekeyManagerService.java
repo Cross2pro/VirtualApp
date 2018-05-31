@@ -12,6 +12,7 @@ import com.xdja.multichip.jniapi.JarJniApiProxy;
 import com.xdja.multichip.jniapi.JarMultiJniApiManager;
 import com.xdja.multichip.param.JniApiParam;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -209,70 +210,76 @@ public class VSafekeyManagerService extends IVSafekeyManager.Stub {
     }
 
     @Override
-    public int encryptKey(byte[] key, int keylen, byte[] seckey, int seckeylen) throws RemoteException {
+    public byte[] encryptKey(byte[] key, int keylen) throws RemoteException {
+        byte[] seckey = new byte[keylen];
+        for(int i=0; i<keylen; i++){
+            seckey[i] = 0;
+        }
         try {
             VLog.e(TAG, "VS encryptKey");
             byte encrypt_kID = 0x08;
             int ret = -1;
             if(jniProxy != null) {
-
                 ret = jniProxy.SM1(key, keylen, JNIAPI.ECB_ENCRYPT, seckey, encrypt_kID, null);
-
                 if(ret < 0){
                     visitSafeKeyErrorCallback();
                 }
             }
             VLog.e(TAG, "VS encryptKey ret "+ ret);
-            return ret;
+            return seckey;
         }catch (Exception e){
             visitSafeKeyErrorCallback();
             e.printStackTrace();
-            return -1;
+            return seckey;
         }
     }
 
     @Override
-    public int decryptKey(byte[] seckey, int seckeylen, byte[] key, int keylen) throws RemoteException {
+    public byte[] decryptKey(byte[] seckey, int seckeylen) throws RemoteException {
+        byte[] key = new byte[seckeylen];
+        for(int i=0; i<seckeylen; i++){
+            key[i] = 0;
+        }
         try {
             VLog.e(TAG, "VS decryptKey");
             byte decrypt_kID = 0x09;
             int ret = -1;
             if(jniProxy != null) {
-
                 ret = jniProxy.SM1(seckey, seckeylen, JNIAPI.ECB_DECRYPT, key, decrypt_kID, null);
-
                 if(ret < 0){
                     visitSafeKeyErrorCallback();
                 }
             }
             VLog.e(TAG, "VS decryptKey ret "+ ret);
-            return ret;
+            return key;
         }catch (Exception e){
             visitSafeKeyErrorCallback();
             e.printStackTrace();
-            return -1;
+            return key;
         }
     }
 
     @Override
-    public int getRandom(int len, byte[] random) throws RemoteException {
+    public byte[] getRandom(int len) throws RemoteException {
+        byte[] random = new byte[len];
+        for(int i=0; i<len; i++){
+            random[i] = 0;
+        }
         try {
             VLog.e(TAG, "VS getRandom");
             int ret = -1;
             if(jniProxy != null) {
-
                 ret = jniProxy.GenRandom(len, random);
-
                 if(ret < 0){
                     visitSafeKeyErrorCallback();
                 }
             }
             VLog.e(TAG, "VS getRandom ret "+ ret);
-            return ret;
+            return random;
         }catch (Exception e){
             visitSafeKeyErrorCallback();
             e.printStackTrace();
-            return -1;
+            return random;
         }
     }
 

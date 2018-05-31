@@ -631,7 +631,11 @@ public final class VClient extends IVClient.Stub {
     }
 
     private void fixInstalledProviders() {
-        clearSettingProvider();
+        try {
+            clearSettingProvider();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         Map clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
         for (Object clientRecord : clientMap.values()) {
             if (BuildCompat.isOreo()) {
@@ -670,7 +674,8 @@ public final class VClient extends IVClient.Stub {
 
     }
 
-    private void clearSettingProvider() {
+    @Override
+    public void clearSettingProvider() throws RemoteException {
         Object cache;
         cache = Settings.System.sNameValueCache.get();
         if (cache != null) {

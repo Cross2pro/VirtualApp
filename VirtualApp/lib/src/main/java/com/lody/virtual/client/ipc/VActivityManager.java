@@ -299,6 +299,14 @@ public class VActivityManager {
         }
     }
 
+    public int getRunningAppMemorySize(String packageName, int userId) {
+        try {
+            return getService().getRunningAppMemorySize(packageName, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
     public void handleApplicationCrash() {
         try {
             getService().handleApplicationCrash();

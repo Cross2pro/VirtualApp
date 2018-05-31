@@ -13,30 +13,28 @@
 #include "safekey_jni.h"
 #include "utils/zJNIEnv.h"
 
-extern JavaVM *gVm;
-extern jclass gClass;
 extern jclass vskmClass;
 
 int SafeKeyJni::encryptKey(char *input, int inputlen, char *output, int outputlen){
-    /*return operatorKey(input,inputlen, output, outputlen,0);*/
-    for(int i = 0; i < inputlen; i++)
+    return operatorKey(input, inputlen, output, outputlen, 0);
+   /* for(int i = 0; i < inputlen; i++)
         output[i] = input[i] + (char)3;
 
-    return 0;
+    return 0;*/
 }
 
 int SafeKeyJni::decryptKey(char *input, int inputlen, char *output, int outputlen){
-    /*return operatorKey(input,inputlen, output, outputlen,1);*/
-    for(int i = 0; i < inputlen; i++)
+    return operatorKey(input, inputlen, output, outputlen, 1);
+   /* for(int i = 0; i < inputlen; i++)
         output[i] = input[i] - (char)3;
 
-    return 0;
+    return 0;*/
 }
 
-int SafeKeyJni::operatorKey(char *input, int inputlen, char *output, int outputlen,int mode) {
+int SafeKeyJni::operatorKey(char *input, int inputlen, char *output, int outputlen, int mode) {
 
-    /*log("SafeKeyJni operatorKey start mode %d keylen %d",mode,inputlen);
-
+    log("SafeKeyJni operatorKey start mode %d keylen %d", mode, inputlen);
+    int ret = 0;
     zJNIEnv env;
     if(env.get() == NULL) {
         log("JNIEnv is NULL");
@@ -45,56 +43,70 @@ int SafeKeyJni::operatorKey(char *input, int inputlen, char *output, int outputl
 
     jbyteArray _input = env.get()->NewByteArray(inputlen);
     env.get()->SetByteArrayRegion(_input, 0, inputlen, (jbyte*)input);
-    jbyteArray _output = env.get()->NewByteArray(inputlen);
-//    env->SetByteArrayRegion(seckey, 0, seckeylen, (jbyte*)pseckey);
+    jbyteArray _output;
     jmethodID mid = NULL;
-    if(mode==0){
-        mid = env.get()->GetStaticMethodID(vskmClass, "encryptKey", "([BI[BI)I");
+    if(mode == 0){
+        mid = env.get()->GetStaticMethodID(vskmClass, "encryptKey", "([BI)[B");
     }else{
-        mid = env.get()->GetStaticMethodID(vskmClass, "decryptKey", "([BI[BI)I");
+        mid = env.get()->GetStaticMethodID(vskmClass, "decryptKey", "([BI)[B");
     }
-
-    int ret = env.get()->CallStaticIntMethod(vskmClass, mid ,_input, inputlen, _output, inputlen);
+    _output = (jbyteArray)env.get()->CallStaticObjectMethod(vskmClass, mid ,_input, inputlen);
     jbyte* a = env.get()->GetByteArrayElements(_output, JNI_FALSE);
     memcpy(output, a, (size_t)inputlen);
+
+    for(int i=0; i<inputlen; i++){
+        if(output[i] != 0){
+            ret = 0;
+            break;
+        }
+        ret = -1;
+    }
+    log("SafeKeyJni operatorKey ret = %d", ret);
 
     env.get()->ReleaseByteArrayElements(_output, a, 0);
     env.get()->DeleteLocalRef(_input);
     env.get()->DeleteLocalRef(_output);
 
-    zString tmp;
+    /*zString tmp;
     char * p = tmp.getBuf();
     for(int i = 0; i < inputlen; i++)
     {
         sprintf(p + i*2, "%02hhx", output[i]);
     }
-
-    log("SafeKeyJni operatorKey end return %d [%s]", ret, p);
-    return ret;*/
-
-    return 0;
+    log("SafeKeyJni operatorKey end return %d [%s]", ret, p);*/
+    return ret;
 }
 
 int SafeKeyJni::getRandom(int len, char *random) {
 
     int ret = 0;
     log("SafeKeyJni getRandom start keylen %d", len);
-    /*zJNIEnv env;
+    zJNIEnv env;
     if(env.get() == NULL) {
         log("JNIEnv is NULL");
         return -1;
     }
 
-    jbyteArray _output = env.get()->NewByteArray(len);
-    jmethodID mid = env.get()->GetStaticMethodID(vskmClass, "getRandom", "(I[B)I");
-    ret = env.get()->CallStaticIntMethod(vskmClass, mid , len, _output);
+    jbyteArray _output;
+    jmethodID mid = env.get()->GetStaticMethodID(vskmClass, "getRandom", "(I)[B");
+    _output = (jbyteArray)env.get()->CallStaticObjectMethod(vskmClass, mid, len);
     jbyte* a = env.get()->GetByteArrayElements(_output, JNI_FALSE);
     memcpy(random, a, (size_t)len);
 
-    env.get()->ReleaseByteArrayElements(_output, a, 0);
-    env.get()->DeleteLocalRef(_output);*/
+    for(int i=0; i<len; i++){
+        if(random[i] != 0){
+            ret = 0;
+            break;
+        }
+        ret = -1;
+    }
+    log("SafeKeyJni getRandom ret = %d", ret);
 
-    timespec time;
+    env.get()->ReleaseByteArrayElements(_output, a, 0);
+    env.get()->DeleteLocalRef(_output);
+    return ret;
+
+   /* timespec time;
     clock_gettime(CLOCK_REALTIME, &time);  //获取相对于1970到现在的秒数
     srand48(time.tv_nsec);
     lrand48();
@@ -111,6 +123,5 @@ int SafeKeyJni::getRandom(int len, char *random) {
         sprintf(p + i*2, "%02hhx", random[i]);
     }
 
-    log("SafeKeyJni getRandom end return %d [%s]", ret, p);
-    return ret;
+    log("SafeKeyJni getRandom end return %d [%s]", ret, p);*/
 }

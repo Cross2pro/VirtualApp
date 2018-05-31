@@ -8,6 +8,8 @@
 
 #include <sys/sendfile.h>
 #include <errno.h>
+#include <utils/timeStamp.h>
+#include <android/legacy_stdlib_inlines.h>
 
 #include "utils/mylog.h"
 
@@ -61,20 +63,59 @@ bool TemplateFile::doControl(int len) {
     return isHit;
 }
 
+int TemplateFile::createTempFile(char *path, zString & tpath) {
+    const char *dirs[] = {
+            "/data/data/io.virtualapp/virtual/data",
+            "/data/data/com.xdja.safetybox/virtual/data"
+    };
+
+    char *name = strrchr(path, '/');
+    if (name == nullptr) {
+        log("judge : TemplateFile::createTempFile get name fail!");
+        return -1;
+    }
+    name += 1;
+
+    timeStamp ts;
+    srandom((unsigned int)ts.get());
+    long rd = random() % 1000;
+
+    int i, fd = -1;
+    int num = sizeof(dirs) / sizeof(dirs[0]);
+    for (i = 0; i < num; i++)
+    {
+        char newpath[260] = {0};
+        sprintf(newpath, "%s/%s_%04ld.xt", dirs[i], name, rd);
+        tpath.format("%s", newpath);
+
+        log("judge : TemplateFile::createTempFile newpaht = %s", newpath);
+
+        fd = originalInterface::original_openat(AT_FDCWD, newpath, O_RDWR|O_CREAT, S_IRWXU);
+
+        if(fd > 0)
+            break;
+    }
+
+    if(i == num)
+    {
+        log("judge : TemplateFile::createTempFile fail !!");
+        fd = -1;
+    }
+
+    return fd;
+}
+
 bool TemplateFile::create(const char *path) {
-    char newpath[260] = {0};
-    sprintf(newpath, "%s.xt", path);
 
-    strcpy(_path, path);
-    log("judge : TemplateFile::create newpaht = %s", newpath);
+    zString tpath;
+    _ef_fd = createTempFile((char *)path, tpath);
 
-    _ef_fd = originalInterface::original_openat(AT_FDCWD, newpath, O_RDWR|O_CREAT,
-                                                S_IRWXU);
     if(_ef_fd <= 0) {
         log("judge : openat fail , reason %s\n", strerror(errno));
         return false;
     }
-    _ef_bk = new EncryptFile(newpath);
+    strcpy(_path, path);
+    _ef_bk = new EncryptFile(tpath.toString());
     if(!_ef_bk->create(_ef_fd, ENCRYPT_WRITE))
     {
         log("judge : _ef_bk->create fail\n");

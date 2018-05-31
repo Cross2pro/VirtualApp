@@ -19,6 +19,7 @@ interface IVClient {
     void scheduleStopService(in IBinder token);
     void finishActivity(in IBinder token);
     void closeAllLongSocket();
+    void clearSettingProvider();
     IBinder createProxyService(in ComponentName component, in IBinder binder);
     IBinder acquireProviderClient(in ProviderInfo info);
     IBinder getAppThread();

@@ -9,6 +9,7 @@
 jclass controllerManagerNative::cmn_class = 0;
 
 jmethodID controllerManagerNative::isNetworkEnable_method = 0;
+jmethodID controllerManagerNative::isCameraEnable_method = 0;
 jmethodID controllerManagerNative::isChangeConnect_method = 0;
 jmethodID controllerManagerNative::isGatewayEnable_method = 0;
 
@@ -26,10 +27,12 @@ bool controllerManagerNative::initial() {
         controllerManagerNative::cmn_class = (jclass )env.get()->NewGlobalRef((jobject )controllerManagerNative::cmn_class);
 
         controllerManagerNative::isNetworkEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isNetworkEnable", "()Z");
+        controllerManagerNative::isCameraEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isCameraEnable", "()Z");
         controllerManagerNative::isGatewayEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isGatewayEnable", "()Z");
         controllerManagerNative::isChangeConnect_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isChangeConnect", "(ILjava/lang/String;)Z");
         if(controllerManagerNative::isNetworkEnable_method == NULL
-                || controllerManagerNative::isChangeConnect_method == NULL || controllerManagerNative::isGatewayEnable_method == NULL)
+                || controllerManagerNative::isChangeConnect_method == NULL || controllerManagerNative::isGatewayEnable_method == NULL
+                || controllerManagerNative::isCameraEnable_method == NULL)
             break;
 
         ret = true;
@@ -44,6 +47,14 @@ bool controllerManagerNative::isNetworkEnable() {
         return false;
 
     return env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class, controllerManagerNative::isNetworkEnable_method);
+}
+
+bool controllerManagerNative::isCameraEnable() {
+    zJNIEnv env;
+    if(env.get() == NULL)
+        return false;
+
+    return env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class, controllerManagerNative::isCameraEnable_method);
 }
 
 bool controllerManagerNative::isGatewayEnable() {

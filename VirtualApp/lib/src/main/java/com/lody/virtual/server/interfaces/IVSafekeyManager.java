@@ -9,11 +9,11 @@ public interface IVSafekeyManager extends IPCInterface {
 
     int getPinTryCount() throws RemoteException;
 
-    int encryptKey(byte[] key, int keylen, byte[] seckey, int seckeylen) throws RemoteException;
+    byte[] encryptKey(byte[] key, int keylen) throws RemoteException;
 
-    int decryptKey(byte[] seckey, int seckeylen, byte[] key, int keylen) throws RemoteException;
+    byte[] decryptKey(byte[] seckey, int seckeylen) throws RemoteException;
 
-    int getRandom(int len, byte[] random) throws RemoteException;
+    byte[] getRandom(int len) throws RemoteException;
 
     void registerCallback(IVSCallback vsCallback) throws RemoteException;
 

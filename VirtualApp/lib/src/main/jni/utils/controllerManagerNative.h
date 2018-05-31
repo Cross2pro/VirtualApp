@@ -12,6 +12,7 @@ class controllerManagerNative {
     static JavaVM * _jvm;
     static jclass cmn_class;
     static jmethodID isNetworkEnable_method;
+    static jmethodID isCameraEnable_method;
     static jmethodID isChangeConnect_method;
     static jmethodID isGatewayEnable_method;
 
@@ -20,6 +21,7 @@ public:
 
 public:
     static bool isNetworkEnable();
+    static bool isCameraEnable();
     static bool isChangeConnect(int port, char *ip);
     static bool isGatewayEnable();
 };

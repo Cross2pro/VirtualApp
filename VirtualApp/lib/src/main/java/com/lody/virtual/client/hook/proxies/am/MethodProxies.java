@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
@@ -398,6 +399,15 @@ class MethodProxies {
 
             //权限管控
             VAppPermissionManager vAppPermissionManager = VAppPermissionManager.get();
+            //禁止使用照相机
+            boolean cameraEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
+                    , VAppPermissionManager.PROHIBIT_CAMERA);
+            Log.e("geyao", getAppPkg() + " Camera Enable: " + cameraEnable);
+            if (cameraEnable && MediaStore.ACTION_IMAGE_CAPTURE.equals(intent.getAction())) {
+                vAppPermissionManager.interceptorTriggerCallback(getAppPkg(), VAppPermissionManager.PROHIBIT_CAMERA);
+                return 0;
+            }
+            //禁止对此应用进行截屏,录屏
             boolean appPermissionEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
                     , VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
             ComponentName component = intent.getComponent();

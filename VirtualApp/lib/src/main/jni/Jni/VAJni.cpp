@@ -12,7 +12,9 @@
 
 using namespace facebook::jni;
 
-static void jni_nativeLaunchEngine(alias_ref<jclass> clazz,JArrayClass<jobject> javaMethods,
+jclass vskmClass;
+
+static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject> javaMethods,
                                    jstring packageName,
                                    jboolean isArt, jint apiLevel, jint cameraMethodType) {
     hookAndroidVM(javaMethods, packageName, isArt, apiLevel, cameraMethodType);
@@ -70,6 +72,14 @@ alias_ref<jclass> nativeEngineClass;
 
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+
+    JNIEnv *env;
+    if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
+    }
+    jclass VSKMClass = env->FindClass("com/lody/virtual/client/ipc/VSafekeyManager");
+    vskmClass = (jclass) env->NewGlobalRef(VSKMClass);
+    env->DeleteLocalRef(VSKMClass);
 
     zJNIEnv::initial(vm);
     controllerManagerNative::initial();

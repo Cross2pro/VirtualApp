@@ -23,6 +23,10 @@ public class NativeMethods {
 
     public static Method gAudioRecordNativeCheckPermission;
 
+    public static Method gCameraStartPreview;
+
+    public static Method gCameraNativeTakePicture;
+
     public static void init() {
 //       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class, String.class}
 //       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class}
@@ -60,6 +64,20 @@ public class NativeMethods {
                 mth.setAccessible(true);
                 break;
             }
+        }
+
+        try {
+            gCameraStartPreview = Camera.class.getDeclaredMethod("startPreview");
+            gCameraStartPreview.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+
+        try {
+            gCameraNativeTakePicture = Camera.class.getDeclaredMethod("native_takePicture", int.class);
+            gCameraNativeTakePicture.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // ignore
         }
     }
 

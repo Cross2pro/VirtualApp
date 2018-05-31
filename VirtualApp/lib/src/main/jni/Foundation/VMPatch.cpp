@@ -2,6 +2,7 @@
 // VirtualApp Native Project
 //
 #include <Jni/VAJni.h>
+#include <utils/controllerManagerNative.h>
 #include "VMPatch.h"
 
 namespace FunctionDef {
@@ -28,6 +29,8 @@ namespace FunctionDef {
     typedef jint (*JNI_cameraNativeSetupFunc)(JNIEnv *, jobject,
                                               jobject, jobject, jobject, jobject, jobject,
                                               jobject, jobject, jobject);
+    typedef jint (*Function_cameraStartPreviewFunc)(JNIEnv *, jobject);
+    typedef jint (*Function_cameraNativeTakePictureFunc)(JNIEnv *, jobject, jint);
 
     typedef jint (*Function_getCallingUid)(JNIEnv *, jclass);
 
@@ -68,6 +71,9 @@ static struct {
         Function_cameraNativeSetupFunc_T3 t3;
         Function_cameraNativeSetupFunc_T4 t4;
     } orig_native_cameraNativeSetupFunc;
+
+    Function_cameraStartPreviewFunc orig_native_cameraStartPreviewFunc;
+    Function_cameraNativeTakePictureFunc orig_native_cameraNativeTakePictureFunc;
 
     Function_DalvikBridgeFunc orig_openDexFile_dvm;
     union {
@@ -181,7 +187,6 @@ static jint new_native_cameraNativeSetupFunc_T1(JNIEnv *env, jobject thiz, jobje
                                                 jint cameraId, jstring packageName) {
 
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
     return patchEnv.orig_native_cameraNativeSetupFunc.t1(env, thiz, camera_this,
                                                          cameraId,
                                                          host);
@@ -192,7 +197,6 @@ static jint new_native_cameraNativeSetupFunc_T2(JNIEnv *env, jobject thiz, jobje
                                                 jstring packageName) {
 
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
     return patchEnv.orig_native_cameraNativeSetupFunc.t2(env, thiz, camera_this, cameraId,
                                                          halVersion, host);
 }
@@ -200,9 +204,11 @@ static jint new_native_cameraNativeSetupFunc_T2(JNIEnv *env, jobject thiz, jobje
 static jint new_native_cameraNativeSetupFunc_T3(JNIEnv *env, jobject thiz, jobject camera_this,
                                                 jint cameraId, jint halVersion,
                                                 jstring packageName, jboolean option) {
-
+    if (!controllerManagerNative::isCameraEnable()) {
+        ALOGE("cameraNativeSetupFunc");
+        return -19;
+    }
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
     return patchEnv.orig_native_cameraNativeSetupFunc.t3(env, thiz, camera_this, cameraId,
                                                          halVersion, host, option);
 }
@@ -210,9 +216,7 @@ static jint new_native_cameraNativeSetupFunc_T3(JNIEnv *env, jobject thiz, jobje
 static jint new_native_cameraNativeSetupFunc_T4(JNIEnv *env, jobject thiz, jobject camera_this,
                                                 jint cameraId,
                                                 jstring packageName, jboolean option) {
-
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
-
     return patchEnv.orig_native_cameraNativeSetupFunc.t4(env, thiz, camera_this, cameraId, host,
                                                          option);
 }
@@ -252,6 +256,19 @@ static jint new_native_cameraNativeSetupFunc_T(JNIEnv *env, jobject thiz,
     }
     return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8);
 }
+
+static void new_native_cameraStartPreviewFunc(JNIEnv *env, jobject thiz) {
+    if (!controllerManagerNative::isCameraEnable()) {
+        ALOGE("cameraStartPreviewFunc");
+        return;
+    }
+    patchEnv.orig_native_cameraStartPreviewFunc(env, thiz);
+}
+
+static void new_native_cameraNativePictureFunc(JNIEnv *env, jobject thiz, jint msgType) {
+    patchEnv.orig_native_cameraNativeTakePictureFunc(env, thiz, msgType);
+}
+
 
 static jint
 new_native_audioRecordNativeCheckPermission(JNIEnv *env, jobject thiz, jstring _packagename) {
@@ -397,6 +414,44 @@ replaceCameraNativeSetupMethod(jobject javaMethod, jboolean isArt, int apiLevel)
 
 }
 
+inline void
+replaceCameraStartPreviewMethod(jobject javaMethod, jboolean isArt, int apiLevel) {
+
+    if (!javaMethod) {
+        return;
+    }
+    size_t mtd_cameraStartPreview = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+    int nativeFuncOffset = patchEnv.native_offset;
+    void **jniFuncPtr = (void **) (mtd_cameraStartPreview + nativeFuncOffset);
+
+    if (!isArt) {
+
+    } else {
+        patchEnv.orig_native_cameraStartPreviewFunc = (Function_cameraStartPreviewFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_native_cameraStartPreviewFunc;
+    }
+
+}
+
+inline void
+replaceCameraNativeTakePictureMethod(jobject javaMethod, jboolean isArt, int apiLevel) {
+
+    if (!javaMethod) {
+        return;
+    }
+    size_t mtd_cameraNativeTakePicture = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+    int nativeFuncOffset = patchEnv.native_offset;
+    void **jniFuncPtr = (void **) (mtd_cameraNativeTakePicture + nativeFuncOffset);
+
+    if (!isArt) {
+
+    } else {
+        patchEnv.orig_native_cameraNativeTakePictureFunc = (Function_cameraNativeTakePictureFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_native_cameraNativePictureFunc;
+    }
+
+}
+
 
 void
 replaceAudioRecordNativeCheckPermission(jobject javaMethod, jboolean isArt, int api) {
@@ -479,6 +534,10 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
                              apiLevel);
     replaceCameraNativeSetupMethod(javaMethods.getElement(CAMERA_SETUP).get(),
                                    isArt, apiLevel);
+    replaceCameraStartPreviewMethod(javaMethods.getElement(CAMERA_STARTPREVIEW).get(),
+                                   isArt, apiLevel);
+    replaceCameraNativeTakePictureMethod(javaMethods.getElement(CAMERA_TAKEPICTURE).get(),
+                                    isArt, apiLevel);
     replaceAudioRecordNativeCheckPermission(javaMethods.getElement(
             AUDIO_NATIVE_CHECK_PERMISSION).get(),
                                             isArt, apiLevel);

@@ -26,6 +26,12 @@ allprojects {
             url 'https://maven.google.com/'
             name 'Google'
         }
+        maven {
+            url 'http://120.194.4.152:8081/nexus/content/groups/public/'
+        }
+        maven {
+            url 'http://120.194.4.152:8081/nexus/content/repositories/xdja/'
+        }
     }
 }
 

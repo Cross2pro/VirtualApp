@@ -1407,11 +1407,53 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
 //int dup(int oldfd);
 HOOK_DEF(int, dup, int oldfd)
 {
-    zString path;
-    getPathFromFd(oldfd, path);
-    doFileTrace(path.toString(), (char *)"dup");
+    int ret = syscall(__NR_dup, oldfd);
 
-    return syscall(__NR_dup, oldfd);
+    zString path, path2;
+    getPathFromFd(oldfd, path);
+    getPathFromFd(ret, path2);
+
+    zString zlog("dup from %s [%d] to %s [%d]", path.toString(), oldfd, path2.toString(), ret);
+
+    doFileTrace(path.toString(), zlog.toString());
+
+    if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
+        /*******************only here**********************/
+        virtualFileDescribe *vfd = new virtualFileDescribe();
+        vfd->incStrong(0);
+        /***************************************************/
+        virtualFileDescribeSet::getVFDSet().set(ret, vfd);
+
+        int _Errno;
+        virtualFile *vf = virtualFileManager::getVFM().getVF(ret, path2.toString(), &_Errno);
+        if (vf != NULL) {
+            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
+            vfd->_vf = vf;
+            vf->vlseek(ret, 0, SEEK_SET);
+        } else {
+            virtualFileDescribeSet::getVFDSet().reset(ret);
+            /******through this way to release vfd *********/
+            virtualFileDescribeSet::getVFDSet().release(vfd);
+            /***********************************************/
+
+            if(_Errno < 0)
+            {
+                //这种情况需要让openat 返回失败
+                /*originalInterface::original_close(ret);
+                ret = -1;
+                errno = EACCES;
+
+                if(flags & O_CREAT)
+                {
+                    originalInterface::original_unlinkat(AT_FDCWD, redirect_path, 0);
+                }
+
+                LOGE("judge : **** force openat fail !!! ****");*/
+            }
+        }
+    }
+
+    return ret;
 }
 
 //int dup3(int oldfd, int newfd, int flags);
