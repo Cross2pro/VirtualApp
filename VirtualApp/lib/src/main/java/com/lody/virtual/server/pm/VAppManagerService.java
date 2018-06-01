@@ -219,7 +219,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (res.isUpdate) {
             FileUtils.deleteDir(libDir);
             VEnvironment.getOdexFile(pkg.packageName).delete();
-            VActivityManagerService.get().killAppByPkg(pkg.packageName, VUserHandle.USER_ALL);
+            VActivityManagerService.get().killAppByPkg(pkg.packageName, 0);
         }
         if (!libDir.exists() && !libDir.mkdirs()) {
             return InstallResult.makeFailure("Unable to create lib dir.");
@@ -388,7 +388,7 @@ public class VAppManagerService extends IAppManager.Stub {
         String packageName = ps.packageName;
         try {
             BroadcastSystem.get().stopApp(packageName);
-            VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
+            VActivityManagerService.get().killAppByPkg(packageName, 0);
             VEnvironment.getPackageResourcePath(packageName).delete();
             FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory(packageName));
             VEnvironment.getOdexFile(packageName).delete();
