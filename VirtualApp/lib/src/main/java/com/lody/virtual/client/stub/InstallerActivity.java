@@ -3,12 +3,14 @@ package com.lody.virtual.client.stub;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -18,6 +20,9 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -51,8 +56,14 @@ public class InstallerActivity extends Activity {
     LinearLayout ll_installing;
     LinearLayout ll_installed;
     LinearLayout ll_installed_1;
+    LinearLayout ll_check;
+    LinearLayout ll_openning;
     TextView tv_warn;
     Button btn_open;
+    ImageView img_appicon;
+    TextView tv_appname;
+    TextView tv_source;
+
     boolean tv_warn_isshow = false;
     private AppInfo apkinfo;
     private AppInfo sourceapkinfo;
@@ -65,6 +76,8 @@ public class InstallerActivity extends Activity {
         ll_installing = (LinearLayout) findViewById(R.id.ll_installing);
         ll_installed = (LinearLayout) findViewById(R.id.ll_installed);
         ll_installed_1 = (LinearLayout) findViewById(R.id.ll_installed_1);
+        ll_check = (LinearLayout) findViewById(R.id.ll_check);
+        ll_openning =(LinearLayout) findViewById(R.id.ll_openning);
         tv_warn = (TextView) findViewById(R.id.tv_warn);
         tv_warn.setText("警告：该应用不是来自安全盒应用中心，请注意应用安全。建议在安全盒应用中心下载使用该应用");
 
@@ -72,31 +85,18 @@ public class InstallerActivity extends Activity {
         Button btn_quit = (Button) findViewById(R.id.btn_quit);
         btn_open = (Button) findViewById(R.id.btn_open);
         Button btn_cancle = (Button) findViewById(R.id.btn_cancle);
-        ImageView img_appicon = (ImageView) findViewById(R.id.img_appicon);
-        TextView tv_appname = (TextView) findViewById(R.id.tv_appname);
-        TextView tv_source = (TextView) findViewById(R.id.tv_source);
+        img_appicon = (ImageView) findViewById(R.id.img_appicon);
+        tv_appname = (TextView) findViewById(R.id.tv_appname);
+        tv_source = (TextView) findViewById(R.id.tv_source);
 
+        ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        Animation operatingAnim = AnimationUtils.loadAnimation(this, R.anim.imageroate);
+        LinearInterpolator lin = new LinearInterpolator();
+        operatingAnim.setInterpolator(lin);
+        imageView.startAnimation(operatingAnim);
+        ImageView ivOpenning = (ImageView) findViewById(R.id.iv_openning);
+        ivOpenning.startAnimation(operatingAnim);
 
-        String path = getIntent().getStringExtra("installer_path");
-        String source_apk_packagename = getIntent().getStringExtra("source_apk");
-        Log.e(TAG, " Install apk path : " + path + " source_apk : " + source_apk_packagename);
-
-        apkinfo = parseInstallApk(path);
-
-        InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(source_apk_packagename, 0);
-        sourceapkinfo = parseInstallApk(info.apkPath);
-        tv_source.setText("应用来源："+sourceapkinfo.name);
-
-        img_appicon.setImageDrawable(apkinfo.icon);
-        tv_appname.setText(apkinfo.name);
-
-        if(InstallerSetting.safeApps.contains(apkinfo.packageName)){
-            tv_warn_isshow = false;
-        }else{
-            tv_warn_isshow = true;
-        }
-
-        stateChanged(STATE_INSTALL);
         btn_install.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -124,13 +124,84 @@ public class InstallerActivity extends Activity {
             }
         });
 
+        String path = getIntent().getStringExtra("installer_path");
+        String source_apk_packagename = getIntent().getStringExtra("source_apk");
+        String source_lable = getIntent().getStringExtra("source_label");
+        Log.e("lxf", " Install path : " + path);
+        Log.e("lxf", " Install source_apk : " + source_apk_packagename);
+        Log.e("lxf", " Install source_lable : " + source_lable);
+        if("com.tencent.mm".equals(source_apk_packagename)
+                ||"cn.wps.moffice".equals(source_apk_packagename)
+                ||"com.android.gallery3d".equals(source_apk_packagename)){
+
+            Intent intent = new Intent();
+            intent.setAction("com.xdja.decrypt.COPYFILE");
+            intent.putExtra("workspace",VirtualCore.get().getHostPkg());
+            intent.putExtra("source_apk", source_apk_packagename);
+            intent.putExtra("installer_path", path);
+            intent.putExtra("_VA_|_user_id_",0);
+            intent.setComponent(new ComponentName("com.xdja.decrypt", "com.xdja.decrypt.DecryptService"));
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            VirtualCore.get().getContext().startService(intent);
+            stateChanged(STATE_NONE);
+        }
+        else{
+            initView(getIntent());
+            stateChanged(STATE_INSTALL);
+        }
+    }
+
+    private void initView(Intent intent){
+        String path = intent.getStringExtra("installer_path");
+        String source_apk_packagename = intent.getStringExtra("source_apk");
+        String source_lable = intent.getStringExtra("source_label");
+        Log.e("lxf", " Install path : " + path);
+        Log.e("lxf", " Install source_apk : " + source_apk_packagename);
+        Log.e("lxf", " Install source_lable : " + source_lable);
+
+        if(source_lable!=null){
+            tv_source.setText("应用来源："+source_lable);
+        }else {
+            InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(source_apk_packagename, 0);
+            sourceapkinfo = parseInstallApk(info.apkPath);
+            tv_source.setText("应用来源："+sourceapkinfo.name);
+        }
+        apkinfo = parseInstallApk(path);
+        img_appicon.setImageDrawable(apkinfo.icon);
+        tv_appname.setText(apkinfo.name);
+
+        if(InstallerSetting.safeApps.contains(apkinfo.packageName)){
+            tv_warn_isshow = false;
+        }else{
+            tv_warn_isshow = true;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode==RESULT_OK){
+            if(requestCode==100){
+                initView(data);
+                stateChanged(STATE_INSTALL);
+            }
+        }
     }
 
     private void stateChanged(int state){
         switch(state){
             case STATE_NONE:
+                ll_openning.setVisibility(View.INVISIBLE);
+                ll_check.setVisibility(View.VISIBLE);
+                ll_install.setVisibility(View.INVISIBLE);
+                ll_installing.setVisibility(View.INVISIBLE);
+                ll_installed.setVisibility(View.INVISIBLE);
+                ll_installed_1.setVisibility(View.INVISIBLE);
+                tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALL:
+                ll_openning.setVisibility(View.INVISIBLE);
+                ll_check.setVisibility(View.INVISIBLE);
                 ll_install.setVisibility(View.VISIBLE);
                 ll_installing.setVisibility(View.INVISIBLE);
                 ll_installed.setVisibility(View.INVISIBLE);
@@ -138,6 +209,8 @@ public class InstallerActivity extends Activity {
                 tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALLING:
+                ll_openning.setVisibility(View.INVISIBLE);
+                ll_check.setVisibility(View.INVISIBLE);
                 ll_install.setVisibility(View.INVISIBLE);
                 ll_installing.setVisibility(View.VISIBLE);
                 ll_installed.setVisibility(View.INVISIBLE);
@@ -146,6 +219,8 @@ public class InstallerActivity extends Activity {
                 break;
             case STATE_INSTALLED:
             case STATE_INSTALLFAILED:
+                ll_openning.setVisibility(View.INVISIBLE);
+                ll_check.setVisibility(View.INVISIBLE);
                 ll_install.setVisibility(View.INVISIBLE);
                 ll_installing.setVisibility(View.INVISIBLE);
                 ll_installed.setVisibility(View.VISIBLE);
@@ -157,6 +232,15 @@ public class InstallerActivity extends Activity {
                 }else {
                     btn_open.setText("打开");
                 }
+                break;
+            case STATE_OPENNING:
+                ll_openning.setVisibility(View.VISIBLE);
+                ll_check.setVisibility(View.INVISIBLE);
+                ll_install.setVisibility(View.INVISIBLE);
+                ll_installing.setVisibility(View.INVISIBLE);
+                ll_installed.setVisibility(View.INVISIBLE);
+                ll_installed_1.setVisibility(View.INVISIBLE);
+                tv_warn.setVisibility(View.INVISIBLE);
                 break;
         }
 
@@ -194,6 +278,7 @@ public class InstallerActivity extends Activity {
     private final int STATE_INSTALLING = 1;
     private final int STATE_INSTALLED = 2;
     private final int STATE_INSTALLFAILED = 3;
+    private final int STATE_OPENNING = 4;
     private InstallerHandler mHandler = new InstallerHandler();
     class InstallerHandler extends Handler{
         @Override
@@ -236,7 +321,6 @@ public class InstallerActivity extends Activity {
                     }
                     break;
                 case STATE_INSTALLED:
-                    break;
                 case STATE_INSTALLFAILED:
                     break;
 
@@ -282,6 +366,7 @@ public class InstallerActivity extends Activity {
                     showToast(InstallerActivity.this,"安装包已被删除",Toast.LENGTH_SHORT);
                 }
 
+                stateChanged(STATE_OPENNING);
                 delDlg.dismiss();
                 if(open){
                     Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
