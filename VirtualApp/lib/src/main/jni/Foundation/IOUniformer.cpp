@@ -1489,11 +1489,11 @@ __END_DECLS
 
 
 void onSoLoaded(const char *name, void *handle) {
-    if(strcmp(name, "/data/user/0/io.virtualapp/virtual/data/app/com.tencent.mm/lib/libwechatxlog.so") == 0) {
+    /*if(strcmp(name, "/data/user/0/io.virtualapp/virtual/data/app/com.tencent.mm/lib/libwechatxlog.so") == 0) {
 
             slog("fuck, hook libwechatxlog");
             HOOK_SYMBOL(handle, xlogger_Write);
-    }
+    }*/
 }
 
 int findSymbol(const char *name, const char *libn,
