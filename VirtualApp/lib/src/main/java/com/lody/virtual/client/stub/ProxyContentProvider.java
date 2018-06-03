@@ -40,7 +40,7 @@ public class ProxyContentProvider extends ContentProvider {
         Uri a = wrapperUri("query", uri);
         try {
             return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
-                    .query(uri, strArr, str, strArr2, str2);
+                    .query(a, strArr, str, strArr2, str2);
         } catch (Exception e) {
             return new MatrixCursor(new String[]{});
         }

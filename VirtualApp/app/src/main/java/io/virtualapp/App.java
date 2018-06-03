@@ -38,7 +38,7 @@ public class App extends MultiDexApplication {
         VLog.OPEN_LOG = true;
 
         //外部app访问内部的provider，仅文件
-        VASettings.PROVIDER_ONLY_FILE = true;
+        VASettings.PROVIDER_ONLY_FILE = false;
 
         //解决google登录后无法返回app
         VASettings.NEW_INTENTSENDER = true;
