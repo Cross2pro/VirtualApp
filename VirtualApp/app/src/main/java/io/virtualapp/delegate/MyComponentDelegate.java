@@ -48,7 +48,6 @@ public class MyComponentDelegate implements ComponentDelegate {
                 Log.e("lxf", "onActivityStarted "+activity.getLocalClassName());
 
             }
-            @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onActivityResumed(Activity activity) {
                 Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
@@ -58,24 +57,29 @@ public class MyComponentDelegate implements ComponentDelegate {
 //                    return;
                 //清除前景水印
                 View view = activity.getWindow().getDecorView();
-                view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-                    @Override
-                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                        Log.e("lxf", "onLayoutChange w "+v.getMeasuredWidth()+" h "+v.getMeasuredHeight());
-                        view.setForeground(null);
-                        int screenWidth = v.getMeasuredWidth();
-                        int screenHeight = v.getMeasuredHeight();
-                        if(screenWidth<=0 || screenHeight<=0)
-                            return;
-                        Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
-                        Canvas canvas = new Canvas(mBackgroundBitmap);
-                        draw(canvas,screenWidth,screenHeight,"8ik7uj6yh5tg4rf");
-                        view.setForeground(new BitmapDrawable(mBackgroundBitmap));
-                    }
-                });
+                view.removeOnLayoutChangeListener(mlistener);
+                view.addOnLayoutChangeListener(mlistener);
 
             }
 
+            View.OnLayoutChangeListener mlistener = new MyViewOnLayoutChangeListener();
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            class MyViewOnLayoutChangeListener implements View.OnLayoutChangeListener {
+
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    Log.e("lxf", "onLayoutChange w "+v.getMeasuredWidth()+" h "+v.getMeasuredHeight());
+                    v.setForeground(null);
+                    int screenWidth = v.getMeasuredWidth();
+                    int screenHeight = v.getMeasuredHeight();
+                    if(screenWidth<=0 || screenHeight<=0)
+                        return;
+                    Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(mBackgroundBitmap);
+                    draw(canvas,screenWidth,screenHeight,"8ik7uj6yh5tg4rf");
+                    v.setForeground(new BitmapDrawable(mBackgroundBitmap));
+                }
+            }
             @Override
             public void onActivityPaused(Activity activity) {
                 Log.e("lxf", "onActivityPaused "+activity.getLocalClassName());
