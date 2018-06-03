@@ -71,7 +71,8 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
     @Override
     public boolean isSupportEncrypt(String packageName) {
         return !TextUtils.isEmpty(packageName) &&
-                (packageName.equals("com.tencent.mm") || packageName.equals("cn.wps.moffice_eng"));
+                (packageName.equals("com.tencent.mm") || packageName.equals("cn.wps.moffice_eng")
+                || packageName.equals("com.xdja.decrypt"));
     }
 
     /**
