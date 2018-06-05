@@ -519,7 +519,7 @@ class MethodProxies {
                 args[intentIndex] = UriCompat.fakeFileUri(intent);
                 return method.invoke(who, args);
             }
-            UriCompat.fakeFileUri(intent);
+            // UriCompat.fakeFileUri(intent);
             int res = VActivityManager.get().startActivity(intent, activityInfo, resultTo, options, resultWho, requestCode, VUserHandle.myUserId());
             if (res != 0 && resultTo != null && requestCode > 0) {
                 VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);

@@ -113,6 +113,10 @@ public class ProxyContentProvider extends ContentProvider {
     @Override
     public AssetFileDescriptor openAssetFile(Uri uri, String str) throws FileNotFoundException {
         Uri a = wrapperUri("openAssetFile", uri);
+        if ("file".equals(a.getScheme())) {
+            ParcelFileDescriptor fd = openFile(uri, str);
+            return fd != null ? new AssetFileDescriptor(fd, 0, -1) : null;
+        }
         try {
             return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
                     .openAssetFile(a, str);
@@ -139,9 +143,37 @@ public class ProxyContentProvider extends ContentProvider {
         }
     }
 
+    private static int modeToMode(String mode) {
+        int modeBits;
+        if ("r".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
+        } else if ("w".equals(mode) || "wt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else if ("wa".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_APPEND;
+        } else if ("rw".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
+                    | ParcelFileDescriptor.MODE_CREATE;
+        } else if ("rwt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else {
+            throw new IllegalArgumentException("Invalid mode: " + mode);
+        }
+        return modeBits;
+    }
+
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String str) throws FileNotFoundException {
         Uri a = wrapperUri("openFile", uri);
+        if ("file".equals(a.getScheme())) {
+            return ParcelFileDescriptor.open(new java.io.File(a.getPath()), modeToMode(str));
+        }
         try {
             return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
                     .openFile(a, str);

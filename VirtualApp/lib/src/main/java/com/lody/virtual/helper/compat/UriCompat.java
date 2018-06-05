@@ -4,22 +4,24 @@ import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.database.Cursor;
-import java.io.File;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static android.content.ContentResolver.SCHEME_CONTENT;
+import static android.content.ContentResolver.SCHEME_FILE;
 
 public class UriCompat {
     private static final String TAG = "UriCompat";
@@ -53,6 +55,17 @@ public class UriCompat {
                 Log.i(TAG, "fake uri:" + uri + "->" + u);
             }
             return u;
+        } else if (SCHEME_FILE.equals(uri.getScheme())) {
+            String path = uri.getPath();
+            String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            if (path.startsWith(external_path)) {
+                String split_path = path.substring(external_path.length());
+
+                Uri fake_uri = uri.buildUpon().scheme(SCHEME_CONTENT).path("/external" + split_path).authority(AUTH).appendQueryParameter("__va_scheme", SCHEME_FILE).build();
+                return fake_uri;
+            }
+
+            return null;
         } else {
             return null;
         }
@@ -84,6 +97,20 @@ public class UriCompat {
                 Log.i(TAG, "wrapperUri uri:" + uri + "->" + u);
             }
             return u;
+        } else if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
+            String path = uri.getEncodedPath();
+            final int splitIndex = path.indexOf('/', 1);
+            final String tag = Uri.decode(path.substring(1, splitIndex));
+            path = Uri.decode(path.substring(splitIndex + 1));
+            if ("external".equals(tag))
+            {
+                int userId = VUserHandle.myUserId();
+                File root = VEnvironment.getExternalStorageDirectory(userId);
+                File file = new File(root, path);
+
+                Uri u = Uri.fromFile(file);
+                return u;
+            }
         }
         return uri;
     }
