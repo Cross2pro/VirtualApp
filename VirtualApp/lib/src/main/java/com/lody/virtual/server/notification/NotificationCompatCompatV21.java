@@ -38,7 +38,8 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
             return false;
         }
         String sourcePath = null;
-        PackageInfo packageInfo = getPackageInfo(packageName);
+        //PackageInfo packageInfo = getPackageInfo(packageName);
+        PackageInfo packageInfo = null;
         ApplicationInfo host = getHostContext().getApplicationInfo();
         if (packageInfo != null) {
             sourcePath = packageInfo.applicationInfo.sourceDir;
