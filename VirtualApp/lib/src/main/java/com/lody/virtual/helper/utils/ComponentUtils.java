@@ -5,18 +5,29 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
+import android.net.Uri;
 import android.os.IBinder;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.ShadowPendingReceiver;
 import com.lody.virtual.client.stub.ShadowPendingService;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
 
@@ -141,10 +152,55 @@ public class ComponentUtils {
         return newIntent;
     }
 
+    private static final String SCHEME_FILE = "file";
+    private static final String SCHEME_PACKAGE = "package";
+    private static final String SCHEME_CONTENT = "content";
+    private static String parseInstallRequest(Intent intent){
+        Uri packageUri = intent.getData();
+        String path = null;
+        if (SCHEME_FILE.equals(packageUri.getScheme())) {
+
+            File sourceFile = new File(packageUri.getPath());
+            path = NativeEngine.getRedirectedPath(sourceFile.getAbsolutePath());
+            VLog.e("wxd", " parseInstallRequest path : " + path);
+        }else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
+            File sharedFileCopy = new File(VirtualCore.get().getContext().getCacheDir(), packageUri.getLastPathSegment());
+            try {
+                inputStream = VirtualCore.get().getContext().getContentResolver().openInputStream(packageUri);
+                outputStream = new FileOutputStream(sharedFileCopy);
+                byte[] buffer = new byte[1024];
+                int count;
+                while ((count = inputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, count);
+                }
+                outputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                FileUtils.closeQuietly(inputStream);
+                FileUtils.closeQuietly(outputStream);
+            }
+            path = sharedFileCopy.getPath();
+            VLog.e("wxd", " parseInstallRequest sharedFileCopy path : " + path);
+        }
+        return path;
+    }
     public static Intent redirectIntentSender(int type, String creator, Intent intent, IBinder iBinder) {
         Intent newIntent = intent.cloneFilter();
         switch (type) {
             case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
+                Log.e("lxf","IntentSender Action "+ intent.getAction()+ " type "+ intent.getType());
+                if(Intent.ACTION_VIEW.equalsIgnoreCase(intent.getAction())
+                        && "application/vnd.android.package-archive".equalsIgnoreCase(intent.getType())){
+                    Intent intent1 = new Intent();
+                    intent1.putExtra("source_apk", VirtualRuntime.getInitialPackageName());
+                    intent1.putExtra("installer_path", parseInstallRequest(intent));
+                    intent1.setComponent(new ComponentName(VirtualCore.get().getContext(), InstallerActivity.class));
+                    intent1.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                    return intent1;
+                }
                 ComponentInfo info = VirtualCore.get().resolveActivityInfo(intent, VUserHandle.myUserId());
                 if (info != null) {
                     newIntent.setClass(VirtualCore.get().getContext(), ShadowPendingActivity.class);
