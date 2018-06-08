@@ -21,4 +21,6 @@
     <string name="external_storage">外置存储</string>
     <string name="install_d">安装 (%d)</string>
     <string name="install_too_much_once_time">不能一次性安装超过9个App!</string>
+    <string name="tip_install_gms">提示</string>
+    <string name="text_install_gms">是否启用Google Service支持？</string>
 </resources>

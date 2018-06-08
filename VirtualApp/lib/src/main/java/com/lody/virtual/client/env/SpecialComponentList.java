@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 
+import com.lody.virtual.GmsSupport;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,9 +27,11 @@ public final class SpecialComponentList {
     private static final List<String> ACTION_BLACK_LIST = new ArrayList<String>(1);
     private static final Map<String, String> PROTECTED_ACTION_MAP = new HashMap<>(5);
     private static final HashSet<String> WHITE_PERMISSION = new HashSet<>(3);
+    private static final HashSet<String> BROADCAST_START_WHITE_LIST = new HashSet<>();
     private static final HashSet<String> INSTRUMENTATION_CONFLICTING = new HashSet<>(2);
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
+    private static final Set<String> DISABLE_OUTSIDE_CONTENTPROVIDER = new HashSet<>();
     private static String PROTECT_ACTION_PREFIX = "_VA_protected_";
 
     static {
@@ -57,6 +61,9 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SHUTDOWN);
 
         ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
+        ACTION_BLACK_LIST.add("com.sina.weibo.action.BACK_TO_FORGROUND");
+        ACTION_BLACK_LIST.add("com.sina.weibo.action.BACK_TO_BACKGROUND");
+
         WHITE_PERMISSION.add("android.permission.USE_XDJA_SIP_swbg");//税务办公
         WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
         WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
@@ -69,6 +76,7 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
         //update images/videos by media provider
         PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_HEADSET_PLUG, Intent.ACTION_HEADSET_PLUG);
 
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic");
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic_mutiple");
@@ -86,6 +94,30 @@ public final class SpecialComponentList {
                 e.printStackTrace();
             }
         }
+
+//        BROADCAST_START_WHITE_LIST.add("com.facebook.orca");
+//        BROADCAST_START_WHITE_LIST.add("com.facebook.katana");
+        BROADCAST_START_WHITE_LIST.add("com.tencent.mm");
+        BROADCAST_START_WHITE_LIST.add("com.whatsapp");
+        BROADCAST_START_WHITE_LIST.add(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+        BROADCAST_START_WHITE_LIST.add("com.google.android.gms");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.gsf.login");
+//        BROADCAST_START_WHITE_LIST.add("com.android.vending");
+        BROADCAST_START_WHITE_LIST.add("com.google.android.play.games");
+        BROADCAST_START_WHITE_LIST.add("com.android.providers.media");
+
+    }
+
+    public static boolean isDisableOutsideContentProvider(String name) {
+        return DISABLE_OUTSIDE_CONTENTPROVIDER.contains(name);
+    }
+
+    public static void addDisableOutsideContentProvider(String name) {
+        DISABLE_OUTSIDE_CONTENTPROVIDER.add(name);
+    }
+
+    public static void addStaticBroadCastWhiteList(String pkg) {
+        BROADCAST_START_WHITE_LIST.add(pkg);
     }
 
     public static boolean isSpecSystemPackage(String pkg) {
@@ -114,13 +146,17 @@ public final class SpecialComponentList {
         ACTION_BLACK_LIST.add(action);
     }
 
-    public static void protectIntentFilter(IntentFilter filter) {
+    public static void protectIntentFilter(IntentFilter filter, String packageName) {
         if (filter != null) {
             List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
             ListIterator<String> iterator = actions.listIterator();
             while (iterator.hasNext()) {
                 String action = iterator.next();
                 if (SpecialComponentList.isActionInBlackList(action)) {
+                    iterator.remove();
+                    continue;
+                }
+                if (GmsSupport.isGoogleAppOrService(packageName)) {
                     iterator.remove();
                     continue;
                 }
@@ -181,5 +217,9 @@ public final class SpecialComponentList {
 
     public static boolean isWhitePermission(String permission) {
         return WHITE_PERMISSION.contains(permission);
+    }
+
+    public static boolean canStartFromBroadcast(String str) {
+        return BROADCAST_START_WHITE_LIST.contains(str);
     }
 }

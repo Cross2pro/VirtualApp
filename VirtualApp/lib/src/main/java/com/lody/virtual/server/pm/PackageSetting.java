@@ -27,7 +27,7 @@ public class PackageSetting implements Parcelable {
     public String packageName;
     public String apkPath;
     public String libPath;
-    public boolean dependSystem;
+    public boolean notCopyApk;
     @Deprecated
     public boolean skipDexOpt;
     public int appId;
@@ -42,7 +42,7 @@ public class PackageSetting implements Parcelable {
         this.packageName = in.readString();
         this.apkPath = in.readString();
         this.libPath = in.readString();
-        this.dependSystem = in.readByte() != 0;
+        this.notCopyApk = in.readByte() != 0;
         this.appId = in.readInt();
         //noinspection unchecked
         this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
@@ -50,7 +50,7 @@ public class PackageSetting implements Parcelable {
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, apkPath, libPath, dependSystem, skipDexOpt, appId);
+        return new InstalledAppInfo(packageName, apkPath, libPath, notCopyApk, appId);
     }
 
     PackageUserState modifyUserState(int userId) {
@@ -69,7 +69,7 @@ public class PackageSetting implements Parcelable {
         state.installed = installed;
     }
 
-    PackageUserState readUserState(int userId) {
+    public PackageUserState readUserState(int userId) {
         PackageUserState state = userState.get(userId);
         if (state != null) {
             return state;
@@ -91,7 +91,7 @@ public class PackageSetting implements Parcelable {
         dest.writeString(this.packageName);
         dest.writeString(this.apkPath);
         dest.writeString(this.libPath);
-        dest.writeByte(this.dependSystem ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
         dest.writeInt(this.appId);
         //noinspection unchecked
         dest.writeSparseArray((SparseArray) this.userState);

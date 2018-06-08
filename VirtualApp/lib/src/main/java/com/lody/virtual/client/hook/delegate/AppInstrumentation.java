@@ -10,16 +10,20 @@ import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.client.fixer.ContextFixer;
+import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IUiCallback;
+
+import java.lang.reflect.Field;
 
 import mirror.android.app.ActivityThread;
 
@@ -64,11 +68,48 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public boolean isEnvBad() {
-        return !(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) instanceof AppInstrumentation);
+        return !checkInstrumentation(ActivityThread.mInstrumentation.get(VirtualCore.mainThread()));
+    }
+
+    private boolean checkInstrumentation(Instrumentation instrumentation) {
+        if (instrumentation instanceof AppInstrumentation) {
+            return true;
+        }
+        Class<?> clazz = instrumentation.getClass();
+        if(Instrumentation.class.equals(clazz)){
+            return false;
+        }
+        do {
+            Field[] fields = clazz.getDeclaredFields();
+            if (fields != null) {
+                for (Field field : fields) {
+                    if (Instrumentation.class.isAssignableFrom(field.getType())) {
+                        field.setAccessible(true);
+                        Object obj = null;
+                        try {
+                            obj = field.get(instrumentation);
+                        } catch (IllegalAccessException e) {
+                            return false;
+                        }
+                        if(obj != null && (obj instanceof AppInstrumentation)){
+                            return true;
+                        }
+                    }
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }while (!Instrumentation.class.equals(clazz));
+        return false;
+    }
+
+    private void checkActivityCallback() {
+        InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
+        InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
     }
 
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
+        checkActivityCallback();
         if (icicle != null) {
             BundleCompat.clearParcelledData(icicle);
         }
@@ -94,6 +135,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
         }
         super.callActivityOnCreate(activity, icicle);
+        ActivityFixer.fixAfterActivityCreate(activity);
         VirtualCore.get().getComponentDelegate().afterActivityCreate(activity);
     }
 
@@ -119,7 +161,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                 IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
                 if (callback != null) {
                     try {
-                        callback.onAppOpened(VClientImpl.get().getCurrentPackage(), VUserHandle.myUserId());
+                        callback.onAppOpened(VClient.get().getCurrentPackage(), VUserHandle.myUserId());
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -146,6 +188,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public void callApplicationOnCreate(Application app) {
+        checkActivityCallback();
         super.callApplicationOnCreate(app);
     }
 

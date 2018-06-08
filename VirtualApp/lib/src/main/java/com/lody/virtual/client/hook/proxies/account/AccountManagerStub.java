@@ -2,14 +2,18 @@ package com.lody.virtual.client.hook.proxies.account;
 
 import android.accounts.Account;
 import android.accounts.IAccountManagerResponse;
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.ipc.VAccountManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import mirror.android.accounts.IAccountManager;
 
@@ -62,6 +66,19 @@ public class AccountManagerStub extends BinderInvocationProxy {
 		addMethodProxy(new renameAccount());
 		addMethodProxy(new getPreviousName());
 		addMethodProxy(new renameSharedAccountAsUser());
+
+		if(BuildCompat.isOreo()) {
+			addMethodProxy(new finishSessionAsUser());
+			addMethodProxy(new getAccountVisibility());
+			addMethodProxy(new addAccountExplicitlyWithVisibility());
+			addMethodProxy(new getAccountsAndVisibilityForPackage());
+			addMethodProxy(new getPackagesAndVisibilityForAccount());
+			addMethodProxy(new setAccountVisibility());
+			addMethodProxy(new startAddAccountSession());
+			addMethodProxy(new startUpdateCredentialsSession());
+			addMethodProxy(new registerAccountListener());
+			addMethodProxy(new unregisterAccountListener());
+		}
 	}
 
 	private static class getPassword extends MethodProxy {
@@ -594,4 +611,172 @@ public class AccountManagerStub extends BinderInvocationProxy {
 			return method.invoke(who, args);
 		}
 	}
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class isCredentialsUpdateSuggested extends MethodProxy {
+		private isCredentialsUpdateSuggested() {
+		}
+
+		public String getMethodName() {
+			return "isCredentialsUpdateSuggested";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			Mgr.isCredentialsUpdateSuggested((IAccountManagerResponse) objArr[0], (Account) objArr[1], (String) objArr[2]);
+			return 0;
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class finishSessionAsUser extends MethodProxy {
+		private finishSessionAsUser() {
+		}
+
+		public String getMethodName() {
+			return "finishSessionAsUser";
+		}
+
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			AccountManagerStub.Mgr.finishSessionAsUser((IAccountManagerResponse) objArr[0], (Bundle) objArr[1], ((Boolean) objArr[2]).booleanValue(), (Bundle) objArr[3], ((Integer) objArr[4]).intValue());
+			return Integer.valueOf(0);
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class getAccountVisibility extends MethodProxy {
+		private getAccountVisibility() {
+		}
+
+		public String getMethodName() {
+			return "getAccountVisibility";
+		}
+
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			return Integer.valueOf(AccountManagerStub.Mgr.getAccountVisibility((Account) objArr[0], (String) objArr[1]));
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class addAccountExplicitlyWithVisibility extends MethodProxy {
+		private addAccountExplicitlyWithVisibility() {
+		}
+
+		public String getMethodName() {
+			return "addAccountExplicitlyWithVisibility";
+		}
+
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			return Mgr.addAccountExplicitlyWithVisibility((Account) objArr[0], (String) objArr[1], (Bundle) objArr[2], (Map) objArr[3]);
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class getAccountsAndVisibilityForPackage extends MethodProxy {
+		private getAccountsAndVisibilityForPackage() {
+		}
+
+		public String getMethodName() {
+			return "getAccountsAndVisibilityForPackage";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			return Mgr.getAccountsAndVisibilityForPackage((String) objArr[0], (String) objArr[1]);
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class getPackagesAndVisibilityForAccount extends MethodProxy {
+		private getPackagesAndVisibilityForAccount() {
+		}
+
+		public String getMethodName() {
+			return "getPackagesAndVisibilityForAccount";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			return Mgr.getPackagesAndVisibilityForAccount((Account) objArr[0]);
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class setAccountVisibility extends MethodProxy {
+		private setAccountVisibility() {
+		}
+
+		public String getMethodName() {
+			return "setAccountVisibility";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			return Mgr.setAccountVisibility((Account) objArr[0], (String) objArr[1], ((Integer) objArr[2]).intValue());
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class startAddAccountSession extends MethodProxy {
+		private startAddAccountSession() {
+		}
+
+		public String getMethodName() {
+			return "startAddAccountSession";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			Mgr.startAddAccountSession((IAccountManagerResponse) objArr[0], (String) objArr[1], (String) objArr[2], (String[]) objArr[3], ((Boolean) objArr[4]).booleanValue(), (Bundle) objArr[5]);
+			return 0;
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class startUpdateCredentialsSession extends MethodProxy {
+		private startUpdateCredentialsSession() {
+		}
+
+		public String getMethodName() {
+			return "startUpdateCredentialsSession";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			Mgr.startUpdateCredentialsSession((IAccountManagerResponse) objArr[0], (Account) objArr[1], (String) objArr[2], ((Boolean) objArr[3]).booleanValue(), (Bundle) objArr[4]);
+			return 0;
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class registerAccountListener extends MethodProxy {
+		private registerAccountListener() {
+		}
+
+		public String getMethodName() {
+			return "registerAccountListener";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			Mgr.registerAccountListener((String[]) objArr[0], (String) objArr[1]);
+			return 0;
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.O)
+	private static class unregisterAccountListener extends MethodProxy {
+		private unregisterAccountListener() {
+		}
+
+		public String getMethodName() {
+			return "unregisterAccountListener";
+		}
+
+		@Override
+		public Object call(Object obj, Method method, Object... objArr) throws Throwable {
+			Mgr.unregisterAccountListener((String[]) objArr[0], (String) objArr[1]);
+			return 0;
+		}
+	}
+
 }

@@ -111,6 +111,10 @@ public class VUserInfo implements Parcelable {
     public VUserInfo() {
     }
 
+    public VUserInfo(int id) {
+        this.id = id;
+    }
+
     public VUserInfo(VUserInfo orig) {
         name = orig.name;
         iconPath = orig.iconPath;

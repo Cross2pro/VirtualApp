@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -33,7 +33,11 @@ public abstract class MethodProxy {
     }
 
     public static String getAppPkg() {
-        return VClientImpl.get().getCurrentPackage();
+        return VClient.get().getCurrentPackage();
+    }
+
+    public static boolean isNotCopyApk() {
+        return  VClient.get().isNotCopyApk();
     }
 
     protected static Context getHostContext() {
@@ -53,7 +57,7 @@ public abstract class MethodProxy {
     }
 
     protected static int getVUid() {
-        return VClientImpl.get().getVUid();
+        return VClient.get().getVUid();
     }
 
     public static int getAppUserId() {
@@ -61,7 +65,7 @@ public abstract class MethodProxy {
     }
 
     protected static int getBaseVUid() {
-        return VClientImpl.get().getBaseVUid();
+        return VClient.get().getBaseVUid();
     }
 
     protected static int getRealUid() {
@@ -69,11 +73,11 @@ public abstract class MethodProxy {
     }
 
     protected static VDeviceInfo getDeviceInfo() {
-        return VClientImpl.get().getDeviceInfo();
+        return VClient.get().getDeviceInfo();
     }
 
     protected static boolean isFakeLocationEnable() {
-        return VirtualLocationManager.get().getMode(VUserHandle.myUserId(), VClientImpl.get().getCurrentPackage()) != 0;
+        return VirtualLocationManager.get().getMode(VUserHandle.myUserId(), VClient.get().getCurrentPackage()) != 0;
     }
 
     public static boolean isVisiblePackage(ApplicationInfo info) {

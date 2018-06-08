@@ -7,8 +7,12 @@ import java.lang.reflect.Method;
 @SuppressWarnings("unchecked")
 public class RefStaticMethod<T> {
     private Method method;
+    private String parent;
+    private String name;
 
     public RefStaticMethod(Class<?> cls, Field field) throws NoSuchMethodException {
+        this.name = field.getName();
+        this.parent = cls.getName();
         if (field.isAnnotationPresent(MethodParams.class)) {
             Class<?>[] types = field.getAnnotation(MethodParams.class).value();
             for (int i = 0; i < types.length; i++) {
@@ -26,7 +30,7 @@ public class RefStaticMethod<T> {
             this.method = cls.getDeclaredMethod(field.getName(), types);
             this.method.setAccessible(true);
         } else if (field.isAnnotationPresent(MethodReflectParams.class)) {
-            boolean arrayset=false;
+            boolean arrayset = false;
             String[] typeNames = field.getAnnotation(MethodReflectParams.class).value();
             Class<?>[] types = new Class<?>[typeNames.length];
             Class<?>[] types2 = new Class<?>[typeNames.length];
@@ -40,28 +44,28 @@ public class RefStaticMethod<T> {
                     }
                 }
                 types[i] = type;
-                if("java.util.HashSet".equals(typeNames[i])){
-                    arrayset=true;
-                    Class<?> type2 =type;
+                if ("java.util.HashSet".equals(typeNames[i])) {
+                    arrayset = true;
+                    Class<?> type2 = type;
                     try {
                         type2 = Class.forName("android.util.ArraySet");
                     } catch (ClassNotFoundException e) {
                         //ignore
                     }
-                    if(type2 != null) {
+                    if (type2 != null) {
                         types2[i] = type2;
-                    }else{
+                    } else {
                         types2[i] = type;
                     }
-                }else{
+                } else {
                     types2[i] = type;
                 }
             }
             try {
                 this.method = cls.getDeclaredMethod(field.getName(), types);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
-                if(arrayset){
+                if (arrayset) {
                     this.method = cls.getDeclaredMethod(field.getName(), types2);
                 }
             }
@@ -132,5 +136,13 @@ public class RefStaticMethod<T> {
             }
             throw e;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "RefStaticMethod{" +
+                parent+"@" + name +
+                " find=" + (method != null) +
+                '}';
     }
 }

@@ -1,15 +1,20 @@
 package com.lody.virtual.server.pm;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.ArtDexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -19,6 +24,7 @@ import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
@@ -36,8 +42,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import dalvik.system.DexFile;
 
@@ -47,7 +53,7 @@ import dalvik.system.DexFile;
 public class VAppManagerService extends IAppManager.Stub {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
-    private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>(){
+    private static final Singleton<VAppManagerService> sService = new Singleton<VAppManagerService>() {
         @Override
         protected VAppManagerService create() {
             return new VAppManagerService();
@@ -81,16 +87,43 @@ public class VAppManagerService extends IAppManager.Stub {
         synchronized (this) {
             mBooting = true;
             mPersistenceLayer.read();
+            if(VASettings.CHECK_UPDATE_NOT_COPY_APK) {
+                upgradeApps();
+            }
+            if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
+                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+            }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
         }
     }
 
     private void cleanUpResidualFiles(PackageSetting ps) {
-        File dataAppDir = VEnvironment.getDataAppPackageDirectory(ps.packageName);
+        cleanUpResidualFilesByPackageName(ps.packageName);
+    }
+
+    private void cleanUpResidualFilesByPackageName(String packageName) {
+        File dataAppDir = VEnvironment.getDataAppPackageDirectory(packageName);
         FileUtils.deleteDir(dataAppDir);
         for (int userId : VUserManagerService.get().getUserIds()) {
-            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, packageName));
+        }
+    }
+
+    public void onUserCreated(VUserInfo userInfo) {
+        VEnvironment.getUserSystemDirectory(userInfo.id).mkdirs();
+        for (VPackage p : PackageCacheManager.PACKAGE_CACHE.values()) {
+            linkUserAppLib(userInfo.id, p.packageName);
+        }
+    }
+
+    private void linkUserAppLib(int userId, String packageName) {
+        String libPath = VEnvironment.getAppLibDirectory(packageName).getPath();
+        String userLibPath = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();
+        try {
+            FileUtils.createSymlink(libPath, userLibPath);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -102,8 +135,10 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean loadPackageInnerLocked(PackageSetting ps) {
-        if (ps.dependSystem) {
-            if (!VirtualCore.get().isOutsideInstalled(ps.packageName)) {
+        if (!FileUtils.isExist(ps.apkPath)) {
+            if(VASettings.CHECK_UPDATE_NOT_COPY_APK && ps.notCopyApk){
+                //android 8.0 ps.notCopyApk need update
+            }else{
                 return false;
             }
         }
@@ -180,8 +215,7 @@ public class VAppManagerService extends IAppManager.Stub {
             }
             res.isUpdate = true;
         }
-        File appDir = VEnvironment.getDataAppPackageDirectory(pkg.packageName);
-        File libDir = new File(appDir, "lib");
+        File libDir = VEnvironment.getAppLibDirectory(pkg.packageName);
         if (res.isUpdate) {
             FileUtils.deleteDir(libDir);
             VEnvironment.getOdexFile(pkg.packageName).delete();
@@ -190,31 +224,22 @@ public class VAppManagerService extends IAppManager.Stub {
         if (!libDir.exists() && !libDir.mkdirs()) {
             return InstallResult.makeFailure("Unable to create lib dir.");
         }
-        boolean dependSystem = (flags & InstallStrategy.DEPEND_SYSTEM_IF_EXIST) != 0
-                && VirtualCore.get().isOutsideInstalled(pkg.packageName);
+        boolean notCopyApk = (flags & InstallStrategy.NOT_COPY_APK) != 0;
 
-        if (existSetting != null && existSetting.dependSystem) {
-            dependSystem = false;
+        if (existSetting != null && existSetting.notCopyApk) {
+            notCopyApk = false;
+        }
+        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName, packageFile)){
+            notCopyApk = false;
         }
 
         NativeLibraryHelperCompat.copyNativeBinaries(new File(path), libDir);
-        if (!dependSystem) {
-            File privatePackageFile = new File(appDir, "base.apk");
-            File parentFolder = privatePackageFile.getParentFile();
-            if (!parentFolder.exists() && !parentFolder.mkdirs()) {
-                VLog.w(TAG, "Warning: unable to create folder : " + privatePackageFile.getPath());
-            } else if (privatePackageFile.exists() && !privatePackageFile.delete()) {
-                VLog.w(TAG, "Warning: unable to delete file : " + privatePackageFile.getPath());
-            }
+        linkUserAppLib(0, pkg.packageName);
+
+        if (!notCopyApk) {
+            File privatePackageFile = VEnvironment.getPackageResourcePath(pkg.packageName);
             try {
-                if ((flags & InstallStrategy.MOVE_FILE) != 0) {
-                    if (!packageFile.renameTo(privatePackageFile)) {
-                        //rename fail
-                        FileUtils.copyFile(packageFile, privatePackageFile);
-                    }
-                } else {
-                    FileUtils.copyFile(packageFile, privatePackageFile);
-                }
+                FileUtils.copyFile(packageFile, privatePackageFile);
             } catch (IOException e) {
                 privatePackageFile.delete();
                 return InstallResult.makeFailure("Unable to copy the package file.");
@@ -231,7 +256,7 @@ public class VAppManagerService extends IAppManager.Stub {
         } else {
             ps = new PackageSetting();
         }
-        ps.dependSystem = dependSystem;
+        ps.notCopyApk = notCopyApk;
         ps.apkPath = packageFile.getPath();
         ps.libPath = libDir.getPath();
         ps.packageName = pkg.packageName;
@@ -249,19 +274,14 @@ public class VAppManagerService extends IAppManager.Stub {
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
-        if (!dependSystem) {
-            boolean runDexOpt = false;
+        if (!notCopyApk) {
             if (VirtualRuntime.isArt()) {
                 try {
                     ArtDexOptimizer.interpretDex2Oat(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath());
                 } catch (IOException e) {
                     e.printStackTrace();
-                    runDexOpt = true;
                 }
             } else {
-                runDexOpt = true;
-            }
-            if (runDexOpt) {
                 try {
                     DexFile.loadDex(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath(), 0).close();
                 } catch (IOException e) {
@@ -309,6 +329,9 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean canUpdate(VPackage existOne, VPackage newOne, int flags) {
+        if ((flags & InstallStrategy.FORCE_UPDATE) != 0) {
+            return true;
+        }
         if ((flags & InstallStrategy.COMPARE_VERSION) != 0) {
             if (existOne.mVersionCode < newOne.mVersionCode) {
                 return true;
@@ -593,4 +616,56 @@ public class VAppManagerService extends IAppManager.Stub {
     public void savePersistenceData() {
         mPersistenceLayer.save();
     }
+
+
+    /**
+     * check app update on va's startup
+     */
+    private void upgradeApps() {
+        List<String> removes = new ArrayList<>();
+        for (Map.Entry<String, VPackage> e : PackageCacheManager.PACKAGE_CACHE.entrySet()) {
+            String pkg = e.getKey();
+            VPackage vPackage = e.getValue();
+            if (vPackage == null || vPackage.mExtras == null) {
+                continue;
+            }
+            PackageSetting setting = (PackageSetting)vPackage.mExtras;
+            if(setting.notCopyApk) {
+                PackageInfo outside = null;
+                try {
+                    outside = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg, 0);
+                } catch (Throwable ex) {
+                    //ignore
+                }
+                if (outside == null) {
+                    removes.add(pkg);
+                    continue;
+                }
+                if (!FileUtils.isExist(setting.apkPath)) {
+                    upgradePackage(pkg, outside.applicationInfo.publicSourceDir,
+                            InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE);
+                } else {
+                    PackageInfo inside = VPackageManager.get().getPackageInfo(pkg, 0, 0);
+                    if (inside == null || (inside.versionCode < outside.versionCode)
+                            || !TextUtils.equals(
+                            inside.applicationInfo.publicSourceDir,
+                            outside.applicationInfo.publicSourceDir)) {
+                        //1.lose,2.version,3.8.0 apk
+                        upgradePackage(pkg, outside.applicationInfo.publicSourceDir,
+                                InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE);
+                    }
+                }
+            }
+        }
+
+        for (String pkg : removes) {
+            PackageCacheManager.PACKAGE_CACHE.remove(pkg);
+            cleanUpResidualFilesByPackageName(pkg);
+        }
+    }
+
+    public InstallResult upgradePackage(String pkg, String path, int flag) {
+        return installPackage(path, flag, false);
+    }
+
 }

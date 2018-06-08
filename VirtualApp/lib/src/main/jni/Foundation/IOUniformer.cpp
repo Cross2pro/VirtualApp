@@ -35,15 +35,16 @@ void IOUniformer::init_env_before_all() {
 
     char *api_level_chars = getenv("V_API_LEVEL");
     char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
+    char *need_dlopen_chars = getenv("V_NEED_DLOPEN");
     if (api_level_chars) {
-#ifdef LOG_ENABLE
-        ALOGE("Enter init before all.");
-#endif
         int api_level = atoi(api_level_chars);
         int preview_api_level;
         preview_api_level = atoi(preview_api_level_chars);
+        int need_dlopen = atoi(need_dlopen_chars);
+
         char keep_env_name[25];
         char forbid_env_name[25];
+        char dlopen_keep_env_name[25];
         char replace_src_env_name[25];
         char replace_dst_env_name[25];
         int i = 0;
@@ -54,6 +55,16 @@ void IOUniformer::init_env_before_all() {
                 break;
             }
             add_keep_item(item);
+            i++;
+        }
+        i = 0;
+        while (true) {
+            sprintf(dlopen_keep_env_name, "V_DLOPEN_KEEP_ITEM_%d", i);
+            char *item = getenv(dlopen_keep_env_name);
+            if (!item) {
+                break;
+            }
+            add_dlopen_keep_item(item);
             i++;
         }
         i = 0;
@@ -78,7 +89,7 @@ void IOUniformer::init_env_before_all() {
             add_replace_item(item_src, item_dst);
             i++;
         }
-        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level);
+        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level, need_dlopen);
         iu_loaded = true;
     }
 }
@@ -107,6 +118,10 @@ const char *IOUniformer::query(const char *orig_path) {
 
 void IOUniformer::whitelist(const char *_path) {
     add_keep_item(_path);
+}
+
+void IOUniformer::dlopen_whitelist(const char *_path){
+    add_dlopen_keep_item(_path);
 }
 
 void IOUniformer::forbid(const char *_path) {
@@ -783,7 +798,8 @@ char **build_new_env(char *const envp[]) {
     int new_envp_count = orig_envp_count
                          + get_keep_item_count()
                          + get_forbidden_item_count()
-                         + get_replace_item_count() * 2 + 1;
+                         + get_replace_item_count() * 2 + 1
+                         + get_dlopen_keep_item_count();
     if (provided_ld_preload) {
         new_envp_count--;
     }
@@ -811,9 +827,6 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
      *
      * We will support 64Bit to adopt it.
      */
-#ifdef LOG_ENABLE
-    ALOGE("execve : %s", pathname);
-#endif
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     char *ld = getenv("LD_PRELOAD");
@@ -828,6 +841,8 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
         char **new_envp = build_new_env(envp);
         int ret = syscall(__NR_execve, redirect_path, argv, new_envp);
         FREE(redirect_path, pathname);
+        //free mem
+        free(new_envp);
         return ret;
     }
     int ret = syscall(__NR_execve, redirect_path, argv, envp);
@@ -839,35 +854,38 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
     return ret;
 }
 
+const char *relocate_path_dlopen(const char *path, int *result) {
+    if (path[0] == '/' || path[0] == '.') {
+        return relocate_path(path, result, 1);
+    }
+    *result = NOT_MATCH;
+    return path;
+}
 
 HOOK_DEF(void*, dlopen, const char *filename, int flag) {
     int res;
-    const char *redirect_path = relocate_path(filename, &res);
+    const char *redirect_path = relocate_path_dlopen(filename, &res);
     void *ret = orig_dlopen(redirect_path, flag);
 
     zString op("dlopen ret %p err %s", ret, getErr);
     doFileTrace(redirect_path, op.toString());
 
     onSoLoaded(filename, ret);
-#ifdef LOG_ENABLE
     ALOGD("dlopen : %s, return : %p.", redirect_path, ret);
-#endif
     FREE(redirect_path, filename);
     return ret;
 }
 
 HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extinfo) {
     int res;
-    const char *redirect_path = relocate_path(filename, &res);
+    const char *redirect_path = relocate_path_dlopen(filename, &res);
     void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
 
     zString op("do_dlopen_V19 ret %p err %s", ret, getErr);
     doFileTrace(redirect_path, op.toString());
 
     onSoLoaded(filename, ret);
-#ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-#endif
     FREE(redirect_path, filename);
     return ret;
 }
@@ -875,16 +893,14 @@ HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extin
 HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
          void *caller_addr) {
     int res;
-    const char *redirect_path = relocate_path(name, &res);
+    const char *redirect_path = relocate_path_dlopen(name, &res);
     void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
 
     zString op("do_dlopen_V24 ret %p err %s", ret, getErr);
     doFileTrace(redirect_path, op.toString());
 
     onSoLoaded(name, ret);
-#ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-#endif
     FREE(redirect_path, name);
     return ret;
 }
@@ -892,16 +908,14 @@ HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
 HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
          void *caller_addr) {
     int res;
-    const char *redirect_path = relocate_path(name, &res);
+    const char *redirect_path = relocate_path_dlopen(name, &res);
     void *ret = orig_do_dlopen_V26(redirect_path, flags, extinfo, caller_addr);
 
     zString op("do_dlopen_V26 ret %p err %s", ret, getErr);
     doFileTrace(redirect_path, op.toString());
 
     onSoLoaded(name, ret);
-#ifdef LOG_ENABLE
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-#endif
     FREE(redirect_path, name);
     return ret;
 }
@@ -909,17 +923,13 @@ HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
 
 //void *dlsym(void *handle,const char *symbol)
 HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
-#ifdef LOG_ENABLE
     ALOGD("dlsym : %p %s.", handle, symbol);
-#endif
     return orig_dlsym(handle, symbol);
 }
 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
-#ifdef LOG_ENABLE
     ALOGD(">>>>> kill >>> pid: %d, sig: %d.", pid, sig);
-#endif
     int ret = syscall(__NR_kill, pid, sig);
     return ret;
 }
@@ -1499,17 +1509,17 @@ void hook_dlopen(int api_level) {
             MSHookFunction(symbol, (void *) new_do_dlopen_V26,
                            (void **) &orig_do_dlopen_V26);
         }
-    }else if (api_level > 23) {
+    } else if (api_level > 23) {
         if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPv", "linker",
                        (unsigned long *) &symbol) == 0) {
             MSHookFunction(symbol, (void *) new_do_dlopen_V24,
-                          (void **) &orig_do_dlopen_V24);
+                           (void **) &orig_do_dlopen_V24);
         }
     } else if (api_level >= 19) {
         if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfo", "linker",
                        (unsigned long *) &symbol) == 0) {
             MSHookFunction(symbol, (void *) new_do_dlopen_V19,
-                          (void **) &orig_do_dlopen_V19);
+                           (void **) &orig_do_dlopen_V19);
         }
     } else {
         if (findSymbol("__dl_dlopen", "linker",
@@ -1519,12 +1529,14 @@ void hook_dlopen(int api_level) {
     }
 }
 
-void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_api_level) {
+
+void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level,int need_dlopen) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
-
     char api_level_chars[5];
     setenv("V_SO_PATH", so_path, 1);
+    sprintf(api_level_chars, "%i", need_dlopen);
+    setenv("V_NEED_DLOPEN", api_level_chars, 1);
     sprintf(api_level_chars, "%i", api_level);
     setenv("V_API_LEVEL", api_level_chars, 1);
     sprintf(api_level_chars, "%i", preview_api_level);
@@ -1590,7 +1602,9 @@ void IOUniformer::startUniformer(const char *so_path,int api_level, int preview_
         dlclose(handle);
     }
 
-    hook_dlopen(api_level);
+    if(need_dlopen == 1){
+        hook_dlopen(api_level);
+    }
 
     originalInterface::original_lseek = orig_lseek;
     originalInterface::original_llseek = orig___llseek;

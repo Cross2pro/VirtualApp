@@ -1,7 +1,9 @@
 package com.lody.virtual.helper.compat;
 
 import android.annotation.TargetApi;
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.text.TextUtils;
 
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -13,6 +15,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import mirror.android.content.pm.ApplicationInfoL;
 import mirror.com.android.internal.content.NativeLibraryHelper;
 import mirror.dalvik.system.VMRuntime;
 
@@ -38,7 +41,60 @@ public class NativeLibraryHelperCompat {
 		return -1;
 	}
 
-	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static boolean isSupportNative32(ApplicationInfo ai) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
+                return true;
+            }
+        }
+	    Set<String> supportedABIs = getABIsFromApk(ai.publicSourceDir);
+        if (supportedABIs == null || supportedABIs.isEmpty()) {
+            return true;
+        }
+        //find 32 so
+        for (String supportedAbi : supportedABIs) {
+            if ("armeabi".endsWith(supportedAbi)
+                    || "armeabi-v7a".equals(supportedAbi)
+                    || "x86".equals(supportedAbi)
+                    || "mips".equals(supportedAbi)) {
+                return true;
+            }
+        }
+        return !TextUtils.isEmpty(getNativeLibraryDir32(ai));
+    }
+
+    public static String getNativeLibraryDir32(ApplicationInfo ai) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+            try {
+                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
+                String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
+                if(primaryCpuAbi == null){
+                    return null;
+                }
+                boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
+                if (!TextUtils.isEmpty(secondaryCpuAbi)) {
+                    // Multi-arch case.
+                    if (primaryArchIs64bit) {
+                        // Primary arch: 64-bit, secondary: 32-bit.
+                        return ApplicationInfoL.secondaryNativeLibraryDir.get(ai);
+                    } else {
+                        return ai.nativeLibraryDir;
+                    }
+                } else if (primaryArchIs64bit) {
+                    // Single-arch 64-bit.
+                    return null;
+                } else {
+                    // Single-arch 32-bit.
+                    return ai.nativeLibraryDir;
+                }
+            }catch (Throwable e){
+                return ai.nativeLibraryDir;
+            }
+        }
+        return ai.nativeLibraryDir;
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	private static int copyNativeBinariesAfterL(File apkFile, File sharedLibraryDir) {
 		try {
 			Object handle = NativeLibraryHelper.Handle.create.call(apkFile);
@@ -92,7 +148,9 @@ public class NativeLibraryHelperCompat {
 		}
 
 		for (String supportedAbi : supportedABIs) {
-			if ("arm64-v8a".endsWith(supportedAbi) || "x86_64".equals(supportedAbi) || "mips64".equals(supportedAbi)) {
+			if ("arm64-v8a".endsWith(supportedAbi)
+                    || "x86_64".equals(supportedAbi)
+                    || "mips64".equals(supportedAbi)) {
 				return true;
 			}
 		}
@@ -124,4 +182,30 @@ public class NativeLibraryHelperCompat {
 		return null;
 	}
 
+
+    public static Set<String> getSoListFromApk(File apk) {
+        try {
+            ZipFile apkFile = new ZipFile(apk);
+            Enumeration<? extends ZipEntry> entries = apkFile.entries();
+            Set<String> solist = new HashSet<String>();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                String name = entry.getName();
+                if (name.contains("../")) {
+                    continue;
+                }
+                if (name.startsWith("lib/") && !entry.isDirectory() && name.endsWith(".so")) {
+                    String so = name.substring(name.lastIndexOf("/")+1);
+                    if(!solist.contains(so)){
+                        solist.add(so);
+                    }
+                }
+            }
+            return solist;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

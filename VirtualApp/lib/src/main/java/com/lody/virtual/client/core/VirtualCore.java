@@ -2,6 +2,7 @@ package com.lody.virtual.client.core;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -11,9 +12,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.IBinder;
@@ -21,8 +26,9 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.R;
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
@@ -98,8 +104,32 @@ public final class VirtualCore {
     private ConditionVariable initLock = new ConditionVariable();
     private ComponentDelegate componentDelegate;
     private TaskDescriptionDelegate taskDescriptionDelegate;
+    private SettingHandler mSettingHandler;
 
     private VirtualCore() {
+    }
+
+    public boolean isDisableDlOpen(String packageName) {
+        return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName);
+    }
+
+    public boolean isDisableNotCopyApk(String packageName, File apkPath) {
+        return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName, apkPath);
+    }
+
+    public boolean isUseVirtualLibraryFiles(String packageName, String apkPath){
+        return mSettingHandler == null || mSettingHandler.isUseVirtualLibraryFiles(packageName, apkPath);
+    }
+
+    public boolean isUseRealDir(String packageName) {
+        if (VASettings.USE_REAL_DATA_DIR) {
+            return true;
+        }
+        return mSettingHandler != null && mSettingHandler.isUseRealDataDir(packageName);
+    }
+
+    public void setSettingHandler(SettingHandler settingHandler) {
+        mSettingHandler = settingHandler;
     }
 
     public static VirtualCore get() {
@@ -135,7 +165,7 @@ public final class VirtualCore {
     }
 
     public void setCrashHandler(CrashHandler handler) {
-        VClientImpl.get().setCrashHandler(handler);
+        VClient.get().setCrashHandler(handler);
     }
 
     public TaskDescriptionDelegate getTaskDescriptionDelegate() {
@@ -169,15 +199,18 @@ public final class VirtualCore {
 
     public void startup(Context context) throws Throwable {
         if (!isStartUp) {
-            UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
-            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;
+            Constants.SHORTCUT_ACTION = context.getPackageName() + ".virtual.action.shortcut";
+            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_CP_AUTHORITY;
             ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;
             this.context = context;
             mainThread = ActivityThread.currentActivityThread.call();
             unHookPackageManager = context.getPackageManager();
+            //TODO compatible StubFileProvider context.getPackageName() + ".virtual.fileprovider";
+            UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";//.virtual.proxy.provider
+
             hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
             IPCBus.initialize(new IServerCache() {
                 @Override
@@ -261,6 +294,12 @@ public final class VirtualCore {
         if (isVAppProcess()) {
             systemPid = VActivityManager.get().getSystemPid();
         }
+        if (isVAppProcess()) {
+            if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
+                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+                addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+            }
+        }
     }
 
     private IAppManager getService() {
@@ -318,13 +357,13 @@ public final class VirtualCore {
     @Deprecated
     public void preOpt(String pkg) throws IOException {
         InstalledAppInfo info = getInstalledAppInfo(pkg, 0);
-        if (info != null && !info.dependSystem) {
+        if (info != null && !info.notCopyApk) {
             DexFile.loadDex(info.apkPath, info.getOdexFile().getPath(), 0).close();
         }
     }
 
     /**
-     * Is the specified app running in foreground / background?
+     * Check if the specified app running in foreground / background?
      *
      * @param packageName package name
      * @param userId      user id
@@ -348,9 +387,9 @@ public final class VirtualCore {
             inputStream = getContext().getAssets().open(asset);
             return installPackageFromStream(inputStream, flags);
         } catch (Throwable e) {
-            InstallResult result = new InstallResult();
-            result.error = e.getMessage();
-            return result;
+            InstallResult res = new InstallResult();
+            res.error = e.getMessage();
+            return res;
         } finally {
             FileUtils.closeQuietly(inputStream);
         }
@@ -364,13 +403,15 @@ public final class VirtualCore {
             }
             File apkFile = new File(dir, "tmp_" + System.currentTimeMillis() + ".apk");
             FileUtils.writeToFile(inputStream, apkFile);
-            return getService().installPackage(apkFile.getAbsolutePath(), flags | InstallStrategy.MOVE_FILE);
+            InstallResult res = getService().installPackage(apkFile.getAbsolutePath(), flags);
+            apkFile.delete();
+            return res;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         } catch (Throwable e) {
-            InstallResult result = new InstallResult();
-            result.error = e.getMessage();
-            return result;
+            InstallResult res = new InstallResult();
+            res.error = e.getMessage();
+            return res;
         }
     }
 
@@ -471,22 +512,38 @@ public final class VirtualCore {
         if (targetIntent == null) {
             return false;
         }
-        Intent shortcutIntent = new Intent();
-        shortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
-        shortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
-        if (splash != null) {
-            shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
-        }
-        shortcutIntent.putExtra("_VA_|_intent_", targetIntent);
-        shortcutIntent.putExtra("_VA_|_uri_", targetIntent.toUri(0));
-        shortcutIntent.putExtra("_VA_|_user_id_", userId);
+        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, packageName, userId);
 
-        Intent addIntent = new Intent();
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, icon);
-        addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-        context.sendBroadcast(addIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ShortcutInfo likeShortcut = null;
+            likeShortcut = new ShortcutInfo.Builder(getContext(), packageName + "@" + userId)
+                    .setLongLabel(name)
+                    .setShortLabel(name)
+                    .setIcon(Icon.createWithBitmap(icon))
+                    .setIntent(shortcutIntent)
+                    .build();
+            ShortcutManager shortcutManager = getContext().getSystemService(ShortcutManager.class);
+            if (shortcutManager != null) {
+                try {
+                    shortcutManager.requestPinShortcut(likeShortcut,
+                            PendingIntent.getActivity(getContext(), packageName.hashCode() + userId, shortcutIntent,
+                                    PendingIntent.FLAG_UPDATE_CURRENT).getIntentSender());
+                } catch (Throwable e) {
+                    return false;
+                }
+            }
+        } else {
+            Intent addIntent = new Intent();
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, BitmapUtils.warrperIcon(icon, 256, 256));
+            addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+            try {
+                context.sendBroadcast(addIntent);
+            } catch (Throwable e) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -514,22 +571,37 @@ public final class VirtualCore {
         if (targetIntent == null) {
             return false;
         }
+        Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, packageName, userId);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+        } else {
+            Intent addIntent = new Intent();
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+            addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+            addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
+            context.sendBroadcast(addIntent);
+        }
+        return true;
+    }
+
+    /**
+     * @param intent target activity
+     * @param splash loading activity
+     * @param userId userId
+     */
+    public Intent wrapperShortcutIntent(Intent intent, Intent splash, String packageName, int userId) {
         Intent shortcutIntent = new Intent();
-        shortcutIntent.setClassName(getHostPkg(), Constants.SHORTCUT_PROXY_ACTIVITY_NAME);
         shortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
+        shortcutIntent.setAction(Constants.SHORTCUT_ACTION);
+        shortcutIntent.setPackage(getHostPkg());
         if (splash != null) {
             shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
         }
-        shortcutIntent.putExtra("_VA_|_intent_", targetIntent);
-        shortcutIntent.putExtra("_VA_|_uri_", targetIntent.toUri(0));
-        shortcutIntent.putExtra("_VA_|_user_id_", VUserHandle.myUserId());
-
-        Intent addIntent = new Intent();
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-        addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
-        context.sendBroadcast(addIntent);
-        return true;
+        shortcutIntent.putExtra("_VA_|_pkg_", packageName);
+//        shortcutIntent.putExtra("_VA_|_intent_", (String)null);//targetIntent);
+        shortcutIntent.putExtra("_VA_|_uri_", intent.toUri(0));
+        shortcutIntent.putExtra("_VA_|_user_id_", userId);
+        return shortcutIntent;
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {

@@ -51,6 +51,12 @@ public class ProviderHook implements InvocationHandler {
                 return new DownloadProviderHook(provider);
             }
         });
+        PROVIDER_MAP.put("com.huawei.android.launcher.settings", new HookFetcher() {
+            @Override
+            public ProviderHook fetch(boolean external, IInterface provider) {
+                return new HuaWeiLauncherProviderHook(provider);
+            }
+        });
     }
 
     protected final Object mBase;
@@ -206,7 +212,7 @@ public class ProviderHook implements InvocationHandler {
             }
             return methodBox.call();
         } catch (Throwable e) {
-            VLog.d("ProviderHook", "call: %s (%s) with error", method.getName(), Arrays.toString(args));
+            VLog.w("ProviderHook", "call: %s (%s) with error", method.getName(), Arrays.toString(args));
             if (e instanceof InvocationTargetException) {
                 throw e.getCause();
             }

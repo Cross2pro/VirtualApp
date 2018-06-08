@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.IInterface;
 import android.os.Process;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -617,7 +618,7 @@ class MethodProxies {
 
 
     static final class GetPackageInfo extends MethodProxy {
-
+        private static final int MATCH_FACTORY_ONLY = 0x00200000;
         @Override
         public String getMethodName() {
             return "getPackageInfo";
@@ -633,6 +634,9 @@ class MethodProxies {
             String pkg = (String) args[0];
             int flags = (int) args[1];
             int userId = VUserHandle.myUserId();
+            if((flags & MATCH_FACTORY_ONLY) != 0){
+                return method.invoke(who, args);
+            }
             PackageInfo packageInfo = VPackageManager.get().getPackageInfo(pkg, flags, userId);
             if (packageInfo != null) {
                 return packageInfo;
@@ -647,7 +651,6 @@ class MethodProxies {
         }
 
     }
-
 
     static class DeleteApplicationCacheFiles extends MethodProxy {
 
@@ -977,6 +980,10 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, flags, userId);
             if (info != null) {
+                //fix createPckageContext  :p999
+                if(VClient.get().getVUid() <= 0){
+                    info.uid = getRealUid();
+                }
                 return info;
             }
             info = (ApplicationInfo) method.invoke(who, args);

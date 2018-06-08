@@ -3,7 +3,7 @@ package com.lody.virtual.client.hook.providers;
 import android.os.Build;
 import android.os.Bundle;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.hook.base.MethodBox;
 
 import java.lang.reflect.InvocationTargetException;
@@ -51,7 +51,7 @@ public class SettingsProviderHook extends ExternalProviderHook {
 
     @Override
     public Bundle call(MethodBox methodBox, String method, String arg, Bundle extras) throws InvocationTargetException {
-        if (!VClientImpl.get().isBound()) {
+        if (!VClient.get().isBound()) {
             return methodBox.call();
         }
         int methodType = getMethodType(method);
@@ -61,7 +61,7 @@ public class SettingsProviderHook extends ExternalProviderHook {
                 return wrapBundle(arg, presetValue);
             }
             if ("android_id".equals(arg)) {
-                return wrapBundle("android_id", VClientImpl.get().getDeviceInfo().getAndroidId());
+                return wrapBundle("android_id", VClient.get().getDeviceInfo().getAndroidId());
             }
         }
         if (METHOD_PUT == methodType) {

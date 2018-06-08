@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import mirror.com.android.internal.R_Hide;
 
 public class MyComponentDelegate implements ComponentDelegate {
+    Activity mProcessTopActivity;
 
     @Override
     public void beforeApplicationCreate(Application application) {
@@ -47,9 +48,12 @@ public class MyComponentDelegate implements ComponentDelegate {
             public void onActivityStarted(Activity activity) {
                 Log.e("lxf", "onActivityStarted "+activity.getLocalClassName());
 
+                //fix crash of youtube#sound keys move to ActivityFixer
             }
+
             @Override
             public void onActivityResumed(Activity activity) {
+                mProcessTopActivity = activity;
                 Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
 //                boolean issd = isStubDialog(activity);
 //                Log.e("lxf", "isStubDialog "+issd);
@@ -83,6 +87,9 @@ public class MyComponentDelegate implements ComponentDelegate {
             @Override
             public void onActivityPaused(Activity activity) {
                 Log.e("lxf", "onActivityPaused "+activity.getLocalClassName());
+                if (mProcessTopActivity == activity) {
+                    mProcessTopActivity = null;
+                }
             }
 
             @Override

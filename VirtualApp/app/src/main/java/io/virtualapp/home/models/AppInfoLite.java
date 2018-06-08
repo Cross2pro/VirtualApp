@@ -22,18 +22,18 @@ public class AppInfoLite implements Parcelable {
     };
     public String packageName;
     public String path;
-    public boolean fastOpen;
+    public boolean notCopyApk;
 
-    public AppInfoLite(String packageName, String path, boolean fastOpen) {
+    public AppInfoLite(String packageName, String path, boolean notCopyApk) {
         this.packageName = packageName;
         this.path = path;
-        this.fastOpen = fastOpen;
+        this.notCopyApk = notCopyApk;
     }
 
     protected AppInfoLite(Parcel in) {
         this.packageName = in.readString();
         this.path = in.readString();
-        this.fastOpen = in.readByte() != 0;
+        this.notCopyApk = in.readByte() != 0;
     }
 
     @Override
@@ -45,6 +45,6 @@ public class AppInfoLite implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
         dest.writeString(this.path);
-        dest.writeByte(this.fastOpen ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
     }
 }

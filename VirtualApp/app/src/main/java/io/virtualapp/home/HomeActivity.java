@@ -3,6 +3,7 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -85,18 +86,11 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private TextView mDeleteAppTextView;
     private LaunchpadAdapter mLaunchpadAdapter;
     private Handler mUiHandler;
-    private boolean mReload = false;
 
     public static void goHome(Context context) {
         Intent intent = new Intent(context, HomeActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
-    public static void goHome(Context context,int value) {
-        Intent intent = new Intent(context, HomeActivity.class);
-        intent.putExtra("VA_install",value);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         context.startActivity(intent);
     }
 
@@ -111,12 +105,19 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initMenu();
         new HomePresenterImpl(this).start();
         initMagic();
+//        IBinderTool.printAllService();
+//        IBinderTool.printIBinder("android.content.IFlymePermissionService");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         IntentFilter filter = new IntentFilter();
         filter.addAction(Constants.ACTION_PACKAGE_ADDED);
         filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Constants.ACTION_PACKAGE_WILL_ADDED);
         filter.addDataScheme("package");
         registerReceiver(mReceiver, filter);
-
     }
     private void initMagic() {
         try {
@@ -153,30 +154,39 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if(mReload){
-            mReload = false;
-            mPresenter.dataChanged();
-        }
-        int value = getIntent().getIntExtra("VA_install",0);
-        if(value==1){
-            moveTaskToBack(true);
-            getIntent().putExtra("VA_install",0);
-            return;
-        }
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mReceiver);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(mReceiver);
+        if (mDialog != null && mDialog.isShowing()) {
+            mDialog.dismiss();
+            mDialog = null;
+        }
     }
 
+    ProgressDialog mDialog = null;
     BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mReload = true;
+            String pkg = intent.getData() == null ? null : intent.getData().getSchemeSpecificPart();
+            if (Constants.ACTION_PACKAGE_WILL_ADDED.equals(intent.getAction())) {
+                String msg = "wait update " + mPresenter.getLabel(pkg);
+                if (mDialog != null) {
+                    mDialog.setMessage(msg);
+                } else {
+                    mDialog = ProgressDialog.show(context, null, msg);
+                }
+            } else {
+                if (mDialog != null && mDialog.isShowing()) {
+                    mDialog.dismiss();
+                    mPresenter.dataChanged();
+                    mDialog = null;
+                }
+            }
         }
     };
 
@@ -212,8 +222,12 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             Toast.makeText(this, "The coming", Toast.LENGTH_SHORT).show();
             return false;
         });
-        menu.add("Virtual Location").setIcon(R.drawable.ic_notification).setOnMenuItemClickListener(item -> {
+        menu.add("Virtual Location").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
             startActivity(new Intent(this, LocationSettingsActivity.class));
+            return true;
+        });
+        menu.add("Install Google Support").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+            askInstallGms();
             return true;
         });
         menu.add("Settings").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
@@ -395,8 +409,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     @Override
     public void askInstallGms() {
         new AlertDialog.Builder(this)
-                .setTitle("Hi")
-                .setMessage("We found that your device has been installed the Google service, whether you need to install them?")
+                .setTitle(R.string.tip_install_gms)
+                .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     defer().when(() -> {
                         GmsSupport.installGApps(0);
@@ -496,7 +510,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 AppData data = mLaunchpadAdapter.getList().get(target.getAdapterPosition());
                 return data.canReorder();
             } catch (IndexOutOfBoundsException e) {
-                e.printStackTrace();
+                //ignore
             }
             return false;
         }

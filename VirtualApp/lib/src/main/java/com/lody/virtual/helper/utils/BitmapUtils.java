@@ -2,6 +2,7 @@ package com.lody.virtual.helper.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -26,4 +27,17 @@ public class BitmapUtils {
         }
     }
 
+
+    public static Bitmap warrperIcon(Bitmap bitmap, int newWidth, int newHeight) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width < newWidth || height < newHeight) {
+            return bitmap;
+        }
+        float scaleWidth = ((float) newWidth) / (float)width;
+        float scaleHeight = ((float) newHeight) / (float)height;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+    }
 }

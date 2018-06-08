@@ -4,13 +4,12 @@ import android.app.IServiceConnection;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ServiceConnection;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -93,7 +92,7 @@ public class ServiceConnectionDelegate extends IServiceConnection.Stub {
         if (delegateService != null) {
             name = delegateService.getComponent();
             service = delegateService.getService();
-            IBinder proxy = ProxyServiceFactory.getProxyService(VClientImpl.get().getCurrentApplication(), name, service);
+            IBinder proxy = ProxyServiceFactory.getProxyService(VClient.get().getCurrentApplication(), name, service);
             if (proxy != null) {
                 service = proxy;
             }

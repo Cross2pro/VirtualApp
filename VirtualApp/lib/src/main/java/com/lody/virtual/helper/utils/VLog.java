@@ -25,6 +25,10 @@ public class VLog {
 		}
 	}
 
+	public static void logbug(String tag, String msg){
+		d(tag, msg);
+	}
+
 	public static void w(String tag, String msg, Object... format) {
 		if (OPEN_LOG) {
 			Log.w(tag, String.format(msg, format));

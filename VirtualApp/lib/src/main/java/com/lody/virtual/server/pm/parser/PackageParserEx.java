@@ -21,12 +21,14 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.PackageUserState;
+import com.lody.virtual.server.pm.VPackageManagerService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,7 +62,7 @@ public class PackageParserEx {
         } else {
             try {
                 PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
-            }catch (Throwable e){
+            } catch (Throwable e) {
                 //ignore APK Signature Scheme v2
             }
         }
@@ -214,7 +216,7 @@ public class PackageParserEx {
             ApplicationInfoL.primaryCpuAbi.set(ai, hostPrimaryCpuAbi);
         }
 
-        if (ps.dependSystem) {
+        if (ps.notCopyApk) {
             String[] sharedLibraryFiles = sSharedLibCache.get(ps.packageName);
             if (sharedLibraryFiles == null) {
                 PackageManager hostPM = VirtualCore.get().getUnHookPackageManager();
@@ -231,12 +233,26 @@ public class PackageParserEx {
         }
     }
 
-    private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
-        if (VASettings.USE_REAL_DATA_DIR) {
-            ai.dataDir = VirtualCore.get().getContext().getApplicationInfo().dataDir
-                    .replace(VirtualCore.get().getHostPkg(), ai.packageName);
+    private static void initApplicationAsUser(ApplicationInfo ai, int userId, boolean notCopyApk) {
+        if (VASettings.ENABLE_IO_REDIRECT && VirtualCore.get().isUseRealDir(ai.packageName)) {
+            ai.dataDir = "/data/data/" + ai.packageName + "/";
         } else {
             ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+        }
+
+        if (VASettings.ENABLE_IO_REDIRECT && notCopyApk
+                && !VirtualCore.get().isUseVirtualLibraryFiles(ai.packageName, ai.publicSourceDir)) {
+            ApplicationInfo outside = VPackageManagerService.get()
+                    .getOutSideApplicationInfo(ai.packageName, false);
+            if (outside != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    //fake app copy .so file to /lib/
+                    // /data/data/va/app/lib
+                    String nativeLibraryDir = ai.nativeLibraryDir;
+                    ApplicationInfoL.secondaryNativeLibraryDir.set(ai, nativeLibraryDir);
+                }
+                ai.nativeLibraryDir = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -244,7 +260,7 @@ public class PackageParserEx {
             ApplicationInfoL.scanPublicSourceDir.set(ai, ai.dataDir);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if(Build.VERSION.SDK_INT < 26) {
+            if (Build.VERSION.SDK_INT < 26) {
                 ApplicationInfoN.deviceEncryptedDataDir.set(ai, ai.dataDir);
                 ApplicationInfoN.credentialEncryptedDataDir.set(ai, ai.dataDir);
             }
@@ -289,13 +305,14 @@ public class PackageParserEx {
         }
     }
 
-    public static PackageInfo generatePackageInfo(VPackage p, int flags, long firstInstallTime, long lastUpdateTime, PackageUserState state, int userId) {
+    public static PackageInfo generatePackageInfo(VPackage p, int flags, long firstInstallTime, long lastUpdateTime, PackageUserState state, int userId, boolean notCopyApk) {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
         }
         if (p.mSignatures == null) {
             readSignature(p);
         }
+        PackageSetting ps = (PackageSetting) p.mExtras;
         PackageInfo pi = new PackageInfo();
         pi.packageName = p.packageName;
         pi.versionCode = p.mVersionCode;
@@ -303,7 +320,7 @@ public class PackageParserEx {
         pi.versionName = p.mVersionName;
         pi.sharedUserId = p.mSharedUserId;
         pi.sharedUserLabel = p.mSharedUserLabel;
-        pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
+        pi.applicationInfo = generateApplicationInfo(p, flags, state, userId, notCopyApk);
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
         if (p.requestedPermissions != null && !p.requestedPermissions.isEmpty()) {
@@ -333,7 +350,7 @@ public class PackageParserEx {
                 final ActivityInfo[] res = new ActivityInfo[N];
                 for (int i = 0; i < N; i++) {
                     final VPackage.ActivityComponent a = p.activities.get(i);
-                    res[num++] = generateActivityInfo(a, flags, state, userId);
+                    res[num++] = generateActivityInfo(a, flags, state, userId, notCopyApk);
                 }
                 pi.activities = res;
             }
@@ -345,7 +362,7 @@ public class PackageParserEx {
                 final ActivityInfo[] res = new ActivityInfo[N];
                 for (int i = 0; i < N; i++) {
                     final VPackage.ActivityComponent a = p.receivers.get(i);
-                    res[num++] = generateActivityInfo(a, flags, state, userId);
+                    res[num++] = generateActivityInfo(a, flags, state, userId, notCopyApk);
                 }
                 pi.receivers = res;
             }
@@ -357,7 +374,7 @@ public class PackageParserEx {
                 final ServiceInfo[] res = new ServiceInfo[N];
                 for (int i = 0; i < N; i++) {
                     final VPackage.ServiceComponent s = p.services.get(i);
-                    res[num++] = generateServiceInfo(s, flags, state, userId);
+                    res[num++] = generateServiceInfo(s, flags, state, userId, notCopyApk);
                 }
                 pi.services = res;
             }
@@ -369,7 +386,7 @@ public class PackageParserEx {
                 final ProviderInfo[] res = new ProviderInfo[N];
                 for (int i = 0; i < N; i++) {
                     final VPackage.ProviderComponent pr = p.providers.get(i);
-                    res[num++] = generateProviderInfo(pr, flags, state, userId);
+                    res[num++] = generateProviderInfo(pr, flags, state, userId, ps.notCopyApk);
                 }
                 pi.providers = res;
             }
@@ -395,7 +412,7 @@ public class PackageParserEx {
     }
 
     public static ApplicationInfo generateApplicationInfo(VPackage p, int flags,
-                                                          PackageUserState state, int userId) {
+                                                          PackageUserState state, int userId, boolean notCopyApk) {
         if (p == null) return null;
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
@@ -406,13 +423,13 @@ public class PackageParserEx {
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }
-        initApplicationAsUser(ai, userId);
+        initApplicationAsUser(ai, userId, notCopyApk);
         return ai;
     }
 
 
     public static ActivityInfo generateActivityInfo(VPackage.ActivityComponent a, int flags,
-                                                    PackageUserState state, int userId) {
+                                                    PackageUserState state, int userId, boolean notCopyApk) {
         if (a == null) return null;
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
@@ -423,12 +440,12 @@ public class PackageParserEx {
                 && (a.metaData != null)) {
             ai.metaData = a.metaData;
         }
-        ai.applicationInfo = generateApplicationInfo(a.owner, flags, state, userId);
+        ai.applicationInfo = generateApplicationInfo(a.owner, flags, state, userId, notCopyApk);
         return ai;
     }
 
     public static ServiceInfo generateServiceInfo(VPackage.ServiceComponent s, int flags,
-                                                  PackageUserState state, int userId) {
+                                                  PackageUserState state, int userId, boolean notCopyApk) {
         if (s == null) return null;
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
@@ -438,12 +455,12 @@ public class PackageParserEx {
         if ((flags & PackageManager.GET_META_DATA) != 0 && s.metaData != null) {
             si.metaData = s.metaData;
         }
-        si.applicationInfo = generateApplicationInfo(s.owner, flags, state, userId);
+        si.applicationInfo = generateApplicationInfo(s.owner, flags, state, userId, notCopyApk);
         return si;
     }
 
     public static ProviderInfo generateProviderInfo(VPackage.ProviderComponent p, int flags,
-                                                    PackageUserState state, int userId) {
+                                                    PackageUserState state, int userId, boolean notCopyApk) {
         if (p == null) return null;
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
@@ -458,7 +475,7 @@ public class PackageParserEx {
         if ((flags & PackageManager.GET_URI_PERMISSION_PATTERNS) == 0) {
             pi.uriPermissionPatterns = null;
         }
-        pi.applicationInfo = generateApplicationInfo(p.owner, flags, state, userId);
+        pi.applicationInfo = generateApplicationInfo(p.owner, flags, state, userId, notCopyApk);
         return pi;
     }
 

@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.lody.virtual">
 
-    <uses-permission android:name="com.huawei.authentication.HW_ACCESS_AUTH_SERVICE" />
-
+    <!-- samsung start -->
     <uses-permission android:name="com.samsung.svoice.sync.READ_DATABASE" />
     <uses-permission android:name="com.samsung.svoice.sync.ACCESS_SERVICE" />
     <uses-permission android:name="com.samsung.svoice.sync.WRITE_DATABASE" />
@@ -18,182 +17,52 @@
     <uses-permission android:name="sec.android.permission.READ_MSG_PREF" />
     <uses-permission android:name="com.samsung.android.scloud.backup.lib.read" />
     <uses-permission android:name="com.samsung.android.scloud.backup.lib.write" />
+    <!-- samsung end -->
 
-    <uses-permission android:name="android.permission.BIND_DIRECTORY_SEARCH" />
-    <uses-permission android:name="android.permission.UPDATE_APP_OPS_STATS" />
-    <uses-permission android:name="com.android.voicemail.permission.READ_WRITE_ALL_VOICEMAIL" />
-
-    <uses-permission
-        android:name="android.permission.ACCOUNT_MANAGER"
-        tools:ignore="ProtectedPermissions" />
-
-    <uses-permission
-        android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
-    <!-- don't need mock location -->
-    <!--<uses-permission
-        android:name="android.permission.ACCESS_MOCK_LOCATION"
-        tools:ignore="MockLocation" />-->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIMAX_STATE" />
-    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
-    <uses-permission
-        android:name="android.permission.BIND_APPWIDGET"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BODY_SENSORS" />
-    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIMAX_STATE" />
-    <uses-permission android:name="android.permission.CLEAR_APP_CACHE" />
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
-    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="android.permission.FLASHLIGHT" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.GET_CLIPS" />
-    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
-    <uses-permission android:name="android.permission.GET_TASKS" />
-    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
-    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.PERSISTENT_ACTIVITY" />
-    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
-    <uses-permission android:name="android.permission.READ_CALENDAR" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.READ_CELL_BROADCASTS" />
-    <uses-permission android:name="android.permission.READ_CLIPS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_INSTALL_SESSIONS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.READ_SOCIAL_STREAM" />
-    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
-    <uses-permission android:name="android.permission.READ_USER_DICTIONARY" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.RECEIVE_MMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.REORDER_TASKS" />
-    <uses-permission android:name="android.permission.RESTART_PACKAGES" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.SET_TIME_ZONE" />
-    <uses-permission android:name="android.permission.SET_WALLPAPER" />
-    <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
-    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_READ" />
-    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_WRITE" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.TRANSMIT_IR" />
-    <uses-permission android:name="android.permission.USE_SIP" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
-    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
-    <uses-permission android:name="android.permission.WRITE_CLIPS" />
-    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_PROFILE" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SMS" />
-    <uses-permission android:name="android.permission.WRITE_SOCIAL_STREAM" />
-    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- other app start -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
-    <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS" />
-    <uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS" />
-    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
-    <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />
+    <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" />
+    <uses-permission android:name="com.android.voicemail.permission.READ_WRITE_ALL_VOICEMAIL" />
+    <uses-permission android:name="com.huawei.authentication.HW_ACCESS_AUTH_SERVICE" />
+    <!-- other app end -->
+
+    <!-- google play store start -->
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="com.android.vending.CHECK_LICENSE" />
-    <uses-permission android:name="com.android.voicemail.permission.ADD_VOICEMAIL" />
+    <!-- google play store end -->
+
+    <!-- google services framework start -->
+    <uses-permission android:name="com.google.android.providers.talk.permission.READ_ONLY" />
+    <uses-permission android:name="com.google.android.providers.talk.permission.WRITE_ONLY" />
+
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID_NOTIFICATION" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.OTHER_SERVICES" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.YouTubeUser" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adsense" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adwords" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ah" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.android" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.androidsecure" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.blogger" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cl" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cp" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.dodgeball" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.finance" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.gbase" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.grandcentral" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.groups2" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.health" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ig" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.jotspot" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.knol" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.lh2" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.local" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mail" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mobile" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.news" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.notebook" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.orkut" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.print" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierra" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierraqa" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierrasandbox" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sitemaps" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speech" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speechpersonalization" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.talk" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wifi" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wise" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.writely" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.youtube" />
-    <uses-permission android:name="com.google.android.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
-    <uses-permission android:name="com.google.android.providers.talk.permission.READ_ONLY" />
-    <uses-permission android:name="com.google.android.providers.talk.permission.WRITE_ONLY" />
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
-    <uses-permission android:name="android.permission.READ_LOGS" />
-    <uses-permission
-        android:name="android.permission.INSTALL_PACKAGES"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.DELETE_PACKAGES"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.CLEAR_APP_USER_DATA"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.WRITE_MEDIA_STORAGE"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.ACCESS_CACHE_FILESYSTEM"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.READ_OWNER_DATA" />
-    <uses-permission android:name="android.permission.WRITE_OWNER_DATA" />
-    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
-    <uses-permission
-        android:name="android.permission.DEVICE_POWER"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.BATTERY_STATS" />
-    <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" />
+    <!-- google services framework end -->
+
+    <!-- shortcut and badge start -->
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />
+    <uses-permission android:name="android.permission.READ_APP_BADGE" />
+
+    <uses-permission android:name="com.google.android.launcher.permission.READ_SETTINGS" />
+    <uses-permission android:name="com.oppo.launcher.permission.READ_SETTINGS" />
+    <uses-permission android:name="com.oppo.launcher.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_READ" />
+    <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_WRITE" />
+    <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.READ" />
+    <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE" />
+    <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS" />
+    <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT" />
+    <uses-permission android:name="com.sonyericsson.home.permission.BROADCAST_BADGE" />
+    <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE" />
+    <uses-permission android:name="com.anddoes.launcher.permission.UPDATE_COUNT" />
+    <uses-permission android:name="com.majeur.launcher.permission.UPDATE_BADGE" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" />
+    <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" />
     <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.android.launcher.permission.WRITE_SETTINGS" />
     <uses-permission android:name="com.android.launcher3.permission.READ_SETTINGS" />
@@ -212,18 +81,173 @@
     <uses-permission android:name="cn.nubia.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" />
-    <uses-permission android:name="android.permission.GET_INTENT_SENDER_INTENT" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- shortcut and badge end -->
+    <!-- 常用 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+    <!-- 相机 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <!-- 位置服务 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
+    <!-- 网络 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- sdcard -->
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- 电量 -->
+    <uses-permission android:name="android.permission.BATTERY_STATS" />
+    <!-- 身体传感器 -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <!-- 锁屏-->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <!-- 允许应用程序展开或折叠状态栏 -->
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <!-- 账号相关 -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+    <!-- 通话状态 -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- 修改当前配置-->
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+    <!-- 设置 -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <!-- 最近任务/进程 -->
+    <uses-permission android:name="android.permission.GET_TASKS" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <uses-permission android:name="android.permission.PERSISTENT_ACTIVITY" />
+    <!-- 录音 -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- bluetooth -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- nfc -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- 震动 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 指纹 -->
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- 下面自己按需保留 -->
+
+    <!-- browser history start -->
+    <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS" />
+    <uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS" />
+    <!-- browser history end -->
+
+    <!-- 清空应用缓存-->
+    <uses-permission android:name="android.permission.CLEAR_APP_CACHE" />
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
+    <!-- 同步设置 -->
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
+    <!-- rss -->
+    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_READ" />
+    <uses-permission android:name="android.permission.SUBSCRIBED_FEEDS_WRITE" />
+    <!-- 日历 -->
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- 通讯录 -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <!-- 系统日志 -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
+    <!-- 重启应用 -->
+    <uses-permission android:name="android.permission.RESTART_PACKAGES" />
+    <!-- 时间/时区 -->
+    <uses-permission android:name="android.permission.SET_TIME"
+                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission android:name="android.permission.SET_TIME_ZONE" />
+    <!-- 墙纸 -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
+    <!-- 红外线 -->
+    <uses-permission android:name="android.permission.TRANSMIT_IR" />
+
+    <!-- SIP服务 -->
+    <uses-permission android:name="android.permission.USE_SIP" />
+    <!-- 唤醒屏幕 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- float window -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- boot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- system app start -->
+    <uses-permission
+        android:name="android.permission.INSTALL_PACKAGES"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.DELETE_PACKAGES"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.CLEAR_APP_USER_DATA"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.WRITE_MEDIA_STORAGE"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.ACCESS_CACHE_FILESYSTEM"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.DEVICE_POWER"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.WRITE_APN_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS"/>
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
-    <uses-feature android:name="android.hardware.camera" />
-    <uses-feature
-        android:name="android.hardware.camera.autofocus"
-        android:required="false" />
+    <uses-permission
+        android:name="android.permission.BIND_APPWIDGET"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.ACCOUNT_MANAGER"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- system app end -->
+    <!-- not found -->
+    <uses-permission android:name="android.permission.READ_INSTALL_SESSIONS" />
+    <uses-permission android:name="android.permission.READ_OWNER_DATA" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_SOCIAL_STREAM" />
+    <uses-permission android:name="android.permission.READ_USER_DICTIONARY" />
+    <uses-permission android:name="android.permission.READ_CELL_BROADCASTS" />
+    <uses-permission android:name="android.permission.WRITE_CLIPS" />
+    <uses-permission android:name="android.permission.READ_CLIPS" />
+    <uses-permission android:name="android.permission.WRITE_PROFILE" />
+    <uses-permission android:name="android.permission.WRITE_SOCIAL_STREAM" />
+    <uses-permission android:name="android.permission.GET_CLIPS" />
+    <uses-permission android:name="android.permission.WRITE_USER_DICTIONARY" />
+    <uses-permission android:name="android.permission.WRITE_OWNER_DATA" />
+    <uses-permission android:name="android.permission.BIND_DIRECTORY_SEARCH" />
+    <uses-permission android:name="android.permission.UPDATE_APP_OPS_STATS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+    <uses-permission android:name="android.permission.ACCESS_GPS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.ACCESS_WIMAX_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" />
+    <uses-permission android:name="android.permission.GET_INTENT_SENDER_INTENT" />
+    <uses-permission android:name="android.permission.CHANGE_WIMAX_STATE" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <application>
         <!--safekey adapter-->
@@ -236,32 +260,40 @@
         <!--safekey adapter-->
 
         <service
-            android:name="com.lody.virtual.client.stub.DaemonService"
+            android:name="com.lody.virtual.client.stub.KeepAliveService"
             android:process="@string/engine_process_name" />
 
         <service
-            android:name="com.lody.virtual.client.stub.DaemonService$InnerService"
+            android:name="com.lody.virtual.client.stub.HiddenForeNotification"
             android:process="@string/engine_process_name" />
 
         <activity
             android:name="com.lody.virtual.client.stub.ShortcutHandleActivity"
             android:exported="true"
             android:process="@string/engine_process_name"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            android:taskAffinity="virtual.shortcut.task"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="${applicationId}.virtual.action.shortcut" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+            </intent-filter>
+        </activity>
 
         <activity
-            android:name=".client.stub.StubPendingActivity"
+            android:name=".client.stub.ShadowPendingActivity"
             android:process="@string/engine_process_name" />
 
         <service
-            android:name=".client.stub.StubPendingService"
+            android:name=".client.stub.ShadowPendingService"
             android:process="@string/engine_process_name" />
         <receiver
-            android:name=".client.stub.StubPendingReceiver"
+            android:name=".client.stub.ShadowPendingReceiver"
             android:process="@string/engine_process_name" />
 
         <service
-            android:name=".client.stub.StubJob"
+            android:name=".client.stub.ShadowJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:process="@string/engine_process_name" />
 
@@ -325,1062 +357,2612 @@
             android:process="@string/engine_process_name" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C0"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p0"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C1"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p1"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C2"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p2"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C3"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P3"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p3"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C4"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P4"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p4"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C5"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P5"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p5"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C6"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P6"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p6"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C7"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P7"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p7"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C8"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P8"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p8"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C9"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P9"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p9"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C10"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P10"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p10"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C11"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P11"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p11"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C12"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P12"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p12"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C13"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P13"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p13"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C14"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P14"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p14"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C15"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P15"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p15"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C16"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P16"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p16"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C17"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P17"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p17"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C18"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P18"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p18"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C19"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P19"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p19"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C20"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P20"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p20"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C21"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P21"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p21"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C22"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P22"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p22"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C23"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P23"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p23"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C24"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P24"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p24"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C25"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P25"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p25"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C26"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P26"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p26"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C27"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P27"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p27"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C28"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P28"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p28"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C29"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P29"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p29"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C30"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P30"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p30"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C31"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P31"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p31"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C32"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P32"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p32"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C33"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P33"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p33"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C34"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P34"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p34"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C35"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P35"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p35"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C36"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P36"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p36"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C37"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P37"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p37"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C38"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P38"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p38"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C39"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P39"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p39"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C40"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P40"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p40"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C41"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P41"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p41"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C42"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P42"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p42"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C43"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P43"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p43"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C44"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P44"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p44"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C45"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P45"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p45"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C46"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P46"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p46"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C47"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P47"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p47"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C48"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P48"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p48"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubActivity$C49"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P49"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:excludeFromRecents="true"
             android:process=":p49"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C0"
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P50"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p50"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P51"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p51"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P52"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p52"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P53"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p53"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P54"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p54"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P55"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p55"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P56"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p56"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P57"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p57"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P58"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p58"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P59"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p59"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P60"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p60"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P61"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p61"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P62"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p62"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P63"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p63"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P64"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p64"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P65"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p65"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P66"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p66"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P67"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p67"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P68"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p68"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P69"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p69"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P70"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p70"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P71"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p71"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P72"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p72"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P73"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p73"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P74"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p74"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P75"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p75"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P76"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p76"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P77"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p77"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P78"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p78"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P79"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p79"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P80"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p80"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P81"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p81"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P82"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p82"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P83"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p83"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P84"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p84"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P85"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p85"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P86"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p86"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P87"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p87"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P88"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p88"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P89"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p89"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P90"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p90"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P91"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p91"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P92"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p92"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P93"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p93"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P94"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p94"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P95"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p95"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P96"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p96"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P97"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p97"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P98"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p98"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowActivity$P99"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:process=":p99"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@style/VATheme" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p0"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C1"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p1"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C2"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p2"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C3"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P3"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p3"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C4"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P4"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p4"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C5"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P5"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p5"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C6"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P6"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p6"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C7"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P7"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p7"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C8"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P8"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p8"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C9"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P9"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p9"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C10"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P10"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p10"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C11"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P11"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p11"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C12"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P12"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p12"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C13"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P13"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p13"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C14"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P14"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p14"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C15"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P15"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p15"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C16"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P16"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p16"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C17"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P17"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p17"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C18"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P18"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p18"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C19"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P19"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p19"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C20"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P20"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p20"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C21"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P21"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p21"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C22"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P22"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p22"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C23"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P23"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p23"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C24"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P24"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p24"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C25"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P25"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p25"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C26"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P26"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p26"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C27"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P27"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p27"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C28"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P28"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p28"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C29"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P29"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p29"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C30"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P30"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p30"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C31"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P31"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p31"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C32"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P32"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p32"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C33"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P33"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p33"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C34"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P34"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p34"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C35"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P35"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p35"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C36"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P36"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p36"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C37"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P37"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p37"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C38"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P38"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p38"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C39"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P39"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p39"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C40"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P40"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p40"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C41"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P41"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p41"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C42"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P42"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p42"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C43"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P43"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p43"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C44"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P44"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p44"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C45"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P45"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p45"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C46"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P46"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p46"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C47"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P47"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p47"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C48"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P48"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p48"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
 
         <activity
-            android:name="com.lody.virtual.client.stub.StubDialog$C49"
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P49"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p49"
-            android:taskAffinity="com.lody.virtual.vt"
+            android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P50"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p50"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P51"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p51"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P52"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p52"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P53"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p53"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P54"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p54"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P55"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p55"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P56"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p56"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P57"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p57"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P58"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p58"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P59"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p59"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P60"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p60"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P61"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p61"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P62"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p62"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P63"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p63"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P64"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p64"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P65"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p65"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P66"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p66"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P67"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p67"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P68"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p68"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P69"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p69"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P70"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p70"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P71"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p71"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P72"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p72"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P73"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p73"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P74"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p74"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P75"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p75"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P76"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p76"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P77"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p77"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P78"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p78"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P79"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p79"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P80"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p80"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P81"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p81"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P82"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p82"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P83"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p83"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P84"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p84"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P85"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p85"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P86"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p86"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P87"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p87"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P88"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p88"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P89"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p89"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P90"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p90"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P91"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p91"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P92"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p92"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P93"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p93"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P94"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p94"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P95"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p95"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P96"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p96"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P97"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p97"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P98"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p98"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <activity
+            android:name="com.lody.virtual.client.stub.ShadowDialogActivity$P99"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:process=":p99"
+            android:taskAffinity="com.lody.virtual.virtual_task"
+            android:theme="@android:style/Theme.Dialog" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P0"
+            android:exported="false"
+            android:process=":p0" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P1"
+            android:exported="false"
+            android:process=":p1" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P2"
+            android:exported="false"
+            android:process=":p2" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P3"
+            android:exported="false"
+            android:process=":p3" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P4"
+            android:exported="false"
+            android:process=":p4" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P5"
+            android:exported="false"
+            android:process=":p5" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P6"
+            android:exported="false"
+            android:process=":p6" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P7"
+            android:exported="false"
+            android:process=":p7" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P8"
+            android:exported="false"
+            android:process=":p8" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P9"
+            android:exported="false"
+            android:process=":p9" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P10"
+            android:exported="false"
+            android:process=":p10" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P11"
+            android:exported="false"
+            android:process=":p11" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P12"
+            android:exported="false"
+            android:process=":p12" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P13"
+            android:exported="false"
+            android:process=":p13" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P14"
+            android:exported="false"
+            android:process=":p14" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P15"
+            android:exported="false"
+            android:process=":p15" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P16"
+            android:exported="false"
+            android:process=":p16" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P17"
+            android:exported="false"
+            android:process=":p17" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P18"
+            android:exported="false"
+            android:process=":p18" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P19"
+            android:exported="false"
+            android:process=":p19" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P20"
+            android:exported="false"
+            android:process=":p20" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P21"
+            android:exported="false"
+            android:process=":p21" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P22"
+            android:exported="false"
+            android:process=":p22" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P23"
+            android:exported="false"
+            android:process=":p23" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P24"
+            android:exported="false"
+            android:process=":p24" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P25"
+            android:exported="false"
+            android:process=":p25" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P26"
+            android:exported="false"
+            android:process=":p26" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P27"
+            android:exported="false"
+            android:process=":p27" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P28"
+            android:exported="false"
+            android:process=":p28" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P29"
+            android:exported="false"
+            android:process=":p29" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P30"
+            android:exported="false"
+            android:process=":p30" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P31"
+            android:exported="false"
+            android:process=":p31" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P32"
+            android:exported="false"
+            android:process=":p32" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P33"
+            android:exported="false"
+            android:process=":p33" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P34"
+            android:exported="false"
+            android:process=":p34" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P35"
+            android:exported="false"
+            android:process=":p35" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P36"
+            android:exported="false"
+            android:process=":p36" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P37"
+            android:exported="false"
+            android:process=":p37" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P38"
+            android:exported="false"
+            android:process=":p38" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P39"
+            android:exported="false"
+            android:process=":p39" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P40"
+            android:exported="false"
+            android:process=":p40" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P41"
+            android:exported="false"
+            android:process=":p41" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P42"
+            android:exported="false"
+            android:process=":p42" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P43"
+            android:exported="false"
+            android:process=":p43" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P44"
+            android:exported="false"
+            android:process=":p44" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P45"
+            android:exported="false"
+            android:process=":p45" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P46"
+            android:exported="false"
+            android:process=":p46" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P47"
+            android:exported="false"
+            android:process=":p47" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P48"
+            android:exported="false"
+            android:process=":p48" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P49"
+            android:exported="false"
+            android:process=":p49" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P50"
+            android:exported="false"
+            android:process=":p50" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P51"
+            android:exported="false"
+            android:process=":p51" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P52"
+            android:exported="false"
+            android:process=":p52" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P53"
+            android:exported="false"
+            android:process=":p53" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P54"
+            android:exported="false"
+            android:process=":p54" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P55"
+            android:exported="false"
+            android:process=":p55" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P56"
+            android:exported="false"
+            android:process=":p56" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P57"
+            android:exported="false"
+            android:process=":p57" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P58"
+            android:exported="false"
+            android:process=":p58" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P59"
+            android:exported="false"
+            android:process=":p59" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P60"
+            android:exported="false"
+            android:process=":p60" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P61"
+            android:exported="false"
+            android:process=":p61" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P62"
+            android:exported="false"
+            android:process=":p62" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P63"
+            android:exported="false"
+            android:process=":p63" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P64"
+            android:exported="false"
+            android:process=":p64" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P65"
+            android:exported="false"
+            android:process=":p65" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P66"
+            android:exported="false"
+            android:process=":p66" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P67"
+            android:exported="false"
+            android:process=":p67" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P68"
+            android:exported="false"
+            android:process=":p68" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P69"
+            android:exported="false"
+            android:process=":p69" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P70"
+            android:exported="false"
+            android:process=":p70" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P71"
+            android:exported="false"
+            android:process=":p71" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P72"
+            android:exported="false"
+            android:process=":p72" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P73"
+            android:exported="false"
+            android:process=":p73" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P74"
+            android:exported="false"
+            android:process=":p74" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P75"
+            android:exported="false"
+            android:process=":p75" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P76"
+            android:exported="false"
+            android:process=":p76" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P77"
+            android:exported="false"
+            android:process=":p77" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P78"
+            android:exported="false"
+            android:process=":p78" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P79"
+            android:exported="false"
+            android:process=":p79" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P80"
+            android:exported="false"
+            android:process=":p80" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P81"
+            android:exported="false"
+            android:process=":p81" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P82"
+            android:exported="false"
+            android:process=":p82" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P83"
+            android:exported="false"
+            android:process=":p83" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P84"
+            android:exported="false"
+            android:process=":p84" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P85"
+            android:exported="false"
+            android:process=":p85" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P86"
+            android:exported="false"
+            android:process=":p86" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P87"
+            android:exported="false"
+            android:process=":p87" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P88"
+            android:exported="false"
+            android:process=":p88" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P89"
+            android:exported="false"
+            android:process=":p89" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P90"
+            android:exported="false"
+            android:process=":p90" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P91"
+            android:exported="false"
+            android:process=":p91" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P92"
+            android:exported="false"
+            android:process=":p92" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P93"
+            android:exported="false"
+            android:process=":p93" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P94"
+            android:exported="false"
+            android:process=":p94" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P95"
+            android:exported="false"
+            android:process=":p95" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P96"
+            android:exported="false"
+            android:process=":p96" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P97"
+            android:exported="false"
+            android:process=":p97" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P98"
+            android:exported="false"
+            android:process=":p98" />
+
+        <service
+            android:name="com.lody.virtual.client.stub.ShadowService$P99"
+            android:exported="false"
+            android:process=":p99" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C0"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P0"
             android:authorities="${applicationId}.virtual_stub_0"
             android:exported="false"
             android:process=":p0" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C1"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P1"
             android:authorities="${applicationId}.virtual_stub_1"
             android:exported="false"
             android:process=":p1" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C2"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P2"
             android:authorities="${applicationId}.virtual_stub_2"
             android:exported="false"
             android:process=":p2" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C3"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P3"
             android:authorities="${applicationId}.virtual_stub_3"
             android:exported="false"
             android:process=":p3" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C4"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P4"
             android:authorities="${applicationId}.virtual_stub_4"
             android:exported="false"
             android:process=":p4" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C5"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P5"
             android:authorities="${applicationId}.virtual_stub_5"
             android:exported="false"
             android:process=":p5" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C6"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P6"
             android:authorities="${applicationId}.virtual_stub_6"
             android:exported="false"
             android:process=":p6" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C7"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P7"
             android:authorities="${applicationId}.virtual_stub_7"
             android:exported="false"
             android:process=":p7" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C8"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P8"
             android:authorities="${applicationId}.virtual_stub_8"
             android:exported="false"
             android:process=":p8" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C9"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P9"
             android:authorities="${applicationId}.virtual_stub_9"
             android:exported="false"
             android:process=":p9" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C10"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P10"
             android:authorities="${applicationId}.virtual_stub_10"
             android:exported="false"
             android:process=":p10" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C11"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P11"
             android:authorities="${applicationId}.virtual_stub_11"
             android:exported="false"
             android:process=":p11" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C12"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P12"
             android:authorities="${applicationId}.virtual_stub_12"
             android:exported="false"
             android:process=":p12" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C13"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P13"
             android:authorities="${applicationId}.virtual_stub_13"
             android:exported="false"
             android:process=":p13" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C14"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P14"
             android:authorities="${applicationId}.virtual_stub_14"
             android:exported="false"
             android:process=":p14" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C15"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P15"
             android:authorities="${applicationId}.virtual_stub_15"
             android:exported="false"
             android:process=":p15" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C16"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P16"
             android:authorities="${applicationId}.virtual_stub_16"
             android:exported="false"
             android:process=":p16" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C17"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P17"
             android:authorities="${applicationId}.virtual_stub_17"
             android:exported="false"
             android:process=":p17" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C18"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P18"
             android:authorities="${applicationId}.virtual_stub_18"
             android:exported="false"
             android:process=":p18" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C19"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P19"
             android:authorities="${applicationId}.virtual_stub_19"
             android:exported="false"
             android:process=":p19" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C20"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P20"
             android:authorities="${applicationId}.virtual_stub_20"
             android:exported="false"
             android:process=":p20" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C21"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P21"
             android:authorities="${applicationId}.virtual_stub_21"
             android:exported="false"
             android:process=":p21" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C22"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P22"
             android:authorities="${applicationId}.virtual_stub_22"
             android:exported="false"
             android:process=":p22" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C23"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P23"
             android:authorities="${applicationId}.virtual_stub_23"
             android:exported="false"
             android:process=":p23" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C24"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P24"
             android:authorities="${applicationId}.virtual_stub_24"
             android:exported="false"
             android:process=":p24" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C25"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P25"
             android:authorities="${applicationId}.virtual_stub_25"
             android:exported="false"
             android:process=":p25" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C26"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P26"
             android:authorities="${applicationId}.virtual_stub_26"
             android:exported="false"
             android:process=":p26" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C27"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P27"
             android:authorities="${applicationId}.virtual_stub_27"
             android:exported="false"
             android:process=":p27" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C28"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P28"
             android:authorities="${applicationId}.virtual_stub_28"
             android:exported="false"
             android:process=":p28" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C29"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P29"
             android:authorities="${applicationId}.virtual_stub_29"
             android:exported="false"
             android:process=":p29" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C30"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P30"
             android:authorities="${applicationId}.virtual_stub_30"
             android:exported="false"
             android:process=":p30" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C31"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P31"
             android:authorities="${applicationId}.virtual_stub_31"
             android:exported="false"
             android:process=":p31" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C32"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P32"
             android:authorities="${applicationId}.virtual_stub_32"
             android:exported="false"
             android:process=":p32" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C33"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P33"
             android:authorities="${applicationId}.virtual_stub_33"
             android:exported="false"
             android:process=":p33" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C34"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P34"
             android:authorities="${applicationId}.virtual_stub_34"
             android:exported="false"
             android:process=":p34" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C35"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P35"
             android:authorities="${applicationId}.virtual_stub_35"
             android:exported="false"
             android:process=":p35" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C36"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P36"
             android:authorities="${applicationId}.virtual_stub_36"
             android:exported="false"
             android:process=":p36" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C37"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P37"
             android:authorities="${applicationId}.virtual_stub_37"
             android:exported="false"
             android:process=":p37" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C38"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P38"
             android:authorities="${applicationId}.virtual_stub_38"
             android:exported="false"
             android:process=":p38" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C39"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P39"
             android:authorities="${applicationId}.virtual_stub_39"
             android:exported="false"
             android:process=":p39" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C40"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P40"
             android:authorities="${applicationId}.virtual_stub_40"
             android:exported="false"
             android:process=":p40" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C41"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P41"
             android:authorities="${applicationId}.virtual_stub_41"
             android:exported="false"
             android:process=":p41" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C42"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P42"
             android:authorities="${applicationId}.virtual_stub_42"
             android:exported="false"
             android:process=":p42" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C43"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P43"
             android:authorities="${applicationId}.virtual_stub_43"
             android:exported="false"
             android:process=":p43" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C44"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P44"
             android:authorities="${applicationId}.virtual_stub_44"
             android:exported="false"
             android:process=":p44" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C45"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P45"
             android:authorities="${applicationId}.virtual_stub_45"
             android:exported="false"
             android:process=":p45" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C46"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P46"
             android:authorities="${applicationId}.virtual_stub_46"
             android:exported="false"
             android:process=":p46" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C47"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P47"
             android:authorities="${applicationId}.virtual_stub_47"
             android:exported="false"
             android:process=":p47" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C48"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P48"
             android:authorities="${applicationId}.virtual_stub_48"
             android:exported="false"
             android:process=":p48" />
 
         <provider
-            android:name="com.lody.virtual.client.stub.StubContentProvider$C49"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P49"
             android:authorities="${applicationId}.virtual_stub_49"
             android:exported="false"
             android:process=":p49" />
+
         <provider
-            android:name=".client.stub.StubFileProvider"
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P50"
+            android:authorities="${applicationId}.virtual_stub_50"
             android:exported="false"
+            android:process=":p50" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P51"
+            android:authorities="${applicationId}.virtual_stub_51"
+            android:exported="false"
+            android:process=":p51" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P52"
+            android:authorities="${applicationId}.virtual_stub_52"
+            android:exported="false"
+            android:process=":p52" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P53"
+            android:authorities="${applicationId}.virtual_stub_53"
+            android:exported="false"
+            android:process=":p53" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P54"
+            android:authorities="${applicationId}.virtual_stub_54"
+            android:exported="false"
+            android:process=":p54" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P55"
+            android:authorities="${applicationId}.virtual_stub_55"
+            android:exported="false"
+            android:process=":p55" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P56"
+            android:authorities="${applicationId}.virtual_stub_56"
+            android:exported="false"
+            android:process=":p56" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P57"
+            android:authorities="${applicationId}.virtual_stub_57"
+            android:exported="false"
+            android:process=":p57" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P58"
+            android:authorities="${applicationId}.virtual_stub_58"
+            android:exported="false"
+            android:process=":p58" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P59"
+            android:authorities="${applicationId}.virtual_stub_59"
+            android:exported="false"
+            android:process=":p59" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P60"
+            android:authorities="${applicationId}.virtual_stub_60"
+            android:exported="false"
+            android:process=":p60" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P61"
+            android:authorities="${applicationId}.virtual_stub_61"
+            android:exported="false"
+            android:process=":p61" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P62"
+            android:authorities="${applicationId}.virtual_stub_62"
+            android:exported="false"
+            android:process=":p62" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P63"
+            android:authorities="${applicationId}.virtual_stub_63"
+            android:exported="false"
+            android:process=":p63" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P64"
+            android:authorities="${applicationId}.virtual_stub_64"
+            android:exported="false"
+            android:process=":p64" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P65"
+            android:authorities="${applicationId}.virtual_stub_65"
+            android:exported="false"
+            android:process=":p65" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P66"
+            android:authorities="${applicationId}.virtual_stub_66"
+            android:exported="false"
+            android:process=":p66" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P67"
+            android:authorities="${applicationId}.virtual_stub_67"
+            android:exported="false"
+            android:process=":p67" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P68"
+            android:authorities="${applicationId}.virtual_stub_68"
+            android:exported="false"
+            android:process=":p68" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P69"
+            android:authorities="${applicationId}.virtual_stub_69"
+            android:exported="false"
+            android:process=":p69" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P70"
+            android:authorities="${applicationId}.virtual_stub_70"
+            android:exported="false"
+            android:process=":p70" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P71"
+            android:authorities="${applicationId}.virtual_stub_71"
+            android:exported="false"
+            android:process=":p71" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P72"
+            android:authorities="${applicationId}.virtual_stub_72"
+            android:exported="false"
+            android:process=":p72" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P73"
+            android:authorities="${applicationId}.virtual_stub_73"
+            android:exported="false"
+            android:process=":p73" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P74"
+            android:authorities="${applicationId}.virtual_stub_74"
+            android:exported="false"
+            android:process=":p74" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P75"
+            android:authorities="${applicationId}.virtual_stub_75"
+            android:exported="false"
+            android:process=":p75" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P76"
+            android:authorities="${applicationId}.virtual_stub_76"
+            android:exported="false"
+            android:process=":p76" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P77"
+            android:authorities="${applicationId}.virtual_stub_77"
+            android:exported="false"
+            android:process=":p77" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P78"
+            android:authorities="${applicationId}.virtual_stub_78"
+            android:exported="false"
+            android:process=":p78" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P79"
+            android:authorities="${applicationId}.virtual_stub_79"
+            android:exported="false"
+            android:process=":p79" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P80"
+            android:authorities="${applicationId}.virtual_stub_80"
+            android:exported="false"
+            android:process=":p80" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P81"
+            android:authorities="${applicationId}.virtual_stub_81"
+            android:exported="false"
+            android:process=":p81" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P82"
+            android:authorities="${applicationId}.virtual_stub_82"
+            android:exported="false"
+            android:process=":p82" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P83"
+            android:authorities="${applicationId}.virtual_stub_83"
+            android:exported="false"
+            android:process=":p83" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P84"
+            android:authorities="${applicationId}.virtual_stub_84"
+            android:exported="false"
+            android:process=":p84" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P85"
+            android:authorities="${applicationId}.virtual_stub_85"
+            android:exported="false"
+            android:process=":p85" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P86"
+            android:authorities="${applicationId}.virtual_stub_86"
+            android:exported="false"
+            android:process=":p86" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P87"
+            android:authorities="${applicationId}.virtual_stub_87"
+            android:exported="false"
+            android:process=":p87" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P88"
+            android:authorities="${applicationId}.virtual_stub_88"
+            android:exported="false"
+            android:process=":p88" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P89"
+            android:authorities="${applicationId}.virtual_stub_89"
+            android:exported="false"
+            android:process=":p89" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P90"
+            android:authorities="${applicationId}.virtual_stub_90"
+            android:exported="false"
+            android:process=":p90" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P91"
+            android:authorities="${applicationId}.virtual_stub_91"
+            android:exported="false"
+            android:process=":p91" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P92"
+            android:authorities="${applicationId}.virtual_stub_92"
+            android:exported="false"
+            android:process=":p92" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P93"
+            android:authorities="${applicationId}.virtual_stub_93"
+            android:exported="false"
+            android:process=":p93" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P94"
+            android:authorities="${applicationId}.virtual_stub_94"
+            android:exported="false"
+            android:process=":p94" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P95"
+            android:authorities="${applicationId}.virtual_stub_95"
+            android:exported="false"
+            android:process=":p95" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P96"
+            android:authorities="${applicationId}.virtual_stub_96"
+            android:exported="false"
+            android:process=":p96" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P97"
+            android:authorities="${applicationId}.virtual_stub_97"
+            android:exported="false"
+            android:process=":p97" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P98"
+            android:authorities="${applicationId}.virtual_stub_98"
+            android:exported="false"
+            android:process=":p98" />
+
+        <provider
+            android:name="com.lody.virtual.client.stub.ShadowContentProvider$P99"
+            android:authorities="${applicationId}.virtual_stub_99"
+            android:exported="false"
+            android:process=":p99" />
+
+
+        <provider
+            android:name=".client.stub.ProxyContentProvider"
             android:authorities="${applicationId}.virtual.fileprovider"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/stub_file_paths" />
-        </provider>
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:process=":x" />
+
     </application>
 </manifest>

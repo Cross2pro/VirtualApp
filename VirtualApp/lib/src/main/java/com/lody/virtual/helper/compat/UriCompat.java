@@ -1,106 +1,134 @@
 package com.lody.virtual.helper.compat;
 
 import android.content.ClipData;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.os.Environment;
-import android.provider.MediaStore;
-import android.database.Cursor;
-import java.io.File;
+import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+
+import static android.content.ContentResolver.SCHEME_CONTENT;
+import static android.content.ContentResolver.SCHEME_FILE;
 
 public class UriCompat {
     private static final String TAG = "UriCompat";
+    private static boolean DEBUG = false;
     public static String AUTH = "virtual.fileprovider";
-    private final static String[] ACTIONS = {
-            Intent.ACTION_SEND,
-            Intent.ACTION_SEND_MULTIPLE,
-            Intent.ACTION_SENDTO,
-            "android.intent.action.VIEW",
-            "android.media.action.IMAGE_CAPTURE",
-            "com.android.camera.action.CROP",
-    };
 
     public static boolean needFake(Intent intent) {
-        for (String act : ACTIONS) {
-            if (act.equals(intent.getAction())) {
-                return true;
-            }
+        String pkg = intent.getPackage();
+        //inside
+        if (pkg != null && VirtualCore.get().isAppInstalled(pkg)) {
+            return false;
         }
-        return false;
+        //inside
+        ComponentName componentName = intent.getComponent();
+        if (componentName != null && VirtualCore.get().isAppInstalled(componentName.getPackageName())) {
+            return false;
+        }
+        //fake all intent's uri
+        return true;
     }
 
     public static Uri fakeFileUri(Uri uri) {
-        if (uri == null || AUTH.equals(uri.getAuthority())) return null;
-        if ("file".equals(uri.getScheme())) {
-            String path = Uri.decode(uri.getPath());
-            String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
-            if (path.startsWith(external_path))
-            {
-                String split_path = path.substring(external_path.length());
-                return fakeFileUri(uri.buildUpon().scheme("content").path("/external" + split_path).build());
-            }
-        }
-
         if ("content".equals(uri.getScheme())) {
-            //TODO: fake file path? sdcard/Android/data/
             //fake auth
             String auth = uri.getAuthority();
-            if ("media".equals(uri.getAuthority())) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    Cursor cursor = VirtualCore.get().getContext().getContentResolver().query(uri,null,null,null,null,null);
-                    while (cursor.moveToNext()) {
-                        int idx = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-                        if (idx >= 0) {
-                            byte [] path_in_bytes = cursor.getBlob(idx);
-                            if ( path_in_bytes != null ) {
-                                String path = null;
-                                int byte_end = path_in_bytes.length - 1;
-                                while (byte_end > 0) {
-                                    if (path_in_bytes[byte_end] == 0) {
-                                        byte_end = byte_end -1;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                if (byte_end > 0) {
-                                    path = new String(path_in_bytes, 0, byte_end + 1);
-                                }
-
-                                String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
-                                if (path_in_bytes != null && path.startsWith(external_path)) {
-                                    return fakeFileUri(Uri.fromFile(new File(path)));
-                                }
-                            }
-                        }
-                    }
-                    cursor.close();
-                }
+            if(AUTH.equals(auth)){
+                return uri;
             }
-            return uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
+            Uri u = uri.buildUpon().authority(AUTH).appendQueryParameter("__va_auth", auth).build();
+            if (DEBUG) {
+                Log.i(TAG, "fake uri:" + uri + "->" + u);
+            }
+            return u;
+        } else if (SCHEME_FILE.equals(uri.getScheme())) {
+            String path = uri.getPath();
+            String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            if (path.startsWith(external_path)) {
+                String split_path = path.substring(external_path.length());
+
+                Uri fake_uri = uri.buildUpon().scheme(SCHEME_CONTENT).path("/external" + split_path).authority(AUTH).appendQueryParameter("__va_scheme", SCHEME_FILE).build();
+                return fake_uri;
+            }
+
+            return null;
         } else {
             return null;
         }
     }
 
+    public static Uri wrapperUri(Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        String auth = uri.getQueryParameter("__va_auth");
+        if (!TextUtils.isEmpty(auth)) {
+            Uri.Builder builder = uri.buildUpon().authority(auth);
+            Set<String> names = uri.getQueryParameterNames();
+            Map<String, String> querys = null;
+            if (names != null && names.size() > 0) {
+                querys = new HashMap<>();
+                for (String name : names) {
+                    querys.put(name, uri.getQueryParameter(name));
+                }
+            }
+            builder.clearQuery();
+            for (Map.Entry<String, String> e : querys.entrySet()) {
+                if(!"__va_auth".equals(e.getKey())) {
+                    builder.appendQueryParameter(e.getKey(), e.getValue());
+                }
+            }
+            Uri u = builder.build();
+            if (DEBUG) {
+                Log.i(TAG, "wrapperUri uri:" + uri + "->" + u);
+            }
+            return u;
+        } else if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
+            String path = uri.getEncodedPath();
+            final int splitIndex = path.indexOf('/', 1);
+            final String tag = Uri.decode(path.substring(1, splitIndex));
+            path = Uri.decode(path.substring(splitIndex + 1));
+            if ("external".equals(tag))
+            {
+                int userId = VUserHandle.myUserId();
+                File root = VEnvironment.getExternalStorageDirectory(userId);
+                File file = new File(root, path);
+
+                Uri u = Uri.fromFile(file);
+                return u;
+            }
+        }
+        return uri;
+    }
+
     public static Intent fakeFileUri(Intent intent) {
         if (!needFake(intent)) {
-            VLog.i(TAG, "don't need fake intent");
+            if (DEBUG) {
+                VLog.i(TAG, "don't need fake intent");
+            }
             return intent;
         }
         Uri uri = intent.getData();
         if (uri != null) {
             Uri u = fakeFileUri(uri);
             if (u != null) {
-                Log.i(TAG, "fake data uri:" + uri + "->" + u);
+                if (DEBUG) {
+                    Log.i(TAG, "fake data uri:" + uri + "->" + u);
+                }
                 intent.setDataAndType(u, intent.getType());
             }
         }

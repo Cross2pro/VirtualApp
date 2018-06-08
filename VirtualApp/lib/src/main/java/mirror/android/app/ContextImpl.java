@@ -4,10 +4,10 @@ package mirror.android.app;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import mirror.MethodParams;
 import mirror.RefClass;
 import mirror.RefMethod;
 import mirror.RefObject;
-import mirror.MethodParams;
 
 public class ContextImpl {
     public static Class<?> TYPE = RefClass.load(ContextImpl.class, "android.app.ContextImpl");
@@ -17,4 +17,7 @@ public class ContextImpl {
     public static RefObject<PackageManager> mPackageManager;
 
     public static RefMethod<Context> getReceiverRestrictedContext;
+
+    @MethodParams({Context.class})
+    public static RefMethod<Void> setOuterContext;
 }

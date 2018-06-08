@@ -6,6 +6,7 @@ import android.accounts.AuthenticatorDescription;
 import android.accounts.IAccountAuthenticator;
 import android.accounts.IAccountAuthenticatorResponse;
 import android.accounts.IAccountManagerResponse;
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
@@ -73,6 +75,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     private static final long CHECK_IN_TIME = 30 * 24 * 60 * 1000L;
     private static final String TAG = VAccountManagerService.class.getSimpleName();
     private final SparseArray<List<VAccount>> accountsByUserId = new SparseArray<>();
+    private final SparseArray<List<VAccountVisibility>> accountsVisibilitiesByUserId = new SparseArray();
     private final LinkedList<AuthTokenRecord> authTokenRecords = new LinkedList<>();
     private final LinkedHashMap<String, Session> mSessions = new LinkedHashMap<>();
     private final AuthenticatorCache cache = new AuthenticatorCache();
@@ -86,8 +89,8 @@ public class VAccountManagerService extends IAccountManager.Stub {
 
     public static void systemReady() {
         get().readAllAccounts();
+        get().readAllAccountVisibilities();
     }
-
 
     private static AuthenticatorDescription parseAuthenticatorDescription(Resources resources, String packageName,
                                                                           AttributeSet attributeSet) {
@@ -1016,6 +1019,224 @@ public class VAccountManagerService extends IAccountManager.Stub {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.O)
+    private boolean removeAccountVisibility(int userId, Account account) {
+        List<VAccountVisibility> list = this.accountsVisibilitiesByUserId.get(userId);
+        if (list != null) {
+            Iterator<VAccountVisibility> it = list.iterator();
+            while (it.hasNext()) {
+                VAccountVisibility vAccountVisibility = it.next();
+                if (userId == vAccountVisibility.userId && TextUtils.equals(vAccountVisibility.name, account.name) && TextUtils.equals(account.type, vAccountVisibility.type)) {
+                    it.remove();
+                    saveAllAccountVisibilities();
+                    sendAccountsChangedBroadcast(userId);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private boolean renameAccountVisibility(int userId, Account account, String name) {
+        synchronized (this.accountsVisibilitiesByUserId) {
+            VAccountVisibility accountVisibility = getAccountVisibility(userId, account);
+            if (accountVisibility != null) {
+                accountVisibility.name = name;
+                saveAllAccountVisibilities();
+                sendAccountsChangedBroadcast(userId);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    @Override
+    @TargetApi(Build.VERSION_CODES.O)
+    public Map<String, Integer> getPackagesAndVisibilityForAccount(int userId, Account account) {
+        VAccountVisibility accountVisibility = getAccountVisibility(userId, account);
+        if (accountVisibility != null) {
+            return accountVisibility.visibility;
+        }
+        return null;
+    }
+
+    @Override
+    @TargetApi(Build.VERSION_CODES.O)
+    public boolean addAccountExplicitlyWithVisibility(int userId, Account account, String password, Bundle extras, Map visibility) {
+        if (account == null) {
+            throw new IllegalArgumentException("account is null");
+        }
+        boolean insertAccountIntoDatabase = insertAccountIntoDatabase(userId, account, password, extras);
+        insertAccountVisibilityIntoDatabase(userId, account, visibility);
+        return insertAccountIntoDatabase;
+    }
+
+    @Override
+    @TargetApi(Build.VERSION_CODES.O)
+    public boolean setAccountVisibility(int userId, Account account, String packageName, int newVisibility) {
+        VAccountVisibility accountVisibility = getAccountVisibility(userId, account);
+        if (accountVisibility == null) {
+            return false;
+        }
+        accountVisibility.visibility.put(packageName, newVisibility);
+        saveAllAccountVisibilities();
+        sendAccountsChangedBroadcast(userId);
+        return true;
+    }
+
+    @Override
+    @TargetApi(Build.VERSION_CODES.O)
+    public int getAccountVisibility(int userId, Account account, String packageName) {
+        VAccountVisibility accountVisibility = getAccountVisibility(userId, account);
+        if (accountVisibility == null || !accountVisibility.visibility.containsKey(packageName)) {
+            return 0;
+        }
+        return accountVisibility.visibility.get(packageName);
+    }
+
+    @Override
+    @TargetApi(Build.VERSION_CODES.O)
+    public Map<Account, Integer> getAccountsAndVisibilityForPackage(int userId, String packageName, String accountType) {
+        Map<Account, Integer> hashMap = new HashMap<>();
+        for (Account account : getAccountList(userId, accountType)) {
+            VAccountVisibility accountVisibility = getAccountVisibility(userId, account);
+            if (accountVisibility != null && accountVisibility.visibility.containsKey(packageName)) {
+                hashMap.put(account, accountVisibility.visibility.get(packageName));
+            }
+        }
+        return hashMap;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private boolean insertAccountVisibilityIntoDatabase(int userId, Account account, Map<String, Integer> map) {
+        if (account == null) {
+            return false;
+        }
+        synchronized (this.accountsVisibilitiesByUserId) {
+            VAccountVisibility vAccountVisibility = new VAccountVisibility(userId, account, map);
+            List<VAccountVisibility> list = this.accountsVisibilitiesByUserId.get(userId);
+            if (list == null) {
+                list = new ArrayList<>();
+                this.accountsVisibilitiesByUserId.put(userId, list);
+            }
+            list.add(vAccountVisibility);
+            saveAllAccountVisibilities();
+            sendAccountsChangedBroadcast(vAccountVisibility.userId);
+        }
+        return true;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private void saveAllAccountVisibilities() {
+        File accountVisibilityConfigFile = VEnvironment.getAccountVisibilityConfigFile();
+        Parcel obtain = Parcel.obtain();
+        try {
+            obtain.writeInt(1);
+            obtain.writeInt(accountsVisibilitiesByUserId.size());
+            for (int i = 0; i < this.accountsVisibilitiesByUserId.size(); i++) {
+                obtain.writeInt(i);
+                List<VAccountVisibility> list = this.accountsVisibilitiesByUserId.valueAt(i);
+                if (list == null) {
+                    obtain.writeInt(0);
+                } else {
+                    obtain.writeInt(list.size());
+                    for (VAccountVisibility writeToParcel : list) {
+                        writeToParcel.writeToParcel(obtain, 0);
+                    }
+                }
+            }
+            obtain.writeLong(this.lastAccountChangeTime);
+            FileOutputStream fileOutputStream = new FileOutputStream(accountVisibilityConfigFile);
+            fileOutputStream.write(obtain.marshall());
+            fileOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        obtain.recycle();
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private void readAllAccountVisibilities() {
+        File accountVisibilityConfigFile = VEnvironment.getAccountVisibilityConfigFile();
+        Parcel dest = Parcel.obtain();
+        if (accountVisibilityConfigFile.exists()) {
+            try {
+                FileInputStream is = new FileInputStream(accountVisibilityConfigFile);
+                byte[] bytes = new byte[(int) accountVisibilityConfigFile.length()];
+                int readLength = is.read(bytes);
+                is.close();
+                if (readLength != bytes.length) {
+                    throw new IOException(String.format("Expect length %d, but got %d.", bytes.length, readLength));
+                }
+                dest.unmarshall(bytes, 0, bytes.length);
+                dest.setDataPosition(0);
+                int version = dest.readInt();
+                int userCount = dest.readInt();
+                for (int i = 0; i < userCount; i++) {
+                    int userId = dest.readInt();
+                    int count = dest.readInt();
+                    List<VAccountVisibility> list = new ArrayList<>();
+                    accountsVisibilitiesByUserId.put(userId, list);
+                    for (int j = 0; j < count; j++) {
+                        list.add(new VAccountVisibility(dest));
+                    }
+                }
+                this.lastAccountChangeTime = dest.readLong();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        dest.recycle();
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private VAccountVisibility getAccountVisibility(int i, String name, String type) {
+        List<VAccountVisibility> list = this.accountsVisibilitiesByUserId.get(i);
+        if (list != null) {
+            for (VAccountVisibility vAccountVisibility : list) {
+                if (TextUtils.equals(vAccountVisibility.name, name) && TextUtils.equals(vAccountVisibility.type, type)) {
+                    return vAccountVisibility;
+                }
+            }
+        }
+        return null;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private VAccountVisibility getAccountVisibility(int userId, Account account) {
+        return getAccountVisibility(userId, account.name, account.type);
+    }
+
+    @Override
+    public void startAddAccountSession(IAccountManagerResponse response, String accountType, String authTokenType, String[] requiredFeatures, boolean expectActivityLaunch, Bundle options) throws RemoteException {
+
+    }
+
+    @Override
+    public void startUpdateCredentialsSession(IAccountManagerResponse response, Account account, String authTokenType, boolean expectActivityLaunch, Bundle options) throws RemoteException {
+
+    }
+
+    @Override
+    public void registerAccountListener(String[] accountTypes, String opPackageName) throws RemoteException {
+
+    }
+
+    @Override
+    public void unregisterAccountListener(String[] accountTypes, String opPackageName) throws RemoteException {
+
+    }
+
+    @Override
+    public void finishSessionAsUser(IAccountManagerResponse response, Bundle sessionBundle, boolean expectActivityLaunch, Bundle appInfo, int userId) throws RemoteException {
+
+    }
+
+    @Override
+    public void isCredentialsUpdateSuggested(IAccountManagerResponse response, Account account, String statusToken) throws RemoteException {
+
+    }
     final static class AuthTokenRecord {
         public int userId;
         public Account account;

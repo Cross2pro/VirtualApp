@@ -6,6 +6,8 @@ import android.accounts.IAccountManagerResponse;
 import android.os.Bundle;
 import android.os.RemoteException;
 
+import java.util.Map;
+
 /**
  * @author Lody
  */
@@ -58,6 +60,35 @@ public interface IAccountManager extends IPCInterface {
     void invalidateAuthToken(int userId, String accountType, String authToken) throws RemoteException;
 
     String peekAuthToken(int userId, Account account, String authTokenType) throws RemoteException;
+
+    boolean setAccountVisibility(int userId, Account a, String packageName, int newVisibility) throws RemoteException;
+
+    int getAccountVisibility(int userId, Account a, String packageName) throws RemoteException;
+
+    void startAddAccountSession(IAccountManagerResponse response, String accountType,
+                                String authTokenType, String[] requiredFeatures, boolean expectActivityLaunch,
+                                Bundle options) throws RemoteException;
+
+    void startUpdateCredentialsSession(IAccountManagerResponse response, Account account,
+                                       String authTokenType, boolean expectActivityLaunch,
+                                       Bundle options) throws RemoteException;
+
+    void registerAccountListener(String[] accountTypes, String opPackageName) throws RemoteException;
+
+    void unregisterAccountListener(String[] accountTypes, String opPackageName) throws RemoteException;
+
+    Map getPackagesAndVisibilityForAccount(int userId, Account account) throws RemoteException;
+
+    Map getAccountsAndVisibilityForPackage(int userId, String packageName, String accountType) throws RemoteException;
+
+    void finishSessionAsUser(IAccountManagerResponse response, Bundle sessionBundle,
+                             boolean expectActivityLaunch, Bundle appInfo, int userId) throws RemoteException;
+
+    void isCredentialsUpdateSuggested(IAccountManagerResponse response, Account account,
+                                      String statusToken) throws RemoteException;
+
+    boolean addAccountExplicitlyWithVisibility(int userId, Account account, String password, Bundle extras,
+                                               Map visibility) throws RemoteException;
 
     abstract class Stub implements IAccountManager {
         @Override

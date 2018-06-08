@@ -23,12 +23,11 @@ import mirror.android.content.res.CompatibilityInfo;
 
 public class IApplicationThreadCompat {
 
-    public static void scheduleCreateService(IInterface appThread, IBinder token, ServiceInfo info,
-                                             int processState) throws RemoteException {
+    public static void scheduleCreateService(IInterface appThread, IBinder token, ServiceInfo info) throws RemoteException {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             IApplicationThreadKitkat.scheduleCreateService.call(appThread, token, info, CompatibilityInfo.DEFAULT_COMPATIBILITY_INFO.get(),
-                    processState);
+                    0);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
             IApplicationThreadICSMR1.scheduleCreateService.call(appThread, token, info, CompatibilityInfo.DEFAULT_COMPATIBILITY_INFO.get());
         } else {
@@ -37,10 +36,9 @@ public class IApplicationThreadCompat {
 
     }
 
-    public static void scheduleBindService(IInterface appThread, IBinder token, Intent intent, boolean rebind,
-                                           int processState) throws RemoteException {
+    public static void scheduleBindService(IInterface appThread, IBinder token, Intent intent, boolean rebind) throws RemoteException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            IApplicationThreadKitkat.scheduleBindService.call(appThread, token, intent, rebind, processState);
+            IApplicationThreadKitkat.scheduleBindService.call(appThread, token, intent, rebind, 0);
         } else {
             IApplicationThread.scheduleBindService.call(appThread, token, intent, rebind);
         }
@@ -50,18 +48,18 @@ public class IApplicationThreadCompat {
         IApplicationThread.scheduleUnbindService.call(appThread, token, intent);
     }
 
-    public static void scheduleServiceArgs(IInterface appThread, IBinder token, boolean taskRemoved,
-                                           int startId, int flags, Intent args) throws RemoteException {
+    public static void scheduleServiceArgs(IInterface appThread, IBinder token,
+                                           int startId, Intent args) throws RemoteException {
 
         if (BuildCompat.isOreo()) {
             List<Object> list = new ArrayList<>(1);
-            Object serviceStartArg = ServiceStartArgs.ctor.newInstance(taskRemoved, startId, flags, args);
+            Object serviceStartArg = ServiceStartArgs.ctor.newInstance(false, startId, 0, args);
             list.add(serviceStartArg);
             IApplicationThreadOreo.scheduleServiceArgs.call(appThread, token, ParceledListSliceCompat.create(list));
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-            IApplicationThreadICSMR1.scheduleServiceArgs.call(appThread, token, taskRemoved, startId, flags, args);
+            IApplicationThreadICSMR1.scheduleServiceArgs.call(appThread, token, false, startId, 0, args);
         } else {
-            IApplicationThread.scheduleServiceArgs.call(appThread, token, startId, flags, args);
+            IApplicationThread.scheduleServiceArgs.call(appThread, token, startId, 0, args);
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -15,6 +16,7 @@ import android.text.TextUtils;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.client.stub.VASettings;
@@ -121,6 +123,10 @@ public class WifiManagerStub extends BinderInvocationProxy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             addMethodProxy(new RemoveWorkSourceMethodProxy("startScan"));
             addMethodProxy(new RemoveWorkSourceMethodProxy("requestBatchedScan"));
+        }
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
+            addMethodProxy(new ResultStaticMethodProxy("getWifiApConfiguration", new WifiConfiguration()));
+            addMethodProxy(new ResultStaticMethodProxy("setWifiApConfiguration", 0));
         }
     }
 

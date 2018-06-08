@@ -35,4 +35,6 @@ public interface AppDataSource {
     InstallResult addVirtualApp(AppInfoLite info);
 
     boolean removeVirtualApp(String packageName, int userId);
+
+    String getLabel(String packageName);
 }
