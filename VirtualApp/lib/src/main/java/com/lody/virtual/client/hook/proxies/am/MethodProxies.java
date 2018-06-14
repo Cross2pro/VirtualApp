@@ -1906,7 +1906,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            MethodParameterUtils.replaceFirstAppPkg(args);
+            //MethodParameterUtils.replaceFirstAppPkg(args);
             for (int i = 0; i < args.length; i++) {
                 Object obj = args[i];
                 if (obj instanceof Uri) {
