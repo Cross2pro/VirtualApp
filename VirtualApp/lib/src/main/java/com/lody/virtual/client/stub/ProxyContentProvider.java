@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -77,6 +78,9 @@ public class ProxyContentProvider extends ContentProvider {
                 } else if (OpenableColumns.SIZE.equals(col)) {
                     cols[i] = OpenableColumns.SIZE;
                     values[i++] = file.length();
+                } else if (MediaStore.MediaColumns.DATA.equals(col)) {
+//                    cols[i] = MediaStore.MediaColumns.DATA;
+//                    values[i++] = file.getAbsolutePath();
                 }
             }
             cols = copyOf(cols, i);
@@ -87,8 +91,9 @@ public class ProxyContentProvider extends ContentProvider {
         }
 
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            Cursor cursor = ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
                     .query(a, projection, selection, selectionArgs, sortOrder);
+            return cursor;
         } catch (Exception e) {
             return new MatrixCursor(new String[]{});
         }

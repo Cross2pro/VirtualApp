@@ -89,6 +89,8 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.UserInfo;
 
+import static android.content.ContentResolver.SCHEME_FILE;
+
 /**
  * @author Lody
  */
@@ -382,6 +384,9 @@ class MethodProxies {
             Log.e("lxf","startActivity uri "+ intent.getDataString());
 
             intent.setDataAndType(intent.getData(), resolvedType);
+            if ("*/*".equals((String) args[intentIndex + 1])) {
+                args[intentIndex + 1] = resolvedType;
+            }
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             int userId = VUserHandle.myUserId();
 
@@ -680,15 +685,19 @@ class MethodProxies {
 
         @Override
         public boolean beforeCall(Object who, Method method, Object... args) {
+            IBinder token = (IBinder) args[0];
+            String callingPackage = VActivityManager.get().getCallingPackage(token);
             for (Object o:args) {
                 if (o instanceof Intent) {
                     Intent intent = (Intent)o;
                     Uri u = intent.getData();
                     if (u!=null)
                     {
-                        Uri newurl = UriCompat.fakeFileUri(u);
-                        if (newurl != null) {
-                            intent.setDataAndType(newurl, intent.getType());
+                        if (!SCHEME_FILE.equals(u.getScheme()) || "android".equals(callingPackage)) {
+                            Uri newurl = UriCompat.fakeFileUri(u);
+                            if (newurl != null) {
+                                intent.setDataAndType(newurl, intent.getType());
+                            }
                         }
                     }
                 }
