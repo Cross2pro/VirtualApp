@@ -710,18 +710,18 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
 
-    int fd = originalInterface::original_openat(AT_FDCWD, redirect_path, O_RDONLY, 0);
+    if (is_TED_Enable()) {
+        int fd = originalInterface::original_openat(AT_FDCWD, redirect_path, O_RDONLY, 0);
 
-    if(fd > 0)
-    {
-        if(EncryptFile::isEncryptFile(fd)) {
-            EncryptFile ef(redirect_path);
-            if(ef.create(fd, ENCRYPT_READ))
-            {
-                ef.fstat(fd, buf);
+        if (fd > 0) {
+            if (EncryptFile::isEncryptFile(fd)) {
+                EncryptFile ef(redirect_path);
+                if (ef.create(fd, ENCRYPT_READ)) {
+                    ef.fstat(fd, buf);
+                }
             }
+            originalInterface::original_close(fd);
         }
-        originalInterface::original_close(fd);
     }
 
     zString op("fstatat64 ret %d err %s", ret, getErr);
