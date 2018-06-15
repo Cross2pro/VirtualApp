@@ -394,6 +394,11 @@ class MethodProxies {
                     && intent.hasCategory("android.intent.category.HOME")) {
                 return method.invoke(who, args);
             }
+            if("android.intent.action.SENDTO".equals(intent.getAction())
+                    &&intent.getDataString()!=null
+                    &&intent.getDataString().startsWith("smsto:")){
+                return method.invoke(who,args);
+            }
 
             if (ComponentUtils.isStubComponent(intent)) {
                 Log.e("lxf","startActivity isStubComponent "+ true);
