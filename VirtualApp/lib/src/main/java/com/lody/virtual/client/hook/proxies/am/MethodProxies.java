@@ -65,6 +65,7 @@ import com.lody.virtual.helper.utils.DrawableUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.AppTaskInfo;
@@ -698,7 +699,7 @@ class MethodProxies {
                     Uri u = intent.getData();
                     if (u!=null)
                     {
-                        if (!SCHEME_FILE.equals(u.getScheme()) || "android".equals(callingPackage)) {
+                        if (!SCHEME_FILE.equals(u.getScheme()) || !VActivityManager.get().isAppPid(VBinder.getCallingPid())) {
                             Uri newurl = UriCompat.fakeFileUri(u);
                             if (newurl != null) {
                                 intent.setDataAndType(newurl, intent.getType());

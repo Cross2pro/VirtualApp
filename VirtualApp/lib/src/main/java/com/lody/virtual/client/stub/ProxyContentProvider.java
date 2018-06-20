@@ -61,8 +61,8 @@ public class ProxyContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         if(VASettings.PROVIDER_ONLY_FILE)return null;
         Uri a = wrapperUri("query", uri);
+        getContext().grantUriPermission(getCallingPackage(), uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
-            getContext().grantUriPermission(getCallingPackage(), uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
             final File file = new File(a.getPath());
             if (projection == null) {
                 projection = COLUMNS;
@@ -79,8 +79,8 @@ public class ProxyContentProvider extends ContentProvider {
                     cols[i] = OpenableColumns.SIZE;
                     values[i++] = file.length();
                 } else if (MediaStore.MediaColumns.DATA.equals(col)) {
-//                    cols[i] = MediaStore.MediaColumns.DATA;
-//                    values[i++] = file.getAbsolutePath();
+                    cols[i] = MediaStore.MediaColumns.DATA;
+                    values[i++] = file.getAbsolutePath();
                 }
             }
             cols = copyOf(cols, i);
@@ -89,6 +89,7 @@ public class ProxyContentProvider extends ContentProvider {
             cursor.addRow(values);
             return cursor;
         }
+
 
         try {
             Cursor cursor = ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
