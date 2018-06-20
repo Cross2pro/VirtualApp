@@ -15,5 +15,7 @@ void doFileTrace(const char* path, char* operation);
 bool isEncryptPath(const char *_path);
 const char * getMagicPath();
 bool closeAllSockets();
+bool hasAppendFlag(int fd);
+void delAppendFlag(int fd);
 
 #endif //VIRTUALAPP_UTILS_H
