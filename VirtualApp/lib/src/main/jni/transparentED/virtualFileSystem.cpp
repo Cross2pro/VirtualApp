@@ -491,16 +491,11 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
                 {
                     if(tf->doControl())
                     {
-                        if (tf->translate(fd)) {
-                            setVFS(VFS_ENCRYPT);
+                        tf->translate(fd);
+                        setVFS(VFS_ENCRYPT);
 
-                            if (ef == NULL) {
-                                ef = new EncryptFile(*tf->getBK());
-                            }
-                            log("vpwrite64 : translate success!");
-                        } else {
-                            setVFS(VFS_IGNORE);
-                            log("vpwrite64 : translate fail,set vfs ignore!");
+                        if(ef == NULL) {
+                            ef = new EncryptFile(*tf->getBK());
                         }
                     }
                     else {
@@ -609,17 +604,11 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
                 {
                     if(tf->doControl())
                     {
-                        if (tf->translate(fd)) {
-                            setVFS(VFS_ENCRYPT);
+                        tf->translate(fd);
+                        setVFS(VFS_ENCRYPT);
 
-                            if (ef == NULL) {
-                                ef = new EncryptFile(*tf->getBK());
-                            }
-                            log("vwrite : translate success!");
-                        }
-                        else {
-                            setVFS(VFS_IGNORE);
-                            log("vwrite : translate fail,set vfs ignore!");
+                        if(ef == NULL) {
+                            ef = new EncryptFile(*tf->getBK());
                         }
                     }
                     else {
