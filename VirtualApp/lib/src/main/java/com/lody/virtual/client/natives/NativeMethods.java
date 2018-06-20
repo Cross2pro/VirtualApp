@@ -2,6 +2,7 @@ package com.lody.virtual.client.natives;
 
 import android.hardware.Camera;
 import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Build;
 
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -26,6 +27,9 @@ public class NativeMethods {
     public static Method gCameraStartPreview;
 
     public static Method gCameraNativeTakePicture;
+
+    public static Method gAudioRecordStart;
+    public static Method gMediaRecordPrepare;
 
     public static void init() {
 //       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class, String.class}
@@ -76,6 +80,18 @@ public class NativeMethods {
         try {
             gCameraNativeTakePicture = Camera.class.getDeclaredMethod("native_takePicture", int.class);
             gCameraNativeTakePicture.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+        try {
+            gAudioRecordStart = AudioRecord.class.getDeclaredMethod("native_start", int.class,int.class);
+            gAudioRecordStart.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+        try {
+            gMediaRecordPrepare = MediaRecorder.class.getDeclaredMethod("_prepare");
+            gMediaRecordPrepare.setAccessible(true);
         } catch (NoSuchMethodException e) {
             // ignore
         }

@@ -15,6 +15,7 @@ class controllerManagerNative {
     static jmethodID isCameraEnable_method;
     static jmethodID isChangeConnect_method;
     static jmethodID isGatewayEnable_method;
+    static jmethodID isSoundRecordEnable_method;
 
 public:
     static bool initial();
@@ -24,6 +25,8 @@ public:
     static bool isCameraEnable();
     static bool isChangeConnect(int port, char *ip);
     static bool isGatewayEnable();
+    static bool isSoundRecordEnable();
+
 };
 
 

@@ -12,6 +12,7 @@ jmethodID controllerManagerNative::isNetworkEnable_method = 0;
 jmethodID controllerManagerNative::isCameraEnable_method = 0;
 jmethodID controllerManagerNative::isChangeConnect_method = 0;
 jmethodID controllerManagerNative::isGatewayEnable_method = 0;
+jmethodID controllerManagerNative::isSoundRecordEnable_method = 0;
 
 bool controllerManagerNative::initial() {
     zJNIEnv env;
@@ -30,9 +31,12 @@ bool controllerManagerNative::initial() {
         controllerManagerNative::isCameraEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isCameraEnable", "()Z");
         controllerManagerNative::isGatewayEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isGatewayEnable", "()Z");
         controllerManagerNative::isChangeConnect_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isChangeConnect", "(ILjava/lang/String;)Z");
-        if(controllerManagerNative::isNetworkEnable_method == NULL
-                || controllerManagerNative::isChangeConnect_method == NULL || controllerManagerNative::isGatewayEnable_method == NULL
-                || controllerManagerNative::isCameraEnable_method == NULL)
+        controllerManagerNative::isSoundRecordEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isSoundRecordEnable", "()Z");
+        if (controllerManagerNative::isNetworkEnable_method == NULL
+            || controllerManagerNative::isChangeConnect_method == NULL
+            || controllerManagerNative::isGatewayEnable_method == NULL
+            || controllerManagerNative::isCameraEnable_method == NULL
+            || controllerManagerNative::isSoundRecordEnable() == NULL)
             break;
 
         ret = true;
@@ -75,4 +79,13 @@ bool controllerManagerNative::isChangeConnect(int port, char *ip){
     ret = env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class, controllerManagerNative::isChangeConnect_method, port, ips);
     env.get()->DeleteLocalRef(ips);
     return ret;
+}
+
+bool controllerManagerNative::isSoundRecordEnable() {
+    zJNIEnv env;
+    if (env.get() == NULL)
+        return false;
+
+    return env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class,
+                                              controllerManagerNative::isSoundRecordEnable_method);
 }

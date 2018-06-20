@@ -17,8 +17,10 @@ namespace FunctionDef {
                                                  jobject, jobject, jobject, jobject, jobject,
                                                  jobject, jobject, jobject);
 
-    typedef jint (*Function_cameraStartPreviewFunc)(JNIEnv *, jobject);
-    typedef jint (*Function_cameraNativeTakePictureFunc)(JNIEnv *, jobject, jint);
+    typedef void (*Function_cameraStartPreviewFunc)(JNIEnv *, jobject);
+    typedef void (*Function_cameraNativeTakePictureFunc)(JNIEnv *, jobject, jint);
+    typedef jint (*Function_audioRecordStartFunc)(JNIEnv *, jclass,jint,jint);
+    typedef void (*Function_mediaRecorderPrepareFunc)(JNIEnv *, jclass);
 
     typedef jint (*JNI_getCallingUid)(JNIEnv *, jclass);
 
@@ -57,7 +59,8 @@ static struct {
 
     Function_cameraStartPreviewFunc orig_native_cameraStartPreviewFunc;
     Function_cameraNativeTakePictureFunc orig_native_cameraNativeTakePictureFunc;
-
+    Function_audioRecordStartFunc orig_native_audioRecordStartFunc;
+    Function_mediaRecorderPrepareFunc orig_native_mediaRecorderPrepareFunc;
     union {
         JNI_openDexNativeFunc beforeN;
         JNI_openDexNativeFunc_N afterN;
@@ -221,6 +224,25 @@ static void new_native_cameraStartPreviewFunc(JNIEnv *env, jobject thiz) {
 
 static void new_native_cameraNativePictureFunc(JNIEnv *env, jobject thiz, jint msgType) {
     patchEnv.orig_native_cameraNativeTakePictureFunc(env, thiz, msgType);
+}
+static int new_native_audioRecordNativeStartFunc(JNIEnv *env, jclass thiz, jint syncEvent,jint sessionId) {
+    ALOGE("audioRecordNativeStartFunc in");
+    if (!controllerManagerNative::isSoundRecordEnable()) {
+        ALOGE("audioRecordNativeStartFunc return");
+        return -1;
+    }
+    return patchEnv.orig_native_audioRecordStartFunc(env, thiz, syncEvent,sessionId);
+}
+static void new_native_mediaRecorderNativePrepareFunc(JNIEnv *env, jclass thiz) {
+    ALOGE("mediaRecorderNativePrepareFunc in");
+    if (!controllerManagerNative::isSoundRecordEnable()) {
+        ALOGE("mediaRecorderNativePrepareFunc return");
+        jclass  newExcCls = env->FindClass("java/io/IOException");
+        env->ThrowNew(newExcCls, "setOutputFile failed.");
+        return;
+    }
+    patchEnv.orig_native_mediaRecorderPrepareFunc(env, thiz);
+    ALOGE("mediaRecorderNativePrepareFunc out");
 }
 
 static jint
@@ -393,9 +415,43 @@ hookCameraNativeTakePictureMethod(jobject javaMethod, jboolean isArt, int apiLev
     }
 
 }
+inline void
+hookAudioRecordStartMethod(jobject javaMethod, jboolean isArt, int apiLevel) {
 
+    if (!javaMethod) {
+        return;
+    }
+    size_t mtd_audioRecordNativeStart = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+    int nativeFuncOffset = patchEnv.native_offset;
+    void **jniFuncPtr = (void **) (mtd_audioRecordNativeStart + nativeFuncOffset);
 
+    if (!isArt) {
 
+    } else {
+        patchEnv.orig_native_audioRecordStartFunc = (Function_audioRecordStartFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_native_audioRecordNativeStartFunc;
+    }
+
+}
+
+inline void
+hookMediaRecorderPrepareMethod(jobject javaMethod, jboolean isArt, int apiLevel) {
+
+    if (!javaMethod) {
+        return;
+    }
+    size_t mtd_mediaRecorderNativePrepare = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+    int nativeFuncOffset = patchEnv.native_offset;
+    void **jniFuncPtr = (void **) (mtd_mediaRecorderNativePrepare + nativeFuncOffset);
+
+    if (!isArt) {
+
+    } else {
+        patchEnv.orig_native_mediaRecorderPrepareFunc = (Function_mediaRecorderPrepareFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_native_mediaRecorderNativePrepareFunc;
+    }
+
+}
 
 void
 hookAudioRecordNativeCheckPermission(jobject javaMethod, jboolean isArt, int api) {
@@ -499,6 +555,8 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
                                     isArt, apiLevel);
     hookCameraNativeTakePictureMethod(javaMethods.getElement(CAMERA_TAKEPICTURE).get(),
                                          isArt, apiLevel);
+    hookAudioRecordStartMethod(javaMethods.getElement(AUDIO_RECORD_START).get(),isArt, apiLevel);
+    hookMediaRecorderPrepareMethod(javaMethods.getElement(MEDIA_RECORDER_PREPARE).get(),isArt, apiLevel);
     hookAudioRecordNativeCheckPermission(
             javaMethods.getElement(AUDIO_NATIVE_CHECK_PERMISSION).get(), isArt, apiLevel);
     hookRuntimeNativeLoad();

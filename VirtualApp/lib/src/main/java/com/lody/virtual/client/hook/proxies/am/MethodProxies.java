@@ -6,6 +6,7 @@ import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.IIntentReceiver;
 import android.content.Intent;
@@ -419,19 +420,26 @@ class MethodProxies {
                 return 0;
             }
             //禁止对此应用进行截屏,录屏
-            boolean appPermissionEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
+            boolean screenShortRecorderEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg()
                     , VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+            Log.e("geyao", getAppPkg() + " screenShortRecorderEnable Enable: " + screenShortRecorderEnable);
             ComponentName component = intent.getComponent();
-            Log.e("geyao", "component packageName: " + (component == null ? "component is null" : component.getPackageName()));
-            Log.e("geyao", "component className: " + (component == null ? "component is null" : component.getClassName()));
-            Log.e("geyao", "component permissionEnable: " + appPermissionEnable);
             if (component != null && "com.android.systemui".equals(component.getPackageName())
                     && "com.android.systemui.media.MediaProjectionPermissionActivity".equals(component.getClassName())
-                    && appPermissionEnable) {
+                    && screenShortRecorderEnable) {
+                Log.e("geyao", getAppPkg() + " prohibit screen short recorder interceptorTriggerCallback");
                 vAppPermissionManager.interceptorTriggerCallback(getAppPkg(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
                 return 0;
             }
-
+            //禁止使用蓝牙功能
+            boolean bluetoothEnable = vAppPermissionManager.getAppPermissionEnable(getAppPkg(), VAppPermissionManager.PROHIBIT_BLUETOOTH);
+            Log.e("geyao", getAppPkg() + " bluetoothEnable Enable: " + bluetoothEnable);
+            if (bluetoothEnable && (BluetoothAdapter.ACTION_REQUEST_ENABLE.equals(intent.getAction()) ||
+                    (component != null && "com.android.bluetooth".equals(component.getPackageName())))) {
+                Log.e("geyao", getAppPkg() + " prohibit bluetooth interceptorTriggerCallback");
+                vAppPermissionManager.interceptorTriggerCallback(getAppPkg(), VAppPermissionManager.PROHIBIT_BLUETOOTH);
+                return 0;
+            }
             //xdja swbg
 //            if(getAppPkg() != null && getAppPkg().equals("com.xdja.swbg")
 //                    &&Intent.ACTION_VIEW.equals(intent.getAction())

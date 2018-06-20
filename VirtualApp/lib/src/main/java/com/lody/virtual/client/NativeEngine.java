@@ -153,7 +153,8 @@ public class NativeEngine {
             return;
         }
         Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission,
-            NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture};
+                NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture,
+                NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {

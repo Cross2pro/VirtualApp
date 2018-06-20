@@ -66,6 +66,18 @@ public class controllerManager {
         return ret;
     }
 
+    public static boolean isSoundRecordEnable()
+    {
+        boolean ret = false;
+        try{
+            ret = controllerManager.get().getService().isSoundRecordEnable(VirtualRuntime.getInitialPackageName());
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+
+        return ret;
+    }
+
     public static boolean getActivitySwitch()
     {
         boolean ret = false;

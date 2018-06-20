@@ -101,6 +101,20 @@ public class controllerService extends IController.Stub {
     }
 
     @Override
+    public boolean isSoundRecordEnable(String packageName) throws RemoteException {
+        VAppPermissionManager vapm = VAppPermissionManager.get();
+        boolean appPermissionEnable = vapm.getAppPermissionEnable(packageName,
+                VAppPermissionManager.PROHIBIT_SOUND_RECORD);
+        Log.e(Tag, "isSoundRecordEnable getAppPermissionEnable : " + packageName + " " + appPermissionEnable);
+        if (appPermissionEnable) {
+            vapm.interceptorTriggerCallback(packageName, VAppPermissionManager.PROHIBIT_SOUND_RECORD);
+        }
+        boolean ret = !appPermissionEnable;
+        Log.e(Tag, "isSoundRecordEnable : " + packageName + " " + ret);
+        return ret;
+    }
+
+    @Override
     public boolean getActivitySwitch() throws RemoteException {
         Log.e(Tag, "getActivitySwitch : " + activitySwitchFlag);
         return activitySwitchFlag;

@@ -16,6 +16,7 @@ import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
 import com.lody.virtual.client.hook.proxies.backup.BackupManagerStub;
+import com.lody.virtual.client.hook.proxies.bluetooth.BluetoothManagerStub;
 import com.lody.virtual.client.hook.proxies.bluetooth.BluetoothStub;
 import com.lody.virtual.client.hook.proxies.clipboard.ClipBoardStub;
 import com.lody.virtual.client.hook.proxies.connectivity.ConnectivityStub;
@@ -158,6 +159,7 @@ public final class InvocationStubManager {
                 addInjector(new VibratorStub());
                 addInjector(new WifiManagerStub());
                 addInjector(new BluetoothStub());
+                addInjector(new BluetoothManagerStub());
                 addInjector(new ContextHubServiceStub());
             }
             if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {

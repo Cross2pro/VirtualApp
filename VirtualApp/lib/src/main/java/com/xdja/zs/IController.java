@@ -14,6 +14,7 @@ public interface IController extends IPCInterface {
     boolean isCameraEnable(String packageName) throws RemoteException;
     boolean isGatewayEnable(String packageName) throws RemoteException;
     boolean isChangeConnect(String packageName, int port, String ip) throws RemoteException;
+    boolean isSoundRecordEnable(String packageName) throws RemoteException;
 
     boolean getActivitySwitch() throws RemoteException;
     void setActivitySwitch(boolean switchFlag) throws RemoteException;
