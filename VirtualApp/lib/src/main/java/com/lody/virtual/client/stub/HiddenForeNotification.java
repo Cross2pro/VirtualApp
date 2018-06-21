@@ -1,5 +1,6 @@
 package com.lody.virtual.client.stub;
 
+import android.app.Notification;
 import android.app.Notification.Builder;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -11,7 +12,7 @@ public class HiddenForeNotification extends Service {
     private static final int ID = 2781;
 
     public static void bindForeground(Service service) {
-        Builder builder = new Builder(service.getApplicationContext());
+        /*Builder builder = new Builder(service.getApplicationContext());
         builder.setSmallIcon(android.R.drawable.ic_dialog_dialer);
         if (VERSION.SDK_INT > 24) {
             builder.setContentTitle("Running...");
@@ -20,8 +21,8 @@ public class HiddenForeNotification extends Service {
             builder.setContentTitle("Tip: Message Should Be Hidden");
             builder.setContentText("Get Removed");
             builder.setContentIntent(PendingIntent.getService(service, 0, new Intent(service, HiddenForeNotification.class), 0));
-        }
-        service.startForeground(ID, builder.getNotification());
+        }*/
+        service.startForeground(ID, new Notification());
         if (VERSION.SDK_INT <= 24) {
             service.startService(new Intent(service, HiddenForeNotification.class));
         }
@@ -30,11 +31,11 @@ public class HiddenForeNotification extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            Builder builder = new Builder(getBaseContext());
+           /* Builder builder = new Builder(getBaseContext());
             builder.setSmallIcon(android.R.drawable.ic_dialog_dialer);
             builder.setContentTitle("Remove Service Notification");
-            builder.setContentText("Remove Service Notification");
-            startForeground(ID, builder.getNotification());
+            builder.setContentText("Remove Service Notification");*/
+            startForeground(ID, new Notification());
             stopForeground(true);
             stopSelf();
         } catch (Exception e) {
