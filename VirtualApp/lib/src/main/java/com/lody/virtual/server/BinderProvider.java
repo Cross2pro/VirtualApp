@@ -33,6 +33,7 @@ import com.lody.virtual.server.interfaces.IUserManager;
 import com.lody.virtual.server.interfaces.IVSafekeyManager;
 import com.lody.virtual.server.interfaces.IVirtualLocationManager;
 import com.lody.virtual.server.interfaces.IVirtualStorageService;
+import com.lody.virtual.server.interfaces.IWaterMark;
 import com.lody.virtual.server.job.VJobSchedulerService;
 import com.lody.virtual.server.location.VirtualLocationService;
 import com.lody.virtual.server.notification.VNotificationManagerService;
@@ -41,6 +42,7 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
+import com.lody.virtual.server.watermark.VWaterMarkService;
 import com.xdja.zs.IController;
 import com.xdja.zs.controllerService;
 
@@ -97,6 +99,8 @@ public final class BinderProvider extends ContentProvider {
         IPCBus.register(IController.class, controllerService.get());
         VAppPermissionManagerService.systemReady();
         IPCBus.register(IAppPermissionManager.class, VAppPermissionManagerService.get());
+        VWaterMarkService.systemReady();
+        IPCBus.register(IWaterMark.class, VWaterMarkService.get());
         initialized = true;
         return true;
     }
