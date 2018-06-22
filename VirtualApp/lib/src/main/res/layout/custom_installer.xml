@@ -159,14 +159,13 @@
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:layout_marginTop="108dp"
-                android:src="@android:drawable/sym_def_app_icon" />
+                android:src="@drawable/ic_install_check" />
 
             <TextView
                 android:id="@+id/tv_appname"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:text="UnKnow"
                 android:textColor="#2c2c2c" />
 
             <TextView
@@ -174,7 +173,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="应用检测中..." />
+                android:text="正在检测..." />
         </LinearLayout>
 
 

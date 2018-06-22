@@ -3,12 +3,15 @@ package com.lody.virtual.client.stub;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.os.Bundle;
@@ -32,6 +35,7 @@ import android.widget.Toast;
 import com.lody.virtual.R;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
@@ -83,6 +87,7 @@ public class InstallerActivity extends Activity {
 
         Button btn_install = (Button) findViewById(R.id.btn_install);
         Button btn_quit = (Button) findViewById(R.id.btn_quit);
+        Button btn_check_cancle = (Button) findViewById(R.id.btn_check_cancle);
         btn_open = (Button) findViewById(R.id.btn_open);
         Button btn_cancle = (Button) findViewById(R.id.btn_cancle);
         img_appicon = (ImageView) findViewById(R.id.img_appicon);
@@ -111,6 +116,12 @@ public class InstallerActivity extends Activity {
                 finish();
             }
         });
+        btn_check_cancle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
         btn_open.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -126,13 +137,16 @@ public class InstallerActivity extends Activity {
 
         String path = getIntent().getStringExtra("installer_path");
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
-        String source_lable = getIntent().getStringExtra("source_label");
-        Log.e("lxf", " Install path : " + path);
-        Log.e("lxf", " Install source_apk : " + source_apk_packagename);
-        Log.e("lxf", " Install source_lable : " + source_lable);
+        Log.e("lxf", " Check path : " + path);
         if("com.tencent.mm".equals(source_apk_packagename)
                 ||"cn.wps.moffice".equals(source_apk_packagename)
-                ||"com.android.gallery3d".equals(source_apk_packagename)){
+                ||"com.android.gallery3d".equals(source_apk_packagename)
+                || "com.xdja.jxclient".equals(source_apk_packagename)){
+
+            IntentFilter filter=new IntentFilter();
+            filter.addAction(SpecialComponentList.protectAction("com.xdja.decrypt.DecryptService.DECRYPT_RESULT"));
+            registerReceiver(myReceiver,filter);
+            isRegisterReceiver = true;
 
             Intent intent = new Intent();
             intent.setAction("com.xdja.decrypt.COPYFILE");
@@ -156,9 +170,6 @@ public class InstallerActivity extends Activity {
         String source_apk_packagename = intent.getStringExtra("source_apk");
         String source_lable = intent.getStringExtra("source_label");
         Log.e("lxf", " Install path : " + path);
-        Log.e("lxf", " Install source_apk : " + source_apk_packagename);
-        Log.e("lxf", " Install source_lable : " + source_lable);
-
         if(source_lable!=null){
             tv_source.setText("应用来源："+source_lable);
         }else {
@@ -177,6 +188,19 @@ public class InstallerActivity extends Activity {
         }
     }
 
+    public boolean isRegisterReceiver = false;
+    @Override
+    protected void onDestroy() {
+        if(myReceiver!=null&&isRegisterReceiver){
+            unregisterReceiver(myReceiver);
+            isRegisterReceiver = false;
+        }
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName("com.xdja.decrypt", "com.xdja.decrypt.DecryptService"));
+        stopService(intent);
+        super.onDestroy();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -189,40 +213,27 @@ public class InstallerActivity extends Activity {
     }
 
     private void stateChanged(int state){
+        tv_source.setTextColor(Color.parseColor("#535353"));
+        ll_openning.setVisibility(View.INVISIBLE);
+        ll_check.setVisibility(View.INVISIBLE);
+        ll_install.setVisibility(View.INVISIBLE);
+        ll_installing.setVisibility(View.INVISIBLE);
+        ll_installed.setVisibility(View.INVISIBLE);
+        ll_installed_1.setVisibility(View.INVISIBLE);
+        tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
         switch(state){
             case STATE_NONE:
-                ll_openning.setVisibility(View.INVISIBLE);
+                tv_source.setTextColor(Color.parseColor("#01dd8d"));
                 ll_check.setVisibility(View.VISIBLE);
-                ll_install.setVisibility(View.INVISIBLE);
-                ll_installing.setVisibility(View.INVISIBLE);
-                ll_installed.setVisibility(View.INVISIBLE);
-                ll_installed_1.setVisibility(View.INVISIBLE);
-                tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALL:
-                ll_openning.setVisibility(View.INVISIBLE);
-                ll_check.setVisibility(View.INVISIBLE);
                 ll_install.setVisibility(View.VISIBLE);
-                ll_installing.setVisibility(View.INVISIBLE);
-                ll_installed.setVisibility(View.INVISIBLE);
-                ll_installed_1.setVisibility(View.INVISIBLE);
-                tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALLING:
-                ll_openning.setVisibility(View.INVISIBLE);
-                ll_check.setVisibility(View.INVISIBLE);
-                ll_install.setVisibility(View.INVISIBLE);
                 ll_installing.setVisibility(View.VISIBLE);
-                ll_installed.setVisibility(View.INVISIBLE);
-                ll_installed_1.setVisibility(View.INVISIBLE);
-                tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
                 break;
             case STATE_INSTALLED:
             case STATE_INSTALLFAILED:
-                ll_openning.setVisibility(View.INVISIBLE);
-                ll_check.setVisibility(View.INVISIBLE);
-                ll_install.setVisibility(View.INVISIBLE);
-                ll_installing.setVisibility(View.INVISIBLE);
                 ll_installed.setVisibility(View.VISIBLE);
                 ll_installed_1.setVisibility(View.VISIBLE);
                 tv_warn.setVisibility(View.INVISIBLE);
@@ -235,12 +246,13 @@ public class InstallerActivity extends Activity {
                 break;
             case STATE_OPENNING:
                 ll_openning.setVisibility(View.VISIBLE);
-                ll_check.setVisibility(View.INVISIBLE);
-                ll_install.setVisibility(View.INVISIBLE);
-                ll_installing.setVisibility(View.INVISIBLE);
-                ll_installed.setVisibility(View.INVISIBLE);
-                ll_installed_1.setVisibility(View.INVISIBLE);
-                tv_warn.setVisibility(View.INVISIBLE);
+                break;
+            case STATE_CHECKERROR:
+                tv_source.setTextColor(Color.RED);
+                tv_source.setText("检测失败");
+                tv_warn.setText("提示：没有找到需要的安装包！");
+                tv_warn.setVisibility(View.VISIBLE);
+                ll_check.setVisibility(View.VISIBLE);
                 break;
         }
 
@@ -279,6 +291,7 @@ public class InstallerActivity extends Activity {
     private final int STATE_INSTALLED = 2;
     private final int STATE_INSTALLFAILED = 3;
     private final int STATE_OPENNING = 4;
+    private final int STATE_CHECKERROR = 5;
     private InstallerHandler mHandler = new InstallerHandler();
     class InstallerHandler extends Handler{
         @Override
@@ -388,5 +401,13 @@ public class InstallerActivity extends Activity {
                 context.getResources().getDimensionPixelOffset(R.dimen.dp_110));
         toast.show();
     }
+
+    BroadcastReceiver myReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.e("lxf","Installer receiver intent: "+ intent.toString());
+            stateChanged(STATE_CHECKERROR);
+        }
+    };
 
 }
