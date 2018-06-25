@@ -1228,7 +1228,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             {
                 in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1252,7 +1252,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             {
                 ignoreFile::lseek(in_fd, off, SEEK_SET);
             } else {
-                ignoreFile::lseek(in_fd, 0, SEEK_SET);
+                ignoreFile::lseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1276,7 +1276,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             {
                 in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1331,7 +1331,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 loff_t result;
                 in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1357,7 +1357,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 loff_t result;
                 ignoreFile::llseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
             } else {
-                ignoreFile::lseek(in_fd, 0, SEEK_SET);
+                ignoreFile::lseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1383,7 +1383,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 loff_t result;
                 in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_SET);
+                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
