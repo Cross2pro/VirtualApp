@@ -636,6 +636,12 @@ HOOK_DEF(int, __getcwd, char *buf, size_t size) {
 HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
+
+    if ((flags & O_ACCMODE) == O_WRONLY) {
+        flags &= ~O_ACCMODE;
+        flags |= O_RDWR;
+    }
+
     int ret = syscall(__NR_openat, fd, redirect_path, flags, mode);
 
     zString op("openat fd = %d err = %s", ret, strerror(errno));
@@ -653,7 +659,11 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         if (vf != NULL) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
             vfd->_vf = vf;
-            vf->vlseek(ret, 0, SEEK_SET);
+            if ((flags & O_APPEND) == O_APPEND) {
+                vf->vlseek(ret, 0, SEEK_END);
+            } else {
+                vf->vlseek(ret, 0, SEEK_SET);
+            }
         } else {
             virtualFileDescribeSet::getVFDSet().reset(ret);
             /******through this way to release vfd *********/

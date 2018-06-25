@@ -334,3 +334,20 @@ void delAppendFlag(int fd) {
         return ;
     }
 }
+
+void addAppendFlag(int fd) {
+    int val = syscall(__NR_fcntl64, fd, F_GETFL, 0);
+
+    if (val == -1) {
+        LOGE("fcntl error for F_GETFL");
+        return;
+    }
+
+    val |= O_APPEND;
+
+    LOGE("fcntl FD %d, F_SETFL value: %d", fd, val);
+    if (syscall(__NR_fcntl64, fd, F_SETFL, val) < 0) {
+        LOGE("fcntl error for F_SETFL");
+        return;
+    }
+}

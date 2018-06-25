@@ -214,7 +214,7 @@ ssize_t TemplateFile::write(int fd, char *buf, size_t len) {
 }
 
 bool TemplateFile::translate(int fd) {
-
+    bool setAppendFlag = false;
     if(fd == 0) {
         fd = originalInterface::original_openat(AT_FDCWD, _path, O_WRONLY, 0);
         if (fd <= 0)
@@ -230,11 +230,15 @@ bool TemplateFile::translate(int fd) {
     // out_fd has the O_APPEND flag set. This is not currently supported by sendfile()
     if (hasAppendFlag(fd)) {
         delAppendFlag(fd);
+        setAppendFlag = true;
     }
 
     int ret = originalInterface::original_sendfile(fd, _ef_fd, 0, len);
     originalInterface::original_lseek(fd, ori_pos, SEEK_SET);
     log("judge : translate [%s] sendfile return %d error %s\n", _path, ret, strerror(errno));
+    if (setAppendFlag) {
+        addAppendFlag(fd);
+    }
     fsync(fd);
 
     return ret == len;

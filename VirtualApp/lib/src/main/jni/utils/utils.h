@@ -17,5 +17,5 @@ const char * getMagicPath();
 bool closeAllSockets();
 bool hasAppendFlag(int fd);
 void delAppendFlag(int fd);
-
+void addAppendFlag(int fd);
 #endif //VIRTUALAPP_UTILS_H
