@@ -351,6 +351,7 @@ public class InstallerActivity extends Activity {
         btn_del_cancle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                stateChanged(STATE_OPENNING);
                 delDlg.dismiss();
                 if(open){
                     Intent intent = VirtualCore.get().getLaunchIntent(apkinfo.packageName, VirtualCore.get().myUserId());
