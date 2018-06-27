@@ -529,6 +529,13 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             List<ResolveInfo> appResult = VPackageManager.get().queryIntentActivities((Intent) args[0],
                     (String) args[1], (Integer) args[2], userId);
+            Intent intent = (Intent)args[0];
+            if((intent != null) && ("android.intent.action.SEND".equals(intent.getAction()) || "android.intent.action.SENDTO".equals(intent.getAction()))){
+                if (slice) {
+                    return ParceledListSliceCompat.create(appResult);
+                }
+                return appResult;
+            }
             Object _hostResult = method.invoke(who, args);
             if (_hostResult != null) {
                 List<ResolveInfo> hostResult = slice ? ParceledListSlice.getList.call(_hostResult)
