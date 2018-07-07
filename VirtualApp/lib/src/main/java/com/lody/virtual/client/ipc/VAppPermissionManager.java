@@ -47,7 +47,7 @@ public class VAppPermissionManager {
     /**
      * 应用数据加解密
      */
-    public static final String ALLOW_DATE_ENCRYPT_DECRYPT = "应用数据加解密";
+    public static final String ALLOW_DATA_ENCRYPT_DECRYPT = "应用数据加解密";
     /**
      * 应用防卸载
      */
@@ -63,7 +63,7 @@ public class VAppPermissionManager {
             PROHIBIT_BLUETOOTH,//禁止调用蓝牙功能
             PROHIBIT_SOUND_RECORD,//禁止使用录音功能
             PROHIBIT_LOCATION,//禁止读取位置信息
-            ALLOW_DATE_ENCRYPT_DECRYPT,//应用数据加解密
+            ALLOW_DATA_ENCRYPT_DECRYPT,//应用数据加解密
             PROHIBIT_APP_UNINSTALL//应用防卸载
     };
     private static final VAppPermissionManager sInstance = new VAppPermissionManager();
