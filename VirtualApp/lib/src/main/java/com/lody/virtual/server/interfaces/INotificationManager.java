@@ -19,6 +19,10 @@ public interface INotificationManager extends IPCInterface {
 
     void cancelAllNotification(String packageName, int userId) throws RemoteException;
 
+    void cancelNotification(String pkg, String tag, int id, int userId) throws RemoteException;
+
+    void registerCallback(INotificationCallback iNotificationCallback) throws RemoteException;
+
     abstract class Stub implements INotificationManager {
         @Override
         public boolean isBinderAlive() {

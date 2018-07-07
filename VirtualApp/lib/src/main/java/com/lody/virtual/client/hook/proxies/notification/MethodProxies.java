@@ -101,6 +101,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            String packageName = (String) args[0];
             String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
             if (getHostPkg().equals(pkg)) {
                 return method.invoke(who, args);
@@ -109,9 +110,12 @@ class MethodProxies {
             int id = (int) args[2];
             id = VNotificationManager.get().dealNotificationId(id, pkg, tag, getAppUserId());
             tag = VNotificationManager.get().dealNotificationTag(id, pkg, tag, getAppUserId());
-
             args[1] = tag;
             args[2] = id;
+            if (VirtualCore.get().isAppInstalled(pkg)) {
+                VNotificationManager.get().cancelNotification(packageName, tag, id, getAppUserId());
+                return 0;
+            }
             return method.invoke(who, args);
         }
     }
@@ -172,7 +176,7 @@ class MethodProxies {
         }
     }
 
-    static class GetAppActiveNotifications  extends MethodProxy{
+    static class GetAppActiveNotifications extends MethodProxy {
         @Override
         public String getMethodName() {
             return "getAppActiveNotifications";

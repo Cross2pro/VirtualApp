@@ -52,6 +52,7 @@ import com.lody.virtual.server.ServiceCache;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppPermissionCallback;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
+import com.lody.virtual.server.interfaces.INotificationCallback;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
 import com.lody.virtual.server.interfaces.IVSCallback;
@@ -611,6 +612,8 @@ public final class VirtualCore {
     }
 
     public abstract static class AppPermissionCallback extends IAppPermissionCallback.Stub {
+    }
+    public abstract static class NotificationCallback extends INotificationCallback.Stub {
     }
 
     public void setUiCallback(Intent intent, IUiCallback callback) {

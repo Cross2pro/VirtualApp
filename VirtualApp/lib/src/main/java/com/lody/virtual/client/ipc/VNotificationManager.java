@@ -5,7 +5,7 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
-import com.lody.virtual.server.interfaces.IActivityManager;
+import com.lody.virtual.server.interfaces.INotificationCallback;
 import com.lody.virtual.server.interfaces.INotificationManager;
 import com.lody.virtual.server.notification.NotificationCompat;
 
@@ -81,6 +81,22 @@ public class VNotificationManager {
     public void cancelAllNotification(String packageName, int userId) {
         try {
             getService().cancelAllNotification(packageName, userId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void cancelNotification(String packageName, String tag, int id, int userId) {
+        try {
+            getService().cancelNotification(packageName, tag, id, userId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void registerCallback(INotificationCallback iNotificationCallback) {
+        try {
+            getService().registerCallback(iNotificationCallback);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

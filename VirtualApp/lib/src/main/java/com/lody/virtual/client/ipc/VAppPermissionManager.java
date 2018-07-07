@@ -41,6 +41,18 @@ public class VAppPermissionManager {
      */
     public static final String PROHIBIT_SOUND_RECORD = "禁止使用录音功能";
     /**
+     * 禁止读取位置信息
+     */
+    public static final String PROHIBIT_LOCATION = "禁止读取位置信息";
+    /**
+     * 开启应用数据加解密
+     */
+    public static final String ALLOW_DATE_ENCRYPT_DECRYPT = "开启应用数据加解密";
+    /**
+     * 应用防卸载
+     */
+    public static final String PROHIBIT_APP_UNINSTALL = "应用防卸载";
+    /**
      * 目前支持的权限集合
      */
     public static final String[] permissions = new String[]{
@@ -49,7 +61,10 @@ public class VAppPermissionManager {
             PROHIBIT_CAMERA,//禁止使用摄像头
             ALLOW_WATER_MARK,//启用应用界面水印功能
             PROHIBIT_BLUETOOTH,//禁止调用蓝牙功能
-            PROHIBIT_SOUND_RECORD//禁止使用录音功能
+            PROHIBIT_SOUND_RECORD,//禁止使用录音功能
+            PROHIBIT_LOCATION,//禁止读取位置信息
+            ALLOW_DATE_ENCRYPT_DECRYPT,//开启应用数据加解密
+            PROHIBIT_APP_UNINSTALL//应用防卸载
     };
     private static final VAppPermissionManager sInstance = new VAppPermissionManager();
     private IPCSingleton<IAppPermissionManager> singleton = new IPCSingleton<>(IAppPermissionManager.class);
