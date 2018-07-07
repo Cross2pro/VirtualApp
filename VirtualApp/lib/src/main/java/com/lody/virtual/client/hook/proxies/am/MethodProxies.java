@@ -53,6 +53,7 @@ import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.client.stub.VASettings;
@@ -90,6 +91,7 @@ import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.UserInfo;
+import mirror.android.widget.Toast;
 
 import static android.content.ContentResolver.SCHEME_FILE;
 
@@ -493,6 +495,15 @@ class MethodProxies {
                 Uri packageUri = intent.getData();
                 if (SCHEME_PACKAGE.equals(packageUri.getScheme())) {
                     pkg = packageUri.getSchemeSpecificPart();
+                }
+                if(InstallerSetting.systemApps.contains(pkg)){
+                    InstallerSetting.showToast(getHostContext(),"自带应用不可卸载",Toast.LENGTH_LONG);
+                    intent.setData(null);
+                    return method.invoke(who, args);
+                }else if(VAppPermissionManager.get().getAppPermissionEnable(pkg,VAppPermissionManager.PROHIBIT_APP_UNINSTALL)){
+                    InstallerSetting.showToast(getHostContext(),"企业策略限制，该应用不可卸载",Toast.LENGTH_LONG);
+                    intent.setData(null);
+                    return method.invoke(who, args);
                 }
                 intent.putExtra("uninstall_app",pkg);
                 intent.setComponent(new ComponentName(getHostContext(), UnInstallerActivity.class));
