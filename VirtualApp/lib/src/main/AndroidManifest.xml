@@ -2965,5 +2965,12 @@
             android:grantUriPermissions="true"
             android:process=":x" />
 
+        <provider
+            android:name="com.xdja.ckms.TokenProvider"
+            android:authorities="com.xdja.safetybox.TokenProvider"
+            android:enabled="true"
+            android:exported="true">
+        </provider>
+
     </application>
 </manifest>

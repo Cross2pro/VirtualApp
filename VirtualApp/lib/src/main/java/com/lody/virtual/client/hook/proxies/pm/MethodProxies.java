@@ -650,7 +650,7 @@ class MethodProxies {
             }
             packageInfo = (PackageInfo) method.invoke(who, args);
             if (packageInfo != null) {
-                if (isVisiblePackage(packageInfo.applicationInfo)) {
+                if (isVisiblePackage(packageInfo.applicationInfo) || "com.xdja.safekeyservice".equals(pkg)) {
                     return packageInfo;
                 }
             }
