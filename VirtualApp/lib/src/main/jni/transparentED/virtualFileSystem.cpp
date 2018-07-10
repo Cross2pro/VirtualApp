@@ -145,8 +145,9 @@ void virtualFileManager::updateVF(virtualFile &vf) {
 
         }
 
+        virtualFileDescribe vfd(fd);
         vf.setVFS(vfs);
-        if(!vf.create(fd))
+        if(!vf.create(&vfd))
         {
             slog("judge :  **** updateVF  [%s] fail **** ", vf.getPath());
             slog("judge :  **** updateVF  [%s] fail **** ", vf.getPath());
@@ -158,22 +159,13 @@ void virtualFileManager::updateVF(virtualFile &vf) {
     } while (false);
 }
 
-virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
+virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, int * pErrno) {
 
     virtualFile *vf = 0;
     vfileState vfs = VFS_IGNORE;
     *pErrno = 0;                                //默认无错误发生
 
-    /*
-     * 首先获取vfd，获取不到一定是发生异常，返回错误
-     */
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr)
-    {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        *pErrno = -1;
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
     do {
@@ -199,7 +191,7 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
             }*/
 
             struct stat sb;
-            originalInterface::original_fstat(fd, &sb);
+            originalInterface::original_fstat(vfd->_fd, &sb);
 
             if (!S_ISREG(sb.st_mode)) {
                 //LOGE("judge : S_ISREG return false");
@@ -215,7 +207,7 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
                 //是加密文件 是遏制为 ‘处理’
                 //不是加密文件 不管
 
-                if (EncryptFile::isEncryptFile(fd)) {
+                if (EncryptFile::isEncryptFile(vfd->_fd)) {
                     vfs = VFS_ENCRYPT;
 
                     LOGE("judge : find Encrypt File ");
@@ -232,7 +224,7 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
                     vf->addRef();
                     vf->setVFS(vfs);
 
-                    if(!vf->create(fd))
+                    if(!vf->create(vfd.get()))
                     {
                         delete vf;
                         vf = 0;
@@ -262,8 +254,10 @@ virtualFile* virtualFileManager::getVF(int fd, char *path, int * pErrno) {
     return vf;
 }
 
-void virtualFileManager::releaseVF(char *path, int __fd) {
+void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
+
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     VFMap::iterator iter = _vfmap.find(std::string(path));
     if(iter != _vfmap.end())
@@ -279,7 +273,7 @@ void virtualFileManager::releaseVF(char *path, int __fd) {
                 originalInterface::original_close(fd);
             }
             log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
-            vf->vclose(__fd);
+            vf->vclose(vfd.get());
             delete vf;
             _vfmap.erase(iter);
         }
@@ -324,8 +318,10 @@ void virtualFile::setVFS(vfileState vfs) {
     _vfs = vfs;
 }
 
-bool virtualFile::create(int fd) {
+bool virtualFile::create(virtualFileDescribe* pvfd) {
     vfileState vfs = getVFS();
+
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT) {
         if(ef != NULL) {
@@ -335,7 +331,7 @@ bool virtualFile::create(int fd) {
         if(ef == NULL)
         {
             ef = new EncryptFile(_path);
-            bool ret = ef->create(fd, ENCRYPT_READ);
+            bool ret = ef->create(vfd->_fd, ENCRYPT_READ);
             if(!ret) {
                 delete ef;
                 ef = 0;
@@ -372,18 +368,20 @@ bool virtualFile::create(int fd) {
     return false;
 }
 
-int virtualFile::vclose(int fd) {
+int virtualFile::vclose(virtualFileDescribe* pvfd) {
     /*
      * 如果VFS == VFS_TESTING
      * 那么这里需要做最后一次检查
      */
     vfileState vfs = getVFS();
 
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
+
     if(vfs == VFS_ENCRYPT) {
     } else if(vfs == VFS_TESTING) {
         if(tf != NULL)
         {
-            tf->close(true, fd);
+            tf->close(true, vfd->_fd);
         }
     } else {
     }
@@ -401,26 +399,23 @@ void virtualFile::forceTranslate() {
     }
 }
 
-int virtualFile::vpread64(int fd, char * buf, size_t len, off64_t from) {
+int virtualFile::vpread64(virtualFileDescribe* pvfd, char * buf, size_t len, off64_t from) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
-        return ef->pread64(fd, buf, len, from);
+        return ef->pread64(vfd->_fd, buf, len, from);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::pread64(fd, buf, len, from);
+        return ignoreFile::pread64(vfd->_fd, buf, len, from);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -429,44 +424,40 @@ int virtualFile::vpread64(int fd, char * buf, size_t len, off64_t from) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::pread64(fd, buf, len, from);
+                return ignoreFile::pread64(vfd->_fd, buf, len, from);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->pread64(fd, buf, len, from);
+                return ef->pread64(vfd->_fd, buf, len, from);
             }
             case VFS_TESTING:
-                return tf->pread64(fd, buf, len, from);
+                return tf->pread64(vfd->_fd, buf, len, from);
         }
     }
 
     return 0;
 }
 
-int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
+int virtualFile::vpwrite64(virtualFileDescribe* pvfd, char * buf, size_t len, off64_t offset) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
 
-        return ef->pwrite64(fd, buf, len, offset);
+        return ef->pwrite64(vfd->_fd, buf, len, offset);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::pwrite64(fd, buf, len, offset);
+        return ignoreFile::pwrite64(vfd->_fd, buf, len, offset);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -475,23 +466,23 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::pwrite64(fd, buf, len, offset);
+                return ignoreFile::pwrite64(vfd->_fd, buf, len, offset);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->pwrite64(fd, buf, len, offset);
+                return ef->pwrite64(vfd->_fd, buf, len, offset);
             }
             case VFS_TESTING: {
-                int ret =  tf->pwrite64(fd, buf, len, offset);
+                int ret =  tf->pwrite64(vfd->_fd, buf, len, offset);
 
                 if(tf->canCheck())
                 {
                     if(tf->doControl())
                     {
-                        tf->translate(fd);
+                        tf->translate(vfd->_fd);
                         setVFS(VFS_ENCRYPT);
 
                         if(ef == NULL) {
@@ -502,7 +493,7 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
                         setVFS(VFS_IGNORE);
                     }
 
-                    tf->close(false, fd);
+                    tf->close(false, vfd->_fd);
                     delete tf;
                     tf = 0;
                 }
@@ -515,26 +506,22 @@ int virtualFile::vpwrite64(int fd, char * buf, size_t len, off64_t offset) {
     return 0;
 }
 
-int virtualFile::vread(int fd, char * buf, size_t len) {
+int virtualFile::vread(virtualFileDescribe* pvfd, char * buf, size_t len) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
-        return ef->read(fd, buf, len);
+        return ef->read(vfd->_fd, buf, len);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::read(fd, buf, len);
+        return ignoreFile::read(vfd->_fd, buf, len);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -543,43 +530,39 @@ int virtualFile::vread(int fd, char * buf, size_t len) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::read(fd, buf, len);
+                return ignoreFile::read(vfd->_fd, buf, len);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->read(fd, buf, len);
+                return ef->read(vfd->_fd, buf, len);
             }
             case VFS_TESTING:
-                return tf->read(fd, buf, len);
+                return tf->read(vfd->_fd, buf, len);
         }
     }
 
     return 0;
 }
 
-int virtualFile::vwrite(int fd, char * buf, size_t len) {
+int virtualFile::vwrite(virtualFileDescribe* pvfd, char * buf, size_t len) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
-        return ef->write(fd, buf, len);
+        return ef->write(vfd->_fd, buf, len);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::write(fd, buf, len);
+        return ignoreFile::write(vfd->_fd, buf, len);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -588,23 +571,23 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::write(fd, buf, len);
+                return ignoreFile::write(vfd->_fd, buf, len);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->write(fd, buf, len);
+                return ef->write(vfd->_fd, buf, len);
             }
             case VFS_TESTING: {
-                int ret =  tf->write(fd, buf, len);
+                int ret =  tf->write(vfd->_fd, buf, len);
 
                 if(tf->canCheck())
                 {
                     if(tf->doControl())
                     {
-                        tf->translate(fd);
+                        tf->translate(vfd->_fd);
                         setVFS(VFS_ENCRYPT);
 
                         if(ef == NULL) {
@@ -615,7 +598,7 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
                         setVFS(VFS_IGNORE);
                     }
 
-                    tf->close(false, fd);
+                    tf->close(false, vfd->_fd);
                     delete tf;
                     tf = 0;
                 }
@@ -628,26 +611,22 @@ int virtualFile::vwrite(int fd, char * buf, size_t len) {
     return 0;
 }
 
-int virtualFile::vfstat(int fd, struct stat *buf) {
+int virtualFile::vfstat(virtualFileDescribe* pvfd, struct stat *buf) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
-        return ef->fstat(fd, buf);
+        return ef->fstat(vfd->_fd, buf);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::fstat(fd, buf);
+        return ignoreFile::fstat(vfd->_fd, buf);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -656,43 +635,39 @@ int virtualFile::vfstat(int fd, struct stat *buf) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::fstat(fd, buf);
+                return ignoreFile::fstat(vfd->_fd, buf);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->fstat(fd, buf);
+                return ef->fstat(vfd->_fd, buf);
             }
             case VFS_TESTING:
-                return tf->fstat(fd, buf);
+                return tf->fstat(vfd->_fd, buf);
         }
     }
 
     return 0;
 }
 
-off_t virtualFile::vlseek(int fd, off_t offset, int whence){
+off_t virtualFile::vlseek(virtualFileDescribe* pvfd, off_t offset, int whence){
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
-        return ef->lseek(fd, offset, whence);
+        return ef->lseek(vfd->_fd, offset, whence);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::lseek(fd, offset, whence);
+        return ignoreFile::lseek(vfd->_fd, offset, whence);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -701,45 +676,41 @@ off_t virtualFile::vlseek(int fd, off_t offset, int whence){
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::lseek(fd, offset, whence);
+                return ignoreFile::lseek(vfd->_fd, offset, whence);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->lseek(fd, offset, whence);
+                return ef->lseek(vfd->_fd, offset, whence);
             }
             case VFS_TESTING:
-                return tf->lseek(fd, offset, whence);
+                return tf->lseek(vfd->_fd, offset, whence);
         }
     }
 
     return 0;
 }
 
-int virtualFile::vllseek(int fd, unsigned long offset_high, unsigned long offset_low, loff_t *result,
+int virtualFile::vllseek(virtualFileDescribe* pvfd, unsigned long offset_high, unsigned long offset_low, loff_t *result,
                          unsigned int whence) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
 
-        return ef->llseek(fd, offset_high, offset_low, result, whence);
+        return ef->llseek(vfd->_fd, offset_high, offset_low, result, whence);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::llseek(fd, offset_high, offset_low, result, whence);
+        return ignoreFile::llseek(vfd->_fd, offset_high, offset_low, result, whence);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -748,44 +719,40 @@ int virtualFile::vllseek(int fd, unsigned long offset_high, unsigned long offset
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::llseek(fd, offset_high, offset_low, result, whence);
+                return ignoreFile::llseek(vfd->_fd, offset_high, offset_low, result, whence);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->llseek(fd, offset_high, offset_low, result, whence);
+                return ef->llseek(vfd->_fd, offset_high, offset_low, result, whence);
             }
             case VFS_TESTING:
-                return tf->llseek(fd, offset_high, offset_low, result, whence);
+                return tf->llseek(vfd->_fd, offset_high, offset_low, result, whence);
         }
     }
 
     return 0;
 }
 
-int virtualFile::vftruncate(int fd, off_t length) {
+int virtualFile::vftruncate(virtualFileDescribe* pvfd, off_t length) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
 
-        return ef->ftruncate(fd, length);
+        return ef->ftruncate(vfd->_fd, length);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::ftruncate(fd, length);
+        return ignoreFile::ftruncate(vfd->_fd, length);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -794,44 +761,40 @@ int virtualFile::vftruncate(int fd, off_t length) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::ftruncate(fd, length);
+                return ignoreFile::ftruncate(vfd->_fd, length);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->ftruncate(fd, length);
+                return ef->ftruncate(vfd->_fd, length);
             }
             case VFS_TESTING:
-                return tf->ftruncate(fd, length);
+                return tf->ftruncate(vfd->_fd, length);
         }
     }
 
     return 0;
 }
 
-int virtualFile::vftruncate64(int fd, off64_t length) {
+int virtualFile::vftruncate64(virtualFileDescribe* pvfd, off64_t length) {
     vfileState vfs = getVFS();
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    if(vfd.get() == nullptr) {
-        slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-        return 0;
-    }
+    xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT)
     {
         if(vfd->cur_state != vfs)
         {
-            ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+            ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
             vfd->cur_state = vfs;
         }
 
-        return ef->ftruncate64(fd, length);
+        return ef->ftruncate64(vfd->_fd, length);
     }
     else if(vfs == VFS_IGNORE)
     {
-        return ignoreFile::ftruncate64(fd, length);
+        return ignoreFile::ftruncate64(vfd->_fd, length);
     }
     else if(vfs == VFS_TESTING)
     {
@@ -840,17 +803,17 @@ int virtualFile::vftruncate64(int fd, off64_t length) {
         switch (subvfs)
         {
             case VFS_IGNORE:
-                return ignoreFile::ftruncate64(fd, length);
+                return ignoreFile::ftruncate64(vfd->_fd, length);
             case VFS_ENCRYPT: {
                 if(vfd->cur_state != subvfs)
                 {
-                    ef->lseek(fd, ef->getHeadOffset(), SEEK_CUR);
+                    ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
                     vfd->cur_state = subvfs;
                 }
-                return ef->ftruncate64(fd, length);
+                return ef->ftruncate64(vfd->_fd, length);
             }
             case VFS_TESTING:
-                return tf->ftruncate64(fd, length);
+                return tf->ftruncate64(vfd->_fd, length);
         }
     }
 

@@ -34,11 +34,10 @@ class virtualFileDescribe : public xdja::zs::LightRefBase<virtualFileDescribe>
 public:
     virtualFile * _vf;
     vfileState cur_state;
+    int _fd;
 
-    virtualFileDescribe()
+    virtualFileDescribe(int fd) : _vf(0), cur_state(VFS_IGNORE), _fd(fd)
     {
-        _vf = 0;
-        cur_state = VFS_IGNORE;
     }
 };
 
@@ -130,28 +129,28 @@ public:
     void unlockWhole();
 
 public:
-    int vpread64(int fd, char * buf, size_t len, off64_t from);
-    int vpwrite64(int fd, char * buf, size_t len, off64_t from);
+    int vpread64(virtualFileDescribe* pvfd, char * buf, size_t len, off64_t from);
+    int vpwrite64(virtualFileDescribe* pvfd, char * buf, size_t len, off64_t from);
 
-    int vread(int fd, char * buf, size_t len);
-    int vwrite(int fd, char * buf, size_t len);
+    int vread(virtualFileDescribe* pvfd, char * buf, size_t len);
+    int vwrite(virtualFileDescribe* pvfd, char * buf, size_t len);
 
-    int vfstat(int fd, struct stat * buf);
-    off_t vlseek(int fd, off_t offset, int whence);
-    int vllseek(int fd, unsigned long offset_high,
+    int vfstat(virtualFileDescribe* pvfd, struct stat * buf);
+    off_t vlseek(virtualFileDescribe* pvfd, off_t offset, int whence);
+    int vllseek(virtualFileDescribe* pvfd, unsigned long offset_high,
                unsigned long offset_low, loff_t *result,
                unsigned int whence);
 
-    int vftruncate(int fd, off_t length);
-    int vftruncate64(int fd, off64_t length);
+    int vftruncate(virtualFileDescribe* pvfd, off_t length);
+    int vftruncate64(virtualFileDescribe* pvfd, off64_t length);
 
     char * getPath() {return _path;}
     void setPath(char * path) { strncpy(_path, path, MAX_PATH); }
 
-    bool create(int fd);
+    bool create(virtualFileDescribe* pvfd);
 
 
-    int vclose(int fd);
+    int vclose(virtualFileDescribe* pvfd);
 
     void forceTranslate();
 
@@ -186,12 +185,12 @@ public:
         pthread_mutex_destroy(&_lock);
     }
 
-    virtualFile * getVF(int fd, char * path, int * pErrno);
+    virtualFile * getVF(virtualFileDescribe* pvfd, char * path, int * pErrno);
 
     virtualFile * queryVF(char *path);
     void updateVF(virtualFile & vf);
 
-    void releaseVF(char *path, int fd);
+    void releaseVF(char *path, virtualFileDescribe* pvfd);
 
     /*void forceClean(char * path);*/
 

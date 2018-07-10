@@ -649,25 +649,34 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
         /*******************only here**********************/
-        virtualFileDescribe *vfd = new virtualFileDescribe();
-        vfd->incStrong(0);
+        virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
+        pvfd->incStrong(0);
         /***************************************************/
-        virtualFileDescribeSet::getVFDSet().set(ret, vfd);
+        virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
+
+        /*
+        * 首先获取vfd，获取不到一定是发生异常，返回错误
+        */
+        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
+        if (vfd.get() == nullptr) {
+            slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
+            return -1;
+        }
 
         int _Errno;
-        virtualFile *vf = virtualFileManager::getVFM().getVF(ret, (char *) redirect_path, &_Errno);
+        virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), (char *) redirect_path, &_Errno);
         if (vf != NULL) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
             vfd->_vf = vf;
             if ((flags & O_APPEND) == O_APPEND) {
-                vf->vlseek(ret, 0, SEEK_END);
+                vf->vlseek(vfd.get(), 0, SEEK_END);
             } else {
-                vf->vlseek(ret, 0, SEEK_SET);
+                vf->vlseek(vfd.get(), 0, SEEK_SET);
             }
         } else {
             virtualFileDescribeSet::getVFDSet().reset(ret);
             /******through this way to release vfd *********/
-            virtualFileDescribeSet::getVFDSet().release(vfd);
+            virtualFileDescribeSet::getVFDSet().release(pvfd);
             /***********************************************/
 
             if(_Errno < 0)
@@ -704,7 +713,7 @@ HOOK_DEF(int, close, int __fd) {
     } else {
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), __fd);
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
         /******through this way to release vfd *********/
         virtualFileDescribeSet::getVFDSet().release(vfd.get());
         /***********************************************/
@@ -959,7 +968,7 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vpread64(fd, (char *) buf, count, offset);
+        ret = vfd->_vf->vpread64(vfd.get(), (char *) buf, count, offset);
         flag = true;
     }
 
@@ -984,7 +993,7 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vpwrite64(fd, (char *) buf, count, offset);
+        ret = vfd->_vf->vpwrite64(vfd.get(), (char *) buf, count, offset);
         flag = true;
     }
 
@@ -1009,7 +1018,7 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vread(fd, (char *) buf, count);
+        ret = vfd->_vf->vread(vfd.get(), (char *) buf, count);
         flag = true;
     }
 
@@ -1034,7 +1043,7 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vwrite(fd, (char *) buf, count);
+        ret = vfd->_vf->vwrite(vfd.get(), (char *) buf, count);
         flag = true;
     }
 
@@ -1070,7 +1079,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                 LOGE("__mmap2 mprotect failed.");
             } else {
                 off64_t pos = pgoffset * 4096;
-                vfd->_vf->vpread64(fd, (char *) ret, length, pos);
+                vfd->_vf->vpread64(vfd.get(), (char *) ret, length, pos);
 
                 if (nowrite) {
                     if (0 != mprotect(ret, length, prot)) {
@@ -1110,7 +1119,7 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vfstat(fd, buf);
+        ret = vfd->_vf->vfstat(vfd.get(), buf);
         flag = true;
     }
 
@@ -1135,7 +1144,7 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vlseek(fd, offset, whence);
+        ret = vfd->_vf->vlseek(vfd.get(), offset, whence);
         flag = true;
     }
 
@@ -1168,7 +1177,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vllseek(fd, offset_high, offset_low, result, whence);
+        ret = vfd->_vf->vllseek(vfd.get(), offset_high, offset_low, result, whence);
         flag = true;
     }
 
@@ -1194,7 +1203,7 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
-        ret = vfd->_vf->vftruncate64(fd, length);
+        ret = vfd->_vf->vftruncate64(vfd.get(), length);
         flag = true;
     }
 
@@ -1226,24 +1235,24 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         {
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
+                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
             ret = 0;
             int rl;
-            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
             {
                 ret += rl;
-                out_vfd->_vf->vwrite(out_fd, buf, rl);
+                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
             delete []buf;
 
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             }
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
@@ -1261,7 +1270,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             while((rl = ignoreFile::read(in_fd, buf, 1024)))
             {
                 ret += rl;
-                out_vfd->_vf->vwrite(out_fd, buf, rl);
+                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
             delete []buf;
 
@@ -1274,15 +1283,15 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         {
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
+                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
             ret = 0;
             int rl;
-            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
             {
                 ret += rl;
                 ignoreFile::write(out_fd, buf, rl);
@@ -1291,7 +1300,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_fd, off, SEEK_SET);
+                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             }
         }
     }
@@ -1329,25 +1338,25 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
+                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
             ret = 0;
             int rl;
-            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
             {
                 ret += rl;
-                out_vfd->_vf->vwrite(out_fd, buf, rl);
+                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
             delete []buf;
 
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             }
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
@@ -1366,7 +1375,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             while((rl = ignoreFile::read(in_fd, buf, 1024)))
             {
                 ret += rl;
-                out_vfd->_vf->vwrite(out_fd, buf, rl);
+                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
             delete []buf;
 
@@ -1381,15 +1390,15 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_fd, 0, SEEK_CUR);
+                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
             ret = 0;
             int rl;
-            while((rl = in_vfd->_vf->vread(in_fd, buf, 1024)))
+            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
             {
                 ret += rl;
                 ignoreFile::write(out_fd, buf, rl);
@@ -1399,7 +1408,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_fd, off_hi, off_lo, &result, SEEK_SET);
+                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             }
         }
     }
@@ -1429,21 +1438,30 @@ HOOK_DEF(int, dup, int oldfd)
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
         /*******************only here**********************/
-        virtualFileDescribe *vfd = new virtualFileDescribe();
-        vfd->incStrong(0);
+        virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
+        pvfd->incStrong(0);
         /***************************************************/
-        virtualFileDescribeSet::getVFDSet().set(ret, vfd);
+        virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
+
+        /*
+        * 首先获取vfd，获取不到一定是发生异常，返回错误
+        */
+        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
+        if (vfd.get() == nullptr) {
+            slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
+            return -1;
+        }
 
         int _Errno;
-        virtualFile *vf = virtualFileManager::getVFM().getVF(ret, path2.toString(), &_Errno);
+        virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), path2.toString(), &_Errno);
         if (vf != NULL) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
             vfd->_vf = vf;
-            vf->vlseek(ret, 0, SEEK_SET);
+            vf->vlseek(vfd.get(), 0, SEEK_SET);
         } else {
             virtualFileDescribeSet::getVFDSet().reset(ret);
             /******through this way to release vfd *********/
-            virtualFileDescribeSet::getVFDSet().release(vfd);
+            virtualFileDescribeSet::getVFDSet().release(pvfd);
             /***********************************************/
 
             if(_Errno < 0)
