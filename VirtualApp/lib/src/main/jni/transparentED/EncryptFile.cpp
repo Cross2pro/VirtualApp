@@ -63,14 +63,17 @@ bool EncryptFile::isEncryptFile(int fd) {
 }
 
 EncryptFile::EncryptFile(const char * path) {
-    memset(this->path, 0, MAX_PATH);
+    this->path = new char[strlen(path) + 1];
+    memset(this->path, 0, strlen(path) + 1);
+
     strcpy(this->path, path);
 
     fc2 = 0;
 }
 
 EncryptFile::EncryptFile(EncryptFile &ef) {
-    memset(this->path, 0, MAX_PATH);
+    this->path = new char[strlen(ef.path) + 1];
+    memset(this->path, 0, strlen(ef.path) + 1);
     strcpy(path, ef.path);
 
     memcpy(this->header.magic, ef.header.magic, sizeof(header.magic));
@@ -85,6 +88,9 @@ EncryptFile::~EncryptFile() {
 
     if(fc2)
         delete fc2;
+
+    if(path)
+        delete []path;
 }
 
 /*

@@ -66,10 +66,6 @@ public:
 };
 #pragma pack(pop)
 
-#ifndef MAX_PATH
-#define MAX_PATH 512
-#endif
-
 enum ef_mode{
     ENCRYPT_WRITE,
     ENCRYPT_READ
@@ -77,7 +73,7 @@ enum ef_mode{
 
 class EncryptFile {
 private:
-    char path[MAX_PATH];
+    char * path;
     ef_mode _mode;
     EncryptFileHeader header;
 
