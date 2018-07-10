@@ -1485,11 +1485,8 @@ HOOK_DEF(int, dup, int oldfd)
     /*zString zlog("dup from %s [%d] to %s [%d]", path.toString(), oldfd, path2.toString(), ret);
 
     doFileTrace(path.toString(), zlog.toString());*/
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
-    xdja::zs::sp<virtualFileDescribe> oldvfd(virtualFileDescribeSet::getVFDSet().get(oldfd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
 
-    if(ret > 0 && oldvfd.get()) {
+    if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
