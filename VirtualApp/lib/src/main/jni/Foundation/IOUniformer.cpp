@@ -666,7 +666,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         int _Errno;
         virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), (char *) redirect_path, &_Errno);
         if (vf != NULL) {
-            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
+            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, vfd);
             vfd->_vf = vf;
             if ((flags & O_APPEND) == O_APPEND) {
                 vf->vlseek(vfd.get(), 0, SEEK_END);
@@ -711,6 +711,8 @@ HOOK_DEF(int, close, int __fd) {
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if(vfd.get() == nullptr) {
     } else {
+
+        log("trace_close fd[%d]path[%s]vfd[%p]", __fd, path.toString(), vfd.get());
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
         virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
