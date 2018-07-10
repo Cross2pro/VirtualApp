@@ -1091,32 +1091,37 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
     void * ret = 0;
     bool flag = false;
 
-    pthread_mutex_lock(&lock_for_vfdset);
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_mutex_unlock(&lock_for_vfdset);
-    if(vfd.get() == nullptr) {
-    } else {
-        if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
-            flags |= MAP_ANONYMOUS;     //申请匿名内存
-            ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
+    do {
+        if (fd == -1) break;
 
-            bool nowrite = (prot & PROT_WRITE) == 0;
-            if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
-                LOGE("__mmap2 mprotect failed.");
-            } else {    
-                off64_t pos = pgoffset * 4096;
-                vfd->_vf->vpread64(vfd.get(), (char *) ret, length, pos);
+        pthread_mutex_lock(&lock_for_vfdset);
+        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+        pthread_mutex_unlock(&lock_for_vfdset);
 
-                if (nowrite) {
-                    if (0 != mprotect(ret, length, prot)) {
-                        LOGE("__mmap2 mprotect restore prot fails.");
+        if (vfd.get() == nullptr) {
+        } else {
+            if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
+                flags |= MAP_ANONYMOUS;     //申请匿名内存
+                ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
+
+                bool nowrite = (prot & PROT_WRITE) == 0;
+                if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
+                    LOGE("__mmap2 mprotect failed.");
+                } else {
+                    off64_t pos = pgoffset * 4096;
+                    vfd->_vf->vpread64(vfd.get(), (char *) ret, length, pos);
+
+                    if (nowrite) {
+                        if (0 != mprotect(ret, length, prot)) {
+                            LOGE("__mmap2 mprotect restore prot fails.");
+                        }
                     }
-                }
 
-                flag = true;
+                    flag = true;
+                }
             }
         }
-    }
+    }while(false);
 
     if(fd > 0)
     {
