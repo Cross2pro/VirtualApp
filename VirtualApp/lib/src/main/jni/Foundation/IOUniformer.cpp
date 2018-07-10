@@ -29,9 +29,7 @@ bool iu_loaded = false;
 
 using namespace xdja;
 
-pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-atomicVessel flag_for_vfds;
+pthread_mutex_t lock_for_vfdset = PTHREAD_MUTEX_INITIALIZER;
 
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
@@ -653,7 +651,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
 
-        pthread_mutex_lock(&mut);
+        pthread_mutex_lock(&lock_for_vfdset);
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
@@ -672,7 +670,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         int _Errno;
         virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), (char *) redirect_path, &_Errno);
         if (vf != NULL) {
-            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, vfd);
+            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, vfd.get());
             vfd->_vf = vf;
             if ((flags & O_APPEND) == O_APPEND) {
                 vf->vlseek(vfd.get(), 0, SEEK_END);
@@ -700,7 +698,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 LOGE("judge : **** force openat fail !!! ****");
             }
         }
-        pthread_mutex_unlock(&mut);
+        pthread_mutex_unlock(&lock_for_vfdset);
     }
     FREE(redirect_path, pathname);
 
@@ -716,7 +714,7 @@ HOOK_DEF(int, close, int __fd) {
     doFileTrace(path.toString(), zlog.toString());
 
     int ret;
-    pthread_mutex_lock(&mut);
+    pthread_mutex_lock(&lock_for_vfdset);
     do {
         ret = syscall(__NR_close, __fd);
         if (ret < 0)
@@ -729,14 +727,14 @@ HOOK_DEF(int, close, int __fd) {
             log("trace_close fd[%d]path[%s]vfd[%p]", __fd, path.toString(), vfd.get());
             virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), __fd);
+            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
             /******through this way to release vfd *********/
             virtualFileDescribeSet::getVFDSet().release(vfd.get());
             /***********************************************/
         }
 
     }while(false);
-    pthread_mutex_unlock(&mut);
+    pthread_mutex_unlock(&lock_for_vfdset);
 
     return ret;
 }
@@ -982,7 +980,9 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1007,7 +1007,9 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1032,9 +1034,9 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
-    pthread_mutex_lock(&mut);
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_mutex_unlock(&mut);
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1059,7 +1061,9 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1087,7 +1091,9 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
     void * ret = 0;
     bool flag = false;
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
@@ -1135,7 +1141,9 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1160,7 +1168,9 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1193,7 +1203,9 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1219,7 +1231,9 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1244,9 +1258,10 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
     off_t off = 0;
     if(offset != 0)
         off = *offset;
-
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
     xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
         //完全不管
         ret = orig_sendfile(out_fd, in_fd, offset, count);
@@ -1347,8 +1362,10 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
     unsigned long off_hi = static_cast<unsigned long>(off >> 32);
     unsigned long off_lo = static_cast<unsigned long>(off);
 
+    pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
     xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
+    pthread_mutex_unlock(&lock_for_vfdset);
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
         //完全不管
         ret = orig_sendfile64(out_fd, in_fd, offset, count);
@@ -1457,7 +1474,7 @@ HOOK_DEF(int, dup, int oldfd)
     doFileTrace(path.toString(), zlog.toString());
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
-        pthread_mutex_lock(&mut);
+        pthread_mutex_lock(&lock_for_vfdset);
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
@@ -1500,7 +1517,7 @@ HOOK_DEF(int, dup, int oldfd)
                 LOGE("judge : **** force openat fail !!! ****");*/
             }
         }
-        pthread_mutex_unlock(&mut);
+        pthread_mutex_unlock(&lock_for_vfdset);
     }
 
     return ret;
