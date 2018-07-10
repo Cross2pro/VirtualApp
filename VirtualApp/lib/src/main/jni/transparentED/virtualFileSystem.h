@@ -133,6 +133,11 @@ public:
         {
             delete ef;
         }
+
+        if(_path) {
+            delete[]_path;
+            _path = 0;
+        }
     }
 
     unsigned int addRef();
@@ -172,7 +177,7 @@ public:
         if(_path == NULL)
         {
             _path = new char[strlen(path) + 1];
-            memset(path, 0, strlen(path) + 1);
+            memset(_path, 0, strlen(path) + 1);
         }
         strncpy(_path, path, strlen(path) + 1);
     }
