@@ -145,8 +145,8 @@ HOOK_DEF(int, faccessat, int dirfd, const char *pathname, int mode, int flags) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_faccessat, dirfd, redirect_path, mode, flags);
 
-    zString op("faccessat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("faccessat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -159,8 +159,8 @@ HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags)
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fchmodat, dirfd, redirect_path, mode, flags);
 
-    zString op("fchmodat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("fchmodat mode %p flags %p ret %d err %s", mode, flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -171,8 +171,8 @@ HOOK_DEF(int, fchmod, const char *pathname, mode_t mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chmod, redirect_path, mode);
 
-    zString op("fchmod mode %p ret %d err %s", mode, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("fchmod mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -185,8 +185,8 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
 
-    zString op("fstatat flags %p ret %d err %s", flags, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("fstatat flags %p ret %d err %s", flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -198,8 +198,8 @@ HOOK_DEF(int, mknodat, int dirfd, const char *pathname, mode_t mode, dev_t dev) 
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mknodat, dirfd, redirect_path, mode, dev);
 
-    zString op("mknodat mode %p ret %d err %s", mode, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("mknodat mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -210,8 +210,8 @@ HOOK_DEF(int, mknod, const char *pathname, mode_t mode, dev_t dev) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mknod, redirect_path, mode, dev);
 
-    zString op("mknod mode %p ret %d err %s", mode, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("mknod mode %p ret %d err %s", mode, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -225,8 +225,8 @@ HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec 
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_utimensat, dirfd, redirect_path, times, flags);
 
-    zString op("utimensat flags %p ret %d err %s", flags, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("utimensat flags %p ret %d err %s", flags, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -239,8 +239,8 @@ HOOK_DEF(int, fchownat, int dirfd, const char *pathname, uid_t owner, gid_t grou
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fchownat, dirfd, redirect_path, owner, group, flags);
 
-    zString op("fchownat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("fchownat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -252,8 +252,8 @@ HOOK_DEF(int, chroot, const char *pathname) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chroot, redirect_path);
 
-    zString op("chroot ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("chroot ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -294,8 +294,8 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
         vf3->delRef();
     }
 
-    zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -309,8 +309,8 @@ HOOK_DEF(int, rename, const char *oldpath, const char *newpath) {
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_rename, redirect_path_old, redirect_path_new);
 
-    zString op("rename to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("rename to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -330,8 +330,8 @@ HOOK_DEF(int, unlinkat, int dirfd, const char *pathname, int flags) {
         virtualFileManager::getVFM().deleted((char *)redirect_path);
     }
 
-    zString op("unlinkat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("unlinkat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -342,8 +342,8 @@ HOOK_DEF(int, unlink, const char *pathname) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_unlink, redirect_path);
 
-    zString op("unlink ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("unlink ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -358,8 +358,8 @@ HOOK_DEF(int, symlinkat, const char *oldpath, int newdirfd, const char *newpath)
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_symlinkat, redirect_path_old, newdirfd, redirect_path_new);
 
-    zString op("symlinkat to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("symlinkat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -373,8 +373,8 @@ HOOK_DEF(int, symlink, const char *oldpath, const char *newpath) {
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_symlink, redirect_path_old, redirect_path_new);
 
-    zString op("symlink to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("symlink to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -391,8 +391,8 @@ HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const cha
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_linkat, olddirfd, redirect_path_old, newdirfd, redirect_path_new, flags);
 
-    zString op("linkat to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("linkat to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -406,8 +406,8 @@ HOOK_DEF(int, link, const char *oldpath, const char *newpath) {
     const char *redirect_path_new = relocate_path(newpath, &res_new);
     int ret = syscall(__NR_link, redirect_path_old, redirect_path_new);
 
-    zString op("link to %s ret %d err %s", redirect_path_new, ret, getErr);
-    doFileTrace(redirect_path_old, op.toString());
+    /*zString op("link to %s ret %d err %s", redirect_path_new, ret, getErr);
+    doFileTrace(redirect_path_old, op.toString());*/
 
     FREE(redirect_path_old, oldpath);
     FREE(redirect_path_new, newpath);
@@ -421,8 +421,8 @@ HOOK_DEF(int, utimes, const char *pathname, const struct timeval *tvp) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_utimes, redirect_path, tvp);
 
-    zString op("utimes ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("utimes ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -435,8 +435,8 @@ HOOK_DEF(int, access, const char *pathname, int mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_access, redirect_path, mode);
 
-    zString op("access ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("access ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -449,8 +449,8 @@ HOOK_DEF(int, chmod, const char *pathname, mode_t mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chmod, redirect_path, mode);
 
-    zString op("chmod ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("chmod ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -463,8 +463,8 @@ HOOK_DEF(int, chown, const char *pathname, uid_t owner, gid_t group) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_chown, redirect_path, owner, group);
 
-    zString op("chown ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("chown ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -477,8 +477,8 @@ HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_lstat64, redirect_path, buf);
 
-    zString op("lstat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("lstat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -491,8 +491,8 @@ HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_stat64, redirect_path, buf);
 
-    zString op("stat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("stat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -505,8 +505,8 @@ HOOK_DEF(int, mkdirat, int dirfd, const char *pathname, mode_t mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mkdirat, dirfd, redirect_path, mode);
 
-    zString op("mkdirat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("mkdirat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -517,8 +517,8 @@ HOOK_DEF(int, mkdir, const char *pathname, mode_t mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_mkdir, redirect_path, mode);
 
-    zString op("mkdir ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("mkdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -531,8 +531,8 @@ HOOK_DEF(int, rmdir, const char *pathname) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_rmdir, redirect_path);
 
-    zString op("rmdir ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("rmdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -545,8 +545,8 @@ HOOK_DEF(int, readlinkat, int dirfd, const char *pathname, char *buf, size_t buf
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_readlinkat, dirfd, redirect_path, buf, bufsiz);
 
-    zString op("readlinkat ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("readlinkat ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -557,8 +557,8 @@ HOOK_DEF(ssize_t, readlink, const char *pathname, char *buf, size_t bufsiz) {
     const char *redirect_path = relocate_path(pathname, &res);
     ssize_t ret = syscall(__NR_readlink, redirect_path, buf, bufsiz);
 
-    zString op("readlink ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("readlink ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -571,8 +571,8 @@ HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_statfs64, redirect_path, size, stat);
 
-    zString op("__statfs64 ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("__statfs64 ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -585,8 +585,8 @@ HOOK_DEF(int, truncate, const char *pathname, off_t length) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_truncate, redirect_path, length);
 
-    zString op("truncate length %ld ret %d err %s", length, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("truncate length %ld ret %d err %s", length, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -601,8 +601,8 @@ HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
     RETURN_IF_FORBID
     int ret = syscall(__NR_truncate64, redirect_path, length);
 
-    zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -616,8 +616,8 @@ HOOK_DEF(int, chdir, const char *pathname) {
     RETURN_IF_FORBID
     int ret = syscall(__NR_chdir, redirect_path);
 
-    zString op("chdir ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("chdir ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -646,8 +646,8 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
     int ret = syscall(__NR_openat, fd, redirect_path, flags, mode);
 
-    zString op("openat fd = %d err = %s", ret, strerror(errno));
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("openat fd = %d err = %s", ret, strerror(errno));
+    doFileTrace(redirect_path, op.toString());*/
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
 
@@ -707,11 +707,11 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
 HOOK_DEF(int, close, int __fd) {
 
-    zString path;
+    /*zString path;
     getPathFromFd(__fd, path);
 
     zString zlog("close %d", __fd);
-    doFileTrace(path.toString(), zlog.toString());
+    doFileTrace(path.toString(), zlog.toString());*/
 
     int ret;
     pthread_mutex_lock(&lock_for_vfdset);
@@ -724,7 +724,7 @@ HOOK_DEF(int, close, int __fd) {
         if (vfd.get() == nullptr) {
         } else {
 
-            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, path.toString(), vfd.get());
+            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
             virtualFileDescribeSet::getVFDSet().reset(__fd);
 
             virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
@@ -759,8 +759,8 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
         }
     }
 
-    zString op("fstatat64 ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("fstatat64 ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -772,8 +772,8 @@ HOOK_DEF(int, __open, const char *pathname, int flags, int mode) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_open, redirect_path, flags, mode);
 
-    zString op("__open ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("__open ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -785,8 +785,8 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
     const char *redirect_path = relocate_path(__file, &res);
     int ret = syscall(__NR_statfs, redirect_path, __buf);
 
-    zString op("__statfs ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("__statfs ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, __file);
     return ret;
@@ -798,8 +798,8 @@ HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_lchown, redirect_path, owner, group);
 
-    zString op("lchown ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("lchown ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -882,8 +882,8 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
     }
     int ret = syscall(__NR_execve, redirect_path, argv, envp);
 
-    zString op("execve ret %d err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("execve ret %d err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     FREE(redirect_path, pathname);
     return ret;
@@ -902,8 +902,8 @@ HOOK_DEF(void*, dlopen, const char *filename, int flag) {
     const char *redirect_path = relocate_path_dlopen(filename, &res);
     void *ret = orig_dlopen(redirect_path, flag);
 
-    zString op("dlopen ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("dlopen ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     onSoLoaded(filename, ret);
     ALOGD("dlopen : %s, return : %p.", redirect_path, ret);
@@ -916,8 +916,8 @@ HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extin
     const char *redirect_path = relocate_path_dlopen(filename, &res);
     void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
 
-    zString op("do_dlopen_V19 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("do_dlopen_V19 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     onSoLoaded(filename, ret);
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -931,8 +931,8 @@ HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
     const char *redirect_path = relocate_path_dlopen(name, &res);
     void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
 
-    zString op("do_dlopen_V24 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("do_dlopen_V24 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     onSoLoaded(name, ret);
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -946,8 +946,8 @@ HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
     const char *redirect_path = relocate_path_dlopen(name, &res);
     void *ret = orig_do_dlopen_V26(redirect_path, flags, extinfo, caller_addr);
 
-    zString op("do_dlopen_V26 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());
+    /*zString op("do_dlopen_V26 ret %p err %s", ret, getErr);
+    doFileTrace(redirect_path, op.toString());*/
 
     onSoLoaded(name, ret);
     ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
@@ -978,7 +978,7 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -993,9 +993,9 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     if(!flag)
         ret = orig_pread64(fd, buf, count, offset);
 
-    zMd5 ms;
+    /*zMd5 ms;
     zString op("%cpread64 offset [fd %d] [%lld] count [%d] ret [%d] content[%s]", flag?'v':' ', fd, offset, count, ret, ms.getSig((char *)buf, ret));
-    doFileTrace(path.toString(), op.toString());
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1005,7 +1005,7 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1020,9 +1020,9 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     if(!flag)
         ret = orig_pwrite64(fd, buf, count, offset);
 
-    zMd5 ms;
+    /*zMd5 ms;
     zString op("%cpwrite64 offset [fd %d] [%lld] count [%d] ret [%d] content[%s]", flag?'v':' ', fd, offset, count, ret, ms.getSig((char *)buf, ret));
-    doFileTrace(path.toString(), op.toString());
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1032,7 +1032,7 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1047,9 +1047,9 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     if(!flag)
         ret = syscall(__NR_read, fd, buf, count);
 
-    zMd5 ms;
+    /*zMd5 ms;
     zString op("%cread count [fd %d] [%d] ret [%d] content[%s]", flag?'v':' ', fd, count, ret, ms.getSig((char *)buf, ret));
-    doFileTrace(path.toString(), op.toString());
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1059,7 +1059,7 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1074,9 +1074,9 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     if(!flag)
         ret = syscall(__NR_write, fd, buf, count);
 
-    zMd5 ms;
+    /*zMd5 ms;
     zString op("%cwrite count [fd %d] [%d] ret [%d] content[%s]", flag?'v':' ', fd, count, ret, ms.getSig((char *)buf, ret));
-    doFileTrace(path.toString(), op.toString());
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1120,11 +1120,11 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
 
     if(fd > 0)
     {
-        zString path;
+        /*zString path;
         getPathFromFd(fd, path);
 
         zString op("%c__mmap2 length %d flags %p pgoffset %p", flag?'v':' ', length, flags, pgoffset);
-        doFileTrace(path.toString(), op.toString());
+        doFileTrace(path.toString(), op.toString());*/
     }
 
     if(!flag)
@@ -1139,7 +1139,7 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1154,8 +1154,8 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     if(!flag)
         ret = orig_fstat(fd, buf);
 
-    zString op("%cfstat [fd %d] ret %d err %s", flag?'v':' ', fd, ret, getErr);
-    doFileTrace(path.toString(), op.toString());
+    /*zString op("%cfstat [fd %d] ret %d err %s", flag?'v':' ', fd, ret, getErr);
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1166,7 +1166,7 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1181,8 +1181,8 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     if(!flag)
         ret = orig_lseek(fd, offset, whence);
 
-    zString op("%clseek [fd %d] offset %ld whence %d ret %ld err %s", flag?'v':' ', fd, offset, whence, ret, getErr);
-    doFileTrace(path.toString(), op.toString());
+    /*zString op("%clseek [fd %d] offset %ld whence %d ret %ld err %s", flag?'v':' ', fd, offset, whence, ret, getErr);
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1201,7 +1201,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     int ret;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1216,8 +1216,8 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     if(!flag)
         ret = orig___llseek(fd, offset_high, offset_low, result, whence);
 
-    zString op("%cllseek [fd %d] offset %lld whence %d ret %lld err %s", flag?'v':' ', fd, rel_offset, whence, *result, getErr);
-    doFileTrace(path.toString(), op.toString());
+    /*zString op("%cllseek [fd %d] offset %lld whence %d ret %lld err %s", flag?'v':' ', fd, rel_offset, whence, *result, getErr);
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1229,7 +1229,7 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     bool flag = false;
 
     zString path;
-    getPathFromFd(fd, path);
+    /*getPathFromFd(fd, path);*/
 
     pthread_mutex_lock(&lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -1244,8 +1244,8 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     if(!flag)
         ret = orig_ftruncate64(fd, length);
 
-    zString op("%cftruncate64 [fd %d] length %lld ret %d err %s", flag?'v':' ', fd, length, ret, getErr);
-    doFileTrace(path.toString(), op.toString());
+    /*zString op("%cftruncate64 [fd %d] length %lld ret %d err %s", flag?'v':' ', fd, length, ret, getErr);
+    doFileTrace(path.toString(), op.toString());*/
 
     return ret;
 }
@@ -1340,12 +1340,12 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         }
     }
 
-    zString path1, path2;
+    /*zString path1, path2;
     getPathFromFd(out_fd, path1);
     getPathFromFd(in_fd, path2);
 
     zString zlog("from %s to %s, count = %d, ret = %d", path2.toString(), path1.toString(), count, ret);
-    doFileTrace("sendfile", zlog.toString());
+    doFileTrace("sendfile", zlog.toString());*/
 
     return ret;
 }
@@ -1450,12 +1450,12 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
         }
     }
 
-    zString path1, path2;
+    /*zString path1, path2;
     getPathFromFd(out_fd, path1);
     getPathFromFd(in_fd, path2);
 
     zString zlog("from %s to %s, count = %d, ret = %d", path2.toString(), path1.toString(), count, ret);
-    doFileTrace("sendfile64", zlog.toString());
+    doFileTrace("sendfile64", zlog.toString());*/
 
     return ret;
 }
@@ -1469,11 +1469,15 @@ HOOK_DEF(int, dup, int oldfd)
     getPathFromFd(oldfd, path);
     getPathFromFd(ret, path2);
 
-    zString zlog("dup from %s [%d] to %s [%d]", path.toString(), oldfd, path2.toString(), ret);
+    /*zString zlog("dup from %s [%d] to %s [%d]", path.toString(), oldfd, path2.toString(), ret);
 
-    doFileTrace(path.toString(), zlog.toString());
+    doFileTrace(path.toString(), zlog.toString());*/
 
-    if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
+    pthread_mutex_lock(&lock_for_vfdset);
+    xdja::zs::sp<virtualFileDescribe> oldvfd(virtualFileDescribeSet::getVFDSet().get(oldfd));
+    pthread_mutex_unlock(&lock_for_vfdset);
+
+    if(ret > 0 && oldvfd.get()) {
         pthread_mutex_lock(&lock_for_vfdset);
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
@@ -1526,9 +1530,9 @@ HOOK_DEF(int, dup, int oldfd)
 //int dup3(int oldfd, int newfd, int flags);
 HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
 {
-    zString path;
+    /*zString path;
     getPathFromFd(oldfd, path);
-    doFileTrace(path.toString(), (char *)"dup3");
+    doFileTrace(path.toString(), (char *)"dup3");*/
 
     return syscall(__NR_dup3, oldfd, newfd, flags);
 }
