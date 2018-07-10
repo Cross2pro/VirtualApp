@@ -657,7 +657,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         pvfd->incStrong(0);
         /***************************************************/
         virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
-
+        pthread_mutex_unlock(&lock_for_vfdset);
         /*
         * 首先获取vfd，获取不到一定是发生异常，返回错误
         */
@@ -678,10 +678,12 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 vf->vlseek(vfd.get(), 0, SEEK_SET);
             }
         } else {
+            pthread_mutex_lock(&lock_for_vfdset);
             virtualFileDescribeSet::getVFDSet().reset(ret);
             /******through this way to release vfd *********/
             virtualFileDescribeSet::getVFDSet().release(pvfd);
             /***********************************************/
+            pthread_mutex_unlock(&lock_for_vfdset);
 
             if(_Errno < 0)
             {
@@ -698,7 +700,6 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 LOGE("judge : **** force openat fail !!! ****");
             }
         }
-        pthread_mutex_unlock(&lock_for_vfdset);
     }
     FREE(redirect_path, pathname);
 
