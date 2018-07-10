@@ -62,6 +62,20 @@ public:
         rl.finish();
     }
 
+    void dumpItems() {
+        log("dumpItems items = %p", items);
+        for (int i = 0; i < 1024; i++)
+        {
+            log("dumpItems item[%d] = %x", i, items[i].get());
+        }
+
+        int * p = (int *)items;
+        for(int i = 0; i < 100; i++)
+        {
+            log("dumpItems address %x", *(p--));
+        }
+    }
+
     static virtualFileDescribeSet & getVFDSet();
 };
 

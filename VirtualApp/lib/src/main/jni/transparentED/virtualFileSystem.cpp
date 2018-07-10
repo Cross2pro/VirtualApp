@@ -2,6 +2,7 @@
 // Created by zhangsong on 17-11-24.
 //
 
+#include <cassert>
 #include "virtualFileSystem.h"
 #include "originalInterface.h"
 #include "utils/Autolock.h"
@@ -13,29 +14,23 @@ virtualFileDescribeSet& virtualFileDescribeSet::getVFDSet() {
 }
 
 void virtualFileDescribeSet::reset(int idx) {
-    if(idx < 0 || idx > 1023)
-    {
-        return ;
-    }
+    assert(idx >= 0 && idx < 1024);
 
     items[idx].reset();
 }
 void virtualFileDescribeSet::set(int idx, virtualFileDescribe *vfd) {
-    if(idx < 0 || idx > 1023)
-    {
-        return;
-    }
+    assert(idx >= 0 && idx < 1024);
+    assert(items->get(idx) == 0);
 
     items[idx].set((uint32_t)vfd);
 }
 
 virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
-    if(idx < 0 || idx > 1023)
-    {
-        return 0;
-    }
+    assert(idx >= 0 && idx < 1024);
 
-    return (virtualFileDescribe*)items[idx].get();
+    virtualFileDescribe * vfd = (virtualFileDescribe*)items[idx].get();
+
+    return vfd;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
