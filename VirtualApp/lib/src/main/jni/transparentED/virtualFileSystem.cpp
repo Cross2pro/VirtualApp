@@ -69,12 +69,19 @@ void virtualFileManager::deleted(char *path) {
         virtualFile * vf = iter->second;
         {
             log("judge : [path %s] deleted", vf->getPath());
-            char tmp[MAX_PATH + 20] = {0};
-            snprintf(tmp, MAX_PATH + 20, "%s deleted", vf->getPath());
+
+            int len = strlen(path) + 20;
+
+            char *tmp = new char[len];
+            memset(tmp, 0, len);
+
+            snprintf(tmp, len, "%s deleted", vf->getPath());
             vf->setPath(tmp);
 
             _vfmap.erase(iter);     //删掉原来的节点
             _vfmap.insert(std::pair<std::string, virtualFile *>(std::string(tmp), vf)); //以新文件名从新插入
+
+            delete []tmp;
         }
     }
 }

@@ -88,7 +88,7 @@ class TemplateFile;                  //占位
 class virtualFile
 {
 private:
-    char _path[MAX_PATH];
+    char * _path;
 
     pthread_mutex_t _ref_lock;
     unsigned int refrence;                   //文件引用计数
@@ -103,6 +103,8 @@ private:
 public:
     virtualFile(char * path)
     {
+        _path = new char[strlen(path) + 1];
+        memset(_path, 0, strlen(path) + 1);
         strcpy(_path, path);
 
         pthread_mutex_init(&_ref_lock, NULL);
@@ -159,7 +161,21 @@ public:
     int vftruncate64(virtualFileDescribe* pvfd, off64_t length);
 
     char * getPath() {return _path;}
-    void setPath(char * path) { strncpy(_path, path, MAX_PATH); }
+    void setPath(char * path)
+    {
+        if(_path)
+        {
+            delete []_path;
+            _path = NULL;
+        }
+
+        if(_path == NULL)
+        {
+            _path = new char[strlen(path) + 1];
+            memset(path, 0, strlen(path) + 1);
+        }
+        strncpy(_path, path, strlen(path) + 1);
+    }
 
     bool create(virtualFileDescribe* pvfd);
 

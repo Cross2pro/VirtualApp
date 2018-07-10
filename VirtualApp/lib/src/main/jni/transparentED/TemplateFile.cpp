@@ -20,7 +20,7 @@ TemplateFile::TemplateFile() {
 
     memset(flag_for_check, false, sizeof(flag_for_check));
     memset(buf_for_check, 0, sizeof(buf_for_check));
-    memset(_path, 0, 260);
+    _path = 0;
 }
 
 TemplateFile::~TemplateFile() {
@@ -36,6 +36,11 @@ TemplateFile::~TemplateFile() {
     {
         delete _ef_bk;
         _ef_bk = 0;
+    }
+
+    if(_path) {
+        delete[]_path;
+        _path = 0;
     }
 }
 
@@ -85,13 +90,18 @@ int TemplateFile::createTempFile(char *path, zString & tpath) {
     int num = sizeof(dirs) / sizeof(dirs[0]);
     for (i = 0; i < num; i++)
     {
-        char newpath[260] = {0};
+        int len = strlen(dirs[i]) + strlen(name) + 12;
+        char *newpath = new char[len];
+        memset(newpath, 0, len);
+
         sprintf(newpath, "%s/%s_%04ld.xt", dirs[i], name, rd);
         tpath.format("%s", newpath);
 
         log("judge : TemplateFile::createTempFile newpaht = %s", newpath);
 
         fd = originalInterface::original_openat(AT_FDCWD, newpath, O_RDWR|O_CREAT, S_IRWXU);
+
+        delete []newpath;
 
         if(fd > 0)
             break;
@@ -107,26 +117,25 @@ int TemplateFile::createTempFile(char *path, zString & tpath) {
 }
 
 bool TemplateFile::create(const char *path) {
-
     zString tpath;
     _ef_fd = createTempFile((char *)path, tpath);
-
     if(_ef_fd <= 0) {
         log("judge : openat fail , reason %s\n", strerror(errno));
         return false;
     }
+
+    _path = new char[strlen(path) + 1];
+    memset(_path, 0, strlen(path) + 1);
     strcpy(_path, path);
+
     _ef_bk = new EncryptFile(tpath.toString());
     if(!_ef_bk->create(_ef_fd, ENCRYPT_WRITE))
     {
-        log("judge : _ef_bk->create fail\n");
-
         delete _ef_bk;
         originalInterface::original_close(_ef_fd);
         //删除文件
         originalInterface::original_unlinkat(AT_FDCWD, _ef_bk->getPath(), 0);
-
-        _ef_bk = 0;
+       _ef_bk = 0;
         _ef_fd = 0;
 
         return false;

@@ -14,7 +14,7 @@ class TemplateFile {
 private:
     EncryptFile* _ef_bk;      //同步写的备份文件
     int _ef_fd;
-    char _path[260];
+    char * _path;
 
 public:
     ssize_t read(int fd, char * buf, size_t len);
