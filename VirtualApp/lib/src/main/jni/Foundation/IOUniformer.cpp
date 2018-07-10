@@ -29,6 +29,10 @@ bool iu_loaded = false;
 
 using namespace xdja;
 
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+atomicVessel flag_for_vfds;
+
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
         return;
@@ -648,6 +652,8 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     doFileTrace(redirect_path, op.toString());
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
+
+        pthread_mutex_lock(&mut);
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
@@ -694,8 +700,10 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 LOGE("judge : **** force openat fail !!! ****");
             }
         }
+        pthread_mutex_unlock(&mut);
     }
     FREE(redirect_path, pathname);
+
     return ret;
 }
 
@@ -708,20 +716,28 @@ HOOK_DEF(int, close, int __fd) {
     doFileTrace(path.toString(), zlog.toString());
 
     int ret;
-    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
-    if(vfd.get() == nullptr) {
-    } else {
+    pthread_mutex_lock(&mut);
+    do {
+        ret = syscall(__NR_close, __fd);
+        if (ret < 0)
+            break;
 
-        log("trace_close fd[%d]path[%s]vfd[%p]", __fd, path.toString(), vfd.get());
-        virtualFileDescribeSet::getVFDSet().reset(__fd);
+        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
+        if (vfd.get() == nullptr) {
+        } else {
 
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
-        /******through this way to release vfd *********/
-        virtualFileDescribeSet::getVFDSet().release(vfd.get());
-        /***********************************************/
-    }
+            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, path.toString(), vfd.get());
+            virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-    ret = syscall(__NR_close, __fd);
+            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), __fd);
+            /******through this way to release vfd *********/
+            virtualFileDescribeSet::getVFDSet().release(vfd.get());
+            /***********************************************/
+        }
+
+    }while(false);
+    pthread_mutex_unlock(&mut);
+
     return ret;
 }
 
@@ -1016,7 +1032,9 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     zString path;
     getPathFromFd(fd, path);
 
+    pthread_mutex_lock(&mut);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+    pthread_mutex_unlock(&mut);
     if(vfd.get() == nullptr) {
     } else {
         path.format("%s", vfd->_vf->getPath());
@@ -1079,7 +1097,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
             bool nowrite = (prot & PROT_WRITE) == 0;
             if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
                 LOGE("__mmap2 mprotect failed.");
-            } else {
+            } else {    
                 off64_t pos = pgoffset * 4096;
                 vfd->_vf->vpread64(vfd.get(), (char *) ret, length, pos);
 
@@ -1439,6 +1457,7 @@ HOOK_DEF(int, dup, int oldfd)
     doFileTrace(path.toString(), zlog.toString());
 
     if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
+        pthread_mutex_lock(&mut);
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
@@ -1481,6 +1500,7 @@ HOOK_DEF(int, dup, int oldfd)
                 LOGE("judge : **** force openat fail !!! ****");*/
             }
         }
+        pthread_mutex_unlock(&mut);
     }
 
     return ret;
