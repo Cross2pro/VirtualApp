@@ -61,7 +61,9 @@ const char * TED_packageVector[] =
                 "com.tencent.mm",
                 "cn.wps.moffice",
                 "com.android.gallery3d",
-                "com.xdja.decrypt"
+                "com.xdja.decrypt",
+                "android.process.media",
+                "com.xdja.eoa"
         };
 
 bool is_TED_Enable()
