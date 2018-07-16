@@ -1,12 +1,12 @@
 package com.lody.virtual.client.hook.proxies.telephony;
 
 import android.telephony.PhoneStateListener;
+import android.util.Log;
 
-import com.lody.virtual.Build;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceSequencePkgMethodProxy;
-import com.lody.virtual.client.ipc.VLocationManager;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 
 import java.lang.reflect.Method;
 
@@ -23,6 +23,16 @@ public class TelephonyRegistryStub extends BinderInvocationProxy {
         super.onBindMethods();
         addMethodProxy(new ReplaceCallingPkgMethodProxy("listen"));
         addMethodProxy(new ReplaceSequencePkgMethodProxy("listenForSubscriber", 1) {
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+                if (appPermissionEnable) {
+                    Log.e("geyao_TelephonyRegStub", "listenForSubscriber return");
+                    return null;
+                }
+                return super.call(who, method, args);
+            }
+
             @Override
             public boolean beforeCall(Object who, Method method, Object... args) {
                 if (android.os.Build.VERSION.SDK_INT >= 17) {

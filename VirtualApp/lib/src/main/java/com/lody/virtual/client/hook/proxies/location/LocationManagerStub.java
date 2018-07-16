@@ -2,14 +2,13 @@ package com.lody.virtual.client.hook.proxies.location;
 
 import android.content.Context;
 import android.os.Build;
-import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.Inject;
 import com.lody.virtual.client.hook.base.LogInvocation;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.ipc.VLocationManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 
 import java.lang.reflect.Method;
 
@@ -79,6 +78,12 @@ public class LocationManagerStub extends BinderInvocationProxy {
             addMethodProxy(new MethodProxies.RegisterGnssStatusCallback());
             addMethodProxy(new MethodProxies.UnregisterGnssStatusCallback());
         }
+
+
+        addMethodProxy(new MethodProxies.getAllProviders());
+        addMethodProxy(new MethodProxies.getProviderProperties());
+        addMethodProxy(new MethodProxies.sendExtraCommand());
+        addMethodProxy(new MethodProxies.locationCallbackFinished());
     }
 
     private static class FakeReplaceLastPkgMethodProxy extends ReplaceLastPkgMethodProxy {
@@ -91,6 +96,11 @@ public class LocationManagerStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", method.getName() + " return");
+                return 0;
+            }
             if (isFakeLocationEnable()) {
                 return mDefValue;
             }

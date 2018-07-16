@@ -18,14 +18,6 @@ public interface IAppPermissionManager extends IPCInterface {
     boolean isSupportPermission(String permissionName) throws RemoteException;
 
     /**
-     * 是否支持第三方加解密
-     *
-     * @param packageName 应用名称
-     * @return 是否支持第三方加解密
-     */
-    boolean isSupportEncrypt(String packageName) throws RemoteException;
-
-    /**
      * 清除权限数据
      */
     void clearPermissionData() throws RemoteException;

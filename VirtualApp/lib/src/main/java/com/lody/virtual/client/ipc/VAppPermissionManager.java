@@ -3,6 +3,7 @@ package com.lody.virtual.client.ipc;
 import android.content.ClipData;
 import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
@@ -84,7 +85,7 @@ public class VAppPermissionManager {
      * @return 是否是支持的权限
      */
     public boolean isSupportPermission(String permissionName) {
-        VLog.d(TAG, "isSupportPermission permissionName: " + permissionName);
+        VLog.d(TAG, "isSupportPermission permissionName: " + (TextUtils.isEmpty(permissionName) ? "is null" : permissionName));
         try {
             return getService().isSupportPermission(permissionName);
         } catch (RemoteException e) {
@@ -100,13 +101,8 @@ public class VAppPermissionManager {
      * @return 是否支持加解密 true:支持 false:不支持
      */
     public boolean isSupportEncrypt(String packageName) {
-        VLog.d(TAG, "isSupportEncrypt packageName: " + packageName);
-        try {
-            return getService().isSupportEncrypt(packageName);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-            return VirtualRuntime.crash(e);
-        }
+        VLog.d(TAG, "isSupportEncrypt packageName: " + (TextUtils.isEmpty(packageName) ? "" : packageName));
+        return !TextUtils.isEmpty(packageName) && getAppPermissionEnable(packageName, ALLOW_DATA_ENCRYPT_DECRYPT);
     }
 
     /**
@@ -130,7 +126,9 @@ public class VAppPermissionManager {
      * @param isPermissionOpen  权限开关
      */
     public void setAppPermission(String packageName, String appPermissionName, boolean isPermissionOpen) {
-        VLog.d(TAG, "setAppPermission packageName: " + packageName + " appPermissionName: " + appPermissionName + " isPermissionOpen: " + isPermissionOpen);
+        VLog.d(TAG, "setAppPermission packageName: " + (TextUtils.isEmpty(packageName) ? "" : packageName)
+                + " appPermissionName: " + (TextUtils.isEmpty(appPermissionName) ? "" : appPermissionName)
+                + " isPermissionOpen: " + isPermissionOpen);
         try {
             getService().setAppPermission(packageName, appPermissionName, isPermissionOpen);
         } catch (RemoteException e) {
@@ -147,7 +145,8 @@ public class VAppPermissionManager {
      * @return 权限开关状态
      */
     public boolean getAppPermissionEnable(String packageName, String appPermissionName) {
-        VLog.d(TAG, "getAppPermissionEnable packageName: " + packageName + " appPermissionName: " + appPermissionName);
+        VLog.d(TAG, "getAppPermissionEnable packageName: " + (TextUtils.isEmpty(packageName) ? "" : packageName)
+                + " appPermissionName: " + (TextUtils.isEmpty(appPermissionName) ? "" : appPermissionName));
         try {
             boolean appPermissionEnable = getService().getAppPermissionEnable(packageName, appPermissionName);
             VLog.d(TAG, "getAppPermissionEnable result: " + appPermissionEnable);
@@ -193,7 +192,8 @@ public class VAppPermissionManager {
      * @param permissionName 权限名称
      */
     public void interceptorTriggerCallback(String appPackageName, String permissionName) {
-        VLog.d(TAG, "interceptorTriggerCallback");
+        VLog.d(TAG, "interceptorTriggerCallback appPackageName: " + (TextUtils.isEmpty(appPackageName) ? "" : appPackageName)
+                + " permissionName: " + (TextUtils.isEmpty(permissionName) ? "" : permissionName));
         try {
             getService().interceptorTriggerCallback(appPackageName, permissionName);
         } catch (RemoteException e) {
@@ -269,5 +269,20 @@ public class VAppPermissionManager {
             e.printStackTrace();
             VirtualRuntime.crash(e);
         }
+    }
+
+    /**
+     * 获取位置拦截开关状态
+     *
+     * @param packageName 应用包名
+     * @return 开关状态 true:开启拦截 false:关闭拦截
+     */
+    public boolean getLocationEnable(String packageName) {
+        VLog.d(TAG, "getLocationEnable packageName: " + (TextUtils.isEmpty(packageName) ? "" : packageName));
+        boolean result = !TextUtils.isEmpty(packageName) && getAppPermissionEnable(packageName, PROHIBIT_LOCATION);
+        if (result) {
+            interceptorTriggerCallback(packageName, PROHIBIT_LOCATION);
+        }
+        return result;
     }
 }

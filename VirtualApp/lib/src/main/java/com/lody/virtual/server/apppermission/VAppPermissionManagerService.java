@@ -3,7 +3,6 @@ package com.lody.virtual.server.apppermission;
 import android.content.ClipData;
 import android.content.IOnPrimaryClipChangedListener;
 import android.os.RemoteException;
-import android.text.TextUtils;
 
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VAppPermissionManager;
@@ -60,19 +59,6 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
     public boolean isSupportPermission(String permissionName) {
         List<String> list = Arrays.asList(VAppPermissionManager.permissions);
         return list.contains(permissionName);
-    }
-
-    /**
-     * 是否支持加解密
-     *
-     * @param packageName 应用名称
-     * @return 是否支持加解密 true:支持 false:不支持
-     */
-    @Override
-    public boolean isSupportEncrypt(String packageName) {
-        boolean appPermissionEnable = getAppPermissionEnable(packageName,
-                VAppPermissionManager.ALLOW_DATA_ENCRYPT_DECRYPT);
-        return !TextUtils.isEmpty(packageName) && appPermissionEnable;
     }
 
     /**
@@ -201,6 +187,7 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
     public void removePrimaryClipChangedListener() {
         pcListener = null;
     }
+
 
     /**
      * 构建缓存权限map的key

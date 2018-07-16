@@ -3,10 +3,12 @@ package com.lody.virtual.client.hook.proxies.location;
 import android.location.LocationManager;
 import android.location.LocationRequest;
 import android.os.Build;
+import android.util.Log;
 
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.SkipInject;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.remote.vloc.VLocation;
@@ -45,6 +47,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "addGpsStatusListener return");
+                return true;
+            }
             if (isFakeLocationEnable()) {
                 VLocationManager.get().addGpsStatusListener(args);
                 return true;
@@ -66,6 +73,12 @@ class MethodProxies {
 
         @Override
         public Object call(final Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "requestLocationUpdates   return");
+                return 0;
+            }
+
             if (isFakeLocationEnable()) {
                 VLocationManager.get().requestLocationUpdates(args);
                 return 0;
@@ -109,13 +122,18 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "getLastLocation return");
+                return null;
+            }
             if (!(args[0] instanceof String)) {
                 LocationRequest request = (LocationRequest) args[0];
                 fixLocationRequest(request);
             }
             if (isFakeLocationEnable()) {
-                VLocation loc= VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
-                if(loc!=null){
+                VLocation loc = VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
+                if (loc != null) {
                     return loc.toSysLocation();
                 }
                 return null;
@@ -133,6 +151,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "getLastKnownLocation return");
+                return null;
+            }
             if (isFakeLocationEnable()) {
                 VLocation loc = VLocationManager.get().getLocation(getAppPkg(), getAppUserId());
                 if (loc != null) {
@@ -153,6 +176,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "isProviderEnabled return");
+                return false;
+            }
             if (isFakeLocationEnable()) {
                 if (args[0] instanceof String) {
                     return VLocationManager.get().isProviderEnabled((String) args[0]);
@@ -162,7 +190,7 @@ class MethodProxies {
         }
     }
 
-    private static class getAllProviders extends MethodProxy {
+    static class getAllProviders extends MethodProxy {
 
         @Override
         public String getMethodName() {
@@ -171,6 +199,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "getAllProviders return");
+                return null;
+            }
             if (isFakeLocationEnable()) {
                 return Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER);
             }
@@ -187,6 +220,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "getBestProvider return");
+                return null;
+            }
             if (isFakeLocationEnable()) {
                 return LocationManager.GPS_PROVIDER;
             }
@@ -252,6 +290,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "sendExtraCommand return");
+                return true;
+            }
             if (isFakeLocationEnable()) {
                 return true;
             }
@@ -268,6 +311,11 @@ class MethodProxies {
 
         @Override
         public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_LocationManStub", "getProviderProperties return");
+                return null;
+            }
             if (isFakeLocationEnable()) {
                 try {
                     Reflect.on(result).set("mRequiresNetwork", false);
@@ -284,16 +332,22 @@ class MethodProxies {
     static class locationCallbackFinished extends MethodProxy {
 
         @Override
+        public String getMethodName() {
+            return "locationCallbackFinished";
+        }
+
+        @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
+            if (appPermissionEnable) {
+                Log.e("geyao_TelephonyRegStub", "locationCallbackFinished return");
+                return true;
+            }
+
             if (isFakeLocationEnable()) {
                 return true;
             }
             return super.call(who, method, args);
-        }
-
-        @Override
-        public String getMethodName() {
-            return "locationCallbackFinished";
         }
     }
 }
