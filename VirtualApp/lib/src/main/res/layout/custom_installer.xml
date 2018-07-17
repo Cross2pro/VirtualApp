@@ -4,11 +4,64 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <RelativeLayout
+        android:id="@+id/rl_check"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="192px"
+                android:layout_height="192px"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="170dp"
+                android:src="@drawable/ic_install_check" />
+
+            <TextView
+                android:id="@+id/tv_check"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:text="正在检测..."
+                android:textColor="#01dd8d"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/tv_ckwarn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="10dp"
+                android:text="正在检测..."
+                android:textColor="#909090"
+                android:textSize="14dp"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_ckc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="78dp"
+                android:text="取消"
+                android:textColor="#909090"
+                android:textSize="16dp" />
+        </LinearLayout>
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/rl_install"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
 
         <LinearLayout
             android:id="@+id/ll_installing"
@@ -122,29 +175,6 @@
                 android:text="继续安装"
                 android:textColor="#01dd8d"
                 android:textSize="16sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/ll_check"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_alignParentBottom="false"
-            android:layout_marginTop="396dp"
-            android:orientation="horizontal"
-            android:visibility="invisible">
-
-            <Button
-                android:id="@+id/btn_check_cancle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginLeft="16dp"
-                android:layout_marginRight="16dp"
-                android:layout_weight="1"
-                android:background="@drawable/btn_install_quit"
-                android:text="取消"
-                android:textColor="#ffffff"
-                android:textSize="16sp" />
-
         </LinearLayout>
 
         <LinearLayout

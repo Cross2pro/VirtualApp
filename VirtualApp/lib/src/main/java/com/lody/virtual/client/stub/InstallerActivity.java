@@ -29,6 +29,7 @@ import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,6 +45,8 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.pm.VAppManagerService;
 
+import org.w3c.dom.Text;
+
 import java.io.File;
 
 /**
@@ -56,13 +59,17 @@ public class InstallerActivity extends Activity {
 
     private String TAG = "InstallerActivity";
 
+    RelativeLayout rl_check;
+    RelativeLayout rl_install;
+
     LinearLayout ll_install;
     LinearLayout ll_installing;
     LinearLayout ll_installed;
     LinearLayout ll_installed_1;
-    LinearLayout ll_check;
     LinearLayout ll_openning;
     TextView tv_warn;
+    TextView tv_ckwarn;
+    TextView tv_check;
     Button btn_open;
     ImageView img_appicon;
     TextView tv_appname;
@@ -76,18 +83,22 @@ public class InstallerActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.custom_installer);
+        rl_check = (RelativeLayout) findViewById(R.id.rl_check);
+        rl_install = (RelativeLayout) findViewById(R.id.rl_install);
         ll_install = (LinearLayout) findViewById(R.id.ll_install);
         ll_installing = (LinearLayout) findViewById(R.id.ll_installing);
         ll_installed = (LinearLayout) findViewById(R.id.ll_installed);
         ll_installed_1 = (LinearLayout) findViewById(R.id.ll_installed_1);
-        ll_check = (LinearLayout) findViewById(R.id.ll_check);
         ll_openning =(LinearLayout) findViewById(R.id.ll_openning);
         tv_warn = (TextView) findViewById(R.id.tv_warn);
         tv_warn.setText("警告：该应用不是来自安全盒应用中心，请注意应用安全。建议在安全盒应用中心下载使用该应用");
 
+
+        final TextView tv_ckc = (TextView) findViewById(R.id.tv_ckc);
+        tv_ckwarn = (TextView) findViewById(R.id.tv_ckwarn);
+        tv_check = (TextView) findViewById(R.id.tv_check);
         Button btn_install = (Button) findViewById(R.id.btn_install);
         Button btn_quit = (Button) findViewById(R.id.btn_quit);
-        Button btn_check_cancle = (Button) findViewById(R.id.btn_check_cancle);
         btn_open = (Button) findViewById(R.id.btn_open);
         Button btn_cancle = (Button) findViewById(R.id.btn_cancle);
         img_appicon = (ImageView) findViewById(R.id.img_appicon);
@@ -116,9 +127,10 @@ public class InstallerActivity extends Activity {
                 finish();
             }
         });
-        btn_check_cancle.setOnClickListener(new View.OnClickListener() {
+        tv_ckc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                tv_ckc.setTextColor(Color.parseColor("#4b4b4b"));
                 finish();
             }
         });
@@ -213,9 +225,10 @@ public class InstallerActivity extends Activity {
     }
 
     private void stateChanged(int state){
+        rl_check.setVisibility(View.GONE);
+        rl_install.setVisibility(View.VISIBLE);
         tv_source.setTextColor(Color.parseColor("#535353"));
         ll_openning.setVisibility(View.INVISIBLE);
-        ll_check.setVisibility(View.INVISIBLE);
         ll_install.setVisibility(View.INVISIBLE);
         ll_installing.setVisibility(View.INVISIBLE);
         ll_installed.setVisibility(View.INVISIBLE);
@@ -223,8 +236,10 @@ public class InstallerActivity extends Activity {
         tv_warn.setVisibility(tv_warn_isshow?View.VISIBLE:View.INVISIBLE);
         switch(state){
             case STATE_NONE:
-                tv_source.setTextColor(Color.parseColor("#01dd8d"));
-                ll_check.setVisibility(View.VISIBLE);
+                rl_check.setVisibility(View.VISIBLE);
+                rl_install.setVisibility(View.GONE);
+
+                tv_check.setTextColor(Color.parseColor("#01dd8d"));
                 break;
             case STATE_INSTALL:
                 ll_install.setVisibility(View.VISIBLE);
@@ -248,11 +263,12 @@ public class InstallerActivity extends Activity {
                 ll_openning.setVisibility(View.VISIBLE);
                 break;
             case STATE_CHECKERROR:
-                tv_source.setTextColor(Color.RED);
-                tv_source.setText("检测失败");
-                tv_warn.setText("提示：没有找到需要的安装包！");
-                tv_warn.setVisibility(View.VISIBLE);
-                ll_check.setVisibility(View.VISIBLE);
+                rl_check.setVisibility(View.VISIBLE);
+                rl_install.setVisibility(View.GONE);
+                tv_check.setTextColor(Color.RED);
+                tv_check.setText("检测失败");
+                tv_ckwarn.setText("提示：没有找到需要的安装包！");
+                tv_ckwarn.setVisibility(View.VISIBLE);
                 break;
         }
 
