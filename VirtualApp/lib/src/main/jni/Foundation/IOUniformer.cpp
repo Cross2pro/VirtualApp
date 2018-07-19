@@ -720,29 +720,21 @@ HOOK_DEF(int, close, int __fd) {
 
     int ret;
     pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
-    do {
-        ret = syscall(__NR_close, __fd);
-        if (ret < 0) {
-            pthread_rwlock_unlock(&_rw_lock_for_vfdset);
-            break;
-        }
+    xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
+    if (vfd.get() == nullptr) {
+    } else {
 
-        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
-        if (vfd.get() == nullptr) {
-            pthread_rwlock_unlock(&_rw_lock_for_vfdset);
-        } else {
+        log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
+        virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
-            virtualFileDescribeSet::getVFDSet().reset(__fd);
-            pthread_rwlock_unlock(&_rw_lock_for_vfdset);
+        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
+        /******through this way to release vfd *********/
+        virtualFileDescribeSet::getVFDSet().release(vfd.get());
+        /***********************************************/
+    }
 
-            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
-            /******through this way to release vfd *********/
-            virtualFileDescribeSet::getVFDSet().release(vfd.get());
-            /***********************************************/
-        }
-
-    }while(false);
+    ret = syscall(__NR_close, __fd);
+    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
 
     return ret;
 }

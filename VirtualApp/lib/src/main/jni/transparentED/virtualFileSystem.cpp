@@ -266,15 +266,15 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     {
         virtualFile * vf = iter->second;
         if(vf->delRef() == 0) {
-            struct stat buf;
-            buf.st_size = 0;
-
-            int fd = originalInterface::original_openat(AT_FDCWD, vf->getPath(), O_RDONLY, 0);
-            if(fd > 0) {
-                originalInterface::original_fstat(fd, &buf);
-                originalInterface::original_close(fd);
-            }
-            log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
+//            struct stat buf;
+//            buf.st_size = 0;
+//
+//            int fd = originalInterface::original_openat(AT_FDCWD, vf->getPath(), O_RDONLY, 0);
+//            if(fd > 0) {
+//                originalInterface::original_fstat(fd, &buf);
+//                originalInterface::original_close(fd);
+//            }
+//            log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
             vf->vclose(vfd.get());
             delete vf;
             _vfmap.erase(iter);
