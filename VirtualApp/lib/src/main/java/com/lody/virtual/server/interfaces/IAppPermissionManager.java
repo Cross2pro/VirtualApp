@@ -93,6 +93,20 @@ public interface IAppPermissionManager extends IPCInterface {
      */
     void removePrimaryClipChangedListener() throws RemoteException;
 
+    /**
+     * 设置安装第三方应用状态
+     *
+     * @param isEnable 是否可安装 true:允许安装第三方应用 false:不允许安装第三方应用
+     */
+    void setThirdAppInstallationEnable(boolean isEnable) throws RemoteException;
+
+    /**
+     * 获取是否可以安装第三方应用状态
+     *
+     * @return 是否可以安装第三方应用状态 true:可以安装第三方应用 false:不可以安装第三方应用
+     */
+    boolean getThirdAppInstallationEnable() throws RemoteException;
+
     abstract class Stub implements IAppPermissionManager {
         @Override
         public boolean isBinderAlive() {

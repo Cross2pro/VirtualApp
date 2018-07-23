@@ -40,6 +40,11 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
      */
     private static IOnPrimaryClipChangedListener pcListener;
 
+    /**
+     * 缓存是否允许安装第三方应用
+     */
+    private static boolean isAllowThirdAppInstallion;
+
     public static void systemReady() {
         sInstance = new VAppPermissionManagerService();
         functionMaps = new HashMap<>();
@@ -186,6 +191,26 @@ public class VAppPermissionManagerService extends IAppPermissionManager.Stub {
     @Override
     public void removePrimaryClipChangedListener() {
         pcListener = null;
+    }
+
+    /**
+     * 设置安装第三方应用状态
+     *
+     * @param isEnable 是否可安装 true:允许安装第三方应用 false:不允许安装第三方应用
+     */
+    @Override
+    public void setThirdAppInstallationEnable(boolean isEnable) {
+        isAllowThirdAppInstallion = isEnable;
+    }
+
+    /**
+     * 获取是否可以安装第三方应用状态
+     *
+     * @return 是否可以安装第三方应用状态 true:可以安装第三方应用 false:不可以安装第三方应用
+     */
+    @Override
+    public boolean getThirdAppInstallationEnable() {
+        return isAllowThirdAppInstallion;
     }
 
 

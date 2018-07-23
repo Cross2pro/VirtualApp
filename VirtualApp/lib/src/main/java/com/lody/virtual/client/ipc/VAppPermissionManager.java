@@ -285,4 +285,35 @@ public class VAppPermissionManager {
         }
         return result;
     }
+
+    /**
+     * 设置安装第三方应用状态
+     *
+     * @param isEnable 是否可安装 true:允许安装第三方应用 false:不允许安装第三方应用
+     */
+    public void setThirdAppInstallationEnable(boolean isEnable) {
+        VLog.d(TAG, "setThirdAppInstallationEnable isEnable: " + isEnable);
+        try {
+            getService().setThirdAppInstallationEnable(isEnable);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 获取是否可以安装第三方应用状态
+     *
+     * @return 是否可以安装第三方应用状态 true:可以安装第三方应用 false:不可以安装第三方应用
+     */
+    public boolean getThirdAppInstallationEnable() {
+        try {
+            boolean thirdAppInstallationEnable = getService().getThirdAppInstallationEnable();
+            VLog.d(TAG, "getThirdAppInstallationEnable isEnable: " + thirdAppInstallationEnable);
+            return thirdAppInstallationEnable;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return VirtualRuntime.crash(e);
+        }
+    }
 }
