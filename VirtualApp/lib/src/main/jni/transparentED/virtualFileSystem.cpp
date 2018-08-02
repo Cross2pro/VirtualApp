@@ -33,6 +33,22 @@ virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
     return vfd;
 }
 
+void virtualFileDescribeSet::setFlag(int idx, int flag) {
+    assert(idx >= 0 && idx < 1024);
+
+    items[idx].set((uint64_t)flag << 32);
+}
+
+uint32_t virtualFileDescribeSet::getFlag(int idx) {
+    assert(idx >= 0 && idx < 1024);
+    return (uint32_t)(items[idx].get() >> 32);
+}
+
+void virtualFileDescribeSet::clearFlag(int idx) {
+    assert(idx >= 0 && idx < 1024);
+
+    items[idx].resetFlag();
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 virtualFileManager g_VFM;
 /*
@@ -311,13 +327,11 @@ unsigned int virtualFile::delRef() {
 }
 
 vfileState virtualFile::getVFS() {
-    Autolock at_lock(_vfs_lock, (char*)__FUNCTION__, __LINE__);
     return _vfs;
 }
 
 void virtualFile::setVFS(vfileState vfs) {
-    Autolock at_lock(_vfs_lock, (char*)__FUNCTION__, __LINE__);
-    _vfs = vfs;
+    __sync_lock_test_and_set(&_vfs, vfs);
 }
 
 bool virtualFile::create(virtualFileDescribe* pvfd) {

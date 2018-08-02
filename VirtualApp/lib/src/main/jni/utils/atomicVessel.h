@@ -12,23 +12,27 @@
 class atomicVessel
 {
 private:
-    mutable volatile uint32_t thing;
+    mutable volatile uint64_t thing;
 
 public:
     atomicVessel() : thing(0) {}
     ~atomicVessel() {}
 
-    void set(uint32_t val) {
+    void set(uint64_t val) {
         __sync_fetch_and_or(&thing, val);
     }
 
     void reset() {
-        __sync_fetch_and_and(&thing, 0);
+        __sync_fetch_and_and(&thing, 0xFFFFFFFF00000000);
     }
 
-    uint32_t get() {
+    uint64_t get() {
         return __sync_fetch_and_or(&thing, 0);
-    } 
+    }
+
+    void resetFlag() {
+        __sync_fetch_and_and(&thing, 0x00000000FFFFFFFF);
+    }
 };
 
 #endif //VIRTUALAPP_ATOMICVESSEL_H

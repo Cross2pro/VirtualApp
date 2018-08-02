@@ -29,7 +29,11 @@ bool iu_loaded = false;
 
 using namespace xdja;
 
-pthread_rwlock_t _rw_lock_for_vfdset = PTHREAD_RWLOCK_INITIALIZER;
+enum flagState
+{
+    FD_CLOSED = 0,
+    FD_CLOSING = 1
+};
 
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
@@ -645,7 +649,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     }
 
     int ret = syscall(__NR_openat, fd, redirect_path, flags, mode);
-
+    log("openat fd[%d], flag %d", ret, virtualFileDescribeSet::getVFDSet().getFlag(ret));
     /*zString op("openat fd = %d err = %s", ret, strerror(errno));
     doFileTrace(redirect_path, op.toString());*/
 
@@ -656,15 +660,11 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
         /***************************************************/
-        pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
         virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
-        pthread_rwlock_unlock(&_rw_lock_for_vfdset);
         /*
         * 首先获取vfd，获取不到一定是发生异常，返回错误
         */
-        pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
         xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
-        pthread_rwlock_unlock(&_rw_lock_for_vfdset);
 
         if (vfd.get() == nullptr) {
             slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
@@ -682,9 +682,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 vf->vlseek(vfd.get(), 0, SEEK_SET);
             }
         } else {
-            pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
             virtualFileDescribeSet::getVFDSet().reset(ret);
-            pthread_rwlock_unlock(&_rw_lock_for_vfdset);
             /******through this way to release vfd *********/
             virtualFileDescribeSet::getVFDSet().release(pvfd);
             /***********************************************/
@@ -719,11 +717,12 @@ HOOK_DEF(int, close, int __fd) {
     doFileTrace(path.toString(), zlog.toString());*/
 
     int ret;
-    pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if (vfd.get() == nullptr) {
     } else {
+        virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
+        log("close fd[%d] set flag value :%d", __fd, virtualFileDescribeSet::getVFDSet().getFlag(__fd));
         log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
@@ -734,8 +733,8 @@ HOOK_DEF(int, close, int __fd) {
     }
 
     ret = syscall(__NR_close, __fd);
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
-
+    virtualFileDescribeSet::getVFDSet().clearFlag(__fd);
+    log("close fd[%d] clear flag value :%d", __fd, virtualFileDescribeSet::getVFDSet().getFlag(__fd));
     return ret;
 }
 
@@ -980,10 +979,12 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if (virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("pread64 fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vpread64(vfd.get(), (char *) buf, count, offset);
@@ -1007,10 +1008,12 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if (virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("pwrite64 fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vpwrite64(vfd.get(), (char *) buf, count, offset);
@@ -1034,10 +1037,12 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if (virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("read fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vread(vfd.get(), (char *) buf, count);
@@ -1061,10 +1066,12 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if (virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("write fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vwrite(vfd.get(), (char *) buf, count);
@@ -1094,11 +1101,13 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
     do {
         if (fd == -1) break;
 
-        pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
         xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-        pthread_rwlock_unlock(&_rw_lock_for_vfdset);
 
         if (vfd.get() == nullptr) {
+            if(virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+                log("__mmap2 fd[%d] flag is closing", fd);
+                return MAP_FAILED;
+            }
         } else {
             if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
                 flags |= MAP_ANONYMOUS;     //申请匿名内存
@@ -1146,10 +1155,12 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if(virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("fstat fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vfstat(vfd.get(), buf);
@@ -1173,10 +1184,12 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if(virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("lseek fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vlseek(vfd.get(), offset, whence);
@@ -1208,10 +1221,12 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if(virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("__llseek fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vllseek(vfd.get(), offset_high, offset_low, result, whence);
@@ -1236,10 +1251,12 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     zString path;
     /*getPathFromFd(fd, path);*/
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(vfd.get() == nullptr) {
+        if(virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+            log("ftruncate64 fd[%d] flag is closing", fd);
+            return -1;
+        }
     } else {
         path.format("%s", vfd->_vf->getPath());
         ret = vfd->_vf->vftruncate64(vfd.get(), length);
@@ -1263,11 +1280,15 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
     off_t off = 0;
     if(offset != 0)
         off = *offset;
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
+
     xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
     xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        if((virtualFileDescribeSet::getVFDSet().getFlag(out_fd)) &&
+           (virtualFileDescribeSet::getVFDSet().getFlag(in_fd))) {
+            log("sendfile out_fd[%d] and in_fd[%d] flag is closing", out_fd, in_fd);
+            return -1;
+        }
         //完全不管
         ret = orig_sendfile(out_fd, in_fd, offset, count);
     } else {
@@ -1297,6 +1318,11 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
         {
+            if (virtualFileDescribeSet::getVFDSet().getFlag(in_fd)) {
+                log("sendfile in_fd[%d] flag is closing", in_fd);
+                return -1;
+            }
+
             if(offset != 0)
             {
                 ignoreFile::lseek(in_fd, off, SEEK_SET);
@@ -1321,6 +1347,11 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         }
         else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
         {
+            if (virtualFileDescribeSet::getVFDSet().getFlag(out_fd)) {
+                log("sendfile out_fd[%d] flag is closing", out_fd);
+                return -1;
+            }
+
             if(offset != 0)
             {
                 in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
@@ -1367,11 +1398,14 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
     unsigned long off_hi = static_cast<unsigned long>(off >> 32);
     unsigned long off_lo = static_cast<unsigned long>(off);
 
-    pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
     xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
     xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
-    pthread_rwlock_unlock(&_rw_lock_for_vfdset);
     if(in_vfd.get() == nullptr && out_vfd.get() == nullptr) {
+        if((virtualFileDescribeSet::getVFDSet().getFlag(out_fd)) &&
+           (virtualFileDescribeSet::getVFDSet().getFlag(in_fd))) {
+            log("sendfile64 out_fd[%d] and in_fd[%d] flag is closing", out_fd, in_fd);
+            return -1;
+        }
         //完全不管
         ret = orig_sendfile64(out_fd, in_fd, offset, count);
     } else {
@@ -1403,6 +1437,11 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
         {
+            if (virtualFileDescribeSet::getVFDSet().getFlag(in_fd)) {
+                log("sendfile64 in_fd[%d] flag is closing", in_fd);
+                return -1;
+            }
+
             if(offset != 0)
             {
                 loff_t result;
@@ -1429,6 +1468,11 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
         }
         else if(in_vfd.get() != nullptr && out_vfd.get() == nullptr)
         {
+            if (virtualFileDescribeSet::getVFDSet().getFlag(out_fd)) {
+                log("sendfile64 out_fd[%d] flag is closing", out_fd);
+                return -1;
+            }
+
             if(offset != 0)
             {
                 loff_t result;
@@ -1483,16 +1527,12 @@ HOOK_DEF(int, dup, int oldfd)
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
         /***************************************************/
-        pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
         virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
-        pthread_rwlock_unlock(&_rw_lock_for_vfdset);
 
         /*
         * 首先获取vfd，获取不到一定是发生异常，返回错误
         */
-        pthread_rwlock_rdlock(&_rw_lock_for_vfdset);
         xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
-        pthread_rwlock_unlock(&_rw_lock_for_vfdset);
         if (vfd.get() == nullptr) {
             slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
             return -1;
@@ -1505,9 +1545,7 @@ HOOK_DEF(int, dup, int oldfd)
             vfd->_vf = vf;
             vf->vlseek(vfd.get(), 0, SEEK_SET);
         } else {
-            pthread_rwlock_wrlock(&_rw_lock_for_vfdset);
             virtualFileDescribeSet::getVFDSet().reset(ret);
-            pthread_rwlock_unlock(&_rw_lock_for_vfdset);
             /******through this way to release vfd *********/
             virtualFileDescribeSet::getVFDSet().release(pvfd);
             /***********************************************/

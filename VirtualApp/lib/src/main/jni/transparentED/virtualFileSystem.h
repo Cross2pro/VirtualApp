@@ -55,6 +55,9 @@ public:
     virtualFileDescribe * get(int idx);
 
     void release(virtualFileDescribe * vfd) { rl.release(vfd); }
+    void setFlag(int idx, int flag);
+    uint32_t getFlag(int idx);
+    void clearFlag(int idx);
 
     virtualFileDescribeSet()
     {}
