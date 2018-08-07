@@ -38,6 +38,7 @@ import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
@@ -181,6 +182,11 @@ public class InstallerActivity extends Activity {
         String path = intent.getStringExtra("installer_path");
         String source_apk_packagename = intent.getStringExtra("source_apk");
         String source_lable = intent.getStringExtra("source_label");
+        if(VAppPermissionManager.get().getThirdAppInstallationEnable()){
+            InstallerSetting.showToast(this,"安全策略已组织第三方应用安装", Toast.LENGTH_LONG);
+            finish();
+            return;
+        }
         Log.e("lxf", " Install path : " + path);
         if(source_lable!=null){
             tv_source.setText("应用来源："+source_lable);
