@@ -9,6 +9,8 @@ import android.util.Log;
 
 import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.Singleton;
+import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.server.interfaces.IControllerServiceCallback;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +22,8 @@ public class controllerService extends IController.Stub {
     private static HashMap<String, HashSet<String>> IPMAP = new HashMap<>();
     private static HashSet<String> JXIP_list = new HashSet<String>();
     private static boolean activitySwitchFlag = true;
+
+    private IControllerServiceCallback mCSCallback = null;
 
     static {
 
@@ -124,6 +128,83 @@ public class controllerService extends IController.Stub {
     public void setActivitySwitch(boolean switchFlag) throws RemoteException {
         Log.e(Tag, "setActivitySwitch : " + switchFlag);
         activitySwitchFlag = switchFlag;
+    }
+
+    @Override
+    public void registerCallback(IControllerServiceCallback csCallback) throws RemoteException {
+        VLog.e(Tag, "controllerService registerCallback ");
+        if(csCallback != null){
+            mCSCallback = csCallback;
+        }else {
+            VLog.e(Tag, "controllerService csCallback is null, registerCallback failed");
+        }
+    }
+
+    @Override
+    public void unregisterCallback() throws RemoteException {
+        VLog.e(Tag, "controllerService unregisterCallback ");
+        mCSCallback = null;
+    }
+
+    @Override
+    public void appStart(String packageName) throws RemoteException {
+        try {
+            if (mCSCallback != null) {
+                mCSCallback.appStart(packageName);
+                VLog.e(Tag, "appStart " + packageName);
+            } else {
+                VLog.e(Tag, "mCSCallback is null ");
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void appStop(String packageName) throws RemoteException {
+        try {
+            if (mCSCallback != null) {
+                mCSCallback.appStop(packageName);
+                VLog.e(Tag, "appStop " + packageName);
+            } else {
+                VLog.e(Tag, "mCSCallback is null ");
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void appProcessStart(String packageName, String processName, int pid) throws RemoteException {
+        try {
+            if (mCSCallback != null) {
+                mCSCallback.appProcessStart(packageName, processName, pid);
+                VLog.e(Tag, "appProcessStart " + packageName + " process : " + processName + pid);
+            } else {
+                VLog.e(Tag, "mCSCallback is null ");
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void appProcessStop(String packageName, String processName, int pid) throws RemoteException {
+        try {
+            if (mCSCallback != null) {
+                mCSCallback.appProcessStop(packageName, processName, pid);
+                VLog.e(Tag, "appProcessStop " + packageName + "process : " + processName + pid);
+            } else {
+                VLog.e(Tag, "mCSCallback is null ");
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean isBinderAlive() {
+        return super.isBinderAlive();
     }
 
     private static void setIPMAP() {

@@ -35,7 +35,6 @@ import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.ProviderCall;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.stub.VASettings;
-import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ApplicationThreadCompat;
@@ -56,6 +55,7 @@ import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.secondary.BinderDelegateService;
+import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -745,11 +745,31 @@ public class VActivityManagerService extends IActivityManager.Stub {
         app.client = client;
         app.appThread = thread;
         app.pid = pid;
+        notifyAppProcessStatus(app, 0, true);
         synchronized (mProcessNames) {
             mProcessNames.put(app.processName, app.vuid, app);
         }
         synchronized (mPidsSelfLocked) {
             mPidsSelfLocked.put(app.pid, app);
+        }
+
+    }
+
+    private void notifyAppProcessStatus(ProcessRecord app, int uid, boolean status){
+        try{
+            if(status == true) {
+                controllerManager.get().getService().appProcessStart(app.info.packageName, app.processName, app.pid);
+                if (!isAppRunning(app.info.packageName, uid)) {
+                    controllerManager.get().getService().appStart(app.info.packageName);
+                }
+            }else {
+                controllerManager.get().getService().appProcessStop(app.info.packageName, app.processName, app.pid);
+                if (!isAppRunning(app.info.packageName, uid)) {
+                    controllerManager.get().getService().appStop(app.info.packageName);
+                }
+            }
+        }catch (RemoteException e){
+            e.printStackTrace();
         }
     }
 
@@ -759,6 +779,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             synchronized (mPidsSelfLocked) {
                 mPidsSelfLocked.remove(record.pid);
             }
+            notifyAppProcessStatus(record, 0, false);
             processDead(record);
             record.lock.open();
         }
@@ -978,7 +999,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
             int N = mPidsSelfLocked.size();
             while (N-- > 0) {
                 ProcessRecord r = mPidsSelfLocked.valueAt(N);
-
                 if (r.userId == userId && r.info.packageName.equals(packageName)) {
                     running = true;
                     break;

@@ -97,4 +97,36 @@ public class controllerManager {
             VirtualRuntime.crash(e);
         }
     }
+
+    public void appStart(String packageName) throws RemoteException {
+        try{
+            controllerManager.get().getService().appStart(packageName);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void appStop(String packageName) throws RemoteException {
+        try{
+            controllerManager.get().getService().appStop(packageName);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void appProcessStart(String packageName, String processName, int pid) throws RemoteException {
+        try{
+            controllerManager.get().getService().appProcessStart(packageName, processName, pid);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void appProcessStop(String packageName, String processName, int pid) throws RemoteException {
+        try{
+            controllerManager.get().getService().appProcessStop(packageName, processName, pid);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }

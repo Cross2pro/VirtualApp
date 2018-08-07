@@ -2,6 +2,7 @@ package com.xdja.zs;
 
 import android.os.RemoteException;
 
+import com.lody.virtual.server.interfaces.IControllerServiceCallback;
 import com.lody.virtual.server.interfaces.IPCInterface;
 
 /**
@@ -18,6 +19,14 @@ public interface IController extends IPCInterface {
 
     boolean getActivitySwitch() throws RemoteException;
     void setActivitySwitch(boolean switchFlag) throws RemoteException;
+
+    void registerCallback(IControllerServiceCallback csCallback) throws RemoteException;
+    void unregisterCallback() throws RemoteException;
+
+    void appStart(String packageName) throws RemoteException;
+    void appStop(String packageName) throws RemoteException;
+    void appProcessStart(String packageName, String processName, int pid) throws RemoteException;
+    void appProcessStop(String packageName, String processName, int pid) throws RemoteException;
 
     abstract class Stub implements IController {
         @Override
