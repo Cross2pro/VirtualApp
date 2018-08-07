@@ -308,8 +308,7 @@ void virtualFile::unlockWhole() {
 }
 
 unsigned int virtualFile::addRef() {
-    Autolock at_lock(_ref_lock, (char*)__FUNCTION__, __LINE__);
-    ++refrence;
+    __sync_add_and_fetch(&refrence, 1);
 
     log("virtualFile::addRef [refrence %u][%s]", refrence, _path);
 
@@ -317,9 +316,8 @@ unsigned int virtualFile::addRef() {
 }
 
 unsigned int virtualFile::delRef() {
-    Autolock at_lock(_ref_lock, (char*)__FUNCTION__, __LINE__);
     if(refrence > 0)
-        --refrence;
+        __sync_sub_and_fetch(&refrence, 1);
 
     log("virtualFile::delRef [refrence %u] [%s]", refrence, _path);
 
