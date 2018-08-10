@@ -384,9 +384,6 @@ class MethodProxies {
                 }
             }
 
-            Log.e("lxf","startActivity action "+ action);
-            Log.e("lxf","startActivity uri "+ intent.getDataString());
-
             intent.setDataAndType(intent.getData(), resolvedType);
             if ("*/*".equals((String) args[intentIndex + 1])) {
                 args[intentIndex + 1] = resolvedType;
@@ -405,9 +402,6 @@ class MethodProxies {
             }
 
             if (ComponentUtils.isStubComponent(intent)) {
-                Log.e("lxf","startActivity isStubComponent "+ true);
-                Log.e("lxf","startActivity isStubComponent "+ intent.getComponent().getPackageName());
-
                 return method.invoke(who, args);
             }
 

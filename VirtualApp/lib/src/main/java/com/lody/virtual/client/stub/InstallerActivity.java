@@ -84,6 +84,13 @@ public class InstallerActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.custom_installer);
+
+        if(!VAppPermissionManager.get().getThirdAppInstallationEnable()){
+            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
+            finish();
+            return;
+        }
+
         rl_check = (RelativeLayout) findViewById(R.id.rl_check);
         rl_install = (RelativeLayout) findViewById(R.id.rl_install);
         ll_install = (LinearLayout) findViewById(R.id.ll_install);
@@ -182,12 +189,6 @@ public class InstallerActivity extends Activity {
         String path = intent.getStringExtra("installer_path");
         String source_apk_packagename = intent.getStringExtra("source_apk");
         String source_lable = intent.getStringExtra("source_label");
-        if(VAppPermissionManager.get().getThirdAppInstallationEnable()){
-            InstallerSetting.showToast(this,"安全策略已组织第三方应用安装", Toast.LENGTH_LONG);
-            finish();
-            return;
-        }
-        Log.e("lxf", " Install path : " + path);
         if(source_lable!=null){
             tv_source.setText("应用来源："+source_lable);
         }else {

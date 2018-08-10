@@ -20,7 +20,6 @@ import java.lang.reflect.Method;
     @Override
     public Object call(Object who, Method method, Object... args) throws Throwable {
         int index = ArrayUtils.indexOfFirst(args, WindowManager.LayoutParams.class);
-        Log.e("lxf_watermark","method "+getMethodName());
         if (index != -1) {
             WindowManager.LayoutParams attrs = (WindowManager.LayoutParams) args[index];
             if (attrs != null) {
