@@ -214,7 +214,7 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
 
             if (!S_ISREG(sb.st_mode)) {
                 //LOGE("judge : S_ISREG return false");
-                break;      //不是普通文件不处理
+                break;      //不处理
             }
 
             if (sb.st_size == 0) {
@@ -347,13 +347,10 @@ bool virtualFile::create(virtualFileDescribe* pvfd) {
         {
             ef = new EncryptFile(_path);
             bool ret = ef->create(vfd->_fd, ENCRYPT_READ);
-            log("_path = %s ret = %d",_path,ret);
             if(!ret) {
-                log("_path in !ret");
                 delete ef;
                 ef = 0;
             }
-            log("out _path = %s ret = %d",_path,ret);
             return ret;
         }
     } else if(vfs == VFS_TESTING) {
