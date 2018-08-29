@@ -349,7 +349,6 @@ int EncryptFile::llseek(int fd, unsigned long offset_high, unsigned long offset_
         case SEEK_SET:
         {
             off64_t offset = 0;
-
             offset |= offset_high;
             offset <<= 32;
             offset |= offset_low;
@@ -438,5 +437,34 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
         length += getHeadOffset();
     }
 
-    return originalInterface::original_ftruncate64(fd, length);
+    struct stat st;
+    originalInterface::original_fstat(fd,&st);
+
+    if(length <= st.st_size)
+    {
+        return originalInterface::original_ftruncate64(fd,length);
+    } else {
+        int ext_length = length - st.st_size;
+
+        int elen = 0;
+
+        char  buf[ext_length];
+        char  ebuf[ext_length];
+
+        memset(buf,0,sizeof(buf));
+        memset(ebuf,0, sizeof(ebuf));
+
+        fc2->encrypt((char *)buf, ext_length, (char *)ebuf, elen, lseek(fd, 0, SEEK_END));
+
+        log("encryptFlie ftruncate64 ext length = %d strerro = %s",ext_length,strerror(errno));
+
+        int ret = originalInterface::original_write(fd, ebuf, ext_length);
+
+        if (ret > 0) {
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+
 }
