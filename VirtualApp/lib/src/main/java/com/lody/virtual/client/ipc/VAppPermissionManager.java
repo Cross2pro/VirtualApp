@@ -54,6 +54,10 @@ public class VAppPermissionManager {
      */
     public static final String PROHIBIT_APP_UNINSTALL = "应用防卸载";
     /**
+     * 启用安全接入
+     */
+    public static final String ALLOW_SECURE_ACCESS = "启用安全接入";
+    /**
      * 目前支持的权限集合
      */
     public static final String[] permissions = new String[]{
@@ -65,7 +69,8 @@ public class VAppPermissionManager {
             PROHIBIT_SOUND_RECORD,//禁止使用录音功能
             PROHIBIT_LOCATION,//禁止读取位置信息
             ALLOW_DATA_ENCRYPT_DECRYPT,//应用数据加解密
-            PROHIBIT_APP_UNINSTALL//应用防卸载
+            PROHIBIT_APP_UNINSTALL,//应用防卸载
+            ALLOW_SECURE_ACCESS//启用安全接入
     };
     private static final VAppPermissionManager sInstance = new VAppPermissionManager();
     private IPCSingleton<IAppPermissionManager> singleton = new IPCSingleton<>(IAppPermissionManager.class);
