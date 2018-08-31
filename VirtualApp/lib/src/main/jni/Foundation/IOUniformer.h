@@ -24,6 +24,34 @@
   ret (*orig_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)
 
+enum flagState
+{
+    FD_CLOSED = 0,
+    FD_CLOSING = 1
+};
+
+class MmapFileInfo {
+public:
+    char * _path;
+    size_t _offsize;
+    int _flag;
+
+public:
+    MmapFileInfo(char *path, size_t offsize, int flag) {
+        _path = new char[strlen(path) + 1];
+        memset(_path, 0, strlen(path) + 1);
+        strcpy(_path, path);
+        _offsize = offsize;
+        _flag = flag;
+    }
+
+    ~MmapFileInfo() {
+        if (_path) {
+            delete[]_path;
+            _path = 0;
+        }
+    }
+};
 
 namespace IOUniformer {
 

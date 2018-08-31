@@ -27,13 +27,8 @@ bool iu_loaded = false;
 #include "transparentED/virtualFileSystem.h"
 #include "utils/mylog.h"
 
+std::map<uint32_t, MmapFileInfo *> MmapInfoMap;
 using namespace xdja;
-
-enum flagState
-{
-    FD_CLOSED = 0,
-    FD_CLOSING = 1
-};
 
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
@@ -722,7 +717,6 @@ HOOK_DEF(int, close, int __fd) {
     } else {
         virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
-        log("close fd[%d] set flag value :%d", __fd, virtualFileDescribeSet::getVFDSet().getFlag(__fd));
         log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
@@ -734,7 +728,6 @@ HOOK_DEF(int, close, int __fd) {
 
     ret = syscall(__NR_close, __fd);
     virtualFileDescribeSet::getVFDSet().clearFlag(__fd);
-    log("close fd[%d] clear flag value :%d", __fd, virtualFileDescribeSet::getVFDSet().getFlag(__fd));
     return ret;
 }
 
@@ -976,8 +969,8 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
     ssize_t ret = 0;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -986,7 +979,7 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vpread64(vfd.get(), (char *) buf, count, offset);
         flag = true;
     }
@@ -1005,8 +998,8 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
     ssize_t ret = 0;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1015,7 +1008,7 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vpwrite64(vfd.get(), (char *) buf, count, offset);
         flag = true;
     }
@@ -1034,8 +1027,8 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
     ssize_t ret = 0;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1044,7 +1037,7 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vread(vfd.get(), (char *) buf, count);
         flag = true;
     }
@@ -1063,8 +1056,8 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
     ssize_t ret = 0;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1073,7 +1066,7 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vwrite(vfd.get(), (char *) buf, count);
         flag = true;
     }
@@ -1090,7 +1083,84 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
 
 HOOK_DEF(int, munmap, void *addr, size_t length) {
     int ret = -1;
+
+    MmapFileInfo *fileInfo = 0;
+    std::map<uint32_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::uint32_t(addr));
+    if (iter != MmapInfoMap.end()) {
+        MmapInfoMap.erase(iter);
+        fileInfo = iter->second;
+        if ((fileInfo->_flag & MAP_SHARED)) {
+            int fd = syscall(__NR_openat, AT_FDCWD, fileInfo->_path, O_RDWR, 0);
+
+            if (fd > 0) {
+                virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
+                pvfd->incStrong(0);
+                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
+                xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+
+                if (vfd.get() == nullptr) {
+                    slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
+                    return -1;
+                }
+
+                int _Errno;
+                virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), fileInfo->_path,
+                                                                     &_Errno);
+                if (vf != NULL) {
+                    vf->vpwrite64(vfd.get(), (char *) addr, length, fileInfo->_offsize);
+                }
+
+                virtualFileDescribeSet::getVFDSet().reset(fd);
+                virtualFileDescribeSet::getVFDSet().release(pvfd);
+                virtualFileManager::getVFM().deleted(fileInfo->_path);
+                syscall(__NR_close, fd);
+            }
+        }
+    }
+
     ret = syscall(__NR_munmap, addr, length);
+
+    return ret;
+}
+
+HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
+    int ret = -1;
+
+    MmapFileInfo *fileInfo = 0;
+    std::map<uint32_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::uint32_t(addr));
+    if (iter != MmapInfoMap.end()) {
+        fileInfo = iter->second;
+        if ((fileInfo->_flag & MAP_SHARED)) {
+            int fd = syscall(__NR_openat, AT_FDCWD, fileInfo->_path, O_RDWR, 0);
+
+            if (fd > 0) {
+                virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
+                pvfd->incStrong(0);
+                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
+                xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
+
+                if (vfd.get() == nullptr) {
+                    slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
+                    return -1;
+                }
+
+                int _Errno;
+                virtualFile *vf = virtualFileManager::getVFM().getVF(vfd.get(), fileInfo->_path,
+                                                                     &_Errno);
+                if (vf != NULL) {
+                    vf->vpwrite64(vfd.get(), (char *) addr, size, fileInfo->_offsize);
+                }
+
+                virtualFileDescribeSet::getVFDSet().reset(fd);
+                virtualFileDescribeSet::getVFDSet().release(pvfd);
+                virtualFileManager::getVFM().deleted(fileInfo->_path);
+                syscall(__NR_close, fd);
+            }
+        }
+    }
+
+    ret = syscall(__NR_msync, addr, size, flags);
+
     return ret;
 }
 
@@ -1125,6 +1195,8 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                             LOGE("__mmap2 mprotect restore prot fails.");
                         }
                     }
+                    MmapFileInfo *fileInfo = new MmapFileInfo(vfd->_vf->getPath(), pgoffset, flags);
+                    MmapInfoMap.insert(std::pair<uint32_t, MmapFileInfo *>(uint32_t(ret), fileInfo));
 
                     flag = true;
                 }
@@ -1152,8 +1224,8 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     int ret;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1162,7 +1234,7 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vfstat(vfd.get(), buf);
         flag = true;
     }
@@ -1181,8 +1253,8 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
     off_t ret;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1191,7 +1263,7 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vlseek(vfd.get(), offset, whence);
         flag = true;
     }
@@ -1218,8 +1290,8 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
 
     int ret;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1228,7 +1300,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vllseek(vfd.get(), offset_high, offset_low, result, whence);
         flag = true;
     }
@@ -1248,8 +1320,8 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     int ret;
     bool flag = false;
 
-    zString path;
-    /*getPathFromFd(fd, path);*/
+    /*zString path;
+    getPathFromFd(fd, path);*/
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
     if(vfd.get() == nullptr) {
@@ -1258,7 +1330,7 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
             return -1;
         }
     } else {
-        path.format("%s", vfd->_vf->getPath());
+        /*path.format("%s", vfd->_vf->getPath());*/
         ret = vfd->_vf->vftruncate64(vfd.get(), length);
         flag = true;
     }
@@ -1694,6 +1766,7 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
         HOOK_SYMBOL(handle, connect);
+        HOOK_SYMBOL(handle, msync);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
             HOOK_SYMBOL(handle, __open);
