@@ -375,12 +375,10 @@ class MethodProxies {
             String action = intent.getAction();
             if(Intent.ACTION_VIEW.equals(action)&&"*/*".equals(resolvedType)){
                 String suffix = MimeTypeMap.getFileExtensionFromUrl(intent.getDataString());
-                Log.e("lxf","startActivity suffix "+ suffix);
                 if(suffix!=null){
                     String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix);
                     if(type!=null)
                         resolvedType = type;
-                    Log.e("lxf","startActivity resolvedType "+ resolvedType);
                 }
             }else if("android.media.action.IMAGE_CAPTURE".equals(action)){
                 intent.putExtra("IS_DECRYPT", NativeEngine.nativeGetDecryptState());

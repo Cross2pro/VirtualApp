@@ -191,7 +191,6 @@ public class ComponentUtils {
         Intent newIntent = intent.cloneFilter();
         switch (type) {
             case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
-                Log.e("lxf","IntentSender Action "+ intent.getAction()+ " type "+ intent.getType());
                 if(Intent.ACTION_VIEW.equalsIgnoreCase(intent.getAction())
                         && "application/vnd.android.package-archive".equalsIgnoreCase(intent.getType())){
                     Intent intent1 = new Intent();

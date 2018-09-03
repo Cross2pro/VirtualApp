@@ -123,7 +123,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         try {
             String filePath = getApplicationContext().getFilesDir().getAbsolutePath();
             String fileName = filePath + "/magic.mgc";
-            Log.e("lxf","magic file at "+ fileName);
             File f = new File(fileName);
             if (!f.exists()) {
                 new File(filePath).mkdirs();

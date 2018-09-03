@@ -31,9 +31,6 @@ public class MethodProxies {
             String newName = (String) args[1];
             int userid = (int)args[2];
 
-            Log.e(getClass().getName(),"lxf oldPackageName "+oldname);
-            Log.e(getClass().getName(),"lxf newPackageName "+newName);
-            Log.e(getClass().getName(),"lxf userid "+userid);
             return method.invoke(who, args);
         }
 

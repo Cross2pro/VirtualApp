@@ -157,7 +157,6 @@ public class InstallerActivity extends Activity {
 
         String path = getIntent().getStringExtra("installer_path");
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
-        Log.e("lxf", " Check path : " + path);
         if("com.tencent.mm".equals(source_apk_packagename)
                 ||"cn.wps.moffice".equals(source_apk_packagename)
                 ||"com.android.gallery3d".equals(source_apk_packagename)
@@ -393,7 +392,6 @@ public class InstallerActivity extends Activity {
                 boolean apkexit = file.exists();
                 if(apkexit){
                     boolean delsuc = FileUtils.deleteDir(apkinfo.path);
-                    Log.e("lxf","Installer delete apk "+ apkinfo.path + " "+delsuc);
                     if(delsuc){
                         InstallerSetting.showToast(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT);
                     }else{
@@ -418,7 +416,6 @@ public class InstallerActivity extends Activity {
     BroadcastReceiver myReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.e("lxf","Installer receiver intent: "+ intent.toString());
             stateChanged(STATE_CHECKERROR);
         }
     };

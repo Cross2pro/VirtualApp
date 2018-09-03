@@ -512,12 +512,9 @@ public final class VClient extends IVClient.Stub {
             String filename = f.getAbsolutePath();
             if(filename.contains("/emulated/0/"))
                 continue;
-            Log.e("lxf","XXX " + f.getAbsolutePath());
             String tfRoot = VEnvironment.getTFRoot(f.getAbsolutePath()).getAbsolutePath();
             NativeEngine.redirectDirectory(tfRoot+subPathData
                     ,VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
-            Log.e("lxf","XXX " + tfRoot+subPathData);
-            Log.e("lxf","XXX " + VEnvironment.getTFVirtualRoot(tfRoot,subPathData).getAbsolutePath());
         }
 
         VirtualStorageManager vsManager = VirtualStorageManager.get();

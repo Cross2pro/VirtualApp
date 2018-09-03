@@ -33,17 +33,14 @@ public class MyComponentDelegate implements ComponentDelegate {
 
     @Override
     public void beforeApplicationCreate(Application application) {
-        Log.e("lxf", "beforeApplicationCreate ");
     }
 
     @Override
     public void afterApplicationCreate(Application application) {
-        Log.e("lxf", "afterApplicationCreate ");
         //TODO: listen activity lifecycle
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                Log.e("lxf", "onActivityCreated "+activity.getLocalClassName());
                 Intent intent = activity.getIntent();
                 if(intent!=null && MediaStore.ACTION_IMAGE_CAPTURE.equals(intent.getAction())){
                     boolean decrypt = intent.getBooleanExtra("IS_DECRYPT",false);
@@ -55,7 +52,6 @@ public class MyComponentDelegate implements ComponentDelegate {
 
             @Override
             public void onActivityStarted(Activity activity) {
-                Log.e("lxf", "onActivityStarted "+activity.getLocalClassName());
 
                 //fix crash of youtube#sound keys move to ActivityFixer
             }
@@ -63,7 +59,6 @@ public class MyComponentDelegate implements ComponentDelegate {
             @Override
             public void onActivityResumed(Activity activity) {
                 mProcessTopActivity = activity;
-                Log.e("lxf", "onActivityResumed "+activity.getLocalClassName());
 //                boolean issd = isStubDialog(activity);
 //                Log.e("lxf", "isStubDialog "+issd);
 //                if(issd)
@@ -81,7 +76,6 @@ public class MyComponentDelegate implements ComponentDelegate {
 
                 @Override
                 public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                    Log.e("lxf", "onLayoutChange w "+v.getMeasuredWidth()+" h "+v.getMeasuredHeight());
                     v.setForeground(null);
                     int screenWidth = v.getMeasuredWidth();
                     int screenHeight = v.getMeasuredHeight();
@@ -95,7 +89,6 @@ public class MyComponentDelegate implements ComponentDelegate {
             }
             @Override
             public void onActivityPaused(Activity activity) {
-                Log.e("lxf", "onActivityPaused "+activity.getLocalClassName());
                 if (mProcessTopActivity == activity) {
                     mProcessTopActivity = null;
                 }
@@ -103,12 +96,10 @@ public class MyComponentDelegate implements ComponentDelegate {
 
             @Override
             public void onActivityStopped(Activity activity) {
-                Log.e("lxf", "onActivityStopped "+activity.getLocalClassName());
             }
 
             @Override
             public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-                Log.e("lxf", "onActivitySaveInstanceState "+activity.getLocalClassName());
             }
 
             @Override
@@ -166,18 +157,15 @@ public class MyComponentDelegate implements ComponentDelegate {
     }
     @Override
     public void beforeActivityCreate(Activity activity) {
-        Log.e("lxf", "beforeActivityCreate ");
     }
 
     @Override
     public void beforeActivityResume(Activity activity) {
-        Log.e("lxf", "beforeActivityResume ");
 
     }
 
     @Override
     public void beforeActivityPause(Activity activity) {
-        Log.e("lxf", "beforeActivityPause ");
 
     }
 
@@ -188,7 +176,6 @@ public class MyComponentDelegate implements ComponentDelegate {
 
     @Override
     public void afterActivityCreate(Activity activity) {
-        Log.e("lxf", "afterActivityCreate ");
     }
 
     @Override
@@ -252,7 +239,6 @@ public class MyComponentDelegate implements ComponentDelegate {
             canvas.restore();
         }
 
-        Log.e("lxf","onDraw end");
     }
 
 }
