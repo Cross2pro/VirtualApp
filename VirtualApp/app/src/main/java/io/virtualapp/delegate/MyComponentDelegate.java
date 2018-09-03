@@ -13,11 +13,13 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.delegate.ComponentDelegate;
 import com.lody.virtual.server.am.AttributeCache;
@@ -42,6 +44,13 @@ public class MyComponentDelegate implements ComponentDelegate {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
                 Log.e("lxf", "onActivityCreated "+activity.getLocalClassName());
+                Intent intent = activity.getIntent();
+                if(intent!=null && MediaStore.ACTION_IMAGE_CAPTURE.equals(intent.getAction())){
+                    boolean decrypt = intent.getBooleanExtra("IS_DECRYPT",false);
+                    NativeEngine.nativeChangeDecryptState(decrypt);
+                }else{
+                    NativeEngine.nativeChangeDecryptState(false);
+                }
             }
 
             @Override

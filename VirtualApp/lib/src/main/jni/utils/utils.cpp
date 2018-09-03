@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <cstdlib>
 #include <string.h>
+#include <map>
 
 #include "transparentED/originalInterface.h"
 #include "utils.h"
@@ -92,6 +93,19 @@ bool is_TED_Enable()
     }
 
     return temp_result == 1;
+}
+static bool decryptState = false;
+bool changeDecryptState(bool state,int mode){
+
+    if(mode==0){
+        decryptState = state;
+        return false;
+    }else if(mode==1) {
+        return decryptState;
+    }
+}
+bool getDecryptState(){
+    return is_TED_Enable()||decryptState;
 }
 
 const char * FT_packageVector[] =

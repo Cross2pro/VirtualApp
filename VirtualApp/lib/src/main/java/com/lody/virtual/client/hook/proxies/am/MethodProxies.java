@@ -382,6 +382,8 @@ class MethodProxies {
                         resolvedType = type;
                     Log.e("lxf","startActivity resolvedType "+ resolvedType);
                 }
+            }else if("android.media.action.IMAGE_CAPTURE".equals(action)){
+                intent.putExtra("IS_DECRYPT", NativeEngine.nativeGetDecryptState());
             }
 
             intent.setDataAndType(intent.getData(), resolvedType);

@@ -648,7 +648,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     /*zString op("openat fd = %d err = %s", ret, strerror(errno));
     doFileTrace(redirect_path, op.toString());*/
 
-    if(ret > 0 && is_TED_Enable() && isEncryptPath(redirect_path)) {
+    if(ret > 0 && (is_TED_Enable()||changeDecryptState(false,1)) && isEncryptPath(redirect_path)) {
 
 
         /*******************only here**********************/
@@ -1594,7 +1594,7 @@ HOOK_DEF(int, dup, int oldfd)
 
     doFileTrace(path.toString(), zlog.toString());*/
 
-    if(ret > 0 && is_TED_Enable() && isEncryptPath(path2.toString())) {
+    if(ret > 0 && (is_TED_Enable()||changeDecryptState(false,1)) && isEncryptPath(path2.toString())) {
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);

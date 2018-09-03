@@ -11,6 +11,8 @@
 
 bool getPathFromFd(int fd, zString & path);
 bool is_TED_Enable();
+bool changeDecryptState(bool,int);
+bool getDecryptState();
 void doFileTrace(const char* path, char* operation);
 bool isEncryptPath(const char *_path);
 const char * getMagicPath();

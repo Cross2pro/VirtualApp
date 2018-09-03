@@ -67,6 +67,12 @@ static jstring jni_nativeReverseRedirectedPath(alias_ref<jclass> jclazz, jstring
 static jboolean jni_nativeCloseAllSocket(JNIEnv *env, jclass jclazz){
     return (jboolean)closeAllSockets();
 }
+static void jni_nativeChangeDecryptState(JNIEnv *env,jclass jclazz,jboolean state){
+    changeDecryptState(state,0);
+}
+static jboolean jni_nativeGetDecryptState(JNIEnv *env,jclass jclazz){
+    return getDecryptState();
+}
 
 alias_ref<jclass> nativeEngineClass;
 
@@ -105,6 +111,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
                                          jni_nativeCloseAllSocket),
                         makeNativeMethod("nativeDlOpenWhitelist",
                                          jni_nativeDlOpenWhitelist),
+                        makeNativeMethod("nativeChangeDecryptState",
+                                         jni_nativeChangeDecryptState),
+                        makeNativeMethod("nativeGetDecryptState",
+                                         jni_nativeGetDecryptState),
+
                 }
         );
     });

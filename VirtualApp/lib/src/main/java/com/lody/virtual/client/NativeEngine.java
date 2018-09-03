@@ -220,6 +220,10 @@ public class NativeEngine {
 
     public static native boolean nativeCloseAllSocket();
 
+    public static native void nativeChangeDecryptState(boolean state);
+
+    public static native boolean nativeGetDecryptState();
+
     private static native void nativeDlOpenWhitelist(String path);
 
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel, boolean needDlOpen);
