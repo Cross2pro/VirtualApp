@@ -445,26 +445,26 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
         return originalInterface::original_ftruncate64(fd,length);
     } else {
         int ext_length = length - st.st_size;
-
         int elen = 0;
 
-        char  buf[ext_length];
-        char  ebuf[ext_length];
+        char * buf = new char[ext_length];
+        char * ebuf = new char[ext_length];
+        memset(buf,0,sizeof(char) * ext_length);
+        memset(ebuf,0,sizeof(char) * ext_length);
+        fc2->encrypt(buf, ext_length, ebuf, elen, lseek(fd, 0, SEEK_END));
 
-        memset(buf,0,sizeof(buf));
-        memset(ebuf,0, sizeof(ebuf));
-
-        fc2->encrypt((char *)buf, ext_length, (char *)ebuf, elen, lseek(fd, 0, SEEK_END));
-
-        log("encryptFlie ftruncate64 ext length = %d strerro = %s",ext_length,strerror(errno));
 
         int ret = originalInterface::original_write(fd, ebuf, ext_length);
 
+        delete []buf;
+        delete []ebuf;
         if (ret > 0) {
             return 0;
         } else {
             return -1;
         }
+
+
     }
 
 }
