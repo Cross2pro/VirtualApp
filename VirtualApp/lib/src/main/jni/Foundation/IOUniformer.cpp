@@ -1344,6 +1344,8 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     return ret;
 }
 
+#define ENCRYPTFILE_HEADLENGTH 50
+
 //ssize_t sendfile(int out_fd, int in_fd, off_t* offset, size_t count)
 HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 {
@@ -1352,6 +1354,9 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
     off_t off = 0;
     if(offset != 0)
         off = *offset;
+
+    struct stat st;
+    originalInterface::original_fstat(in_fd,&st);
 
     xdja::zs::sp<virtualFileDescribe> in_vfd(virtualFileDescribeSet::getVFDSet().get(in_fd));
     xdja::zs::sp<virtualFileDescribe> out_vfd(virtualFileDescribeSet::getVFDSet().get(out_fd));
@@ -1364,6 +1369,14 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         //完全不管
         ret = orig_sendfile(out_fd, in_fd, offset, count);
     } else {
+
+        size_t real_count = 0;
+        if(off + count > (st.st_size - ENCRYPTFILE_HEADLENGTH)) {
+            real_count = (size_t)(st.st_size - ENCRYPTFILE_HEADLENGTH - off);
+        } else {
+            real_count = count;
+        }
+
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             if(offset != 0)
@@ -1373,14 +1386,21 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
-            char * buf = new char[1024];
+            char * buf = new char[1024]{0};
             ret = 0;
-            int rl;
-            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                } else {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                }
+                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
-                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
@@ -1402,14 +1422,21 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 ignoreFile::lseek(in_fd, 0, SEEK_CUR);
             }
 
-            char * buf = new char[1024];
+            char * buf = new char[1024]{0};
             ret = 0;
-            int rl;
-            while((rl = ignoreFile::read(in_fd, buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = ignoreFile::read(in_fd,buf,real_count % 1024);
+                } else {
+                    rl = ignoreFile::read(in_fd,buf,1024);
+                }
+                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
-                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
@@ -1433,12 +1460,19 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 
             char * buf = new char[1024];
             ret = 0;
-            int rl;
-            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                } else {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                }
+                ignoreFile::write(out_fd,buf,rl);
                 ret += rl;
-                ignoreFile::write(out_fd, buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
@@ -1467,6 +1501,9 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
     if(offset != 0)
         off = *offset;
 
+    struct stat st;
+    originalInterface::original_fstat(in_fd,&st);
+
     unsigned long off_hi = static_cast<unsigned long>(off >> 32);
     unsigned long off_lo = static_cast<unsigned long>(off);
 
@@ -1481,6 +1518,14 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
         //完全不管
         ret = orig_sendfile64(out_fd, in_fd, offset, count);
     } else {
+
+        size_t real_count = 0;
+        if(off + count > (st.st_size - ENCRYPTFILE_HEADLENGTH)) {
+            real_count = (size_t)(st.st_size - ENCRYPTFILE_HEADLENGTH - off);
+        } else {
+            real_count = count;
+        }
+
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             if(offset != 0)
@@ -1491,14 +1536,21 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
-            char * buf = new char[1024];
+            char * buf = new char[1024]{0};
             ret = 0;
-            int rl;
-            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                } else {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                }
+                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
-                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
@@ -1522,14 +1574,21 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 ignoreFile::lseek(in_fd, 0, SEEK_CUR);
             }
 
-            char * buf = new char[1024];
+            char * buf = new char[1024]{0};
             ret = 0;
-            int rl;
-            while((rl = ignoreFile::read(in_fd, buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = ignoreFile::read(in_fd,buf,real_count % 1024);
+                } else {
+                    rl = ignoreFile::read(in_fd,buf,1024);
+                }
+                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
-                out_vfd->_vf->vwrite(out_vfd.get(), buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
@@ -1555,12 +1614,19 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
 
             char * buf = new char[1024];
             ret = 0;
-            int rl;
-            while((rl = in_vfd->_vf->vread(in_vfd.get(), buf, 1024)))
-            {
+            int rl = 0;
+            int size = 0;
+            while(size < real_count) {
+                size += 1024;
+                if(size > real_count) {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                } else {
+                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                }
+                ignoreFile::write(out_fd,buf,rl);
                 ret += rl;
-                ignoreFile::write(out_fd, buf, rl);
             }
+
             delete []buf;
 
             if(offset != 0)
