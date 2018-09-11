@@ -129,6 +129,7 @@ namespace xdja {
                         offset = offset + cipher_need_bytes;
                     }
                 }
+               ret = true;
             }
         } while (0);
 
