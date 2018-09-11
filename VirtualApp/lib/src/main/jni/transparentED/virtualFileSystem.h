@@ -47,6 +47,7 @@ public:
 class virtualFileDescribeSet
 {
     atomicVessel items[1024];
+    atomicVessel flagItems[1024];
     releaser<virtualFileDescribe> rl;
 
 public:
@@ -93,13 +94,13 @@ class virtualFile
 private:
     char * _path;
 
-    pthread_mutex_t _ref_lock;
     unsigned int refrence;                   //文件引用计数
 
-    pthread_mutex_t _vfs_lock;
     vfileState       _vfs;                //文件状态
 
     pthread_rwlock_t _rw_lock;
+    pthread_rwlock_t _rw_ef_lock;
+    pthread_rwlock_t _rw_tf_lock;
     EncryptFile * ef;                       //操作加密文件的对象
     TemplateFile * tf;                      //操作临时文件的对象
 
@@ -110,9 +111,9 @@ public:
         memset(_path, 0, strlen(path) + 1);
         strcpy(_path, path);
 
-        pthread_mutex_init(&_ref_lock, NULL);
-        pthread_mutex_init(&_vfs_lock, NULL);
         pthread_rwlock_init(&_rw_lock, NULL);
+        pthread_rwlock_init(&_rw_ef_lock, NULL);
+        pthread_rwlock_init(&_rw_tf_lock, NULL);
 
         ef = 0;
         tf = 0;
@@ -122,25 +123,29 @@ public:
 
     ~virtualFile()
     {
-        pthread_mutex_destroy(&_ref_lock);
-        pthread_mutex_destroy(&_vfs_lock);
-        pthread_rwlock_destroy(&_rw_lock);
-
+        pthread_rwlock_wrlock(&_rw_tf_lock);
         if(tf != NULL)
         {
             //delete tf;
             delete tf;
         }
+        pthread_rwlock_unlock(&_rw_tf_lock);
 
+        pthread_rwlock_wrlock(&_rw_ef_lock);
         if(ef != NULL)
         {
             delete ef;
         }
+        pthread_rwlock_unlock(&_rw_ef_lock);
 
         if(_path) {
             delete[]_path;
             _path = 0;
         }
+        pthread_rwlock_destroy(&_rw_lock);
+        pthread_rwlock_destroy(&_rw_ef_lock);
+        pthread_rwlock_destroy(&_rw_tf_lock);
+
     }
 
     unsigned int addRef();

@@ -23,15 +23,11 @@ public:
     }
 
     void reset() {
-        __sync_fetch_and_and(&thing, 0xFFFFFFFF00000000);
+        __sync_fetch_and_and(&thing, 0);
     }
 
     uint64_t get() {
         return __sync_fetch_and_or(&thing, 0);
-    }
-
-    void resetFlag() {
-        __sync_fetch_and_and(&thing, 0x00000000FFFFFFFF);
     }
 };
 

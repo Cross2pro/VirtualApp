@@ -644,7 +644,6 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
     }
 
     int ret = syscall(__NR_openat, fd, redirect_path, flags, mode);
-    log("openat fd[%d], flag %d", ret, virtualFileDescribeSet::getVFDSet().getFlag(ret));
     /*zString op("openat fd = %d err = %s", ret, strerror(errno));
     doFileTrace(redirect_path, op.toString());*/
 
@@ -1112,7 +1111,6 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
                 virtualFileDescribeSet::getVFDSet().release(pvfd);
-                virtualFileManager::getVFM().deleted(fileInfo->_path);
                 syscall(__NR_close, fd);
             }
         }
@@ -1153,7 +1151,6 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
                 virtualFileDescribeSet::getVFDSet().release(pvfd);
-                virtualFileManager::getVFM().deleted(fileInfo->_path);
                 syscall(__NR_close, fd);
             }
         }

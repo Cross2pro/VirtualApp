@@ -27,19 +27,19 @@ TemplateFile::~TemplateFile() {
 
     if(_ef_fd) {
         originalInterface::original_close(_ef_fd);
-        //删除真实文件
-        originalInterface::original_unlinkat(AT_FDCWD, _ef_bk->getPath(), 0);
         _ef_fd = 0;
     }
 
     if(_ef_bk)
     {
+        //删除真实文件
+        originalInterface::original_unlinkat(AT_FDCWD, _ef_bk->getPath(), 0);
         delete _ef_bk;
         _ef_bk = 0;
     }
 
     if(_path) {
-        delete[]_path;
+        delete []_path;
         _path = 0;
     }
 }
@@ -271,13 +271,13 @@ void TemplateFile::close(bool checkWhenClose, int fd) {
 
     if(_ef_fd) {
         originalInterface::original_close(_ef_fd);
-        //删除真实文件
-        originalInterface::original_unlinkat(AT_FDCWD, _ef_bk->getPath(), 0);
         _ef_fd = 0;
     }
 
     if(_ef_bk)
     {
+        //删除真实文件
+        originalInterface::original_unlinkat(AT_FDCWD, _ef_bk->getPath(), 0);
         delete _ef_bk;
         _ef_bk = 0;
     }
