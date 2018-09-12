@@ -713,13 +713,19 @@ HOOK_DEF(int, close, int __fd) {
     int ret;
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if (vfd.get() == nullptr) {
+        if (virtualFileDescribeSet::getVFDSet().getFlag(__fd)) {
+            log("close fd[%d] flag is closing", __fd);
+            return -1;
+        }
     } else {
         virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
-        log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
         virtualFileDescribeSet::getVFDSet().reset(__fd);
 
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
+        if (vfd->_vf) {
+            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
+            virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
+        }
         /******through this way to release vfd *********/
         virtualFileDescribeSet::getVFDSet().release(vfd.get());
         /***********************************************/

@@ -86,11 +86,15 @@ EncryptFile::EncryptFile(EncryptFile &ef) {
 
 EncryptFile::~EncryptFile() {
 
-    if(fc2)
+    if(fc2) {
         delete fc2;
+        fc2 = 0;
+    }
 
-    if(path)
+    if(path) {
         delete []path;
+        path = 0;
+    }
 }
 
 /*
@@ -451,8 +455,8 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
         char * ebuf = new char[ext_length];
         memset(buf,0,sizeof(char) * ext_length);
         memset(ebuf,0,sizeof(char) * ext_length);
-        fc2->encrypt(buf, ext_length, ebuf, elen, lseek(fd, 0, SEEK_END));
-
+        if (ext_length > 0)
+            fc2->encrypt(buf, ext_length, ebuf, elen, lseek(fd, 0, SEEK_END));
 
         int ret = originalInterface::original_write(fd, ebuf, ext_length);
 

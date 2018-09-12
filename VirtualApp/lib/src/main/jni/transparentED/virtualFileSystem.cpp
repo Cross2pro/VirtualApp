@@ -198,15 +198,9 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
 
     xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
-    Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
     do {
-        VFMap::iterator iterator = _vfmap.find(std::string(path));
-        if(iterator != _vfmap.end()) {
-            vf = iterator->second;
-            vf->addRef();
-
-            LOGE("judge : found virtualFile [%s]", vf->getPath());
-
+        vf = queryVF(path);
+        if (vf != NULL) {
             vfd->_vf = vf;
             vfd->cur_state = vf->getVFS();  //记录最初的状态
 
@@ -273,6 +267,7 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
                         vfd->_vf = vf;
                         vfd->cur_state = vf->getVFS();  //记录最初的状态
 
+                        Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
                         _vfmap.insert(std::pair<std::string, virtualFile *>(std::string(path), vf));
                     }
                 }
@@ -351,7 +346,6 @@ bool virtualFile::create(virtualFileDescribe* pvfd) {
     xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     if(vfs == VFS_ENCRYPT) {
-        AutoWLock awl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
         if(ef != NULL) {
             delete ef;
             ef = NULL;
@@ -367,7 +361,6 @@ bool virtualFile::create(virtualFileDescribe* pvfd) {
             return ret;
         }
     } else if(vfs == VFS_TESTING) {
-        AutoWLock awl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
         if(tf != NULL)
         {
             delete tf;
@@ -407,7 +400,6 @@ int virtualFile::vclose(virtualFileDescribe* pvfd) {
 
     if(vfs == VFS_ENCRYPT) {
     } else if(vfs == VFS_TESTING) {
-        AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
         if(tf != NULL)
         {
             tf->close(true, vfd->_fd);

@@ -128,6 +128,7 @@ public:
         {
             //delete tf;
             delete tf;
+            tf = 0;
         }
         pthread_rwlock_unlock(&_rw_tf_lock);
 
@@ -135,6 +136,7 @@ public:
         if(ef != NULL)
         {
             delete ef;
+            ef = 0;
         }
         pthread_rwlock_unlock(&_rw_ef_lock);
 
