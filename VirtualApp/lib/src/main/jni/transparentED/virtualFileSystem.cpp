@@ -94,20 +94,20 @@ void virtualFileManager::deleted(char *path) {
     VFMap::iterator iter = _vfmap.find(std::string(path));
     if(iter != _vfmap.end())
     {
-        virtualFile * vf = iter->second;
+        xdja::zs::sp<virtualFile> * vf = iter->second;
         {
-            log("judge : [path %s] deleted", vf->getPath());
+            log("judge : [path %s] deleted", vf->get()->getPath());
 
             int len = strlen(path) + 20;
 
             char *tmp = new char[len];
             memset(tmp, 0, len);
 
-            snprintf(tmp, len, "%s deleted", vf->getPath());
-            vf->setPath(tmp);
+            snprintf(tmp, len, "%s deleted", vf->get()->getPath());
+            vf->get()->setPath(tmp);
 
             _vfmap.erase(iter);     //删掉原来的节点
-            _vfmap.insert(std::pair<std::string, virtualFile *>(std::string(tmp), vf)); //以新文件名从新插入
+            _vfmap.insert(std::pair<std::string, xdja::zs::sp<virtualFile> *>(std::string(tmp), vf)); //以新文件名从新插入
 
             delete []tmp;
         }
@@ -118,15 +118,14 @@ virtualFileManager & virtualFileManager::getVFM() {
     return g_VFM;
 }
 
-virtualFile* virtualFileManager::queryVF(char *path) {
-    virtualFile *vf = 0;
+xdja::zs::sp<virtualFile>* virtualFileManager::queryVF(char *path) {
+    xdja::zs::sp<virtualFile> *vf = 0;
 
     Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
     do {
         VFMap::iterator iterator = _vfmap.find(std::string(path));
         if(iterator != _vfmap.end()) {
             vf = iterator->second;
-            vf->addRef();
 
             LOGE("judge : query virtualFile ");
 
@@ -192,7 +191,7 @@ void virtualFileManager::updateVF(virtualFile &vf) {
 
 virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, int * pErrno) {
 
-    virtualFile *vf = 0;
+    xdja::zs::sp<virtualFile> *vf = 0;
     vfileState vfs = VFS_IGNORE;
     *pErrno = 0;                                //默认无错误发生
 
@@ -201,8 +200,8 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
     do {
         vf = queryVF(path);
         if (vf != NULL) {
-            vfd->_vf = vf;
-            vfd->cur_state = vf->getVFS();  //记录最初的状态
+            vfd->_vf = *vf;
+            vfd->cur_state = vf->get()->getVFS();  //记录最初的状态
 
             break;
         }
@@ -245,11 +244,10 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
             if(vfs != VFS_IGNORE)
             {
                 {
-                    vf = new virtualFile(path);
-                    vf->addRef();
-                    vf->setVFS(vfs);
+                    virtualFile *_vf = new virtualFile(path);
+                    _vf->setVFS(vfs);
 
-                    if(!vf->create(vfd.get()))
+                    if(!_vf->create(vfd.get()))
                     {
                         delete vf;
                         vf = 0;
@@ -262,13 +260,15 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
                         LOGE("************* virtualFile::create fail ! *************");
                     }
                     else {
-                        LOGE("judge : create virtualFile [%s]", vf->getPath());
+                        LOGE("judge : create virtualFile [%s]", _vf->getPath());
 
-                        vfd->_vf = vf;
-                        vfd->cur_state = vf->getVFS();  //记录最初的状态
+                        xdja::zs::sp<virtualFile> pvf(_vf);
+                        pvf->incStrong(0);
+                        vfd->_vf = pvf;
+                        vfd->cur_state = pvf->getVFS();  //记录最初的状态
 
                         Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
-                        _vfmap.insert(std::pair<std::string, virtualFile *>(std::string(path), vf));
+                        _vfmap.insert(std::pair<std::string, xdja::zs::sp<virtualFile> *>(std::string(path), &vfd->_vf));
                     }
                 }
             }
@@ -277,7 +277,7 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
 
     }while(false);
 
-    return vf;
+    return vfd->_vf.get();
 }
 
 void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
@@ -288,8 +288,9 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     VFMap::iterator iter = _vfmap.find(std::string(path));
     if(iter != _vfmap.end())
     {
-        virtualFile * vf = iter->second;
-        if(vf->delRef() == 0) {
+        xdja::zs::sp<virtualFile> *vf = iter->second;
+        log("releaseVF counter %d", vf->get()->getStrongCount());
+        if(vf->get()->getStrongCount() == 1) {
 //            struct stat buf;
 //            buf.st_size = 0;
 //
@@ -299,8 +300,8 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
 //                originalInterface::original_close(fd);
 //            }
 //            log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
-            vf->vclose(vfd.get());
-            delete vf;
+            vf->get()->vclose(vfd.get());
+            vf->get()->decStrong(0);
             _vfmap.erase(iter);
         }
     }
@@ -400,6 +401,7 @@ int virtualFile::vclose(virtualFileDescribe* pvfd) {
 
     if(vfs == VFS_ENCRYPT) {
     } else if(vfs == VFS_TESTING) {
+        AutoWLock awl(_rw_lock, (char*)__FUNCTION__, __LINE__);
         if(tf != NULL)
         {
             tf->close(true, vfd->_fd);
@@ -413,7 +415,6 @@ int virtualFile::vclose(virtualFileDescribe* pvfd) {
 void virtualFile::forceTranslate() {
     vfileState vfs = getVFS();
     if(vfs == VFS_TESTING) {
-        AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
         if(tf != NULL)
         {
             tf->forceTranslate();
@@ -428,10 +429,6 @@ int virtualFile::vpread64(virtualFileDescribe* pvfd, char * buf, size_t len, off
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -452,10 +449,6 @@ int virtualFile::vpread64(virtualFileDescribe* pvfd, char * buf, size_t len, off
             case VFS_IGNORE:
                 return ignoreFile::pread64(vfd->_fd, buf, len, from);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -464,10 +457,6 @@ int virtualFile::vpread64(virtualFileDescribe* pvfd, char * buf, size_t len, off
                 return ef->pread64(vfd->_fd, buf, len, from);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->pread64(vfd->_fd, buf, len, from);
         }
     }
@@ -481,10 +470,6 @@ int virtualFile::vpwrite64(virtualFileDescribe* pvfd, char * buf, size_t len, of
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -506,10 +491,6 @@ int virtualFile::vpwrite64(virtualFileDescribe* pvfd, char * buf, size_t len, of
             case VFS_IGNORE:
                 return ignoreFile::pwrite64(vfd->_fd, buf, len, offset);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -518,10 +499,6 @@ int virtualFile::vpwrite64(virtualFileDescribe* pvfd, char * buf, size_t len, of
                 return ef->pwrite64(vfd->_fd, buf, len, offset);
             }
             case VFS_TESTING: {
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 int ret =  tf->pwrite64(vfd->_fd, buf, len, offset);
 
                 if(tf->canCheck())
@@ -558,10 +535,6 @@ int virtualFile::vread(virtualFileDescribe* pvfd, char * buf, size_t len) {
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -582,10 +555,6 @@ int virtualFile::vread(virtualFileDescribe* pvfd, char * buf, size_t len) {
             case VFS_IGNORE:
                 return ignoreFile::read(vfd->_fd, buf, len);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -594,10 +563,6 @@ int virtualFile::vread(virtualFileDescribe* pvfd, char * buf, size_t len) {
                 return ef->read(vfd->_fd, buf, len);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->read(vfd->_fd, buf, len);
         }
     }
@@ -611,10 +576,6 @@ int virtualFile::vwrite(virtualFileDescribe* pvfd, char * buf, size_t len) {
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -635,10 +596,6 @@ int virtualFile::vwrite(virtualFileDescribe* pvfd, char * buf, size_t len) {
             case VFS_IGNORE:
                 return ignoreFile::write(vfd->_fd, buf, len);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -647,10 +604,6 @@ int virtualFile::vwrite(virtualFileDescribe* pvfd, char * buf, size_t len) {
                 return ef->write(vfd->_fd, buf, len);
             }
             case VFS_TESTING: {
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 int ret =  tf->write(vfd->_fd, buf, len);
 
                 if(tf->canCheck())
@@ -687,10 +640,6 @@ int virtualFile::vfstat(virtualFileDescribe* pvfd, struct stat *buf) {
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -711,10 +660,6 @@ int virtualFile::vfstat(virtualFileDescribe* pvfd, struct stat *buf) {
             case VFS_IGNORE:
                 return ignoreFile::fstat(vfd->_fd, buf);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -723,10 +668,6 @@ int virtualFile::vfstat(virtualFileDescribe* pvfd, struct stat *buf) {
                 return ef->fstat(vfd->_fd, buf);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->fstat(vfd->_fd, buf);
         }
     }
@@ -740,10 +681,6 @@ off_t virtualFile::vlseek(virtualFileDescribe* pvfd, off_t offset, int whence){
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -764,10 +701,6 @@ off_t virtualFile::vlseek(virtualFileDescribe* pvfd, off_t offset, int whence){
             case VFS_IGNORE:
                 return ignoreFile::lseek(vfd->_fd, offset, whence);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -776,10 +709,6 @@ off_t virtualFile::vlseek(virtualFileDescribe* pvfd, off_t offset, int whence){
                 return ef->lseek(vfd->_fd, offset, whence);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->lseek(vfd->_fd, offset, whence);
         }
     }
@@ -794,10 +723,6 @@ int virtualFile::vllseek(virtualFileDescribe* pvfd, unsigned long offset_high, u
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -819,10 +744,6 @@ int virtualFile::vllseek(virtualFileDescribe* pvfd, unsigned long offset_high, u
             case VFS_IGNORE:
                 return ignoreFile::llseek(vfd->_fd, offset_high, offset_low, result, whence);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -831,10 +752,6 @@ int virtualFile::vllseek(virtualFileDescribe* pvfd, unsigned long offset_high, u
                 return ef->llseek(vfd->_fd, offset_high, offset_low, result, whence);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->llseek(vfd->_fd, offset_high, offset_low, result, whence);
         }
     }
@@ -848,10 +765,6 @@ int virtualFile::vftruncate(virtualFileDescribe* pvfd, off_t length) {
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -873,10 +786,6 @@ int virtualFile::vftruncate(virtualFileDescribe* pvfd, off_t length) {
             case VFS_IGNORE:
                 return ignoreFile::ftruncate(vfd->_fd, length);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -885,10 +794,6 @@ int virtualFile::vftruncate(virtualFileDescribe* pvfd, off_t length) {
                 return ef->ftruncate(vfd->_fd, length);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->ftruncate(vfd->_fd, length);
         }
     }
@@ -902,10 +807,6 @@ int virtualFile::vftruncate64(virtualFileDescribe* pvfd, off64_t length) {
 
     if(vfs == VFS_ENCRYPT)
     {
-        AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-        if (NULL == ef) {
-            return -1;
-        }
         if(vfd->cur_state != vfs)
         {
             ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -927,10 +828,6 @@ int virtualFile::vftruncate64(virtualFileDescribe* pvfd, off64_t length) {
             case VFS_IGNORE:
                 return ignoreFile::ftruncate64(vfd->_fd, length);
             case VFS_ENCRYPT: {
-                AutoRLock arl(_rw_ef_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == ef) {
-                    return -1;
-                }
                 if(vfd->cur_state != subvfs)
                 {
                     ef->lseek(vfd->_fd, ef->getHeadOffset(), SEEK_CUR);
@@ -939,10 +836,6 @@ int virtualFile::vftruncate64(virtualFileDescribe* pvfd, off64_t length) {
                 return ef->ftruncate64(vfd->_fd, length);
             }
             case VFS_TESTING:
-                AutoRLock arl(_rw_tf_lock, (char*)__FUNCTION__, __LINE__);
-                if (NULL == tf) {
-                    return -1;
-                }
                 return tf->ftruncate64(vfd->_fd, length);
         }
     }

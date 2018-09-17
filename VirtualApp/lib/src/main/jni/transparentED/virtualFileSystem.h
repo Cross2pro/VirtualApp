@@ -32,7 +32,7 @@ class virtualFile;
 class virtualFileDescribe : public xdja::zs::LightRefBase<virtualFileDescribe>
 {
 public:
-    virtualFile * _vf;
+    xdja::zs::sp<virtualFile> _vf;
     vfileState cur_state;
     int _fd;
 
@@ -89,7 +89,7 @@ public:
 
 class virtualFileManager;
 class TemplateFile;                  //占位
-class virtualFile
+class virtualFile : public xdja::zs::LightRefBase<virtualFile>
 {
 private:
     char * _path;
@@ -99,8 +99,6 @@ private:
     vfileState       _vfs;                //文件状态
 
     pthread_rwlock_t _rw_lock;
-    pthread_rwlock_t _rw_ef_lock;
-    pthread_rwlock_t _rw_tf_lock;
     EncryptFile * ef;                       //操作加密文件的对象
     TemplateFile * tf;                      //操作临时文件的对象
 
@@ -112,8 +110,6 @@ public:
         strcpy(_path, path);
 
         pthread_rwlock_init(&_rw_lock, NULL);
-        pthread_rwlock_init(&_rw_ef_lock, NULL);
-        pthread_rwlock_init(&_rw_tf_lock, NULL);
 
         ef = 0;
         tf = 0;
@@ -123,30 +119,24 @@ public:
 
     ~virtualFile()
     {
-        pthread_rwlock_wrlock(&_rw_tf_lock);
         if(tf != NULL)
         {
             //delete tf;
             delete tf;
             tf = 0;
         }
-        pthread_rwlock_unlock(&_rw_tf_lock);
 
-        pthread_rwlock_wrlock(&_rw_ef_lock);
         if(ef != NULL)
         {
             delete ef;
             ef = 0;
         }
-        pthread_rwlock_unlock(&_rw_ef_lock);
 
         if(_path) {
             delete[]_path;
             _path = 0;
         }
         pthread_rwlock_destroy(&_rw_lock);
-        pthread_rwlock_destroy(&_rw_ef_lock);
-        pthread_rwlock_destroy(&_rw_tf_lock);
 
     }
 
@@ -211,7 +201,7 @@ private:
  */
 
 
-typedef std::map<std::string, virtualFile*> VFMap;
+typedef std::map<std::string, xdja::zs::sp<virtualFile>*> VFMap;
 
 class virtualFileManager
 {
@@ -232,7 +222,7 @@ public:
 
     virtualFile * getVF(virtualFileDescribe* pvfd, char * path, int * pErrno);
 
-    virtualFile * queryVF(char *path);
+    xdja::zs::sp<virtualFile> * queryVF(char *path);
     void updateVF(virtualFile & vf);
 
     void releaseVF(char *path, virtualFileDescribe* pvfd);
