@@ -96,15 +96,16 @@ void virtualFileManager::deleted(char *path) {
     {
         xdja::zs::sp<virtualFile> * vf = iter->second;
         {
-            log("judge : [path %s] deleted", vf->get()->getPath());
+            xdja::zs::sp<virtualFile> pvf(vf->get());
+            log("judge : [path %s] deleted", pvf->getPath());
 
             int len = strlen(path) + 20;
 
             char *tmp = new char[len];
             memset(tmp, 0, len);
 
-            snprintf(tmp, len, "%s deleted", vf->get()->getPath());
-            vf->get()->setPath(tmp);
+            snprintf(tmp, len, "%s deleted", pvf->getPath());
+            pvf->setPath(tmp);
 
             _vfmap.erase(iter);     //删掉原来的节点
             _vfmap.insert(std::pair<std::string, xdja::zs::sp<virtualFile> *>(std::string(tmp), vf)); //以新文件名从新插入
@@ -139,11 +140,12 @@ xdja::zs::sp<virtualFile>* virtualFileManager::queryVF(char *path) {
 void virtualFileManager::updateVF(virtualFile &vf) {
 
     vfileState vfs = VFS_IGNORE;
+    xdja::zs::sp<virtualFile> pvf(&vf);
     do {
-        int fd = originalInterface::original_openat(AT_FDCWD, vf.getPath(), O_RDONLY, 0);
+        int fd = originalInterface::original_openat(AT_FDCWD, pvf->getPath(), O_RDONLY, 0);
         if(fd <= 0)
         {
-            slog("judge : updateVF openat [%s] fail", vf.getPath());
+            slog("judge : updateVF openat [%s] fail", pvf->getPath());
             break;
         }
 
@@ -175,14 +177,14 @@ void virtualFileManager::updateVF(virtualFile &vf) {
         }
 
         virtualFileDescribe * vfd = new virtualFileDescribe(fd);
-        vf.setVFS(vfs);
+        pvf->setVFS(vfs);
         if(!vf.create(vfd))
         {
-            slog("judge :  **** updateVF  [%s] fail **** ", vf.getPath());
-            slog("judge :  **** updateVF  [%s] fail **** ", vf.getPath());
-            slog("judge :  **** updateVF  [%s] fail **** ", vf.getPath());
+            slog("judge :  **** updateVF  [%s] fail **** ", pvf->getPath());
+            slog("judge :  **** updateVF  [%s] fail **** ", pvf->getPath());
+            slog("judge :  **** updateVF  [%s] fail **** ", pvf->getPath());
 
-            vf.setVFS(VFS_IGNORE);
+            pvf->setVFS(VFS_IGNORE);
         }
         delete vfd;
         originalInterface::original_close(fd);
@@ -200,9 +202,8 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
     do {
         vf = queryVF(path);
         if (vf != NULL) {
-            vfd->_vf = *vf;
+            vfd->_vf = new xdja::zs::sp<virtualFile>(vf->get());
             vfd->cur_state = vf->get()->getVFS();  //记录最初的状态
-
             break;
         }
 
@@ -213,7 +214,6 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
                     ) {
                 break;
             }*/
-
             struct stat sb;
             originalInterface::original_fstat(vfd->_fd, &sb);
 
@@ -249,8 +249,8 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
 
                     if(!_vf->create(vfd.get()))
                     {
-                        delete vf;
-                        vf = 0;
+                        delete _vf;
+                        _vf = 0;
 
                         *pErrno = -1;
 
@@ -262,13 +262,13 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
                     else {
                         LOGE("judge : create virtualFile [%s]", _vf->getPath());
 
-                        xdja::zs::sp<virtualFile> pvf(_vf);
-                        pvf->incStrong(0);
-                        vfd->_vf = pvf;
-                        vfd->cur_state = pvf->getVFS();  //记录最初的状态
+                        xdja::zs::sp<virtualFile> *pvf = new xdja::zs::sp<virtualFile>(_vf);
 
                         Autolock at_lock(_lock, (char*)__FUNCTION__, __LINE__);
-                        _vfmap.insert(std::pair<std::string, xdja::zs::sp<virtualFile> *>(std::string(path), &vfd->_vf));
+                        _vfmap.insert(std::pair<std::string, xdja::zs::sp<virtualFile> *>(std::string(path), pvf));
+
+                        vfd->_vf = new xdja::zs::sp<virtualFile>(pvf->get());
+                        vfd->cur_state = pvf->get()->getVFS();  //记录最初的状态
                     }
                 }
             }
@@ -277,7 +277,7 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
 
     }while(false);
 
-    return vfd->_vf.get();
+    return (vfd->_vf != NULL) ? vfd->_vf->get() : NULL;
 }
 
 void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
@@ -290,7 +290,7 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     {
         xdja::zs::sp<virtualFile> *vf = iter->second;
         log("releaseVF counter %d", vf->get()->getStrongCount());
-        if(vf->get()->getStrongCount() == 1) {
+        if(vf->get()->getStrongCount() == 3) {
 //            struct stat buf;
 //            buf.st_size = 0;
 //
@@ -301,7 +301,7 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
 //            }
 //            log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
             vf->get()->vclose(vfd.get());
-            vf->get()->decStrong(0);
+            delete vf;
             _vfmap.erase(iter);
         }
     }

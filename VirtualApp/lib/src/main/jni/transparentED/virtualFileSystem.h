@@ -32,12 +32,18 @@ class virtualFile;
 class virtualFileDescribe : public xdja::zs::LightRefBase<virtualFileDescribe>
 {
 public:
-    xdja::zs::sp<virtualFile> _vf;
+    xdja::zs::sp<virtualFile> *_vf;
     vfileState cur_state;
     int _fd;
 
     virtualFileDescribe(int fd) : _vf(0), cur_state(VFS_IGNORE), _fd(fd)
     {
+    }
+
+    ~virtualFileDescribe() {
+        if (_vf != NULL) {
+            delete _vf;
+        }
     }
 };
 

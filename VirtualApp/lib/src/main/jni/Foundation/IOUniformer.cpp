@@ -270,10 +270,11 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
     {
         slog(" *** need to force translate virtual File [%s] *** ", vf2->get()->getPath());
 
-        vf2->get()->lockWhole();
-        vf2->get()->forceTranslate();
-        vf2->get()->unlockWhole();
-        vf2->get()->delRef();
+        xdja::zs::sp<virtualFile> pvf2(vf2->get());
+        pvf2->lockWhole();
+        pvf2->forceTranslate();
+        pvf2->unlockWhole();
+        pvf2->delRef();
     }
 
     {
@@ -286,10 +287,11 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
     xdja::zs::sp<virtualFile> * vf3 = virtualFileManager::getVFM().queryVF((char *) redirect_path_new);
     if(vf3 != NULL)
     {
-        slog(" *** update virtual file [%s] *** ", vf3->get()->getPath());
-        vf3->get()->lockWhole();
-        virtualFileManager::getVFM().updateVF(*vf3->get());
-        vf3->get()->unlockWhole();
+        xdja::zs::sp<virtualFile> pvf3(vf3->get());
+        slog(" *** update virtual file [%s] *** ", pvf3->getPath());
+        pvf3->lockWhole();
+        virtualFileManager::getVFM().updateVF(*pvf3.get());
+        pvf3->unlockWhole();
     }
 
     /*zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
@@ -668,7 +670,6 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         xdja::zs::sp<virtualFile> vf(virtualFileManager::getVFM().getVF(vfd.get(), (char *) redirect_path, &_Errno));
         if (vf.get() != nullptr) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, vfd.get());
-            vfd->_vf = vf;
             if ((flags & O_APPEND) == O_APPEND) {
                 vf->vlseek(vfd.get(), 0, SEEK_END);
             } else {
@@ -720,9 +721,11 @@ HOOK_DEF(int, close, int __fd) {
         virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
         virtualFileDescribeSet::getVFDSet().reset(__fd);
-
-        log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vfd->_vf->getPath(), vfd.get());
-        virtualFileManager::getVFM().releaseVF(vfd->_vf->getPath(), vfd.get());
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
+        if (vf.get() != nullptr) {
+            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vf->getPath(), vfd.get());
+            virtualFileManager::getVFM().releaseVF(vf->getPath(), vfd.get());
+        }
 
         /******through this way to release vfd *********/
         virtualFileDescribeSet::getVFDSet().release(vfd.get());
@@ -739,7 +742,6 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
     int res;
     const char *redirect_path = relocate_path(pathname, &res);
     int ret = syscall(__NR_fstatat64, dirfd, redirect_path, buf, flags);
-
     if (is_TED_Enable()) {
         int fd = originalInterface::original_openat(AT_FDCWD, redirect_path, O_RDONLY, 0);
 
@@ -753,7 +755,6 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
             originalInterface::original_close(fd);
         }
     }
-
     /*zString op("fstatat64 ret %d err %s", ret, getErr);
     doFileTrace(redirect_path, op.toString());*/
 
@@ -983,7 +984,7 @@ HOOK_DEF(ssize_t, pread64, int fd, void* buf, size_t count, off64_t offset) {
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vpread64(vfd.get(), (char *) buf, count, offset);
             flag = true;
@@ -1015,7 +1016,7 @@ HOOK_DEF(ssize_t, pwrite64, int fd, const void *buf, size_t count, off64_t offse
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vpwrite64(vfd.get(), (char *) buf, count, offset);
             flag = true;
@@ -1047,7 +1048,7 @@ HOOK_DEF(ssize_t, read, int fd, void *buf, size_t count) {
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vread(vfd.get(), (char *) buf, count);
             flag = true;
@@ -1079,7 +1080,7 @@ HOOK_DEF(ssize_t, write, int fd, const void* buf, size_t count) {
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vwrite(vfd.get(), (char *) buf, count);
             flag = true;
@@ -1192,9 +1193,9 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                 return MAP_FAILED;
             }
         } else {
-            xdja::zs::sp<virtualFile> vf(vfd->_vf);
+            xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
             if (vf.get() != nullptr) {
-                if (vfd->_vf->getVFS() == VFS_ENCRYPT) {
+                if (vf->getVFS() == VFS_ENCRYPT) {
                     flags |= MAP_ANONYMOUS;     //申请匿名内存
                     ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
 
@@ -1203,14 +1204,14 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                         LOGE("__mmap2 mprotect failed.");
                     } else {
                         off64_t pos = pgoffset * 4096;
-                        vfd->_vf->vpread64(vfd.get(), (char *) ret, length, pos);
+                        vf->vpread64(vfd.get(), (char *) ret, length, pos);
 
                         if (nowrite) {
                             if (0 != mprotect(ret, length, prot)) {
                                 LOGE("__mmap2 mprotect restore prot fails.");
                             }
                         }
-                        MmapFileInfo *fileInfo = new MmapFileInfo(vfd->_vf->getPath(), pgoffset,
+                        MmapFileInfo *fileInfo = new MmapFileInfo(vf->getPath(), pgoffset,
                                                                   flags);
                         MmapInfoMap.insert(
                                 std::pair<uint32_t, MmapFileInfo *>(uint32_t(ret), fileInfo));
@@ -1253,7 +1254,7 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vfstat(vfd.get(), buf);
             flag = true;
@@ -1285,7 +1286,7 @@ HOOK_DEF(off_t, lseek, int fd, off_t offset, int whence)
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vlseek(vfd.get(), offset, whence);
             flag = true;
@@ -1325,7 +1326,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vllseek(vfd.get(), offset_high, offset_low, result, whence);
             flag = true;
@@ -1358,7 +1359,7 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
         }
     } else {
         /*path.format("%s", vfd->_vf->getPath());*/
-        xdja::zs::sp<virtualFile> vf(vfd->_vf);
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
         if (vf.get() != nullptr) {
             ret = vf->vftruncate64(vfd.get(), length);
             flag = true;
@@ -1409,13 +1410,13 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
-            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf);
-            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf);
+            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
+            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
+                in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
+                in_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024]{0};
@@ -1425,11 +1426,11 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             while(size < real_count) {
                 size += 1024;
                 if(size > real_count) {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,real_count % 1024);
                 } else {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,1024);
                 }
-                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
+                out_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
             }
 
@@ -1437,7 +1438,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
+                in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             }
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
@@ -1447,6 +1448,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 return -1;
             }
 
+            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
             if(offset != 0)
             {
                 ignoreFile::lseek(in_fd, off, SEEK_SET);
@@ -1465,7 +1467,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 } else {
                     rl = ignoreFile::read(in_fd,buf,1024);
                 }
-                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
+                out_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
             }
 
@@ -1483,12 +1485,12 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
                 return -1;
             }
 
-            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf);
+            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
+                in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
+                in_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1498,9 +1500,9 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             while(size < real_count) {
                 size += 1024;
                 if(size > real_count) {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,real_count % 1024);
                 } else {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,1024);
                 }
                 ignoreFile::write(out_fd,buf,rl);
                 ret += rl;
@@ -1510,7 +1512,7 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 
             if(offset != 0)
             {
-                in_vfd->_vf->vlseek(in_vfd.get(), off, SEEK_SET);
+                in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
             }
         }
     }
@@ -1561,14 +1563,14 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
 
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
-            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf);
-            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf);
+            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
+            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
+                in_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
+                in_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024]{0};
@@ -1578,11 +1580,11 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             while(size < real_count) {
                 size += 1024;
                 if(size > real_count) {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,real_count % 1024);
                 } else {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,1024);
                 }
-                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
+                out_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
             }
 
@@ -1591,7 +1593,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
+                in_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             }
         }
         else if(in_vfd.get() == nullptr && out_vfd.get() != nullptr)
@@ -1600,7 +1602,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 log("sendfile64 in_fd[%d] flag is closing", in_fd);
                 return -1;
             }
-
+            xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
             if(offset != 0)
             {
                 loff_t result;
@@ -1620,7 +1622,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 } else {
                     rl = ignoreFile::read(in_fd,buf,1024);
                 }
-                out_vfd->_vf->vwrite(out_vfd.get(),buf,rl);
+                out_vf->vwrite(out_vfd.get(),buf,rl);
                 ret += rl;
             }
 
@@ -1639,13 +1641,13 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 return -1;
             }
 
-            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf);
+            xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
+                in_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             } else {
-                in_vfd->_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
+                in_vf->vlseek(in_vfd.get(), 0, SEEK_CUR);
             }
 
             char * buf = new char[1024];
@@ -1655,9 +1657,9 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             while(size < real_count) {
                 size += 1024;
                 if(size > real_count) {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,real_count % 1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,real_count % 1024);
                 } else {
-                    rl = in_vfd->_vf->vread(in_vfd.get(),buf,1024);
+                    rl = in_vf->vread(in_vfd.get(),buf,1024);
                 }
                 ignoreFile::write(out_fd,buf,rl);
                 ret += rl;
@@ -1668,7 +1670,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             if(offset != 0)
             {
                 loff_t result;
-                in_vfd->_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
+                in_vf->vllseek(in_vfd.get(), off_hi, off_lo, &result, SEEK_SET);
             }
         }
     }
@@ -1716,7 +1718,6 @@ HOOK_DEF(int, dup, int oldfd)
         xdja::zs::sp<virtualFile> vf(virtualFileManager::getVFM().getVF(vfd.get(), path2.toString(), &_Errno));
         if (vf.get() != nullptr) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
-            vfd->_vf = vf;
             vf->vlseek(vfd.get(), 0, SEEK_SET);
         } else {
             virtualFileDescribeSet::getVFDSet().reset(ret);
