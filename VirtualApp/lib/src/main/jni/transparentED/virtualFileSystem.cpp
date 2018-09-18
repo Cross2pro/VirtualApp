@@ -127,6 +127,7 @@ xdja::zs::sp<virtualFile>* virtualFileManager::queryVF(char *path) {
         VFMap::iterator iterator = _vfmap.find(std::string(path));
         if(iterator != _vfmap.end()) {
             vf = iterator->second;
+            vf->get()->addRef();
 
             LOGE("judge : query virtualFile ");
 
@@ -178,7 +179,7 @@ void virtualFileManager::updateVF(virtualFile &vf) {
 
         virtualFileDescribe * vfd = new virtualFileDescribe(fd);
         pvf->setVFS(vfs);
-        if(!vf.create(vfd))
+        if(!pvf->create(vfd))
         {
             slog("judge :  **** updateVF  [%s] fail **** ", pvf->getPath());
             slog("judge :  **** updateVF  [%s] fail **** ", pvf->getPath());
@@ -245,6 +246,7 @@ virtualFile* virtualFileManager::getVF(virtualFileDescribe* pvfd, char *path, in
             {
                 {
                     virtualFile *_vf = new virtualFile(path);
+                    _vf->addRef();
                     _vf->setVFS(vfs);
 
                     if(!_vf->create(vfd.get()))
@@ -290,7 +292,7 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     {
         xdja::zs::sp<virtualFile> *vf = iter->second;
         log("releaseVF counter %d", vf->get()->getStrongCount());
-        if(vf->get()->getStrongCount() == 3) {
+        if(vf->get()->delRef() == 0) {
 //            struct stat buf;
 //            buf.st_size = 0;
 //

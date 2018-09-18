@@ -292,6 +292,7 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
         pvf3->lockWhole();
         virtualFileManager::getVFM().updateVF(*pvf3.get());
         pvf3->unlockWhole();
+        pvf3->delRef();
     }
 
     /*zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
