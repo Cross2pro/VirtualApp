@@ -8,6 +8,25 @@ import java.util.Locale;
 
 public class VASettings {
 
+    /**
+     * PackageManager#checkPermission
+     */
+    public static boolean CHECK_PERMISSION_INSIDE = false;
+    /**
+     * beta
+     * File isolation
+     * allowed:
+     * {vadata}/virtual/data/0/system/
+     * {vadata}/virtual/data/app/{pkg}/
+     * {vadata}/virtual/data/0/{pkg}/
+     * denied:
+     * {vadata}/
+     */
+    public static boolean FILE_ISOLATION = false;
+    /***
+     * @see com.lody.virtual.client.core.InstallStrategy#NOT_COPY_APK
+     * update app in startup and broadcast update.
+     */
     public static boolean CHECK_UPDATE_NOT_COPY_APK = true;
 
     public static boolean PROVIDER_ONLY_FILE = true;

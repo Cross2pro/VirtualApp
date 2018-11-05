@@ -46,6 +46,7 @@ import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
+import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
@@ -139,6 +140,7 @@ public final class InvocationStubManager {
             addInjector(new MountServiceStub());
             addInjector(new BackupManagerStub());
             addInjector(new TelephonyStub());
+
             addInjector(new AccessibilityManagerStub());
             if (BuildCompat.isOreo()) {
                 if (IHwTelephony.TYPE != null) {
@@ -176,6 +178,7 @@ public final class InvocationStubManager {
                 addInjector(new SessionManagerStub());
                 addInjector(new JobServiceStub());
                 addInjector(new RestrictionStub());
+                addInjector(new TelecomManagerStub());
             }
             if (Build.VERSION.SDK_INT >= KITKAT) {
                 addInjector(new AlarmManagerStub());

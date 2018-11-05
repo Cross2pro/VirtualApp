@@ -45,6 +45,7 @@ import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.helper.ipcbus.IServerCache;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -73,7 +74,7 @@ import mirror.android.app.ActivityThread;
 public final class VirtualCore {
 
     public static final int GET_HIDDEN_APP = 0x00000001;
-
+    private static final String TAG = VirtualCore.class.getSimpleName();
     @SuppressLint("StaticFieldLeak")
     private static VirtualCore gCore = new VirtualCore();
     private final int myUid = Process.myUid();
@@ -111,16 +112,19 @@ public final class VirtualCore {
     private VirtualCore() {
     }
 
-    public boolean isDisableDlOpen(String packageName) {
-        return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName);
+    public boolean isDisableDlOpen(String packageName, String apkPath) {
+        return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName, apkPath);
     }
 
     public boolean isDisableNotCopyApk(String packageName, File apkPath) {
         return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName, apkPath);
     }
 
-    public boolean isUseVirtualLibraryFiles(String packageName, String apkPath){
-        return mSettingHandler == null || mSettingHandler.isUseVirtualLibraryFiles(packageName, apkPath);
+    /**
+     * check so for /data/data/app/lib is 64bit?
+     */
+    public boolean isUseOwnLibraryFiles(String packageName, String apkPath){
+        return mSettingHandler == null || mSettingHandler.isUseOwnLibraryFiles(packageName, apkPath);
     }
 
     public boolean isUseRealDir(String packageName) {
@@ -204,6 +208,7 @@ public final class VirtualCore {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
+            VLog.d(TAG, "startup:%s(%d)" ,com.lody.virtual.Build.VERSION_NAME, com.lody.virtual.Build.VERSION_CODE);
             Constants.SHORTCUT_ACTION = context.getPackageName() + ".virtual.action.shortcut";
             VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_CP_AUTHORITY;
             ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;

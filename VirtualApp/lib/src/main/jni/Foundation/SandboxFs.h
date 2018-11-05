@@ -3,6 +3,7 @@
 
 #include <string>
 #include <errno.h>
+#include <fb/include/fb/ALog.h>
 
 typedef struct PathItem {
     char *path;

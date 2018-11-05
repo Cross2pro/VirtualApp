@@ -33,7 +33,6 @@ using namespace xdja;
 void IOUniformer::init_env_before_all() {
     if (iu_loaded)
         return;
-
     char *api_level_chars = getenv("V_API_LEVEL");
     char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
     char *need_dlopen_chars = getenv("V_NEED_DLOPEN");
@@ -831,7 +830,8 @@ char **build_new_env(char *const envp[]) {
                          + get_keep_item_count()
                          + get_forbidden_item_count()
                          + get_replace_item_count() * 2 + 1
-                         + get_dlopen_keep_item_count();
+                         + get_dlopen_keep_item_count()
+                         + 4;
     if (provided_ld_preload) {
         new_envp_count--;
     }

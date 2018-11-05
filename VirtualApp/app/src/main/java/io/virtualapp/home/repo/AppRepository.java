@@ -106,7 +106,8 @@ public class AppRepository implements AppDataSource {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
-                if(!VASettings.CHECK_UPDATE_NOT_COPY_APK && info.notCopyApk){
+                //fix:无法获取名字和图标，有时候x进程没死，收不到升级广播
+                if(info.notCopyApk){
                     PackageUtils.checkUpdate(mContext, info, info.packageName);
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
@@ -180,8 +181,9 @@ public class AppRepository implements AppDataSource {
                     continue;
                 }
             }
-            if (!NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo)) {
-                //don't support 32
+            boolean only64Bit = !NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo.publicSourceDir);
+            if (only64Bit) {
+                //if support 64 then remove it;
                 continue;
             }
             if(notCopyApk && !GmsSupport.hasDex(pkg.applicationInfo.publicSourceDir)){
@@ -198,6 +200,7 @@ public class AppRepository implements AppDataSource {
             info.path = path;
             info.icon = ai.loadIcon(pm);
             info.name = ai.loadLabel(pm);
+            info.only64Bit = only64Bit;
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             if (installedAppInfo != null) {
                 info.cloneCount = installedAppInfo.getInstalledUsers().length;

@@ -11,10 +11,7 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.media.session.MediaController;
 import android.os.Build;
-
-import com.lody.virtual.helper.utils.Reflect;
 
 import mirror.com.android.internal.R_Hide;
 
@@ -61,18 +58,5 @@ public final class ActivityFixer {
             }
         }
 
-    }
-
-    public static void fixAfterActivityCreate(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            //fix crash of youtube#sound keys
-            if ("com.google.android.youtube".equals(activity.getPackageName())) {
-                MediaController mediaController = activity.getWindow().getMediaController();
-                if (mediaController != null) {
-                    Context base = Reflect.on(mediaController).get("mContext");
-                    ContextFixer.fixContext(base);
-                }
-            }
-        }
     }
 }

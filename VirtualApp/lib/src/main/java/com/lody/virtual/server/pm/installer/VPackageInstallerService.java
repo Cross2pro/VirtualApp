@@ -94,17 +94,16 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public int createSession(SessionParams params, String installerPackageName, int userId) throws RemoteException {
+    public int createSession(SessionParams params, String installerPackageName, int userId,int callingUid) throws RemoteException {
         try {
-            return createSessionInternal(params, installerPackageName, userId);
+            return createSessionInternal(params, installerPackageName, userId, callingUid);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private int createSessionInternal(SessionParams params, String installerPackageName, int userId)
+    private int createSessionInternal(SessionParams params, String installerPackageName, int userId,int callingUid)
             throws IOException {
-        final int callingUid = VBinder.getCallingUid();
         final int sessionId;
         final PackageInstallerSession session;
         synchronized (mSessions) {

@@ -22,6 +22,8 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IInterface;
 import android.os.Process;
+import android.os.RemoteException;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -265,13 +267,18 @@ class MethodProxies {
             final IPackageInstaller vInstaller = VPackageManager.get().getPackageInstaller();
             return Proxy.newProxyInstance(installer.getClass().getClassLoader(), installer.getClass().getInterfaces(),
                     new InvocationHandler() {
+                        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                        private Object createSession(Object proxy, Method method, Object[] args) throws RemoteException {
+                            SessionParams params = SessionParams.create((PackageInstaller.SessionParams) args[0]);
+                            String installerPackageName = (String) args[1];
+                            return vInstaller.createSession(params, installerPackageName, VUserHandle.myUserId(), VClient.get().getVUid());
+                        }
+
                         @Override
                         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                             switch (method.getName()) {
                                 case "createSession": {
-                                    SessionParams params = SessionParams.create((PackageInstaller.SessionParams) args[0]);
-                                    String installerPackageName = (String) args[1];
-                                    return vInstaller.createSession(params, installerPackageName, VUserHandle.myUserId());
+                                    return createSession(proxy, method, args);
                                 }
                                 case "updateSessionAppIcon": {
                                     int sessionId = (int) args[0];
@@ -625,6 +632,9 @@ class MethodProxies {
 
 
     static final class GetPackageInfo extends MethodProxy {
+        /**
+         * @see android.content.pm.PackageManager #MATCH_FACTORY_ONLY
+         */
         private static final int MATCH_FACTORY_ONLY = 0x00200000;
         @Override
         public String getMethodName() {
@@ -750,7 +760,6 @@ class MethodProxies {
 
     static class GetPackagesForUid extends MethodProxy {
 
-
         @Override
         public String getMethodName() {
             return "getPackagesForUid";
@@ -758,26 +767,30 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            //fix:getCallingUid
             int uid = (int) args[0];
-            int callingUid = Binder.getCallingUid();
-            if (uid == VirtualCore.get().myUid()) {
-                uid = getBaseVUid();
+            if(uid == Process.myUid() || uid == getRealUid()){
+                //my
+                return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
             }
-            String[] callingPkgs = VPackageManager.get().getPackagesForUid(callingUid);
-            String[] targetPkgs = VPackageManager.get().getPackagesForUid(uid);
-            String[] selfPkgs = VPackageManager.get().getPackagesForUid(Process.myUid());
 
-            Set<String> pkgList = new ArraySet<>(2);
-            if (callingPkgs != null && callingPkgs.length > 0) {
-                pkgList.addAll(Arrays.asList(callingPkgs));
+            String[] insides = VPackageManager.get().getPackagesForUid(uid);
+            String[] outsides = null;
+            try {
+                outsides = VirtualCore.get().getUnHookPackageManager().getPackagesForUid(uid);
+            }catch (Exception e){
+                //ignore
             }
-            if (targetPkgs != null && targetPkgs.length > 0) {
-                pkgList.addAll(Arrays.asList(targetPkgs));
+            if(outsides == null){
+                return insides;
             }
-            if (selfPkgs != null && selfPkgs.length > 0) {
-                pkgList.addAll(Arrays.asList(selfPkgs));
+            if(insides == null){
+                return outsides;
             }
-            return pkgList.toArray(new String[pkgList.size()]);
+            List<String> result = new ArrayList<>();
+            result.addAll(Arrays.asList(insides));
+            result.addAll(Arrays.asList(outsides));
+            return result.toArray(new String[result.size()]);
         }
 
         @Override
@@ -837,41 +850,13 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-
             if (args.length == 2 && args[0] instanceof String && args[1] instanceof String) {
-
-                PackageManager pm = VirtualCore.getPM();
-
                 String pkgNameOne = (String) args[0], pkgNameTwo = (String) args[1];
-                try {
-                    PackageInfo pkgOne = pm.getPackageInfo(pkgNameOne, PackageManager.GET_SIGNATURES);
-                    PackageInfo pkgTwo = pm.getPackageInfo(pkgNameTwo, PackageManager.GET_SIGNATURES);
-
-                    Signature[] one = pkgOne.signatures;
-                    Signature[] two = pkgTwo.signatures;
-
-                    if (ArrayUtils.isEmpty(one)) {
-                        if (!ArrayUtils.isEmpty(two)) {
-                            return PackageManager.SIGNATURE_FIRST_NOT_SIGNED;
-                        } else {
-                            return PackageManager.SIGNATURE_NEITHER_SIGNED;
-                        }
-                    } else {
-                        if (ArrayUtils.isEmpty(two)) {
-                            return PackageManager.SIGNATURE_SECOND_NOT_SIGNED;
-                        } else {
-                            if (Arrays.equals(one, two)) {
-                                return PackageManager.SIGNATURE_MATCH;
-                            } else {
-                                return PackageManager.SIGNATURE_NO_MATCH;
-                            }
-                        }
-                    }
-                } catch (Throwable e) {
-                    // Ignore
+                if(TextUtils.equals(pkgNameOne, pkgNameTwo)){
+                    return PackageManager.SIGNATURE_MATCH;
                 }
+                return VPackageManager.get().checkSignatures(pkgNameOne, pkgNameTwo);
             }
-
             return method.invoke(who, args);
         }
     }
@@ -887,8 +872,18 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int uid1 = (int) args[0];
             int uid2 = (int) args[1];
-            // TODO: verify the signatures by uid.
-            return PackageManager.SIGNATURE_MATCH;
+            if (uid1 == uid2) {
+                return PackageManager.SIGNATURE_MATCH;
+            }
+            String[] pkgs1 = VirtualCore.getPM().getPackagesForUid(uid1);
+            String[] pkgs2 = VirtualCore.getPM().getPackagesForUid(uid2);
+            if (pkgs1 == null || pkgs1.length == 0) {
+                return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
+            }
+            if(pkgs2 == null || pkgs2.length == 0){
+                return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
+            }
+            return VPackageManager.get().checkSignatures(pkgs1[0], pkgs2[0]);
         }
     }
 

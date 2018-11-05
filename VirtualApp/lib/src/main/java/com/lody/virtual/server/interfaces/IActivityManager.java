@@ -12,7 +12,7 @@ import com.lody.virtual.remote.*;
  */
 public interface IActivityManager extends IPCInterface {
 
-    int initProcess(String packageName, String processName, int userId) throws RemoteException;
+    int initProcess(String packageName, String processName, int userId, int callingUid) throws RemoteException;
 
     int getFreeStubCount() throws RemoteException;
 
@@ -44,9 +44,9 @@ public interface IActivityManager extends IPCInterface {
 
     void appDoneExecuting() throws RemoteException;
 
-    int startActivities(Intent[] intents, String[] resolvedTypes, IBinder token, Bundle options, int userId) throws RemoteException;
+    int startActivities(Intent[] intents, String[] resolvedTypes, IBinder token, Bundle options, int userId, int callingUid) throws RemoteException;
 
-    int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) throws RemoteException;
+    int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId, int callingUid) throws RemoteException;
 
     void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) throws RemoteException;
 
@@ -58,6 +58,8 @@ public interface IActivityManager extends IPCInterface {
 
     String getCallingPackage(int userId, IBinder token) throws RemoteException;
 
+    int getCallingUidByPid(int pid) throws RemoteException;
+
     ComponentName getCallingActivity(int userId, IBinder token) throws RemoteException;
 
     AppTaskInfo getTaskInfo(int taskId) throws RemoteException;
@@ -66,7 +68,7 @@ public interface IActivityManager extends IPCInterface {
 
     boolean isVAServiceToken(IBinder token) throws RemoteException;
 
-    ComponentName startService(IBinder caller, Intent service, String resolvedType, int userId) throws RemoteException;
+    ComponentName startService(IBinder caller, Intent service, String resolvedType, int userId, int callingUid) throws RemoteException;
 
     int stopService(IBinder caller, Intent service, String resolvedType, int userId) throws RemoteException;
 
@@ -74,7 +76,7 @@ public interface IActivityManager extends IPCInterface {
 
     void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean removeNotification, int userId) throws RemoteException;
 
-    int bindService(IBinder caller, IBinder token, Intent service, String resolvedType, IServiceConnection connection, int flags, int userId) throws RemoteException;
+    int bindService(IBinder caller, IBinder token, Intent service, String resolvedType, IServiceConnection connection, int flags, int userId, int callingUid) throws RemoteException;
 
     boolean unbindService(IServiceConnection connection, int userId) throws RemoteException;
 
@@ -88,7 +90,7 @@ public interface IActivityManager extends IPCInterface {
 
     VParceledListSlice getServices(int maxNum, int flags, int userId) throws RemoteException;
 
-    IBinder acquireProviderClient(int userId, ProviderInfo info) throws RemoteException;
+    IBinder acquireProviderClient(int userId, ProviderInfo info, int callingUid) throws RemoteException;
 
     PendingIntentData getPendingIntent(IBinder binder) throws RemoteException;
 
@@ -98,7 +100,7 @@ public interface IActivityManager extends IPCInterface {
 
     String getPackageForIntentSender(IBinder binder) throws RemoteException;
 
-    void processRestarted(String packageName, String processName, int userId) throws RemoteException;
+    void processRestarted(String packageName, String processName, int userId, int callingUid) throws RemoteException;
 
     void broadcastFinish(PendingResultData res) throws RemoteException;
 

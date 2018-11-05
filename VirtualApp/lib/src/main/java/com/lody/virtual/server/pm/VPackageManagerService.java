@@ -24,9 +24,11 @@ import android.util.Log;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
+import com.lody.virtual.helper.utils.SignaturesUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -104,7 +106,6 @@ public class VPackageManagerService extends IPackageManager.Stub {
     private final HashMap<String, VPackage.ProviderComponent> mProvidersByAuthority = new HashMap<>();
 
     private final Map<String, VPackage> mPackages = PackageCacheManager.PACKAGE_CACHE;
-    private final Map<String, ApplicationInfo> mOutSidePackages = new HashMap<>();
 
 
     public VPackageManagerService() {
@@ -144,19 +145,19 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 VActivityManagerService.get().killAppByPkg(pkg, VUserHandle.USER_ALL);
                 if (Intent.ACTION_PACKAGE_REMOVED.equals(intent.getAction())) {
                     if (VASettings.CHECK_UPDATE_NOT_COPY_APK && installedAppInfo.notCopyApk) {
-                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg, true);
+                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg);
                         if (applicationInfo == null) {
                             VAppManagerService.get().uninstallPackage(pkg);
                         }
                     }
                 } else if (Intent.ACTION_PACKAGE_ADDED.equals(intent.getAction())) {
-
+                    //ignore
                 } else if(Intent.ACTION_PACKAGE_REPLACED.equals(intent.getAction())){
                     if (VASettings.CHECK_UPDATE_NOT_COPY_APK && installedAppInfo.notCopyApk) {
                         VirtualCore.get().getContext().sendBroadcast(
                                 new Intent(Constants.ACTION_PACKAGE_WILL_ADDED,
                                         Uri.parse("package:" + pkg)));
-                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg, true);
+                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg);
                         if (applicationInfo != null) {
                             int flag = InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE;
                             //发送广播，显示升级对话框
@@ -168,30 +169,13 @@ public class VPackageManagerService extends IPackageManager.Stub {
         }
     };
 
-    public ApplicationInfo getOutSideApplicationInfo(String pkg, boolean force) {
-        ApplicationInfo applicationInfo = null;
-        if (!force) {
-            synchronized (mOutSidePackages) {
-                applicationInfo = mOutSidePackages.get(pkg);
-            }
-            if (applicationInfo != null) {
-                return applicationInfo;
-            }
-        }
-
+    public ApplicationInfo getOutSideApplicationInfo(String pkg) {
         try {
-            applicationInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(pkg, 0);
-        } catch (Throwable e) {
-            //ignore
+            return VirtualCore.get().getUnHookPackageManager().getApplicationInfo(pkg, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            // ignore
         }
-        synchronized (mOutSidePackages) {
-            if (applicationInfo == null) {
-                mOutSidePackages.put(pkg, applicationInfo);
-            } else {
-                mOutSidePackages.remove(pkg);
-            }
-        }
-        return applicationInfo;
+        return null;
     }
 
     void analyzePackageLocked(VPackage pkg) {
@@ -305,15 +289,6 @@ public class VPackageManagerService extends IPackageManager.Stub {
             }
             return null;
         }
-    }
-
-    @Override
-    public int checkPermission(String permName, String pkgName, int userId) {
-        if ("android.permission.INTERACT_ACROSS_USERS".equals(permName)
-                || "android.permission.INTERACT_ACROSS_USERS_FULL".equals(permName)) {
-            return PackageManager.PERMISSION_DENIED;
-        }
-        return VirtualCore.get().getPackageManager().checkPermission(permName, VirtualCore.get().getHostPkg());
     }
 
     @Override
@@ -878,6 +853,108 @@ public class VPackageManagerService extends IPackageManager.Stub {
             PackageSetting ps = (PackageSetting) p.mExtras;
             ps.removeUser(userId);
         }
+    }
+
+
+    private PermissionInfo findPermission(String permission) {
+        synchronized (mPackages) {
+            for (VPackage pkg : mPackages.values()) {
+                ArrayList<VPackage.PermissionComponent> permissions = pkg.permissions;
+                if (permissions != null) {
+                    for (VPackage.PermissionComponent component : permissions) {
+                        if (component.info != null && TextUtils.equals(permission, component.info.name)) {
+                            return component.info;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    private boolean hasRequestedPermission(String permission, String packageName){
+        VPackage pkg;
+        synchronized (mPackages) {
+            pkg = mPackages.get(packageName);
+        }
+        if(pkg != null && pkg.requestedPermissions!=null){
+            return pkg.requestedPermissions.contains(permission);
+        }
+        return false;
+    }
+
+
+    @Override
+    public int checkPermission(String permission, String pkgName, int userId) {
+        if(VASettings.CHECK_PERMISSION_INSIDE) {
+            PermissionInfo info = findPermission(permission);
+            if (info != null) {
+                if (VirtualCore.get().getHostPkg().equals(pkgName)) {
+                    return PackageManager.PERMISSION_GRANTED;
+                }
+                //inside app 's permission
+                if (info.protectionLevel == PermissionInfo.PROTECTION_SIGNATURE) {
+                    if (checkSignatures(info.packageName, pkgName) == PackageManager.SIGNATURE_MATCH) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                    return PackageManager.PERMISSION_DENIED;
+                } else if (info.protectionLevel == PermissionInfo.PROTECTION_SIGNATURE_OR_SYSTEM) {
+                    if (SpecialComponentList.isSpecSystemPackage(pkgName)) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                    if (checkSignatures(info.packageName, pkgName) == PackageManager.SIGNATURE_MATCH) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                    if (VAppManagerService.get().isAppInstalled(pkgName)) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                    return PackageManager.PERMISSION_DENIED;
+
+                } else if (info.protectionLevel == PermissionInfo.PROTECTION_NORMAL ||
+                        info.protectionLevel == PermissionInfo.PROTECTION_DANGEROUS) {
+                    if (VAppManagerService.get().isAppInstalled(pkgName)) {
+                        //need check？
+                        if (hasRequestedPermission(permission, pkgName)) {
+                            return PackageManager.PERMISSION_GRANTED;
+                        }
+                    }
+                    return PackageManager.PERMISSION_DENIED;
+                }
+            }
+        }
+        if ("android.permission.INTERACT_ACROSS_USERS".equals(permission)
+                || "android.permission.INTERACT_ACROSS_USERS_FULL".equals(permission)) {
+            return PackageManager.PERMISSION_DENIED;
+        }
+        return VirtualCore.get().getPackageManager().checkPermission(permission, VirtualCore.get().getHostPkg());
+    }
+
+    @Override
+    public int checkSignatures(String pkg1, String pkg2) {
+        if(TextUtils.equals(pkg1, pkg2)){
+            return PackageManager.SIGNATURE_MATCH;
+        }
+        PackageInfo pkgOne, pkgTwo;
+
+        pkgOne = getPackageInfo(pkg1, PackageManager.GET_SIGNATURES, 0);
+        pkgTwo = getPackageInfo(pkg2, PackageManager.GET_SIGNATURES, 0);
+
+        if(pkgOne == null){
+            try {
+                pkgOne = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg1, PackageManager.GET_SIGNATURES);
+            } catch (PackageManager.NameNotFoundException e) {
+                return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
+            }
+        }
+        if(pkgTwo == null){
+            try {
+                pkgTwo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg2, PackageManager.GET_SIGNATURES);
+            } catch (PackageManager.NameNotFoundException e) {
+                return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
+            }
+        }
+        return SignaturesUtils.compareSignatures(pkgOne.signatures, pkgTwo.signatures);
     }
 
     private final class ActivityIntentResolver extends IntentResolver<VPackage.ActivityIntentInfo, ResolveInfo> {

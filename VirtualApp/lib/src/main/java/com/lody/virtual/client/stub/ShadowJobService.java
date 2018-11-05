@@ -73,7 +73,7 @@ public class ShadowJobService extends Service {
                         } else {
                             emptyCallback(callback, jobId);
                             mScheduler.cancel(jobId);
-                            get().cancel(jobId);
+                            get().cancel(-1, jobId);
                         }
                     }
                 }

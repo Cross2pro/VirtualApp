@@ -49,6 +49,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.PropertiesUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
 import com.lody.virtual.helper.utils.VLog;
@@ -64,10 +65,13 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+import mirror.RefStaticObject;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -119,6 +123,7 @@ public final class VClient extends IVClient.Stub {
     private IBinder token;
     private int vuid;
     private int vpid;
+    static final boolean needCheckProvider = false;
     private ConditionVariable mTempLock;
     private VDeviceInfo deviceInfo;
     private AppBindData mBoundApplication;
@@ -179,12 +184,20 @@ public final class VClient extends IVClient.Stub {
         return vuid;
     }
 
+    /**
+     * $Px
+     * 0-99
+     */
     public int getVpid() {
         return vpid;
     }
 
     public int getBaseVUid() {
         return VUserHandle.getAppId(vuid);
+    }
+
+    public int getVCallingUid(){
+        return VActivityManager.get().getCallingUid();
     }
 
     public ClassLoader getClassLoader(ApplicationInfo appInfo) {
@@ -259,9 +272,37 @@ public final class VClient extends IVClient.Stub {
         return false;
     }
 
+    private void attachBuildProp(){
+        int userId = VUserHandle.myUserId();
+        VDeviceInfo deviceInfo = getDeviceInfo();
+        mirror.android.os.Build.SERIAL.set(deviceInfo.getSerial());
+        mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
+
+        //load file and set
+        File file = VEnvironment.getBuildFile(userId);
+        Properties properties = new Properties();
+        if(PropertiesUtils.load(properties, file)){
+            Map<String, RefStaticObject<String>> fields = new HashMap<>();
+            fields.put("ro.product.brand", mirror.android.os.Build.BRAND);
+            fields.put("ro.product.board", mirror.android.os.Build.BOARD);
+            fields.put("ro.product.name", mirror.android.os.Build.PRODUCT);
+            fields.put("ro.product.device", mirror.android.os.Build.DEVICE);
+            fields.put("ro.build.id", mirror.android.os.Build.ID);
+            fields.put("ro.build.display.id", mirror.android.os.Build.DISPLAY);
+            fields.put("no.such.thing", mirror.android.os.Build.SERIAL);
+
+            for(Map.Entry<String,RefStaticObject<String>> e : fields.entrySet()){
+                String val = properties.getProperty(e.getKey(), null);
+                if(val != null){
+                    e.getValue().set(val);
+                }
+            }
+        }
+    }
+
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
         mTempLock = lock;
-        VDeviceInfo deviceInfo = getDeviceInfo();
+
         if (processName == null) {
             processName = packageName;
         }
@@ -270,13 +311,14 @@ public final class VClient extends IVClient.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        final int userId = getUserId(vuid);
         try {
-            fixInstalledProviders();
+            fixInstalledProviders(packageName, userId);
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        mirror.android.os.Build.SERIAL.set(deviceInfo.getSerial());
-        mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
+        attachBuildProp();
+
         ActivityThread.mInitialApplication.set(
                 VirtualCore.mainThread(),
                 null
@@ -289,7 +331,7 @@ public final class VClient extends IVClient.Stub {
             System.exit(0);
         }
         mAppInfo = info;
-        data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
+        data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, userId);
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
         VLog.i(TAG, "Binding application %s (%s)", data.appInfo.packageName, data.processName);
@@ -464,19 +506,35 @@ public final class VClient extends IVClient.Stub {
         ApplicationInfo info = mBoundApplication.appInfo;
         String packageName = info.packageName;
         int userId = VUserHandle.myUserId();
-        File wifiMacAddressFile = deviceInfo.getWifiFile(userId);
+        File wifiMacAddressFile = getDeviceInfo().getWifiFile(userId);
         String wifiMacAddressPath = wifiMacAddressFile != null ? wifiMacAddressFile.getPath() : null;
         String dataDir = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();//info.dataDir;
         if (!TextUtils.isEmpty(wifiMacAddressPath)) {
-            NativeEngine.redirectDirectory("/sys/class/net/wlan0/address", wifiMacAddressPath);
-            NativeEngine.redirectDirectory("/sys/class/net/eth0/address", wifiMacAddressPath);
-            NativeEngine.redirectDirectory("/sys/class/net/wifi/address", wifiMacAddressPath);
+            NativeEngine.redirectFile("/sys/class/net/wlan0/address", wifiMacAddressPath);
+            NativeEngine.redirectFile("/sys/class/net/eth0/address", wifiMacAddressPath);
+            NativeEngine.redirectFile("/sys/class/net/wifi/address", wifiMacAddressPath);
         } else {
             //default wifi mac
         }
-        File buildProp = new File(VEnvironment.getUserSystemDirectory(userId), "build.prop");
-        if(buildProp.exists()) {
-            NativeEngine.redirectDirectory("/system/build.prop", buildProp.getAbsolutePath());
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            File buildProp = VEnvironment.getBuildFile(userId);
+            if (buildProp.exists()) {
+                NativeEngine.redirectFile("/system/build.prop", buildProp.getAbsolutePath());
+            }
+        }
+
+        if(VASettings.FILE_ISOLATION) {
+            //io hook: whitelist->replace path(/data/data/pkg/)->forbid
+            //odex
+            NativeEngine.whitelistFile(VEnvironment.getOdexFile(packageName).getPath());
+            // /virtual/data/0/system/
+            NativeEngine.whitelist(VEnvironment.getSystemDirectory(userId).getPath());
+            // /virtual/data/app/{pkg}/
+            NativeEngine.whitelist(VEnvironment.getDataAppPackageDirectory(packageName).getPath());
+            // /virtual/data/0/{pkg}/
+            NativeEngine.whitelist(dataDir);
+            //other data dir
+            NativeEngine.forbid(VirtualCore.get().getContext().getApplicationInfo().dataDir, false);
         }
 
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
@@ -488,18 +546,18 @@ public final class VClient extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
 
-        if(isNotCopyApk() && !VirtualCore.get().isUseVirtualLibraryFiles(packageName, info.publicSourceDir)) {
+        if(isNotCopyApk() && !VirtualCore.get().isUseOwnLibraryFiles(packageName, info.publicSourceDir)) {
             ApplicationInfo outside = null;
             try {
                 outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
             } catch (Throwable e) {
                 //ignore
             }
-            if (outside != null && NativeLibraryHelperCompat.isSupportNative32(outside)) {
-                String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
-                if (path != null) {
-                    NativeEngine.dlOpenWhitelist(path);
-                }
+            if (outside != null) {
+                //if need check 64bit,please check after install.
+                //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
+                NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
+                NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
             }
         }
 
@@ -537,7 +595,7 @@ public final class VClient extends IVClient.Stub {
             }
         }
 
-        NativeEngine.enableIORedirect(!VirtualCore.get().isDisableDlOpen(info.packageName));
+        NativeEngine.enableIORedirect(!VirtualCore.get().isDisableDlOpen(info.packageName, info.publicSourceDir));
     }
 
     @SuppressLint("SdCardPath")
@@ -627,14 +685,12 @@ public final class VClient extends IVClient.Stub {
         return provider != null ? provider.asBinder() : null;
     }
 
-    private void fixInstalledProviders() {
-        try {
-            clearSettingProvider();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        Map clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
-        for (Object clientRecord : clientMap.values()) {
+    private void fixInstalledProviders(String packageName, int userId) {
+        clearSettingProvider();
+        List<Object> removes = new ArrayList<>();
+        Map<Object,Object> clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
+        for (Map.Entry<Object,Object> e : clientMap.entrySet()) {
+            Object clientRecord = e.getValue();
             if (BuildCompat.isOreo()) {
                 IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
                 Object holder = ActivityThread.ProviderClientRecordJB.mHolder.get(clientRecord);
@@ -643,6 +699,12 @@ public final class VClient extends IVClient.Stub {
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
                 if (!info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
+                   if(needCheckProvider) {
+                    if(!VActivityManager.get().checkProviderPermission(info, packageName, userId)){
+                        removes.add(e.getKey());
+                        continue;
+                    }
+                   }
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -655,6 +717,12 @@ public final class VClient extends IVClient.Stub {
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
                 if (!info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
+                    if(needCheckProvider) {
+                    if(!VActivityManager.get().checkProviderPermission(info, packageName, userId)){
+                        removes.add(e.getKey());
+                        continue;
+                    }
+                    }
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -668,11 +736,17 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
-
+        if(needCheckProvider) {
+            if (removes.size() > 0) {
+                for (Object obj : removes) {
+                    clientMap.remove(obj);
+                    VLog.w(TAG, "remove provider:" + obj);
+                }
+            }
+        }
     }
 
-    @Override
-    public void clearSettingProvider() throws RemoteException {
+    public void clearSettingProvider() {
         Object cache;
         cache = Settings.System.sNameValueCache.get();
         if (cache != null) {

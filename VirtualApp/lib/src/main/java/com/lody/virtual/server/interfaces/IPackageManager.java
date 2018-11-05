@@ -70,6 +70,8 @@ public interface IPackageManager extends IPCInterface {
 
     IBinder getPackageInstaller() throws RemoteException;
 
+    int checkSignatures(String pkg1, String pkg2) throws RemoteException;
+
     abstract class Stub implements IPackageManager {
         @Override
         public boolean isBinderAlive() {

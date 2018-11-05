@@ -30,9 +30,11 @@ import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
+import com.lody.virtual.remote.VDeviceInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -107,6 +109,39 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initMagic();
 //        IBinderTool.printAllService();
 //        IBinderTool.printIBinder("android.content.IFlymePermissionService");
+        //debug
+        //testMockDevice();
+        //end debug
+    }
+
+    /**
+     * create default build.prop
+     * cat /system/build.prop -> /virtual/data/0/system/build.prop
+     * tip:Android7.0 + don't read /system/build.prop
+     *
+     * how use?
+     * @see  com.lody.virtual.client.ipc.VDeviceManager#createBuildEditor
+     * @see  com.lody.virtual.client.ipc.VDeviceManager.Editor
+     */
+    private void testMockDevice(){
+        VDeviceInfo deviceInfo = VDeviceManager.get().getDeviceInfo(0);
+        deviceInfo.setWifiMac("12:34:56:78:9a:bc");
+        VDeviceManager.get().updateDeviceInfo(0, deviceInfo);
+
+        VDeviceManager.Editor editor = VDeviceManager.get().createBuildEditor(0);
+        editor.setDefault();
+        editor.setBrand("1");
+        editor.setBoard("2");
+        editor.setDevice("3");
+        editor.setDisplay("4");
+        editor.setID("5");
+        editor.setProduct("6");
+        editor.setSerial("7");
+        if (editor.save()) {
+            Log.i("kk", "保存配置ok");
+        } else {
+            Log.e("kk", "保存配置失败");
+        }
     }
 
     @Override

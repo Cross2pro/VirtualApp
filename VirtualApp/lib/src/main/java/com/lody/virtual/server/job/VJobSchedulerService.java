@@ -16,7 +16,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VJobScheduler;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.Singleton;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.server.interfaces.IJobService;
 
@@ -179,11 +178,10 @@ public class VJobSchedulerService extends IJobService.Stub {
 
 
     @Override
-    public int schedule(JobInfo job) {
-        int vuid = VBinder.getCallingUid();
+    public int schedule(int uid, JobInfo job) {
         int id = job.getId();
         ComponentName service = job.getService();
-        JobId jobId = new JobId(vuid, service.getPackageName(), id);
+        JobId jobId = new JobId(uid, service.getPackageName(), id);
         JobConfig config = mJobStore.get(jobId);
         if (config == null) {
             config = new JobConfig(mGlobalJobId++, service.getClassName(), job.getExtras());
@@ -257,8 +255,7 @@ public class VJobSchedulerService extends IJobService.Stub {
     }
 
     @Override
-    public void cancel(int jobId) {
-        int vuid = VBinder.getCallingUid();
+    public void cancel(int uid, int jobId) {
         synchronized (mJobStore) {
             boolean changed = false;
             Iterator<Map.Entry<JobId, JobConfig>> iterator = mJobStore.entrySet().iterator();
@@ -266,7 +263,7 @@ public class VJobSchedulerService extends IJobService.Stub {
                 Map.Entry<JobId, JobConfig> entry = iterator.next();
                 JobId job = entry.getKey();
                 JobConfig config = entry.getValue();
-                if (job.vuid == vuid && job.clientJobId == jobId) {
+                if ((uid == -1 || job.vuid == uid) && job.clientJobId == jobId) {
                     changed = true;
                     mScheduler.cancel(config.virtualJobId);
                     iterator.remove();
@@ -280,15 +277,14 @@ public class VJobSchedulerService extends IJobService.Stub {
     }
 
     @Override
-    public void cancelAll() {
-        int vuid = VBinder.getCallingUid();
+    public void cancelAll(int uid) {
         synchronized (mJobStore) {
             boolean changed = false;
             Iterator<Map.Entry<JobId, JobConfig>> iterator = mJobStore.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<JobId, JobConfig> entry = iterator.next();
                 JobId job = entry.getKey();
-                if (job.vuid == vuid) {
+                if (job.vuid == uid) {
                     JobConfig config = entry.getValue();
                     mScheduler.cancel(config.virtualJobId);
                     changed = true;
@@ -303,8 +299,7 @@ public class VJobSchedulerService extends IJobService.Stub {
     }
 
     @Override
-    public List<JobInfo> getAllPendingJobs() {
-        int vuid = VBinder.getCallingUid();
+    public List<JobInfo> getAllPendingJobs(int uid) {
         List<JobInfo> jobs = mScheduler.getAllPendingJobs();
         synchronized (mJobStore) {
             Iterator<JobInfo> iterator = jobs.listIterator();
@@ -322,7 +317,7 @@ public class VJobSchedulerService extends IJobService.Stub {
                 }
                 JobId jobId = jobEntry.getKey();
                 JobConfig config = jobEntry.getValue();
-                if (jobId.vuid != vuid) {
+                if (jobId.vuid != uid) {
                     iterator.remove();
                     continue;
                 }
@@ -347,15 +342,14 @@ public class VJobSchedulerService extends IJobService.Stub {
 
     @TargetApi(Build.VERSION_CODES.N)
     @Override
-    public JobInfo getPendingJob(int jobId){
-        int vuid = VBinder.getCallingUid();
+    public JobInfo getPendingJob(int uid, int jobId){
         JobInfo jobInfo = null;
         synchronized (mJobStore) {
             Iterator<Map.Entry<JobId, JobConfig>> iterator = mJobStore.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<JobId, JobConfig> entry = iterator.next();
                 JobId job = entry.getKey();
-                if (job.vuid == vuid && job.clientJobId == jobId) {
+                if (job.vuid == uid && job.clientJobId == jobId) {
                     jobInfo = mScheduler.getPendingJob(job.clientJobId);
                     break;
                 }
@@ -366,14 +360,13 @@ public class VJobSchedulerService extends IJobService.Stub {
 
     @TargetApi(Build.VERSION_CODES.O)
     @Override
-    public int enqueue(JobInfo job, Parcelable workItem){
+    public int enqueue(int uid, JobInfo job, Parcelable workItem){
         if(!(workItem instanceof JobWorkItem)){
             return -1;
         }
-        int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();
-        JobId jobId = new JobId(vuid, service.getPackageName(), id);
+        JobId jobId = new JobId(uid, service.getPackageName(), id);
         JobConfig config = mJobStore.get(jobId);
         if (config == null) {
             config = new JobConfig(mGlobalJobId++, service.getClassName(), job.getExtras());

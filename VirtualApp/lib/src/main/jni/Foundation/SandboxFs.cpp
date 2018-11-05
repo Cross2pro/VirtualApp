@@ -120,7 +120,7 @@ const char *relocate_path(const char *path, int *result, int dlopen) {
     if(dlopen == 1){
         for (int i = 0; i < dlopen_keep_items_count; ++i) {
             PathItem &item = dlopen_keep_items[i];
-            if (strcmp(item.path, path) == 0) {
+            if (match_path(item.is_folder, item.size, item.path, path)) {
                 *result = KEEP;
                 return path;
             }
@@ -129,19 +129,9 @@ const char *relocate_path(const char *path, int *result, int dlopen) {
 
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
-        if (strcmp(item.path, path) == 0) {
+        if (match_path(item.is_folder, item.size, item.path, path)) {
             *result = KEEP;
             return path;
-        }
-    }
-
-    for (int i = 0; i < forbidden_item_count; ++i) {
-        PathItem &item = forbidden_items[i];
-        if (match_path(item.is_folder, item.size, item.path, path)) {
-            *result = FORBID;
-            // Permission denied
-            errno = 13;
-            return NULL;
         }
     }
 
@@ -161,6 +151,17 @@ const char *relocate_path(const char *path, int *result, int dlopen) {
             }
         }
     }
+
+    for (int i = 0; i < forbidden_item_count; ++i) {
+        PathItem &item = forbidden_items[i];
+        if (match_path(item.is_folder, item.size, item.path, path)) {
+            *result = FORBID;
+            // Permission denied
+            errno = 13;
+            return NULL;
+        }
+    }
+
     *result = NOT_MATCH;
     return path;
 }

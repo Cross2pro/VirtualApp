@@ -1,13 +1,15 @@
 package com.lody.virtual.helper.utils;
 
+import android.text.TextUtils;
+import android.util.Base64;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import android.text.TextUtils;
 
 /**
  * @author Lody
@@ -41,6 +43,29 @@ public class MD5Utils {
 		fis.close();
 		return bufferToHex(MESSAGE_DIGEST_5.digest());
 	}
+
+	public static String hashBase64(byte[] bs){
+        ByteArrayInputStream in = new ByteArrayInputStream(bs);
+        MessageDigest SHA = null;
+        try {
+            SHA = MessageDigest.getInstance("SHA-1");
+            byte[] buffer = new byte[1024];
+            int numRead;
+            while ((numRead = in.read(buffer)) > 0) {
+                SHA.update(buffer, 0, numRead);
+            }
+        }catch (Exception e){
+            //ignore
+            return null;
+        }finally {
+            try {
+                in.close();
+            } catch (IOException e) {
+                //ignore
+            }
+        }
+        return Base64.encodeToString(SHA.digest(), Base64.DEFAULT);
+    }
 
 	public static String getFileMD5String(InputStream in) throws IOException {
 		byte[] buffer = new byte[1024];

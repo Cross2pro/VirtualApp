@@ -179,6 +179,9 @@ public final class VUserHandle implements Parcelable {
      * @hide
      */
     public static int getUserId(int uid) {
+        if(uid < 0){
+            return 0;
+        }
         if (MU_ENABLED) {
             return uid / PER_USER_RANGE;
         } else {
@@ -188,7 +191,7 @@ public final class VUserHandle implements Parcelable {
 
     /** @hide */
     public static int getCallingUserId() {
-        return getUserId(VBinder.getCallingUid());
+        return getUserId(VClient.get().getVCallingUid());
     }
 
     /**

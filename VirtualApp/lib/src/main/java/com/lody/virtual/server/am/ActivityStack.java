@@ -226,7 +226,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder token, Bundle options) {
+    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder token, Bundle options, int callingUid) {
         optimizeTasksLocked();
         ReuseTarget reuseTarget = ReuseTarget.CURRENT;
         Intent intent = intents[0];
@@ -268,7 +268,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         } else if (reuseTarget == ReuseTarget.DOCUMENT) {
             reuseTask = findTaskByIntentLocked(userId, intent);
         }
-        Intent[] destIntents = startActivitiesProcess(userId, intents, infos, resultTo);
+        Intent[] destIntents = startActivitiesProcess(userId, intents, infos, resultTo, callingUid);
         if (reuseTask == null) {
             realStartActivitiesLocked(null, destIntents, resolvedTypes, options);
         } else {
@@ -280,17 +280,17 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         return 0;
     }
 
-    private Intent[] startActivitiesProcess(int userId, Intent[] intents, ActivityInfo[] infos, ActivityRecord resultTo) {
+    private Intent[] startActivitiesProcess(int userId, Intent[] intents, ActivityInfo[] infos, ActivityRecord resultTo, int callingUid) {
         Intent[] destIntents = new Intent[intents.length];
         for (int i = 0; i < intents.length; i++) {
-            destIntents[i] = startActivityProcess(userId, resultTo, intents[i], infos[i]);
+            destIntents[i] = startActivityProcess(userId, resultTo, intents[i], infos[i], callingUid);
         }
         return destIntents;
     }
 
 
     int startActivityLocked(int userId, Intent intent, ActivityInfo info, IBinder resultTo, Bundle options,
-                            String resultWho, int requestCode) {
+                            String resultWho, int requestCode, int callingUid) {
         optimizeTasksLocked();
 
         Intent destIntent;
@@ -396,7 +396,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         boolean taskMarked = false;
         if (reuseTask == null) {
-            startActivityInNewTaskLocked(userId, intent, info, options);
+            startActivityInNewTaskLocked(userId, intent, info, options, callingUid);
         } else {
             boolean delivered = false;
             mAM.moveTaskToFront(reuseTask.taskId, 0);
@@ -421,9 +421,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
             if (!startTaskToFront) {
                 if (!delivered) {
-                    destIntent = startActivityProcess(userId, sourceRecord, intent, info);
+                    destIntent = startActivityProcess(userId, sourceRecord, intent, info, callingUid);
                     if (destIntent != null) {
-                        startActivityFromSourceTask(reuseTask, destIntent, info, resultWho, requestCode, options);
+                        startActivityFromSourceTask(reuseTask, destIntent, info, resultWho, requestCode, options, callingUid);
                     }
                 }
             }
@@ -431,8 +431,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         return 0;
     }
 
-    private void startActivityInNewTaskLocked(int userId, Intent intent, ActivityInfo info, Bundle options) {
-        Intent destIntent = startActivityProcess(userId, null, intent, info);
+    private void startActivityInNewTaskLocked(int userId, Intent intent, ActivityInfo info, Bundle options, int callingUid) {
+        Intent destIntent = startActivityProcess(userId, null, intent, info, callingUid);
         if (destIntent != null) {
             destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
@@ -476,10 +476,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     private void startActivityFromSourceTask(TaskRecord task, Intent intent, ActivityInfo info, String resultWho,
-                                             int requestCode, Bundle options) {
+                                             int requestCode, Bundle options, int callingUid) {
         ActivityRecord top = task.activities.isEmpty() ? null : task.activities.get(task.activities.size() - 1);
         if (top != null) {
-            if (startActivityProcess(task.userId, top, intent, info) != null) {
+            if (startActivityProcess(task.userId, top, intent, info, callingUid) != null) {
                 realStartActivityLocked(top.token, intent, resultWho, requestCode, options);
             }
         }
@@ -536,8 +536,12 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
         ClassUtils.fixArgs(types, args);
 
-        mirror.android.app.IActivityManager.startActivity.call(ActivityManagerNative.getDefault.call(),
-                (Object[]) args);
+        try {
+            mirror.android.app.IActivityManager.startActivity.call(ActivityManagerNative.getDefault.call(),
+                    (Object[]) args);
+        }catch (Exception e){
+            //vivo start bg's activity
+        }
     }
 
     private String fetchStubActivity(int vpid, ActivityInfo targetInfo) {
@@ -578,9 +582,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    private Intent startActivityProcess(int userId, ActivityRecord sourceRecord, Intent intent, ActivityInfo info) {
+    private Intent startActivityProcess(int userId, ActivityRecord sourceRecord, Intent intent, ActivityInfo info, int callingUid) {
         intent = new Intent(intent);
-        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName);
+        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, callingUid);
         if (targetApp == null) {
             return null;
         }

@@ -5,18 +5,18 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PermissionGroupInfo;
 import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.server.IPackageInstaller;
-import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
 import java.util.List;
@@ -37,12 +37,14 @@ public class VPackageManager {
         return singleton.get();
     }
 
-    public int checkPermission(String permName, String pkgName, int userId) {
+    public int checkPermission(String permission, String pkgName, int userId) {
+        if (TextUtils.isEmpty(permission)) return PackageManager.PERMISSION_GRANTED;
         try {
-            return getService().checkPermission(permName, pkgName, userId);
+            return getService().checkPermission(permission, pkgName, userId);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            //return VirtualRuntime.crash(e);
         }
+        return PackageManager.PERMISSION_DENIED;
     }
 
     public ResolveInfo resolveService(Intent intent, String resolvedType, int flags, int userId) {
@@ -255,4 +257,13 @@ public class VPackageManager {
             return VirtualRuntime.crash(e);
         }
     }
+
+    public int checkSignatures(String pkg1, String pkg2){
+        try {
+            return getService().checkSignatures(pkg1, pkg2);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
 }

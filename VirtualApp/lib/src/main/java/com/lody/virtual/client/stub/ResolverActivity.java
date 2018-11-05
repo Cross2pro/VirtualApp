@@ -35,6 +35,7 @@ import android.widget.TextView;
 import com.lody.virtual.R;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.Reflect;
@@ -93,9 +94,9 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         } else {
             titleResource = R.string.choose;
         }
-
+        int userId = intent.getIntExtra(Constants.EXTRA_USER_HANDLE, VUserHandle.getCallingUserId());
         onCreate(savedInstanceState, intent, getResources().getText(titleResource),
-                null, null, true, VUserHandle.getCallingUserId());
+                null, null, true, userId);
     }
 
     protected void onCreate(Bundle savedInstanceState, Intent intent,

@@ -8,12 +8,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
+import android.os.Process;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
@@ -60,7 +64,7 @@ public class VActivityManager {
             }
         }
         try {
-            return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
+            return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId, getUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -68,7 +72,7 @@ public class VActivityManager {
 
     public int startActivities(Intent[] intents, String[] resolvedTypes, IBinder token, Bundle options, int userId) {
         try {
-            return getService().startActivities(intents, resolvedTypes, token, options, userId);
+            return getService().startActivities(intents, resolvedTypes, token, options, userId, getUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -163,7 +167,7 @@ public class VActivityManager {
 
     public ComponentName startService(IInterface caller, Intent service, String resolvedType, int userId) {
         try {
-            return getService().startService(caller != null ? caller.asBinder() : null, service, resolvedType, userId);
+            return getService().startService(caller != null ? caller.asBinder() : null, service, resolvedType, userId, getUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -196,7 +200,7 @@ public class VActivityManager {
     public boolean bindService(Context context, Intent service, ServiceConnection connection, int flags) {
         try {
             IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
-            return getService().bindService(null, null, service, null, conn, flags, 0) > 0;
+            return getService().bindService(null, null, service, null, conn, flags, 0, getUid()) > 0;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -213,7 +217,7 @@ public class VActivityManager {
 
     public int bindService(IBinder caller, IBinder token, Intent service, String resolvedType, IServiceConnection connection, int flags, int userId) {
         try {
-            return getService().bindService(caller, token, service, resolvedType, connection, flags, userId);
+            return getService().bindService(caller, token, service, resolvedType, connection, flags, userId, getUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -269,7 +273,7 @@ public class VActivityManager {
 
     public void processRestarted(String packageName, String processName, int userId) {
         try {
-            getService().processRestarted(packageName, processName, userId);
+            getService().processRestarted(packageName, processName, userId, getUid());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -365,10 +369,15 @@ public class VActivityManager {
 
     public int getUidByPid(int pid) {
         try {
-            return getService().getUidByPid(pid);
+            int callingUid =  getService().getUidByPid(pid);
+            if(callingUid <= 0){
+                return VClient.get().getVUid();
+            }
+            return callingUid;
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            VirtualRuntime.crash(e);
         }
+        return VClient.get().getVUid();
     }
 
     public int getSystemPid() {
@@ -388,7 +397,7 @@ public class VActivityManager {
     }
 
     public IInterface acquireProviderClient(int userId, ProviderInfo info) throws RemoteException {
-        return ContentProviderNative.asInterface.call(getService().acquireProviderClient(userId, info));
+        return ContentProviderNative.asInterface.call(getService().acquireProviderClient(userId, info, getUid()));
     }
 
     public PendingIntentData getPendingIntent(IBinder binder) throws RemoteException {
@@ -435,9 +444,13 @@ public class VActivityManager {
         }
     }
 
+    public int getUid(){
+        return VClient.get().getVUid();
+    }
+
     public int initProcess(String packageName, String processName, int userId) {
         try {
-            return getService().initProcess(packageName, processName, userId);
+            return getService().initProcess(packageName, processName, userId, getUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -482,6 +495,19 @@ public class VActivityManager {
         }
     }
 
+    public int getCallingUid() {
+        try {
+            int id = getService().getCallingUidByPid(Process.myPid());
+            if (id <= 0) {
+                return VClient.get().getVUid();
+            }
+            return id;
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return VClient.get().getVUid();
+    }
+
     public void closeAllLongSocket(String packageName, int userId) {
         try {
             getService().closeAllLongSocket(packageName, userId);
@@ -490,5 +516,24 @@ public class VActivityManager {
         }
     }
 
+    public boolean checkProviderPermission(ProviderInfo info, String pkg, int userId) {
+        if (info == null || info.grantUriPermissions
+                || (TextUtils.isEmpty(info.readPermission) && TextUtils.isEmpty(info.writePermission))
+                || info.packageName.equals(pkg))
+        {
+            return true;
+        }
 
+        if(!TextUtils.isEmpty(info.readPermission)) {
+            if (PackageManager.PERMISSION_GRANTED != VPackageManager.get().checkPermission(info.readPermission, pkg, userId)) {
+                return false;
+            }
+        }
+        if (!TextUtils.isEmpty(info.writePermission)) {
+            if (PackageManager.PERMISSION_GRANTED != VPackageManager.get().checkPermission(info.writePermission, pkg, userId)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

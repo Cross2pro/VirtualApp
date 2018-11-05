@@ -22,6 +22,7 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 	public int pid;
 	public int vuid;
 	public int vpid;
+	public int callingUid;
 	public int userId;
 	boolean doneExecuting;
     int priority;

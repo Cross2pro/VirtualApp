@@ -6,16 +6,13 @@ import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.natives.NativeMethods;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +113,7 @@ public class NativeEngine {
         }
     }
 
-    public static void whitelist(String path) {
+    public static void whitelistFile(String path) {
         try {
             nativeIOWhitelist(path);
         } catch (Throwable e) {
@@ -124,8 +121,19 @@ public class NativeEngine {
         }
     }
 
-    public static void forbid(String path) {
+    public static void whitelist(String path) {
         if (!path.endsWith("/")) {
+            path = path + "/";
+        }
+        try {
+            nativeIOWhitelist(path);
+        } catch (Throwable e) {
+            VLog.e(TAG, VLog.getStackTraceString(e));
+        }
+    }
+
+    public static void forbid(String path, boolean file) {
+        if (!file && !path.endsWith("/")) {
             path = path + "/";
         }
         try {
@@ -152,9 +160,7 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission,
-                NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture,
-                NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare};
+        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {
@@ -173,24 +179,17 @@ public class NativeEngine {
 
     public static int onGetCallingUid(int originUid) {
         int callingPid = Binder.getCallingPid();
-        if (callingPid == Process.myPid()) {
-            return VClient.get().getBaseVUid();
-        }
         if (callingPid == VirtualCore.get().getSystemPid()) {
             return Process.SYSTEM_UID;
         }
-        int vuid = VActivityManager.get().getUidByPid(callingPid);
-        if (vuid != -1) {
-            return VUserHandle.getAppId(vuid);
-        }
-        VLog.w(TAG, "Cannot detect real uid: %d", callingPid);
-        return VClient.get().getBaseVUid();
+        //fix:getCallingUid
+        return VClient.get().getVCallingUid();
     }
 
     public static void onOpenDexFileNative(String[] params) {
         String dexOrJarPath = params[0];
         String outputPath = params[1];
-        VLog.d(TAG, "openDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
+        VLog.d(TAG, "beforeOpenDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
         try {
             String canonical = new File(dexOrJarPath).getCanonicalPath();
             InstalledAppInfo info = sDexOverrideMap.get(canonical);

@@ -11,7 +11,7 @@ import com.lody.virtual.server.pm.installer.SessionParams;
 import com.lody.virtual.server.pm.installer.SessionInfo;
 
 interface IPackageInstaller {
-    int createSession(in SessionParams params, String installerPackageName, int userId);
+    int createSession(in SessionParams params, String installerPackageName, int userId, int callingUid);
 
     void updateSessionAppIcon(int sessionId, in Bitmap appIcon);
     void updateSessionAppLabel(int sessionId, String appLabel);

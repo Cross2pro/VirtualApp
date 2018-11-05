@@ -46,8 +46,10 @@ public class VLocationManager {
     }
 
     public void setLocationManager(LocationManager locationManager) {
-        mLocationManager = locationManager;
-        MockLocationHelper.invokeSvStatusChanged(locationManager);
+        if(mLocationManager == null) {
+            mLocationManager = locationManager;
+            MockLocationHelper.invokeSvStatusChanged(locationManager);
+        }
     }
 
     private void checkWork() {

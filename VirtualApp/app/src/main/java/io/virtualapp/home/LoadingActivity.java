@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.util.Locale;
 
@@ -17,6 +18,7 @@ import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.PackageAppData;
 import io.virtualapp.home.repo.PackageAppDataStorage;
+import io.virtualapp.utils.PackageUtils;
 import io.virtualapp.widgets.EatBeansView;
 
 /**
@@ -68,6 +70,12 @@ public class LoadingActivity extends VActivity {
 //                    e.printStackTrace();
 //                }
 //            }
+            InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(pkg, userId);
+            if (info.notCopyApk) {
+                PackageUtils.checkUpdate(this, info, info.packageName);
+            }
+        }).done((res) -> {
+
             VActivityManager.get().startActivity(intent, userId);
         });
 

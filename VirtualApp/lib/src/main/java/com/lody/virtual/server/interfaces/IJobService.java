@@ -11,17 +11,17 @@ import java.util.List;
  */
 public interface IJobService extends IPCInterface {
 
-    int schedule(JobInfo job) throws RemoteException;
+    int schedule(int uid, JobInfo job) throws RemoteException;
 
-    void cancel(int jobId) throws RemoteException;
+    void cancel(int uid, int jobId) throws RemoteException;
 
-    void cancelAll() throws RemoteException;
+    void cancelAll(int uid) throws RemoteException;
 
-    List<JobInfo> getAllPendingJobs() throws RemoteException;
+    List<JobInfo> getAllPendingJobs(int uid) throws RemoteException;
 
-    JobInfo getPendingJob(int jobId) throws RemoteException;
+    JobInfo getPendingJob(int uid, int jobId) throws RemoteException;
 
-    int enqueue(JobInfo job, Parcelable workItem) throws RemoteException;
+    int enqueue(int uid, JobInfo job, Parcelable workItem) throws RemoteException;
 
     abstract class Stub implements IJobService {
         @Override

@@ -35,20 +35,27 @@ public class App extends MultiDexApplication {
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
-        VLog.OPEN_LOG = true;
+        VLog.OPEN_LOG = BuildConfig.DEBUG;
 
         //外部app访问内部的provider，仅文件
-        VASettings.PROVIDER_ONLY_FILE = false;
+        VASettings.PROVIDER_ONLY_FILE = true;
 
         //解决google登录后无法返回app
         VASettings.NEW_INTENTSENDER = true;
 
         //双开的app，根据用户升级，自动升级内部的app，需要监听
-        //false则只有va的服务启动才去检查更新
-        //如果是游戏，则建议关闭，
-        VASettings.CHECK_UPDATE_NOT_COPY_APK = false;
+        //false则只有va的服务启动才去检查更新,需要用户监听升级广播和启动得时候检查
+        VASettings.CHECK_UPDATE_NOT_COPY_APK = true;
+
+        //内部文件权限
+        VASettings.FILE_ISOLATION = false;
+
+        //beta:检查内部的app之间的权限，默认：false关闭
+        VASettings.CHECK_PERMISSION_INSIDE = false;
 
         try {
+            //
+            VirtualCore.get().setSettingHandler(new MySettingHandler());
             VirtualCore.get().startup(base);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -60,8 +67,6 @@ public class App extends MultiDexApplication {
         gApp = this;
         super.onCreate();
         VirtualCore virtualCore = VirtualCore.get();
-        //special app
-        virtualCore.setSettingHandler(new MySettingHandler());
         virtualCore.initialize(new VirtualCore.VirtualInitializer() {
 
             @Override

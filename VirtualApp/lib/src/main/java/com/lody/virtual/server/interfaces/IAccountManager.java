@@ -21,7 +21,7 @@ public interface IAccountManager extends IPCInterface {
 
     Account[] getAccounts(int userId, String type) throws RemoteException;
 
-    void getAuthToken(int userId, IAccountManagerResponse response, Account account, String authTokenType, boolean notifyOnAuthFailure, boolean expectActivityLaunch, Bundle loginOptions) throws RemoteException;
+    void getAuthToken(int userId, IAccountManagerResponse response, Account account, String authTokenType, boolean notifyOnAuthFailure, boolean expectActivityLaunch, Bundle loginOptions,int callingUid) throws RemoteException;
 
     void setPassword(int userId, Account account, String password) throws RemoteException;
 

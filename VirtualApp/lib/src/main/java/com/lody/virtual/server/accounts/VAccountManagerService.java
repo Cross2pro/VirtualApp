@@ -34,7 +34,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.AccountManagerCompat;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -192,7 +191,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     }
 
     @Override
-    public final void getAuthToken(final int userId, final IAccountManagerResponse response, final Account account, final String authTokenType, final boolean notifyOnAuthFailure, boolean expectActivityLaunch, final Bundle loginOptions) {
+    public final void getAuthToken(final int userId, final IAccountManagerResponse response, final Account account, final String authTokenType, final boolean notifyOnAuthFailure, boolean expectActivityLaunch, final Bundle loginOptions,int callingUid) {
         if (response == null) {
             throw new IllegalArgumentException("response is null");
         }
@@ -224,7 +223,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
         final String callerPkg = loginOptions.getString(AccountManagerCompat.KEY_ANDROID_PACKAGE_NAME);
         final boolean customTokens = info.desc.customTokens;
 
-        loginOptions.putInt(AccountManager.KEY_CALLER_UID, VBinder.getCallingUid());
+        loginOptions.putInt(AccountManager.KEY_CALLER_UID, callingUid);
         loginOptions.putInt(AccountManager.KEY_CALLER_PID, Binder.getCallingPid());
         if (notifyOnAuthFailure) {
             loginOptions.putBoolean(AccountManagerCompat.KEY_NOTIFY_ON_FAILURE, true);

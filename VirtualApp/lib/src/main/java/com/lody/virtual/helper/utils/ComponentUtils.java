@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
@@ -128,13 +129,14 @@ public class ComponentUtils {
         newIntent.setPackage(null);
         ComponentName component = intent.getComponent();
         String pkg = intent.getPackage();
+        newIntent.putExtra("_VA_|_user_id_", userId);
+        newIntent.putExtra("_VA_|_callingUid_", VClient.get().getVUid());
         if (component != null) {
-            newIntent.putExtra("_VA_|_user_id_", userId);
+
             newIntent.setAction(String.format("_VA_%s_%s", component.getPackageName(), component.getClassName()));
             newIntent.putExtra("_VA_|_component_", component);
             newIntent.putExtra("_VA_|_intent_", new Intent(intent));
         } else if (pkg != null) {
-            newIntent.putExtra("_VA_|_user_id_", userId);
             newIntent.putExtra("_VA_|_creator_", pkg);
             newIntent.putExtra("_VA_|_intent_", new Intent(intent));
             String protectedAction = SpecialComponentList.protectAction(intent.getAction());
@@ -142,7 +144,6 @@ public class ComponentUtils {
                 newIntent.setAction(protectedAction);
             }
         } else {
-            newIntent.putExtra("_VA_|_user_id_", userId);
             newIntent.putExtra("_VA_|_intent_", new Intent(intent));
             String protectedAction = SpecialComponentList.protectAction(intent.getAction());
             if (protectedAction != null) {

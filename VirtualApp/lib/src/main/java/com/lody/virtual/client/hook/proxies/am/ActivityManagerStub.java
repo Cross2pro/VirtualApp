@@ -70,7 +70,8 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
             addMethodProxy(new StaticMethodProxy("navigateUpTo") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
-                    throw new RuntimeException("Call navigateUpTo!!!!");
+                    //throw new RuntimeException("Call navigateUpTo!!!!");
+                    return 0;
                 }
             });
             addMethodProxy(new ReplaceLastUidMethodProxy("checkPermissionWithToken"));

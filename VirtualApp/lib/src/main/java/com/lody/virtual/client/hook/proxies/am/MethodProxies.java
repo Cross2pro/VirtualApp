@@ -1336,8 +1336,18 @@ class MethodProxies {
             if (permission.startsWith("com.google")) {
                 return PackageManager.PERMISSION_GRANTED;
             }
-            args[args.length - 1] = getRealUid();
-            return PackageManager.PERMISSION_GRANTED;
+            if(!VASettings.CHECK_PERMISSION_INSIDE){
+                return method.invoke(who, args);
+            }
+            int pid = (int) args[1];
+            int uid = (int) args[2];
+            String[] pkgs = VirtualCore.getPM().getPackagesForUid(uid);
+            if(pkgs == null || pkgs.length ==0 || !VirtualCore.get().isAppInstalled(pkgs[0])){
+                //outside
+                args[2] = getRealUid();
+                return method.invoke(who, args);
+            }
+            return VPackageManager.get().checkPermission(permission, pkgs[0], VUserHandle.getUserId(uid));
         }
 
         @Override
@@ -1592,6 +1602,10 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
+            if(isServerProcess() && name.startsWith(VASettings.STUB_CP_AUTHORITY)){
+                //is server process
+                return method.invoke(who, args);
+            }
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
@@ -1631,6 +1645,9 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     info = ContentProviderHolderOreo.info.get(holder);
+                    if(!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())){
+                        return null;
+                    }
                     if (provider != null) {
                         provider = ProviderHook.createProxy(true, info.authority, provider);
                     }
@@ -1638,6 +1655,9 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     info = IActivityManager.ContentProviderHolder.info.get(holder);
+                    if(!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())){
+                        return null;
+                    }
                     if (provider != null) {
                         provider = ProviderHook.createProxy(true, info.authority, provider);
                     }
@@ -1813,6 +1833,8 @@ class MethodProxies {
 
                 handleUninstallShortcutIntent(intent);
 
+            } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
+                return handleMediaScannerIntent(intent);
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
             } else {

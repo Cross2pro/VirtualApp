@@ -21,7 +21,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
-import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -241,17 +240,13 @@ public class PackageParserEx {
         }
 
         if (VASettings.ENABLE_IO_REDIRECT && notCopyApk
-                && !VirtualCore.get().isUseVirtualLibraryFiles(ai.packageName, ai.publicSourceDir)) {
+                && !VirtualCore.get().isUseOwnLibraryFiles(ai.packageName, ai.publicSourceDir)) {
             ApplicationInfo outside = VPackageManagerService.get()
-                    .getOutSideApplicationInfo(ai.packageName, false);
+                    .getOutSideApplicationInfo(ai.packageName);
             if (outside != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    //fake app copy .so file to /lib/
-                    // /data/data/va/app/lib
-                    String nativeLibraryDir = ai.nativeLibraryDir;
-                    ApplicationInfoL.secondaryNativeLibraryDir.set(ai, nativeLibraryDir);
-                }
-                ai.nativeLibraryDir = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
+                //if need check 64bit,please check after install.
+                //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
+                ai.nativeLibraryDir = outside.nativeLibraryDir;
             }
         }
 

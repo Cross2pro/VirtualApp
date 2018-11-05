@@ -8,8 +8,8 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 19
         targetSdkVersion 22
-        versionCode 18042410
-        versionName "1.5.0"
+        versionCode 18051410
+        versionName "2.0.0"
         multiDexEnabled true
         ndk {
             abiFilters "armeabi", "armeabi-v7a", "x86"

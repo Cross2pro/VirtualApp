@@ -11,6 +11,7 @@ import android.os.Binder;
 import android.util.SparseArray;
 import android.util.Xml;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.R;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
@@ -136,7 +137,7 @@ public class VUserManagerService extends IUserManager.Stub {
                         partials.add(ui);
                     }
                     //check systemui
-                    File path = new File(VEnvironment.getUserSystemDirectory(ui.id), "build.prop");
+                    /*File path = new File(VEnvironment.getUserDataDirectory(ui.id), "build.prop");
                     if (!path.exists()) {
                         try {
                             Runtime.getRuntime().exec("cat /system/build.prop > " + path.getAbsolutePath());
@@ -144,7 +145,7 @@ public class VUserManagerService extends IUserManager.Stub {
                         } catch (Throwable ex) {
                             //VLog.e("VDeviceInfo", "cat build.prop fail\n%s", Log.getStackTraceString(ex));
                         }
-                    }
+                    }*/
                 }
                 for (int i = 0; i < partials.size(); i++) {
                     VUserInfo ui = partials.get(i);
@@ -171,11 +172,11 @@ public class VUserManagerService extends IUserManager.Stub {
      * @param message used as message if SecurityException is thrown
      * @throws SecurityException if the caller is not system or root
      */
-    private static void checkManageUsersPermission(String message) {
-        final int uid = VBinder.getCallingUid();
-        if (uid != VirtualCore.get().myUid()) {
-            throw new SecurityException("You need MANAGE_USERS permission to: " + message);
+    private void checkManageUsersPermission(String packageName, String message) {
+        if(VirtualCore.get().getHostPkg().equals(packageName) || GmsSupport.isGoogleService(packageName)){
+            return;
         }
+        throw new SecurityException(packageName + " need MANAGE_USERS permission to: " + message);
     }
 
     @Override
@@ -224,8 +225,8 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setUserName(int userId, String name) {
-        checkManageUsersPermission("rename users");
+    public void setUserName(int userId, String name, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "rename users");
         boolean changed = false;
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
@@ -245,8 +246,8 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setUserIcon(int userId, Bitmap bitmap) {
-        checkManageUsersPermission("update users");
+    public void setUserIcon(int userId, Bitmap bitmap, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "update users");
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -290,8 +291,8 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setGuestEnabled(boolean enable) {
-        checkManageUsersPermission("enable guest users");
+    public void setGuestEnabled(boolean enable, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "enable guest users");
         synchronized (mPackagesLock) {
             if (mGuestEnabled != enable) {
                 mGuestEnabled = enable;
@@ -300,27 +301,27 @@ public class VUserManagerService extends IUserManager.Stub {
                     VUserInfo user = mUsers.valueAt(i);
                     if (!user.partial && user.isGuest()) {
                         if (!enable) {
-                            removeUser(user.id);
+                            removeUser(user.id, callingPackage);
                         }
                         return;
                     }
                 }
                 // No guest was found
                 if (enable) {
-                    createUser("Guest", VUserInfo.FLAG_GUEST);
+                    createUser("Guest", VUserInfo.FLAG_GUEST, callingPackage);
                 }
             }
         }
     }
 
     @Override
-    public void wipeUser(int userHandle) {
-        checkManageUsersPermission("wipe user");
+    public void wipeUser(int userHandle, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "wipe user");
         // TODO:
     }
 
-    public void makeInitialized(int userId) {
-        checkManageUsersPermission("makeInitialized");
+    public void makeInitialized(int userId, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "makeInitialized");
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -680,8 +681,8 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public VUserInfo createUser(String name, int flags) {
-        checkManageUsersPermission("Only the system can create users");
+    public VUserInfo createUser(String name, int flags, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "Only the system can create users");
 
         final long ident = Binder.clearCallingIdentity();
         final VUserInfo userInfo;
@@ -722,8 +723,8 @@ public class VUserManagerService extends IUserManager.Stub {
      *
      * @param userHandle the user's id
      */
-    public boolean removeUser(int userHandle) {
-        checkManageUsersPermission("Only the system can remove users");
+    public boolean removeUser(int userHandle, String callingPackage) {
+        checkManageUsersPermission(callingPackage, "Only the system can remove users");
         final VUserInfo user;
         synchronized (mPackagesLock) {
             user = mUsers.get(userHandle);

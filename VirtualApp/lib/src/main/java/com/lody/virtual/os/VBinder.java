@@ -22,7 +22,11 @@ public class VBinder {
         return Binder.getCallingPid();
     }
 
+    /**
+     * @see com.lody.virtual.os.VUserHandle#getCallingUserHandle
+     * @deprecated
+     */
     public static VUserHandle getCallingUserHandle() {
-        return new VUserHandle(VUserHandle.getUserId(getCallingUid()));
+        return VUserHandle.getCallingUserHandle();
     }
 }

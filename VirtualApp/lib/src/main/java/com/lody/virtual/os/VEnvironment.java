@@ -180,12 +180,30 @@ public class VEnvironment {
         return USER_DIRECTORY;
     }
 
+    /**
+     * @param userId
+     * @return
+     * @see #getUserDataDirectory
+     * @deprecated
+     */
     public static File getUserSystemDirectory(int userId) {
+        return getUserDataDirectory(userId);
+    }
+
+    public static File getUserDataDirectory(int userId) {
         return new File(USER_DIRECTORY, String.valueOf(userId));
     }
 
+    public static File getSystemDirectory(int userId) {
+        return new File(getUserDataDirectory(userId), "system");
+    }
+
+    public static File getBuildFile(int userId) {
+        return new File(getSystemDirectory(userId), "build.prop");
+    }
+
     public static File getWifiMacFile(int userId) {
-        return new File(getUserSystemDirectory(userId), "wifiMacAddress");
+        return new File(getSystemDirectory(userId), "wifiMacAddress");
     }
 
     public static File getDataDirectory() {

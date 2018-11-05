@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.os.Build.VERSION;
 import android.os.IBinder;
 
+import com.lody.virtual.R;
+
 public class HiddenForeNotification extends Service {
     private static final int ID = 2781;
 
@@ -15,11 +17,11 @@ public class HiddenForeNotification extends Service {
         /*Builder builder = new Builder(service.getApplicationContext());
         builder.setSmallIcon(android.R.drawable.ic_dialog_dialer);
         if (VERSION.SDK_INT > 24) {
-            builder.setContentTitle("Running...");
-            builder.setContentText("Keep app alive to receive new messages on time");
+            builder.setContentTitle(service.getString(R.string.keep_service_damon_noti_title_v24));
+            builder.setContentText(service.getString(R.string.keep_service_damon_noti_text_v24));
         } else {
-            builder.setContentTitle("Tip: Message Should Be Hidden");
-            builder.setContentText("Get Removed");
+            builder.setContentTitle(service.getString(R.string.keep_service_damon_noti_title));
+            builder.setContentText(service.getString(R.string.keep_service_damon_noti_text));
             builder.setContentIntent(PendingIntent.getService(service, 0, new Intent(service, HiddenForeNotification.class), 0));
         }*/
         service.startForeground(ID, new Notification());
@@ -33,8 +35,8 @@ public class HiddenForeNotification extends Service {
         try {
            /* Builder builder = new Builder(getBaseContext());
             builder.setSmallIcon(android.R.drawable.ic_dialog_dialer);
-            builder.setContentTitle("Remove Service Notification");
-            builder.setContentText("Remove Service Notification");*/
+            builder.setContentTitle(getString(R.string.keep_service_noti_title));
+            builder.setContentText(getString(R.string.keep_service_noti_text));*/
             startForeground(ID, new Notification());
             stopForeground(true);
             stopSelf();

@@ -1,17 +1,12 @@
 package com.lody.virtual.client.ipc;
 
-import android.annotation.TargetApi;
 import android.app.job.JobInfo;
-import android.app.job.JobWorkItem;
-import android.os.Build;
-import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.RemoteException;
 
-import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.ipcbus.IPCSingleton;
-import com.lody.virtual.server.interfaces.IActivityManager;
 import com.lody.virtual.server.interfaces.IJobService;
 
 import java.util.List;
@@ -36,7 +31,7 @@ public class VJobScheduler {
 
     public int schedule(JobInfo job) {
         try {
-            return getService().schedule(job);
+            return getService().schedule(VClient.get().getVUid(), job);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -44,7 +39,7 @@ public class VJobScheduler {
 
     public List<JobInfo> getAllPendingJobs() {
         try {
-            return getService().getAllPendingJobs();
+            return getService().getAllPendingJobs(VClient.get().getVUid());
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -52,7 +47,7 @@ public class VJobScheduler {
 
     public void cancelAll() {
         try {
-            getService().cancelAll();
+            getService().cancelAll(VClient.get().getVUid());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -60,7 +55,7 @@ public class VJobScheduler {
 
     public void cancel(int jobId) {
         try {
-            getService().cancel(jobId);
+            getService().cancel(VClient.get().getVUid(), jobId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -68,7 +63,7 @@ public class VJobScheduler {
 
     public JobInfo getPendingJob(int jobId) {
         try {
-            return getService().getPendingJob(jobId);
+            return getService().getPendingJob(VClient.get().getVUid(), jobId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -77,7 +72,7 @@ public class VJobScheduler {
     public int enqueue(JobInfo job, Object workItem) {
         if (workItem == null) return -1;
         try {
-            return getService().enqueue(job, (Parcelable) workItem);
+            return getService().enqueue(VClient.get().getVUid(), job, (Parcelable) workItem);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

@@ -11,7 +11,6 @@ import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.remote.VDeviceInfo;
 import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -125,23 +124,6 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
         addDeviceInfoToPool(info);
         return info;
-    }
-
-    public void fillBuildProp(File file) {
-        if(file.exists() && file.length() == 0){
-            try {
-                file.delete();
-            }catch (Throwable e){
-                //ignore
-            }
-        }
-            //ro.product.model
-            //ro.build.product
-            //ro.build.soft.version
-            //ro.build.id
-            //ro.build.version.sdk
-            //ro.build.version.release
-            //ro.product.brand
     }
 
     SparseArray<VDeviceInfo> getDeviceInfos() {
