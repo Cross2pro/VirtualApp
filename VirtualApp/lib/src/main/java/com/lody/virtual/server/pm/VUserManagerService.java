@@ -137,15 +137,15 @@ public class VUserManagerService extends IUserManager.Stub {
                         partials.add(ui);
                     }
                     //check systemui
-                    /*File path = new File(VEnvironment.getUserDataDirectory(ui.id), "build.prop");
+                    File path = new File(VEnvironment.getUserDataDirectory(ui.id), "build.prop");
                     if (!path.exists()) {
                         try {
                             Runtime.getRuntime().exec("cat /system/build.prop > " + path.getAbsolutePath());
-                            VDeviceManagerService.get().fillBuildProp(path);
+                            //VDeviceManagerService.get().fillBuildProp(path);
                         } catch (Throwable ex) {
                             //VLog.e("VDeviceInfo", "cat build.prop fail\n%s", Log.getStackTraceString(ex));
                         }
-                    }*/
+                    }
                 }
                 for (int i = 0; i < partials.size(); i++) {
                     VUserInfo ui = partials.get(i);
