@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">VirtualApp</string>
+    <string name="app_name">羅盒多開</string>
     <string name="desktop">桌面</string>
     <string name="add_app">新增App</string>
     <string name="preparing">正在打開App，請稍候…</string>
@@ -23,4 +23,41 @@
     <string name="install_too_much_once_time">不能一次性安裝超過 9 個程式！</string>
     <string name="tip_install_gms">提示</string>
     <string name="text_install_gms">是否启用Google Service支持？</string>
+    <string name="menu_accounts">多開管理</string>
+    <string name="virtual_location">虛擬定位</string>
+    <string name="choose_user_title">請選擇一個用戶</string>
+    <string name="real_location">真實位置</string>
+    <string name="about_title">關於我們</string>
+    <string name="about_msg">濟寧市羅盒網絡科技有限公司出品\n反饋問題請聯係：zl@aluohe.com</string>
+    <string name="tip_no_app">請先添加一個App</string>
+    <string name="activity_choose_location">地點選擇</string>
+    <string name="activity_location_settings">模擬地理位置</string>
+    <string name="clear">移除</string>
+    <string name="search">搜索</string>
+    <string name="label_lat">經度:</string>
+    <string name="label_lng">緯度:</string>
+    <string name="unknown_location">未知位置</string>
+    <string name="no_mock">未模擬</string>
+    <string name="tip_input_keywords">輸入搜索位置</string>
+    <string name="tip_no_find_points">沒有找到相關地點</string>
+    <string name="mocking">正在模擬位置</string>
+    <string name="tip_start_location">開始定位</string>
+    <string name="tip_find_location">正在定位</string>
+    <string name="title_input_location">手動輸入位置</string>
+    <string name="tip_search_keyword">搜索非當前城市區域，請用:“城市名@关键词”</string>
+    <string name="hint_lat">經度</string>
+    <string name="hint_lng">緯度</string>
+    <string name="input_loc_error">輸入内容有誤，請檢查格式：經度-90~90，緯度-180~180</string>
+    <string name="tip_delete">刪除應用</string>
+    <string name="text_delete_app" formatted="false">是否移除應用 %s ?</string>
+    <string name="menu_install_gms">安裝google服務框架</string>
+    <string-array name="weeks">
+        <item>周日</item>
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+    </string-array>
 </resources>

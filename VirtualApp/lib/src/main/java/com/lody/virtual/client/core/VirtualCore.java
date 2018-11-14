@@ -25,6 +25,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
+import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.R;
@@ -186,12 +187,54 @@ public final class VirtualCore {
         return hostPkgInfo.gids;
     }
 
+    /***
+     * manifest's uses-permission
+     * PackageInfo#requestedPermissions
+     * @param permission
+     */
+    public boolean hasPermission(String permission){
+        if (hostPkgInfo.requestedPermissions == null) {
+            throw new RuntimeException("don't has a permission");
+        }
+        for (String per : hostPkgInfo.requestedPermissions) {
+            if (TextUtils.equals(per, permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /***
+     * manifest's uses-permission
+     * PackageInfo#requestedPermissions
+     * @param permissions
+     */
+    public boolean hasAnyPermission(String... permissions) {
+        if (permissions.length == 0) return true;
+        if (hostPkgInfo.requestedPermissions == null) {
+            throw new RuntimeException("don't has a permission");
+        }
+        for (String per : hostPkgInfo.requestedPermissions) {
+            for (String permission : permissions) {
+                if (TextUtils.equals(per, permission)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public Context getContext() {
         return context;
     }
 
     public PackageManager getPackageManager() {
         return context.getPackageManager();
+    }
+
+    public boolean isSystemApp() {
+        ApplicationInfo applicationInfo = getContext().getApplicationInfo();
+        return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }
 
     public String getHostPkg() {
@@ -218,7 +261,8 @@ public final class VirtualCore {
             //TODO compatible StubFileProvider context.getPackageName() + ".virtual.fileprovider";
             UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";//.virtual.proxy.provider
 
-            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
+            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(),
+                    PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS);
             IPCBus.initialize(new IServerCache() {
                 @Override
                 public void join(String serverName, IBinder binder) {

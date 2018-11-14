@@ -272,14 +272,13 @@ public final class VClient extends IVClient.Stub {
         return false;
     }
 
-    private void attachBuildProp(){
-        int userId = VUserHandle.myUserId();
+    private void attachBuildProp(String packageName, int userId){
         VDeviceInfo deviceInfo = getDeviceInfo();
         mirror.android.os.Build.SERIAL.set(deviceInfo.getSerial());
         mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
 
         //load file and set
-        File file = VEnvironment.getBuildFile(userId);
+        File file = VDeviceManager.get().getBuildFile(packageName, userId);
         Properties properties = new Properties();
         if(PropertiesUtils.load(properties, file)){
             Map<String, RefStaticObject<String>> fields = new HashMap<>();
@@ -317,7 +316,7 @@ public final class VClient extends IVClient.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        attachBuildProp();
+        attachBuildProp(packageName, userId);
 
         ActivityThread.mInitialApplication.set(
                 VirtualCore.mainThread(),
@@ -517,24 +516,33 @@ public final class VClient extends IVClient.Stub {
             //default wifi mac
         }
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            File buildProp = VEnvironment.getBuildFile(userId);
+            File buildProp = VDeviceManager.get().getBuildFile(packageName, userId);
             if (buildProp.exists()) {
                 NativeEngine.redirectFile("/system/build.prop", buildProp.getAbsolutePath());
             }
         }
 
         if(VASettings.FILE_ISOLATION) {
+            //getPath         ->  /data/data/va/
+            //getAbsolutePath ->  /data/user/0/
             //io hook: whitelist->replace path(/data/data/pkg/)->forbid
-            //odex
+            // odex
             NativeEngine.whitelistFile(VEnvironment.getOdexFile(packageName).getPath());
+            NativeEngine.whitelistFile(VEnvironment.getOdexFile(packageName).getAbsolutePath());
             // /virtual/data/0/system/
             NativeEngine.whitelist(VEnvironment.getSystemDirectory(userId).getPath());
+            NativeEngine.whitelist(VEnvironment.getSystemDirectory(userId).getAbsolutePath());
             // /virtual/data/app/{pkg}/
             NativeEngine.whitelist(VEnvironment.getDataAppPackageDirectory(packageName).getPath());
+            NativeEngine.whitelist(VEnvironment.getDataAppPackageDirectory(packageName).getAbsolutePath());
             // /virtual/data/0/{pkg}/
-            NativeEngine.whitelist(dataDir);
+            File dataDirFile = new File(dataDir);
+            NativeEngine.whitelist(dataDirFile.getPath());
+            NativeEngine.whitelist(dataDirFile.getAbsolutePath());
             //other data dir
-            NativeEngine.forbid(VirtualCore.get().getContext().getApplicationInfo().dataDir, false);
+            File vaDataDir = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir);
+            NativeEngine.forbid(vaDataDir.getPath(), false);
+            NativeEngine.forbid(vaDataDir.getAbsolutePath(), false);
         }
 
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
@@ -554,10 +562,17 @@ public final class VClient extends IVClient.Stub {
                 //ignore
             }
             if (outside != null) {
-                //if need check 64bit,please check after install.
-                //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
-                NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
-                NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
+                if (VASettings._64BitMode) {
+                    NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
+                    NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
+                } else {
+                    //if need check 64bit,please check after install.
+                    //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
+                    if (!TextUtils.isEmpty(NativeLibraryHelperCompat.getNativeLibraryDir32(outside))) {
+                        NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
+                        NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
+                    }
+                }
             }
         }
 

@@ -30,6 +30,7 @@ import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
+import com.lody.virtual.server.am.ServiceRecord;
 import com.lody.virtual.server.interfaces.IActivityManager;
 
 import java.util.HashMap;
@@ -243,7 +244,7 @@ public class VActivityManager {
         try {
             getService().serviceDoneExecuting(token, type, startId, res, VUserHandle.myUserId());
         } catch (RemoteException e) {
-            e.printStackTrace();
+            //ignore
         }
     }
 
@@ -467,7 +468,7 @@ public class VActivityManager {
         try {
             return getService().isVAServiceToken(token);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return token instanceof ServiceRecord;
         }
     }
 

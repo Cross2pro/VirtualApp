@@ -1,10 +1,15 @@
 package io.virtualapp;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.support.multidex.MultiDexApplication;
+import android.support.v7.app.AppCompatDelegate;
 
-import com.flurry.android.FlurryAgent;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -20,6 +25,7 @@ import jonathanfinerty.once.Once;
 public class App extends MultiDexApplication {
 
     private static App gApp;
+    private SharedPreferences mPreferences;
 
     public static App getApp() {
         return gApp;
@@ -28,10 +34,14 @@ public class App extends MultiDexApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
+        mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
+
         VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
         //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
+        //google 支持（beta）
+        VASettings.ENABLE_GMS = mPreferences.getBoolean(VCommends.PREF_GMS_ENABLE, false);
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
@@ -72,13 +82,11 @@ public class App extends MultiDexApplication {
             @Override
             public void onMainProcess() {
                 //宿主初始化
+                AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
                 Once.initialise(App.this);
-                new FlurryAgent.Builder()
-                        .withLogEnabled(true)
-                        .withListener(() -> {
-                            // nothing
-                        })
-                        .build(App.this, "48RJJP7ZCZZBB6KMMWW5");
+                //某些rom做了限制，比如vivo
+                App.this.registerReceiver(new RomRequestBroadcastReceiver(),
+                        new IntentFilter(Constants.ACTION_NEED_PERMISSION));
             }
 
             @Override
@@ -105,4 +113,23 @@ public class App extends MultiDexApplication {
         });
     }
 
+    public static SharedPreferences getPreferences() {
+        return getApp().mPreferences;
+    }
+
+
+    private class  RomRequestBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(Constants.ACTION_NEED_PERMISSION.equals(intent.getAction())){
+                String season = intent.getStringExtra(Constants.EXTRA_PERMISSION_SEASON);
+                //
+                String error = intent.getStringExtra(Constants.EXTRA_PERMISSION_EX);
+                if("startActivityForBg".equals(season)){
+                    //TODO vivo start activity by service
+                    //跳到vivo的后台弹activity权限
+                }
+            }
+        }
+    };
 }

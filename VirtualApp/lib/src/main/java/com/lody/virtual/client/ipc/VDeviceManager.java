@@ -48,17 +48,50 @@ public class VDeviceManager {
     }
 
     /**
-     * @param userId
-     * @return
      * @see com.lody.virtual.helper.utils.PropertiesUtils#load
      * @see com.lody.virtual.helper.utils.PropertiesUtils#save
      */
-    public File getBuildFile(int userId) {
-        return VEnvironment.getBuildFile(userId);
+    public File getSystemBuildFile(int userId) {
+        return VEnvironment.getSystemBuildFile(userId);
     }
 
+    /**
+     * @see com.lody.virtual.helper.utils.PropertiesUtils#load
+     * @see com.lody.virtual.helper.utils.PropertiesUtils#save
+     */
+    public File getAppBuildFile(String packageName, int userId) {
+        return VEnvironment.getAppBuildFile(packageName, userId);
+    }
+
+    /**
+     * only get using build.prop
+     * @hide
+     * @see com.lody.virtual.helper.utils.PropertiesUtils#load
+     * @see com.lody.virtual.helper.utils.PropertiesUtils#save
+     */
+    public File getBuildFile(String packageName, int userId) {
+        File appFile = getAppBuildFile(packageName, userId);
+        if (appFile.exists()) {
+            return appFile;
+        }
+        return getSystemBuildFile(userId);
+    }
+
+    /**
+     * @deprecated
+     * @see #createAppBuildEditor(String, int)
+     * @see #createSystemBuildEditor(int)
+     */
     public Editor createBuildEditor(int userId) {
-        return new Editor(getBuildFile(userId));
+        return createSystemBuildEditor(userId);
+    }
+
+    public Editor createAppBuildEditor(String packageName, int userId) {
+        return new Editor(getAppBuildFile(packageName, userId));
+    }
+
+    public Editor createSystemBuildEditor(int userId) {
+        return new Editor(getSystemBuildFile(userId));
     }
 
     public static class Editor {

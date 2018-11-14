@@ -9,6 +9,7 @@ import mirror.android.net.IConnectivityManager;
 
 /**
  * @author legency
+ * @see android.net.ConnectivityManager
  */
 public class ConnectivityStub extends BinderInvocationProxy {
 

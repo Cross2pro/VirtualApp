@@ -14,5 +14,9 @@ public class VCommends {
 
 	public static final String TAG_ASK_INSTALL_GMS = "va.extra.ASK_INSTALL_GMS";
 
+    public static final String EXTRA_LOCATION = "virtual_location";
 	public static final String PREF_GMS_ENABLE = "gms_enable";
+	public static final String EXTRA_LOCATION_ADDRESS = "virtual.extras.address";
+	public static final String EXTRA_PACKAGE = "virtual.extras.package";
+	public static final String EXTRA_USERID = "virtual.extras.userid";
 }

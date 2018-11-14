@@ -46,6 +46,10 @@ public class VirtualLocationManager {
         return getMode(MethodProxy.getAppUserId(), MethodProxy.getAppPkg());
     }
 
+    public boolean isUseVirtualLocation(int userId, String pkg){
+        return getMode(userId, pkg) != MODE_CLOSE;
+    }
+
     public void setMode(int userId, String pkg, int mode) {
         try {
             getService().setMode(userId, pkg, mode);

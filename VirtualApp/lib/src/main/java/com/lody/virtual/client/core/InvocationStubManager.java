@@ -16,7 +16,6 @@ import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
 import com.lody.virtual.client.hook.proxies.backup.BackupManagerStub;
-import com.lody.virtual.client.hook.proxies.bluetooth.BluetoothManagerStub;
 import com.lody.virtual.client.hook.proxies.bluetooth.BluetoothStub;
 import com.lody.virtual.client.hook.proxies.clipboard.ClipBoardStub;
 import com.lody.virtual.client.hook.proxies.connectivity.ConnectivityStub;
@@ -48,6 +47,7 @@ import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
+import com.lody.virtual.client.hook.proxies.telephony.ICarrierConfigLoaderStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
 import com.lody.virtual.client.hook.proxies.usage.UsageStatsManagerStub;
@@ -140,7 +140,6 @@ public final class InvocationStubManager {
             addInjector(new MountServiceStub());
             addInjector(new BackupManagerStub());
             addInjector(new TelephonyStub());
-
             addInjector(new AccessibilityManagerStub());
             if (BuildCompat.isOreo()) {
                 if (IHwTelephony.TYPE != null) {
@@ -161,7 +160,6 @@ public final class InvocationStubManager {
                 addInjector(new VibratorStub());
                 addInjector(new WifiManagerStub());
                 addInjector(new BluetoothStub());
-                addInjector(new BluetoothManagerStub());
                 addInjector(new ContextHubServiceStub());
             }
             if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
@@ -195,6 +193,7 @@ public final class InvocationStubManager {
             if (Build.VERSION.SDK_INT >= M) {
                 addInjector(new FingerprintManagerStub());
                 addInjector(new NetworkManagementStub());
+                addInjector(new ICarrierConfigLoaderStub());
             }
             if (Build.VERSION.SDK_INT >= N) {
                 addInjector(new WifiScannerStub());

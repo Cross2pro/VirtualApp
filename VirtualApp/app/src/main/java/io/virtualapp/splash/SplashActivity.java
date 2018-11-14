@@ -9,7 +9,6 @@ import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.abs.ui.VUiKit;
-import io.virtualapp.home.FlurryROMCollector;
 import io.virtualapp.home.HomeActivity;
 import jonathanfinerty.once.Once;
 
@@ -24,10 +23,6 @@ public class SplashActivity extends VActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         VUiKit.defer().when(() -> {
-            if (!Once.beenDone("collect_flurry")) {
-                FlurryROMCollector.startCollect();
-                Once.markDone("collect_flurry");
-            }
             long time = System.currentTimeMillis();
             doActionInThread();
             time = System.currentTimeMillis() - time;
@@ -39,9 +34,6 @@ public class SplashActivity extends VActivity {
             HomeActivity.goHome(this);
             finish();
         });
-    }
-
-    private void showBanner() {
     }
 
     private void doActionInThread() {

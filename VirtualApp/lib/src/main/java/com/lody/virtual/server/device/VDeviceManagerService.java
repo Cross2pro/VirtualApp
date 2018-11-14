@@ -6,6 +6,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.remote.VDeviceInfo;
@@ -97,11 +98,14 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     private VDeviceInfo generateRandomDeviceInfo(int userId) {
         VDeviceInfo info = new VDeviceInfo();
         String value;
-        do {
-            value = VDeviceInfo.genDeviceId(mTelephonyManager.getDeviceId(), userId);
-            info.setDeviceId(value);
-        } while (mPool.deviceIds.contains(value));
-
+        if(VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
+            do {
+                value = VDeviceInfo.genDeviceId(mTelephonyManager.getDeviceId(), userId);
+                info.setDeviceId(value);
+            } while (mPool.deviceIds.contains(value));
+        }else{
+            info.setDeviceId(VDeviceInfo.genDeviceId(null, userId));
+        }
         do {
             value = VDeviceInfo.generate16(System.currentTimeMillis(), 16);
             info.setAndroidId(value);
@@ -133,7 +137,11 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     @SuppressLint("HardwareIds")
     private VDeviceInfo defaultDevice() {
         VDeviceInfo info = new VDeviceInfo();
-        info.setDeviceId(mTelephonyManager.getDeviceId());
+        if (VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
+            info.setDeviceId(mTelephonyManager.getDeviceId());
+        } else {
+            info.setDeviceId(null);
+        }
         info.setAndroidId(Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID));
         info.setWifiMac(null);
         info.setBluetoothMac(null);

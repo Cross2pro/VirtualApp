@@ -32,6 +32,7 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.VDeviceInfo;
@@ -45,6 +46,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.virtualapp.App;
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
@@ -120,7 +122,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
      * tip:Android7.0 + don't read /system/build.prop
      *
      * how use?
-     * @see  com.lody.virtual.client.ipc.VDeviceManager#createBuildEditor
+     * @see  com.lody.virtual.client.ipc.VDeviceManager#createAppBuildEditor(String, int)
+     * @see  com.lody.virtual.client.ipc.VDeviceManager#createSystemBuildEditor(int)
      * @see  com.lody.virtual.client.ipc.VDeviceManager.Editor
      */
     private void testMockDevice(){
@@ -138,9 +141,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         editor.setProduct("6");
         editor.setSerial("7");
         if (editor.save()) {
-            Log.i("kk", "保存配置ok");
-        } else {
-            Log.e("kk", "保存配置失败");
+            Log.e("kk", "mock build ok");
         }
     }
 
@@ -228,45 +229,51 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         mPopupMenu = new PopupMenu(new ContextThemeWrapper(this, R.style.Theme_AppCompat_Light), mMenuView);
         Menu menu = mPopupMenu.getMenu();
         setIconEnable(menu, true);
-        menu.add("Accounts").setIcon(R.drawable.ic_account).setOnMenuItemClickListener(item -> {
-            List<VUserInfo> users = VUserManager.get().getUsers();
-            List<String> names = new ArrayList<>(users.size());
-            for (VUserInfo info : users) {
-                names.add(info.name);
+
+            menu.add(R.string.menu_accounts).setIcon(R.drawable.ic_account).setOnMenuItemClickListener(item -> {
+                List<VUserInfo> users = VUserManager.get().getUsers();
+                List<String> names = new ArrayList<>(users.size());
+                for (VUserInfo info : users) {
+                    names.add(info.name);
+                }
+                CharSequence[] items = new CharSequence[names.size()];
+                for (int i = 0; i < names.size(); i++) {
+                    items[i] = names.get(i);
+                }
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.choose_user_title)
+                        .setItems(items, (dialog, which) -> {
+                            VUserInfo info = users.get(which);
+                            Intent intent = new Intent(this, ChooseTypeAndAccountActivity.class);
+                            intent.putExtra(ChooseTypeAndAccountActivity.KEY_USER_ID, info.id);
+                            startActivity(intent);
+                        }).show();
+                return false;
+            });
+        if(!VASettings.ENABLE_GMS) {
+            menu.add(R.string.menu_install_gms).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+                askInstallGms();
+                return true;
+            });
+        }
+        menu.add(R.string.virtual_location).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+            if (mPresenter.getAppCount() == 0) {
+                Toast.makeText(this, R.string.tip_no_app, Toast.LENGTH_SHORT).show();
+                return false;
             }
-            CharSequence[] items = new CharSequence[names.size()];
-            for (int i = 0; i < names.size(); i++) {
-                items[i] = names.get(i);
-            }
-            new AlertDialog.Builder(this)
-                    .setTitle("Please select an user")
-                    .setItems(items, (dialog, which) -> {
-                        VUserInfo info = users.get(which);
-                        Intent intent = new Intent(this, ChooseTypeAndAccountActivity.class);
-                        intent.putExtra(ChooseTypeAndAccountActivity.KEY_USER_ID, info.id);
-                        startActivity(intent);
-                    }).show();
-            return false;
-        });
-        menu.add("Virtual Storage").setIcon(R.drawable.ic_vs).setOnMenuItemClickListener(item -> {
-            Toast.makeText(this, "The coming", Toast.LENGTH_SHORT).show();
-            return false;
-        });
-        menu.add("Notification").setIcon(R.drawable.ic_notification).setOnMenuItemClickListener(item -> {
-            Toast.makeText(this, "The coming", Toast.LENGTH_SHORT).show();
-            return false;
-        });
-        menu.add("Virtual Location").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
             startActivity(new Intent(this, LocationSettingsActivity.class));
             return true;
         });
-        menu.add("Install Google Support").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
-            askInstallGms();
+
+        menu.add(getString(R.string.about)).setIcon(R.drawable.ic_about).setOnMenuItemClickListener(item -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.about_title);
+            builder.setMessage(R.string.about_msg);
+            builder.setPositiveButton(android.R.string.ok, (dlg, id) -> {
+                dlg.dismiss();
+            });
+            builder.show();
             return true;
-        });
-        menu.add("Settings").setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
-            Toast.makeText(this, "The coming", Toast.LENGTH_SHORT).show();
-            return false;
         });
         mMenuView.setOnClickListener(v -> mPopupMenu.show());
     }
@@ -324,8 +331,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private void deleteApp(int position) {
         AppData data = mLaunchpadAdapter.getList().get(position);
         new AlertDialog.Builder(this)
-                .setTitle("Delete app")
-                .setMessage("Do you want to delete " + data.getName() + "?")
+                .setTitle(R.string.tip_delete)
+                .setMessage(getString(R.string.text_delete_app, data.getName()))
                 .setPositiveButton(android.R.string.yes, (dialog, which) -> {
                     mPresenter.deleteApp(data);
                 })
@@ -440,12 +447,21 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         mLaunchpadAdapter.refresh(model);
     }
 
+    @SuppressLint("ApplySharedPref")
     @Override
     public void askInstallGms() {
+        if (VASettings.ENABLE_GMS) {
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle(R.string.tip_install_gms)
                 .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    App.getPreferences()
+                            .edit()
+                            .putBoolean(VCommends.PREF_GMS_ENABLE, true)
+                            .commit();
+                    VASettings.ENABLE_GMS = true;
                     defer().when(() -> {
                         GmsSupport.installGApps(0);
                     }).done((res) -> {

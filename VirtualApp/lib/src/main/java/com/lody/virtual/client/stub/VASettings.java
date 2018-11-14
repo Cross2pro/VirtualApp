@@ -9,6 +9,11 @@ import java.util.Locale;
 public class VASettings {
 
     /**
+     * @hide
+     */
+    public static boolean _64BitMode = false;
+
+    /**
      * PackageManager#checkPermission
      */
     public static boolean CHECK_PERMISSION_INSIDE = false;

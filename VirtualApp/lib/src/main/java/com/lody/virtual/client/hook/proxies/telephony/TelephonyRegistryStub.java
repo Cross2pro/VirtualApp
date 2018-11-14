@@ -12,6 +12,10 @@ import java.lang.reflect.Method;
 
 import mirror.com.android.internal.telephony.ITelephonyRegistry;
 
+/**
+ * @author Lody
+ * @see android.telephony.TelephonyManager#listen
+ */
 public class TelephonyRegistryStub extends BinderInvocationProxy {
 
     public TelephonyRegistryStub() {

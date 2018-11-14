@@ -198,8 +198,12 @@ public class VEnvironment {
         return new File(getUserDataDirectory(userId), "system");
     }
 
-    public static File getBuildFile(int userId) {
+    public static File getSystemBuildFile(int userId) {
         return new File(getSystemDirectory(userId), "build.prop");
+    }
+
+    public static File getAppBuildFile(String packageName, int userId) {
+        return new File(getSystemDirectory(userId), packageName + "_build.prop");
     }
 
     public static File getWifiMacFile(int userId) {

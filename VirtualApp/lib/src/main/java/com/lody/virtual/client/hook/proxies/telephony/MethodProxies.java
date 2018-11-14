@@ -43,7 +43,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String imei = getDeviceInfo().getDeviceId();
-            if (!TextUtils.isEmpty(imei)) {
+            if(!TextUtils.isEmpty(imei)){
                 return imei;
             }
             return super.call(who, method, args);
@@ -51,7 +51,7 @@ class MethodProxies {
     }
 
     @FakeDeviceMark("fake device id.")
-    static class GetImeiForSlot extends GetDeviceId {
+    static class GetImeiForSlot extends GetDeviceId{
         @Override
         public String getMethodName() {
             return "getImeiForSlot";
@@ -59,7 +59,7 @@ class MethodProxies {
     }
 
     @FakeDeviceMark("fake device id.")
-    static class GetMeidForSlot extends GetDeviceId {
+    static class GetMeidForSlot extends GetDeviceId{
         @Override
         public String getMethodName() {
             return "getMeidForSlot";
@@ -93,9 +93,9 @@ class MethodProxies {
         }
     }
 
-    static class getAllCellInfoUsingSubId extends ReplaceCallingPkgMethodProxy {
+    static class GetAllCellInfoUsingSubId extends ReplaceCallingPkgMethodProxy {
 
-        public getAllCellInfoUsingSubId() {
+        public GetAllCellInfoUsingSubId() {
             super("getAllCellInfoUsingSubId");
         }
 

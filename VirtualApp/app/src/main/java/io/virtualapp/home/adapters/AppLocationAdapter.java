@@ -3,7 +3,6 @@ package io.virtualapp.home.adapters;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -28,11 +27,15 @@ public class AppLocationAdapter extends BaseAdapterPlus<LocationData> {
     protected void attach(View view, LocationData item, int position) {
         ViewHolder viewHolder = (ViewHolder) view.getTag();
         viewHolder.icon.setImageDrawable(item.icon);
-        viewHolder.label.setText(item.name);
+        if (item.userId > 0) {
+            viewHolder.label.setText(item.name + " (" + (item.userId + 1) + ")");
+        } else {
+            viewHolder.label.setText(item.name);
+        }
         if (item.location != null && item.mode != 0) {
             viewHolder.location.setText(item.location.latitude + "," + item.location.longitude);
         } else {
-            viewHolder.location.setText("real location");
+            viewHolder.location.setText(R.string.real_location);
         }
     }
 

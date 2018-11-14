@@ -21,6 +21,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -244,9 +245,17 @@ public class PackageParserEx {
             ApplicationInfo outside = VPackageManagerService.get()
                     .getOutSideApplicationInfo(ai.packageName);
             if (outside != null) {
-                //if need check 64bit,please check after install.
-                //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
-                ai.nativeLibraryDir = outside.nativeLibraryDir;
+                if(VASettings._64BitMode){
+                    ai.nativeLibraryDir = outside.nativeLibraryDir;
+                }else{
+                    //if need check 64bit,please check after install.
+                    //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
+                    String _32path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
+                    if(!TextUtils.isEmpty(_32path)){
+                        ai.nativeLibraryDir = _32path;
+                    }
+                }
+
             }
         }
 

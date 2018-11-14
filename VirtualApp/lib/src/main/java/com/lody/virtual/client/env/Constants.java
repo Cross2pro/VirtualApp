@@ -31,7 +31,17 @@ public class Constants {
 	public static final String ACTION_USER_REMOVED = "virtual." + "android.intent.action.USER_REMOVED";
 	public static final String ACTION_USER_INFO_CHANGED = "virtual." + "android.intent.action.USER_CHANGED";
 	public static final String ACTION_USER_STARTED = "Virtual." + "android.intent.action.USER_STARTED";
-    public static final String ACTION_NEED_PERMISSION = "virtual.action.NEED_PERMISSION";
+    public static final String ACTION_NEED_PERMISSION = "_VA_.server.action.NEED_PERMISSION";
+
+    /**
+     * season:
+     * startActivityForBg vivo start background activity.
+     */
+    public static final String EXTRA_PERMISSION_SEASON = "virtual.extras.season";
+    /**
+     * Throwable
+     */
+    public static final String EXTRA_PERMISSION_EX = "virtual.extras.ex";
 
 	public static String META_KEY_IDENTITY = "X-Identity";
 	public static String META_VALUE_STUB = "Stub-User";

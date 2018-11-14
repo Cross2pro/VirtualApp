@@ -51,6 +51,8 @@ import io.virtualapp.home.models.AppInfoLite;
         void createShortcut(AppData data);
 
         String getLabel(String packageName);
+
+        int getAppCount();
     }
 
 }

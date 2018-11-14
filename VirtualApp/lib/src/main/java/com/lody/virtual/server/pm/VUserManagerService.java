@@ -173,7 +173,9 @@ public class VUserManagerService extends IUserManager.Stub {
      * @throws SecurityException if the caller is not system or root
      */
     private void checkManageUsersPermission(String packageName, String message) {
-        if(VirtualCore.get().getHostPkg().equals(packageName) || GmsSupport.isGoogleService(packageName)){
+        if(VirtualCore.get().getHostPkg().equals(packageName)
+                || GmsSupport.isGoogleService(packageName)
+                || GmsSupport.GOOGLE_FRAMEWORK_PACKAGE.equals(packageName)){
             return;
         }
         throw new SecurityException(packageName + " need MANAGE_USERS permission to: " + message);

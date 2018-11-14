@@ -1,7 +1,9 @@
 package com.lody.virtual.helper.compat;
 
 import android.annotation.TargetApi;
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.text.TextUtils;
 
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -13,6 +15,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import mirror.android.content.pm.ApplicationInfoL;
 import mirror.com.android.internal.content.NativeLibraryHelper;
 import mirror.dalvik.system.VMRuntime;
 
@@ -62,6 +65,37 @@ public class NativeLibraryHelperCompat {
         return false;
     }
 
+    public static String getNativeLibraryDir32(ApplicationInfo ai) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+            try {
+                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
+                String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
+                if(primaryCpuAbi == null){
+                    return null;
+                }
+                boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
+                if (!TextUtils.isEmpty(secondaryCpuAbi)) {
+                    // Multi-arch case.
+                    if (primaryArchIs64bit) {
+                        // Primary arch: 64-bit, secondary: 32-bit.
+                        return ApplicationInfoL.secondaryNativeLibraryDir.get(ai);
+                    } else {
+                        return ai.nativeLibraryDir;
+                    }
+                } else if (primaryArchIs64bit) {
+                    // Single-arch 64-bit.
+                    return null;
+                } else {
+                    // Single-arch 32-bit.
+                    return ai.nativeLibraryDir;
+                }
+            }catch (Throwable e){
+                return ai.nativeLibraryDir;
+            }
+        }
+        return ai.nativeLibraryDir;
+    }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private static int copyNativeBinariesAfterL(File apkFile, File sharedLibraryDir) {
         try {
@@ -93,7 +127,7 @@ public class NativeLibraryHelperCompat {
             }
 
             if (abi == null) {
-                VLog.e(TAG, "Not match any abi [%s].", apkFile.getPath());
+                VLog.e(TAG, "Not match any abi [%s].", apkFile.getAbsolutePath());
                 return -1;
             }
             return NativeLibraryHelper.copyNativeBinaries.call(handle, sharedLibraryDir, abi);

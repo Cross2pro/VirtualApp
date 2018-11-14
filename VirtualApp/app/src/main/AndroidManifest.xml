@@ -1,60 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="io.virtualapp">
+<manifest package="io.virtualapp"
+          xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
     <!-- 通话记录 -->
-    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"/>
     <!-- call phone -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG"/>
     <!-- sms-->
-    <uses-permission android:name="android.permission.RECEIVE_MMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH"/>
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
     <!-- google app start -->
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.OTHER_SERVICES" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.YouTubeUser" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adsense" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adwords" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ah" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.android" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.androidsecure" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.blogger" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cl" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cp" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.dodgeball" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.finance" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.gbase" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.grandcentral" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.groups2" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.health" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ig" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.jotspot" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.knol" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.lh2" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.local" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mail" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mobile" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.news" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.notebook" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.orkut" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.print" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierra" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierraqa" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierrasandbox" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sitemaps" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speech" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speechpersonalization" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.talk" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wifi" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wise" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.writely" />
-    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.youtube" />
+    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH"/>
+    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.OTHER_SERVICES"/>
+    <uses-permission android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.YouTubeUser"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adsense"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.adwords"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ah"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.android"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.androidsecure"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.blogger"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cl"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.cp"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.dodgeball"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.finance"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.gbase"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.grandcentral"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.groups2"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.health"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.ig"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.jotspot"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.knol"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.lh2"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.local"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mail"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.mobile"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.news"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.notebook"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.orkut"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.print"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierra"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierraqa"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sierrasandbox"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.sitemaps"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speech"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.speechpersonalization"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.talk"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wifi"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.wise"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.writely"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="com.google.android.googleapps.permission.GOOGLE_AUTH.youtube"
+        tools:node="remove"/>
     <!-- google app end -->
     <application
         android:name=".App"
@@ -98,12 +170,10 @@
             android:screenOrientation="portrait"
             android:theme="@style/UITheme"
             />
-
         <activity
-            android:name=".home.location.MarkerActivity"
+            android:name=".home.location.ChooseLocationActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/UITheme"
-            />
+            android:theme="@style/UITheme"/>
 
         <!-- va的x进程处理 -->
         <receiver android:name=".PackageReceiver"

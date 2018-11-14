@@ -1336,18 +1336,18 @@ class MethodProxies {
             if (permission.startsWith("com.google")) {
                 return PackageManager.PERMISSION_GRANTED;
             }
-            if(!VASettings.CHECK_PERMISSION_INSIDE){
-                return method.invoke(who, args);
+            if(VASettings.CHECK_PERMISSION_INSIDE){
+                int pid = (int) args[1];
+                int uid = (int) args[2];
+                String[] pkgs = VirtualCore.getPM().getPackagesForUid(uid);
+                if(pkgs != null && pkgs.length > 0
+                        && VirtualCore.get().isAppInstalled(pkgs[0])){
+                    return VPackageManager.get().checkPermission(permission, pkgs[0],
+                            VUserHandle.getUserId(uid));
+                }
             }
-            int pid = (int) args[1];
-            int uid = (int) args[2];
-            String[] pkgs = VirtualCore.getPM().getPackagesForUid(uid);
-            if(pkgs == null || pkgs.length ==0 || !VirtualCore.get().isAppInstalled(pkgs[0])){
-                //outside
-                args[2] = getRealUid();
-                return method.invoke(who, args);
-            }
-            return VPackageManager.get().checkPermission(permission, pkgs[0], VUserHandle.getUserId(uid));
+            args[args.length - 1] = getRealUid();
+            return method.invoke(who, args);
         }
 
         @Override

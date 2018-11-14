@@ -14,13 +14,16 @@ import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
+import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
@@ -43,6 +46,24 @@ import mirror.android.net.wifi.WifiSsid;
  * @see android.net.wifi.WifiManager
  */
 public class WifiManagerStub extends BinderInvocationProxy {
+
+    private class RemoveWorkSourceMethodProxy extends StaticMethodProxy {
+
+        RemoveWorkSourceMethodProxy(String name) {
+            super(name);
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            int index = ArrayUtils.indexOfFirst(args, WorkSource.class);
+            if (index >= 0) {
+                args[index] = null;
+            }
+            return super.call(who, method, args);
+        }
+    }
+
+
     public WifiManagerStub() {
         super(IWifiManager.Stub.asInterface, Context.WIFI_SERVICE);
     }
@@ -104,9 +125,28 @@ public class WifiManagerStub extends BinderInvocationProxy {
             addMethodProxy(new RemoveWorkSourceMethodProxy("startLocationRestrictedScan"));
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            addMethodProxy(new RemoveWorkSourceMethodProxy("requestBatchedScan"));
+        }
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiEnabled"));
+        if (VirtualCore.get().hasPermission(android.Manifest.permission.ACCESS_WIFI_STATE)) {
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("getWifiApConfiguration"));
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiApConfiguration"));
+        } else {
+            addMethodProxy(new ResultStaticMethodProxy("getWifiApConfiguration", null));
+            addMethodProxy(new ResultStaticMethodProxy("setWifiApConfiguration", false));
+        }
+        if (VirtualCore.get().hasAnyPermission(
+                android.Manifest.permission.CHANGE_WIFI_STATE,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("startLocalOnlyHotspot"));
+        }else{
+            addMethodProxy(new ResultStaticMethodProxy("startLocalOnlyHotspot", 0));
+        }
+        if (BuildCompat.isOreo()) {
             addMethodProxy(new RemoveWorkSourceMethodProxy("startScan") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
+                    MethodParameterUtils.replaceFirstAppPkg(args);
                     boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
                     if (appPermissionEnable) {
                         Log.e("geyao_TelephonyRegStub", "startScan return");
@@ -115,27 +155,8 @@ public class WifiManagerStub extends BinderInvocationProxy {
                     return super.call(who, method, args);
                 }
             });
-            addMethodProxy(new RemoveWorkSourceMethodProxy("requestBatchedScan"));
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            addMethodProxy(new ResultStaticMethodProxy("getWifiApConfiguration", new WifiConfiguration()));
-            addMethodProxy(new ResultStaticMethodProxy("setWifiApConfiguration", 0));
-        }
-    }
-
-    private class RemoveWorkSourceMethodProxy extends StaticMethodProxy {
-
-        RemoveWorkSourceMethodProxy(String name) {
-            super(name);
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            int index = ArrayUtils.indexOfFirst(args, WorkSource.class);
-            if (index >= 0) {
-                args[index] = null;
-            }
-            return super.call(who, method, args);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            addMethodProxy(new RemoveWorkSourceMethodProxy("startScan"));
         }
     }
 
@@ -149,23 +170,27 @@ public class WifiManagerStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            WifiInfo wifiInfo = (WifiInfo) method.invoke(who, args);
             boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
             if (appPermissionEnable) {
-                mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
-                mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "00:00:00:00:00:00");
                 Log.e("geyao_WifiManagerStub", "getConnectionInfo return");
-            }
-            if (isFakeLocationEnable()) {
-                mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
-                mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "00:00:00:00:00:00");
+
+                //这里这样处理是否合适需要再确认
+                return createWifiInfo();
             }
             if (VASettings.Wifi.FAKE_WIFI_STATE) {
                 return createWifiInfo();
             }
+            WifiInfo wifiInfo = null;
+            if (VirtualCore.get().hasPermission(android.Manifest.permission.ACCESS_WIFI_STATE)) {
+                wifiInfo = (WifiInfo) method.invoke(who, args);
+            }
             if (wifiInfo != null) {
+                if (isFakeLocationEnable()) {
+                    mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
+                    mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "00:00:00:00:00:00");
+                }
                 String mac = getDeviceInfo().getWifiMac();
-                if (!TextUtils.isEmpty(mac)) {
+                if(!TextUtils.isEmpty(mac)) {
                     mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, mac);
                 }
             }
@@ -191,7 +216,13 @@ public class WifiManagerStub extends BinderInvocationProxy {
             if (isFakeLocationEnable()) {
                 return new ArrayList<ScanResult>();
             }
-            return super.call(who, method, args);
+            if(VirtualCore.get().hasAnyPermission(
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                return super.call(who, method, args);
+            }else{
+                return new ArrayList<ScanResult>();
+            }
         }
     }
 

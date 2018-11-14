@@ -1,12 +1,17 @@
 package com.lody.virtual.client.hook.proxies.bluetooth;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
+import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
@@ -31,72 +36,62 @@ public class BluetoothStub extends BinderInvocationProxy {
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-        addMethodProxy(new BluetoothMethodProxy("isEnabled"));
-        addMethodProxy(new BluetoothMethodProxy("getState"));
-        addMethodProxy(new BluetoothMethodProxy("enable"));
-        addMethodProxy(new BluetoothMethodProxy("enableNoAutoConnect"));
-        addMethodProxy(new BluetoothMethodProxy("disable"));
-        addMethodProxy(new BluetoothMethodProxy("getAddress"));
-        addMethodProxy(new BluetoothMethodProxy("getUuids"));
-        addMethodProxy(new BluetoothMethodProxy("setName"));
-        addMethodProxy(new BluetoothMethodProxy("getName"));
-        addMethodProxy(new BluetoothMethodProxy("getScanMode"));
-        addMethodProxy(new BluetoothMethodProxy("setScanMode"));
-        addMethodProxy(new BluetoothMethodProxy("getDiscoverableTimeout"));
-        addMethodProxy(new BluetoothMethodProxy("setDiscoverableTimeout"));
-        addMethodProxy(new BluetoothMethodProxy("startDiscovery"));
-        addMethodProxy(new BluetoothMethodProxy("cancelDiscovery"));
-        addMethodProxy(new BluetoothMethodProxy("isDiscovering"));
-        addMethodProxy(new BluetoothMethodProxy("getDiscoveryEndMillis"));
-        addMethodProxy(new BluetoothMethodProxy("getAdapterConnectionState"));
-        addMethodProxy(new BluetoothMethodProxy("getBondedDevices"));
-        addMethodProxy(new BluetoothMethodProxy("createBond"));
-        addMethodProxy(new BluetoothMethodProxy("createBondOutOfBand"));
-        addMethodProxy(new BluetoothMethodProxy("cancelBondProcess"));
-        addMethodProxy(new BluetoothMethodProxy("removeBond"));
-        addMethodProxy(new BluetoothMethodProxy("getBondState"));
-        addMethodProxy(new BluetoothMethodProxy("isBondingInitiatedLocally"));
-        addMethodProxy(new BluetoothMethodProxy("getSupportedProfiles"));
-        addMethodProxy(new BluetoothMethodProxy("getConnectionState"));
-        addMethodProxy(new BluetoothMethodProxy("getRemoteName"));
-        addMethodProxy(new BluetoothMethodProxy("getRemoteType"));
-        addMethodProxy(new BluetoothMethodProxy("getRemoteAlias"));
-        addMethodProxy(new BluetoothMethodProxy("setRemoteAlias"));
-        addMethodProxy(new BluetoothMethodProxy("getRemoteClass"));
-        addMethodProxy(new BluetoothMethodProxy("getRemoteUuids"));
-        addMethodProxy(new BluetoothMethodProxy("fetchRemoteUuids"));
-        addMethodProxy(new BluetoothMethodProxy("sdpSearch"));
-        addMethodProxy(new BluetoothMethodProxy("setPin"));
-        addMethodProxy(new BluetoothMethodProxy("setPasskey"));
-        addMethodProxy(new BluetoothMethodProxy("setPairingConfirmation"));
-        addMethodProxy(new BluetoothMethodProxy("getPhonebookAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("setPhonebookAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("getMessageAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("setMessageAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("getSimAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("setSimAccessPermission"));
-        addMethodProxy(new BluetoothMethodProxy("sendConnectionStateChange"));
-        addMethodProxy(new BluetoothMethodProxy("registerCallback"));
-        addMethodProxy(new BluetoothMethodProxy("unregisterCallback"));
-        addMethodProxy(new BluetoothMethodProxy("connectSocket"));
-        addMethodProxy(new BluetoothMethodProxy("createSocketChannel"));
-        addMethodProxy(new BluetoothMethodProxy("factoryReset"));
-        addMethodProxy(new BluetoothMethodProxy("isMultiAdvertisementSupported"));
-        addMethodProxy(new BluetoothMethodProxy("isOffloadedFilteringSupported"));
-        addMethodProxy(new BluetoothMethodProxy("isOffloadedScanBatchingSupported"));
-        addMethodProxy(new BluetoothMethodProxy("isActivityAndEnergyReportingSupported"));
-        addMethodProxy(new BluetoothMethodProxy("isLe2MPhySupported"));
-        addMethodProxy(new BluetoothMethodProxy("isLeCodedPhySupported"));
-        addMethodProxy(new BluetoothMethodProxy("isLeExtendedAdvertisingSupported"));
-        addMethodProxy(new BluetoothMethodProxy("isLePeriodicAdvertisingSupported"));
-        addMethodProxy(new BluetoothMethodProxy("getLeMaximumAdvertisingDataLength"));
-        addMethodProxy(new BluetoothMethodProxy("reportActivityInfo"));
-        addMethodProxy(new BluetoothMethodProxy("requestActivityInfo"));
-        addMethodProxy(new BluetoothMethodProxy("onLeServiceUp"));
-        addMethodProxy(new BluetoothMethodProxy("onBrEdrDown"));
+        if(!VirtualCore.get().hasPermission(Manifest.permission.BLUETOOTH)) {
+            addMethodProxy(new ResultStaticMethodProxy("registerStateChangeCallback", 0));
+            addMethodProxy(new ResultStaticMethodProxy("unregisterStateChangeCallback", 0));
+            addMethodProxy(new ResultStaticMethodProxy("getBluetoothGatt", null));
+            addMethodProxy(new ResultStaticMethodProxy("getState", BluetoothAdapter.STATE_OFF));
+            addMethodProxy(new ResultStaticMethodProxy("getAddress", "02:00:00:00:00:00"));
+            addMethodProxy(new ResultStaticMethodProxy("isEnabled", false));
+        }else{
+            addMethodProxy(new GetAddress());
+
+            //葛垚的代码
+            addMethodProxy(new BluetoothMethodProxy("getState"));
+            addMethodProxy(new BluetoothMethodProxy("registerCallback"));
+            addMethodProxy(new BluetoothMethodProxy("unregisterCallback"));
+        }
+        //Manifest.permission.BLUETOOTH_ADMIN
+        if(!VirtualCore.get().hasPermission(Manifest.permission.BLUETOOTH_ADMIN)) {
+            addMethodProxy(new ResultStaticMethodProxy("disable", false));
+            addMethodProxy(new ResultStaticMethodProxy("enableNoAutoConnect", false));
+            addMethodProxy(new ResultStaticMethodProxy("enable", false));
+            addMethodProxy(new ResultStaticMethodProxy("setName", false));
+            addMethodProxy(new ResultStaticMethodProxy("startDiscovery", 0));
+            addMethodProxy(new ResultStaticMethodProxy("cancelDiscovery", 0));
+            addMethodProxy(new ResultStaticMethodProxy("startLeScan", false));
+            addMethodProxy(new ResultStaticMethodProxy("stopLeScan", 0));
+        }else if(BuildCompat.isOreo()) {
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("enable"));
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("enableNoAutoConnect"));
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("disable"));
+
+            //葛垚的代码
+            addMethodProxy(new BluetoothMethodProxy("enable"));
+            addMethodProxy(new BluetoothMethodProxy("enableNoAutoConnect"));
+            addMethodProxy(new BluetoothMethodProxy("disable"));
+            addMethodProxy(new BluetoothMethodProxy("setName"));
+            addMethodProxy(new BluetoothMethodProxy("startDiscovery"));
+            addMethodProxy(new BluetoothMethodProxy("cancelDiscovery"));
+        }
     }
 
     @FakeDeviceMark("fake MAC")
+    private static class GetAddress extends ReplaceLastPkgMethodProxy {
+        public GetAddress() {
+            super("getAddress");
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String mac = getDeviceInfo().getBluetoothMac();
+            if(!TextUtils.isEmpty(mac)){
+                return mac;
+            }
+            return super.call(who, method, args);
+        }
+    }
+
     private static class BluetoothMethodProxy extends ReplaceLastPkgMethodProxy {
         public BluetoothMethodProxy(String name) {
             super(name);

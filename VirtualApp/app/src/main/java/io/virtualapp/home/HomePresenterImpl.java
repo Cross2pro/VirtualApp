@@ -219,4 +219,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         }
     }
 
+    @Override
+    public int getAppCount() {
+        return VirtualCore.get().getInstalledApps(0).size();
+    }
 }

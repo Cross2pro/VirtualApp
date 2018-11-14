@@ -18,12 +18,13 @@ public class MyTaskDescDelegate implements TaskDescriptionDelegate {
         if (oldTaskDescription == null) {
             return null;
         }
-        String labelPrefix = "[" + VUserManager.get().getUserName() + "] ";
+        int userId = VUserManager.get().getUserHandle();
+        String suffix = " - " + (userId + 1) + "";
         String oldLabel = oldTaskDescription.getLabel() != null ? oldTaskDescription.getLabel() : "";
 
-        if (!oldLabel.startsWith(labelPrefix)) {
+        if (!oldLabel.endsWith(suffix)) {
             // Is it really necessary?
-            return new ActivityManager.TaskDescription(labelPrefix + oldTaskDescription.getLabel(), oldTaskDescription.getIcon(), oldTaskDescription.getPrimaryColor());
+            return new ActivityManager.TaskDescription(oldTaskDescription.getLabel() + suffix, oldTaskDescription.getIcon(), oldTaskDescription.getPrimaryColor());
         } else {
             return oldTaskDescription;
         }

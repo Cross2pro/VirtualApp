@@ -2,6 +2,7 @@ package com.lody.virtual.client.hook.proxies.phonesubinfo;
 
 import android.text.TextUtils;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 
@@ -25,7 +26,10 @@ class MethodProxies {
             if (!TextUtils.isEmpty(deviceId)) {
                 return deviceId;
             }
-            return super.call(who, method, args);
+            if(VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
+                return super.call(who, method, args);
+            }
+            return "0000000000000000";
         }
     }
 
@@ -48,6 +52,16 @@ class MethodProxies {
 
     }
 
+    @FakeDeviceMark("fake device id.")
+    static class GetImeiForSubscriber extends GetDeviceId {
+
+        @Override
+        public String getMethodName() {
+            return "getImeiForSubscriber";
+        }
+
+    }
+
     @FakeDeviceMark("fake iccid")
     static class GetIccSerialNumber extends ReplaceLastPkgMethodProxy {
         public GetIccSerialNumber() {
@@ -60,12 +74,14 @@ class MethodProxies {
             if (!TextUtils.isEmpty(iccId)) {
                 return iccId;
             }
-            return super.call(who, method, args);
+            if(VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
+                return super.call(who, method, args);
+            }
+            return null;
         }
     }
 
-
-    static class getIccSerialNumberForSubscriber extends GetIccSerialNumber {
+    static class GetIccSerialNumberForSubscriber extends GetIccSerialNumber {
         @Override
         public String getMethodName() {
             return "getIccSerialNumberForSubscriber";

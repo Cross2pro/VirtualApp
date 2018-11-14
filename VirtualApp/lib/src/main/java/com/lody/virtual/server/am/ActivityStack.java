@@ -16,6 +16,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.VASettings;
@@ -539,8 +540,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         try {
             mirror.android.app.IActivityManager.startActivity.call(ActivityManagerNative.getDefault.call(),
                     (Object[]) args);
-        }catch (Exception e){
+        }catch (Throwable e){
             //vivo start bg's activity
+            Intent error = new Intent(Constants.ACTION_NEED_PERMISSION);
+            error.setPackage(VirtualCore.get().getHostPkg());
+            error.putExtra(Constants.EXTRA_PERMISSION_SEASON, "startActivityForBg");
+            error.putExtra(Constants.EXTRA_PERMISSION_EX, Log.getStackTraceString(e));
+            VirtualCore.get().getContext().sendBroadcast(error);
         }
     }
 
