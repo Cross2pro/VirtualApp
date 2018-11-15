@@ -51,6 +51,13 @@
     <string name="tip_delete">Delete app</string>
     <string name="text_delete_app" formatted="false">Do you want to delete %s?</string>
     <string name="menu_install_gms">Install Google Support</string>
+    <string name="title_app_device">App Settings</string>
+    <string name="title_user_device">Global Settings</string>
+    <string name="menu_mock_phone">Mock phone</string>
+    <string name="mock_none">no mock</string>
+    <string name="mock_device">mocking</string>
+    <string name="dlg_reset_device">reset mock phone info</string>
+    <string name="mock_global">global mocking</string>
     <string-array name="weeks">
         <item>Sun</item>
         <item>Mon</item>

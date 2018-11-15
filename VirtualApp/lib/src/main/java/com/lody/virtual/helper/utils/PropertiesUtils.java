@@ -7,7 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.Enumeration;
+import java.util.Map;
 import java.util.Properties;
 
 public class PropertiesUtils {
@@ -26,7 +26,7 @@ public class PropertiesUtils {
         return true;
     }
 
-    public static boolean save(Properties properties, File file, String comments) {
+    public static boolean save(Map properties, File file, String comments) {
         if (properties == null || file == null) return false;
         FileOutputStream outputStream = null;
         try {
@@ -50,7 +50,7 @@ public class PropertiesUtils {
         return true;
     }
 
-    private static void store(Properties properties, OutputStream out, String comments)
+    private static void store(Map properties, OutputStream out, String comments)
             throws IOException
     {
         store0(properties, new BufferedWriter(new OutputStreamWriter(out, "8859_1")),
@@ -58,7 +58,7 @@ public class PropertiesUtils {
                 true);
     }
 
-    private static void store0(Properties properties, BufferedWriter bw, String comments, boolean escUnicode)
+    private static void store0(Map properties, BufferedWriter bw, String comments, boolean escUnicode)
             throws IOException
     {
         bw.newLine();
@@ -68,9 +68,9 @@ public class PropertiesUtils {
         //bw.write("#" + new Date().toString());
         //
         synchronized (properties) {
-            for (Enumeration<?> e = properties.keys(); e.hasMoreElements();) {
-                String key = (String)e.nextElement();
-                String val = (String)properties.get(key);
+            for(Object k : properties.keySet()){
+                String key = String.valueOf(k);
+                String val = String.valueOf(properties.get(k));
                 key = saveConvert(key, true, escUnicode);
                 /* No need to escape embedded and trailing spaces for value, hence
                  * pass false to flag.

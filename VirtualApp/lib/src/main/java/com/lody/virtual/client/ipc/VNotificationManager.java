@@ -4,10 +4,11 @@ import android.app.Notification;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
-import com.lody.virtual.server.interfaces.INotificationCallback;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.server.interfaces.INotificationManager;
 import com.lody.virtual.server.notification.NotificationCompat;
+
+import com.xdja.zs.INotificationCallback;
 
 /**
  * Fake notification manager
@@ -15,7 +16,22 @@ import com.lody.virtual.server.notification.NotificationCompat;
 public class VNotificationManager {
     private static final VNotificationManager sInstance = new VNotificationManager();
     private final NotificationCompat mNotificationCompat;
-    private IPCSingleton<INotificationManager> singleton = new IPCSingleton<>(INotificationManager.class);
+    private INotificationManager mService;
+
+    public INotificationManager getService() {
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (VNotificationManager.class) {
+                final Object pmBinder = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(INotificationManager.class, pmBinder);
+            }
+        }
+        return mService;
+    }
+
+    private Object getRemoteInterface() {
+        return INotificationManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.NOTIFICATION));
+    }
 
     private VNotificationManager() {
         mNotificationCompat = NotificationCompat.create();
@@ -23,10 +39,6 @@ public class VNotificationManager {
 
     public static VNotificationManager get() {
         return sInstance;
-    }
-
-    public INotificationManager getService() {
-        return singleton.get();
     }
 
     public boolean dealNotification(int id, Notification notification, String packageName) {

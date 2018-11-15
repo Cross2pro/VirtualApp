@@ -1,5 +1,7 @@
 package com.lody.virtual.client.stub;
 
+import com.lody.virtual.client.core.SettingRule;
+
 import java.util.Locale;
 
 /**
@@ -13,10 +15,6 @@ public class VASettings {
      */
     public static boolean _64BitMode = false;
 
-    /**
-     * PackageManager#checkPermission
-     */
-    public static boolean CHECK_PERMISSION_INSIDE = false;
     /**
      * beta
      * File isolation
@@ -58,8 +56,7 @@ public class VASettings {
 
     /**
      * @deprecated
-     * @see com.lody.virtual.client.core.VirtualCore#setSettingHandler
-     * @see com.lody.virtual.client.core.SettingHandler#isUseRealDataDir(String)
+     * @see com.lody.virtual.client.core.VirtualCore#addSettingRule(SettingRule, String, boolean)
      * /data/data/va/virtual/data/xxx/->/data/data/xxxx/
      */
     public static boolean USE_REAL_DATA_DIR = false;

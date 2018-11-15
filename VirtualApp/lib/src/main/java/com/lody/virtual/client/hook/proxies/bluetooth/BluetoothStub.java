@@ -1,79 +1,72 @@
 package com.lody.virtual.client.hook.proxies.bluetooth;
 
-import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.os.Build;
+import android.os.IInterface;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
-import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
-import com.lody.virtual.helper.compat.BuildCompat;
-import com.lody.virtual.client.hook.base.StaticMethodProxy;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.lody.virtual.client.hook.base.ResultBinderMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
+
+import java.lang.reflect.InvocationHandler;
+import com.xdja.zs.VAppPermissionManager;
 
 import java.lang.reflect.Method;
 
 import mirror.android.bluetooth.IBluetooth;
+
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
 
 /**
  * @see android.bluetooth.BluetoothManager
  */
 public class BluetoothStub extends BinderInvocationProxy {
     private static final String TAG = "Test" + BluetoothStub.class.getSimpleName();
-    public static final String SERVICE_NAME = Build.VERSION.SDK_INT >= 17 ?
-            "bluetooth_manager" :
-            "bluetooth";
+
+    private final static String SERVER_NAME = Build.VERSION.SDK_INT >= JELLY_BEAN_MR1 ?
+            "bluetooth_manager" : "bluetooth";
 
     public BluetoothStub() {
-        super(IBluetooth.Stub.asInterface, SERVICE_NAME);
+        super(IBluetooth.Stub.asInterface, SERVER_NAME);
     }
 
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-        if(!VirtualCore.get().hasPermission(Manifest.permission.BLUETOOTH)) {
-            addMethodProxy(new ResultStaticMethodProxy("registerStateChangeCallback", 0));
-            addMethodProxy(new ResultStaticMethodProxy("unregisterStateChangeCallback", 0));
-            addMethodProxy(new ResultStaticMethodProxy("getBluetoothGatt", null));
-            addMethodProxy(new ResultStaticMethodProxy("getState", BluetoothAdapter.STATE_OFF));
-            addMethodProxy(new ResultStaticMethodProxy("getAddress", "02:00:00:00:00:00"));
-            addMethodProxy(new ResultStaticMethodProxy("isEnabled", false));
-        }else{
-            addMethodProxy(new GetAddress());
-
-            //葛垚的代码
-            addMethodProxy(new BluetoothMethodProxy("getState"));
-            addMethodProxy(new BluetoothMethodProxy("registerCallback"));
-            addMethodProxy(new BluetoothMethodProxy("unregisterCallback"));
+        addMethodProxy(new GetAddress());
+        if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
+            addMethodProxy(new ResultBinderMethodProxy("registerAdapter") {
+                @Override
+                public InvocationHandler createProxy(final IInterface base) {
+                    return new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            if ("getAddress".equals(method.getName())) {
+                                String mac = getDeviceInfo().getBluetoothMac();
+                                if (!TextUtils.isEmpty(mac)) {
+                                    return mac;
+                                }
+                            }
+                            return method.invoke(base, args);
+                        }
+                    };
+                }
+            });
         }
-        //Manifest.permission.BLUETOOTH_ADMIN
-        if(!VirtualCore.get().hasPermission(Manifest.permission.BLUETOOTH_ADMIN)) {
-            addMethodProxy(new ResultStaticMethodProxy("disable", false));
-            addMethodProxy(new ResultStaticMethodProxy("enableNoAutoConnect", false));
-            addMethodProxy(new ResultStaticMethodProxy("enable", false));
-            addMethodProxy(new ResultStaticMethodProxy("setName", false));
-            addMethodProxy(new ResultStaticMethodProxy("startDiscovery", 0));
-            addMethodProxy(new ResultStaticMethodProxy("cancelDiscovery", 0));
-            addMethodProxy(new ResultStaticMethodProxy("startLeScan", false));
-            addMethodProxy(new ResultStaticMethodProxy("stopLeScan", 0));
-        }else if(BuildCompat.isOreo()) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("enable"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("enableNoAutoConnect"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("disable"));
 
-            //葛垚的代码
-            addMethodProxy(new BluetoothMethodProxy("enable"));
-            addMethodProxy(new BluetoothMethodProxy("enableNoAutoConnect"));
-            addMethodProxy(new BluetoothMethodProxy("disable"));
-            addMethodProxy(new BluetoothMethodProxy("setName"));
-            addMethodProxy(new BluetoothMethodProxy("startDiscovery"));
-            addMethodProxy(new BluetoothMethodProxy("cancelDiscovery"));
-        }
+        //葛垚的代码
+        addMethodProxy(new BluetoothMethodProxy("getState"));
+        addMethodProxy(new BluetoothMethodProxy("registerCallback"));
+        addMethodProxy(new BluetoothMethodProxy("unregisterCallback"));
+        addMethodProxy(new BluetoothMethodProxy("enable"));
+        addMethodProxy(new BluetoothMethodProxy("enableNoAutoConnect"));
+        addMethodProxy(new BluetoothMethodProxy("disable"));
+        addMethodProxy(new BluetoothMethodProxy("setName"));
+        addMethodProxy(new BluetoothMethodProxy("startDiscovery"));
+        addMethodProxy(new BluetoothMethodProxy("cancelDiscovery"));
     }
 
     @FakeDeviceMark("fake MAC")

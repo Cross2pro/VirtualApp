@@ -2,7 +2,6 @@ package com.lody.virtual.client.stub;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,16 +12,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
@@ -38,15 +34,13 @@ import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.pm.VAppManagerService;
-
-import org.w3c.dom.Text;
 
 import java.io.File;
 
@@ -391,7 +385,7 @@ public class InstallerActivity extends Activity {
                 File file = new File(apkinfo.path);
                 boolean apkexit = file.exists();
                 if(apkexit){
-                    boolean delsuc = FileUtils.deleteDir(apkinfo.path);
+                    boolean delsuc = FileUtils.deleteDir(apkinfo.path) > 0;
                     if(delsuc){
                         InstallerSetting.showToast(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT);
                     }else{

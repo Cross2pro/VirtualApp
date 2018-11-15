@@ -34,6 +34,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.webkit.MimeTypeMap;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.badger.BadgerManager;
@@ -42,13 +43,14 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
@@ -101,6 +103,17 @@ import static android.content.ContentResolver.SCHEME_FILE;
 @SuppressWarnings("unused")
 class MethodProxies {
 
+    static class GetAppStartMode extends ReplaceLastUidMethodProxy {
+        public GetAppStartMode() {
+            super("getAppStartMode");
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            MethodParameterUtils.replaceLastAppPkg(args);
+            return super.call(who, method, args);
+        }
+    }
 
     static class ForceStopPackage extends MethodProxy {
 
@@ -123,7 +136,6 @@ class MethodProxies {
         }
     }
 
-
     static class CrashApplication extends MethodProxy {
 
         @Override
@@ -141,7 +153,6 @@ class MethodProxies {
             return isAppProcess();
         }
     }
-
 
     static class AddPackageDependency extends MethodProxy {
 
@@ -541,6 +552,11 @@ class MethodProxies {
                 }
                 //TODO: fake file uri
                 args[intentIndex] = UriCompat.fakeFileUri(intent);
+                //check outside is visiable?
+                ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
+                if (resolveInfo == null || !isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
+                    return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+                }
                 return method.invoke(who, args);
             }
             // UriCompat.fakeFileUri(intent);
@@ -983,7 +999,7 @@ class MethodProxies {
 
         @Override
         public boolean isEnable() {
-            return isAppProcess();
+            return isAppProcess() || isServerProcess();
         }
     }
 
@@ -1072,6 +1088,12 @@ class MethodProxies {
                 return VActivityManager.get().bindService(caller.asBinder(), token, service, resolvedType,
                         conn, flags, userId);
             }
+            //check outside visable
+            ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
+            if(resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)){
+                return 0;
+            }
+//            args[4] = ServiceConnectionDelegate.getDelegate(conn);
             return method.invoke(who, args);
         }
 
@@ -1134,6 +1156,11 @@ class MethodProxies {
                 if (!BLOCK_COMPONENT_LIST.contains(serviceInfo.name)) {
                     return VActivityManager.get().startService(appThread, service, resolvedType, userId);
                 }
+            }
+            //check outside visable
+            ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
+            if(resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)){
+                return null;
             }
             return method.invoke(who, args);
         }
@@ -1333,18 +1360,8 @@ class MethodProxies {
             if (SpecialComponentList.isWhitePermission(permission)) {
                 return PackageManager.PERMISSION_GRANTED;
             }
-            if (permission.startsWith("com.google")) {
+            if (GmsSupport.isGoogleAppOrService(getAppPkg())) {
                 return PackageManager.PERMISSION_GRANTED;
-            }
-            if(VASettings.CHECK_PERMISSION_INSIDE){
-                int pid = (int) args[1];
-                int uid = (int) args[2];
-                String[] pkgs = VirtualCore.getPM().getPackagesForUid(uid);
-                if(pkgs != null && pkgs.length > 0
-                        && VirtualCore.get().isAppInstalled(pkgs[0])){
-                    return VPackageManager.get().checkPermission(permission, pkgs[0],
-                            VUserHandle.getUserId(uid));
-                }
             }
             args[args.length - 1] = getRealUid();
             return method.invoke(who, args);
@@ -1606,6 +1623,12 @@ class MethodProxies {
                 //is server process
                 return method.invoke(who, args);
             }
+            if(UriCompat.isOutSide(name)){
+                //outside contentprovider
+                args[nameIdx] = UriCompat.unWrapperOutSide(name);
+                return method.invoke(who, args);
+            }
+
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
@@ -1801,8 +1824,8 @@ class MethodProxies {
             Intent intent = (Intent) args[1];
             String type = (String) args[2];
             intent.setDataAndType(intent.getData(), type);
-            if (VirtualCore.get().getComponentDelegate() != null) {
-                VirtualCore.get().getComponentDelegate().onSendBroadcast(intent);
+            if (VirtualCore.get().getAppCallback() != null) {
+                VirtualCore.get().getAppCallback().onSendBroadcast(intent);
             }
             if (ACTION_BLACK_LIST.contains(intent.getAction())) {
                 return 0;

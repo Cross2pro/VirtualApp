@@ -160,8 +160,7 @@ public class VDeviceInfo implements Parcelable {
                     last = "0" + last;
                 }
             }
-            String val = checkSum(pre + ot + last);
-            return val;
+            return checkSum(pre + ot + last);
         }
     }
 

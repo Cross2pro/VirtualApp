@@ -84,20 +84,29 @@ public class FileUtils {
         return swapStream.toByteArray();
     }
 
-    public static boolean deleteDir(File dir) {
+    public static int deleteDir(File dir) {
+        int count = 0;
         if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String file : children) {
-                boolean success = deleteDir(new File(dir, file));
-                if (!success) {
-                    return false;
+            boolean link = false;
+            try{
+                link = isSymlink(dir);
+            }catch (Exception e){
+                //ignore
+            }
+            if(!link) {
+                String[] children = dir.list();
+                for (String file : children) {
+                    count += deleteDir(new File(dir, file));
                 }
             }
         }
-        return dir.delete();
+        if(dir.delete()){
+            count++;
+        }
+        return count;
     }
 
-    public static boolean deleteDir(String dir) {
+    public static int deleteDir(String dir) {
         return deleteDir(new File(dir));
     }
 

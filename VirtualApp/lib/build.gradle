@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
-def version = '3.0.5'
-def version_code = 18052417
+def version = '3.0.8'
+def version_code = 18060820
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'

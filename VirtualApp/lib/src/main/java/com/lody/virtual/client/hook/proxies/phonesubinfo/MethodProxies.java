@@ -2,7 +2,6 @@ package com.lody.virtual.client.hook.proxies.phonesubinfo;
 
 import android.text.TextUtils;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 
@@ -26,10 +25,7 @@ class MethodProxies {
             if (!TextUtils.isEmpty(deviceId)) {
                 return deviceId;
             }
-            if(VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
-                return super.call(who, method, args);
-            }
-            return "0000000000000000";
+            return super.call(who, method, args);
         }
     }
 
@@ -74,10 +70,7 @@ class MethodProxies {
             if (!TextUtils.isEmpty(iccId)) {
                 return iccId;
             }
-            if(VirtualCore.get().hasPermission(android.Manifest.permission.READ_PHONE_STATE)) {
-                return super.call(who, method, args);
-            }
-            return null;
+            return super.call(who, method, args);
         }
     }
 

@@ -6,9 +6,8 @@ import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.Inject;
-import com.lody.virtual.client.hook.base.LogInvocation;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.xdja.zs.VAppPermissionManager;
 
 import java.lang.reflect.Method;
 
@@ -18,7 +17,6 @@ import mirror.android.location.ILocationManager;
  * @author Lody
  * @see android.location.LocationManager
  */
-@LogInvocation(LogInvocation.Condition.ALWAYS)
 @Inject(MethodProxies.class)
 public class LocationManagerStub extends BinderInvocationProxy {
     public LocationManagerStub() {

@@ -3,7 +3,6 @@ package io.virtualapp.home.models;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
 
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.vloc.VLocation;
@@ -11,11 +10,7 @@ import com.lody.virtual.remote.vloc.VLocation;
 /**
  * @see android.location.Location
  */
-public class LocationData {
-    public String packageName;
-    public int userId;
-    public String name;
-    public Drawable icon;
+public class LocationData extends SettingsData{
     public int mode;
     public VLocation location;
 

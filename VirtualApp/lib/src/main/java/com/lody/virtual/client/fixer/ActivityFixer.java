@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.view.WindowManager;
 
 import mirror.com.android.internal.R_Hide;
 
@@ -32,6 +33,10 @@ public final class ActivityFixer {
                         false);
                 if (showWallpaper) {
                     activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
+                }
+                boolean fullscreen = typedArray.getBoolean(R_Hide.styleable.Window_windowFullscreen.get(), false);
+                if(fullscreen){
+                    activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 }
                 typedArray.recycle();
             }

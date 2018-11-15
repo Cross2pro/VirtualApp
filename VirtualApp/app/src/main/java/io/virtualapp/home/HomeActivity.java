@@ -32,7 +32,6 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.VDeviceInfo;
@@ -46,7 +45,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.virtualapp.App;
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
@@ -54,6 +52,7 @@ import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.adapters.LaunchpadAdapter;
 import io.virtualapp.home.adapters.decorations.ItemOffsetDecoration;
+import io.virtualapp.home.device.DeviceSettingsActivity;
 import io.virtualapp.home.location.LocationSettingsActivity;
 import io.virtualapp.home.models.AddAppButton;
 import io.virtualapp.home.models.AppData;
@@ -132,7 +131,9 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         VDeviceManager.get().updateDeviceInfo(0, deviceInfo);
 
         VDeviceManager.Editor editor = VDeviceManager.get().createBuildEditor(0);
-        editor.setDefault();
+        if(!editor.hasDefault()) {
+            editor.setDefault();
+        }
         editor.setBrand("1");
         editor.setBoard("2");
         editor.setDevice("3");
@@ -250,12 +251,16 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                         }).show();
                 return false;
             });
-        if(!VASettings.ENABLE_GMS) {
-            menu.add(R.string.menu_install_gms).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
-                askInstallGms();
-                return true;
-            });
-        }
+        menu.add(R.string.menu_install_gms).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+            askInstallGms();
+            return true;
+        });
+
+        menu.add(R.string.menu_mock_phone).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+            startActivity(new Intent(this, DeviceSettingsActivity.class));
+            return true;
+        });
+
         menu.add(R.string.virtual_location).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
             if (mPresenter.getAppCount() == 0) {
                 Toast.makeText(this, R.string.tip_no_app, Toast.LENGTH_SHORT).show();
@@ -450,18 +455,10 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     @SuppressLint("ApplySharedPref")
     @Override
     public void askInstallGms() {
-        if (VASettings.ENABLE_GMS) {
-            return;
-        }
         new AlertDialog.Builder(this)
                 .setTitle(R.string.tip_install_gms)
                 .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    App.getPreferences()
-                            .edit()
-                            .putBoolean(VCommends.PREF_GMS_ENABLE, true)
-                            .commit();
-                    VASettings.ENABLE_GMS = true;
                     defer().when(() -> {
                         GmsSupport.installGApps(0);
                     }).done((res) -> {

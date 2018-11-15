@@ -22,7 +22,7 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 	public int pid;
 	public int vuid;
 	public int vpid;
-	public int callingUid;
+	private int callingUid;
 	public int userId;
 	boolean doneExecuting;
     int priority;
@@ -35,7 +35,33 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 		this.processName = processName;
 	}
 
-	@Override
+    public void setVCallingUid(int callingUid) {
+        if (callingUid < 0) return;
+        synchronized (this) {
+            if (this.callingUid == 0) {
+                this.callingUid = callingUid;
+            } else {
+                if(isCalling() && callingUid == vuid){
+                    return;
+                }
+                this.callingUid = callingUid;
+            }
+        }
+    }
+
+    public boolean isCalling(){
+	    synchronized (this){
+	        return this.callingUid != 0 && this.callingUid != vuid;
+        }
+    }
+
+    public int getVCallingUid() {
+        synchronized (this) {
+            return callingUid;
+        }
+    }
+
+    @Override
 	public boolean equals(Object o) {
 		if (this == o)
 			return true;

@@ -6,7 +6,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 
 import java.lang.reflect.Method;

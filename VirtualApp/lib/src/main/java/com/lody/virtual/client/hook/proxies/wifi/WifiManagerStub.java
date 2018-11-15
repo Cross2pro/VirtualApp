@@ -4,7 +4,6 @@ import android.content.Context;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -14,14 +13,12 @@ import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
-import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
+import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
@@ -128,20 +125,9 @@ public class WifiManagerStub extends BinderInvocationProxy {
             addMethodProxy(new RemoveWorkSourceMethodProxy("requestBatchedScan"));
         }
         addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiEnabled"));
-        if (VirtualCore.get().hasPermission(android.Manifest.permission.ACCESS_WIFI_STATE)) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getWifiApConfiguration"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiApConfiguration"));
-        } else {
-            addMethodProxy(new ResultStaticMethodProxy("getWifiApConfiguration", null));
-            addMethodProxy(new ResultStaticMethodProxy("setWifiApConfiguration", false));
-        }
-        if (VirtualCore.get().hasAnyPermission(
-                android.Manifest.permission.CHANGE_WIFI_STATE,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("startLocalOnlyHotspot"));
-        }else{
-            addMethodProxy(new ResultStaticMethodProxy("startLocalOnlyHotspot", 0));
-        }
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("getWifiApConfiguration"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiApConfiguration"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("startLocalOnlyHotspot"));
         if (BuildCompat.isOreo()) {
             addMethodProxy(new RemoveWorkSourceMethodProxy("startScan") {
                 @Override
@@ -180,10 +166,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
             if (VASettings.Wifi.FAKE_WIFI_STATE) {
                 return createWifiInfo();
             }
-            WifiInfo wifiInfo = null;
-            if (VirtualCore.get().hasPermission(android.Manifest.permission.ACCESS_WIFI_STATE)) {
-                wifiInfo = (WifiInfo) method.invoke(who, args);
-            }
+            WifiInfo wifiInfo = (WifiInfo) method.invoke(who, args);
             if (wifiInfo != null) {
                 if (isFakeLocationEnable()) {
                     mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
@@ -216,13 +199,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
             if (isFakeLocationEnable()) {
                 return new ArrayList<ScanResult>();
             }
-            if(VirtualCore.get().hasAnyPermission(
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-                return super.call(who, method, args);
-            }else{
-                return new ArrayList<ScanResult>();
-            }
+            return super.call(who, method, args);
         }
     }
 

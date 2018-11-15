@@ -12,40 +12,28 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.ipcbus.IPCBus;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
-import com.lody.virtual.server.apppermission.VAppPermissionManagerService;
 import com.lody.virtual.server.device.VDeviceManagerService;
-import com.lody.virtual.server.interfaces.IAccountManager;
-import com.lody.virtual.server.interfaces.IActivityManager;
-import com.lody.virtual.server.interfaces.IAppManager;
-import com.lody.virtual.server.interfaces.IAppPermissionManager;
-import com.lody.virtual.server.interfaces.IDeviceInfoManager;
-import com.lody.virtual.server.interfaces.IJobService;
-import com.lody.virtual.server.interfaces.INotificationManager;
-import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
-import com.lody.virtual.server.interfaces.IUserManager;
-import com.lody.virtual.server.interfaces.IVSafekeyManager;
-import com.lody.virtual.server.interfaces.IVirtualLocationManager;
-import com.lody.virtual.server.interfaces.IVirtualStorageService;
-import com.lody.virtual.server.interfaces.IWaterMark;
 import com.lody.virtual.server.job.VJobSchedulerService;
 import com.lody.virtual.server.location.VirtualLocationService;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
-import com.lody.virtual.server.safekey.VSafekeyManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
-import com.lody.virtual.server.watermark.VWaterMarkService;
-import com.xdja.zs.IController;
+
+import com.xdja.zs.VSafekeyManagerService;
+import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
 
+
+import com.xdja.zs.VAppPermissionManagerService;
 /**
  * @author Lody
  */
@@ -75,34 +63,40 @@ public final class BinderProvider extends ContentProvider {
             return false;
         }
         VPackageManagerService.systemReady();
-        IPCBus.register(IPackageManager.class, VPackageManagerService.get());
+        addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         VActivityManagerService.systemReady(context);
-        IPCBus.register(IActivityManager.class, VActivityManagerService.get());
-        IPCBus.register(IUserManager.class, VUserManagerService.get());
+        addService(ServiceManagerNative.ACTIVITY, VActivityManagerService.get());
+        addService(ServiceManagerNative.USER, VUserManagerService.get());
         VAppManagerService.systemReady();
-        IPCBus.register(IAppManager.class, VAppManagerService.get());
+        addService(ServiceManagerNative.APP, VAppManagerService.get());
         BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            IPCBus.register(IJobService.class, VJobSchedulerService.get());
+            addService(ServiceManagerNative.JOB, VJobSchedulerService.get());
         }
         VNotificationManagerService.systemReady(context);
-        IPCBus.register(INotificationManager.class, VNotificationManagerService.get());
+        addService(ServiceManagerNative.NOTIFICATION, VNotificationManagerService.get());
         VAppManagerService.get().scanApps();
         VAccountManagerService.systemReady();
-        IPCBus.register(IAccountManager.class, VAccountManagerService.get());
-        IPCBus.register(IVirtualStorageService.class, VirtualStorageService.get());
+        addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());
+        addService(ServiceManagerNative.VS, VirtualStorageService.get());
         VDeviceManagerService.systemReady(context);
-        IPCBus.register(IDeviceInfoManager.class, VDeviceManagerService.get());
-        IPCBus.register(IVirtualLocationManager.class, VirtualLocationService.get());
+        addService(ServiceManagerNative.DEVICE, VDeviceManagerService.get());
+        addService(ServiceManagerNative.VIRTUAL_LOC, VirtualLocationService.get());
+
         VSafekeyManagerService.systemReady(context);
-        IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
-        IPCBus.register(IController.class, controllerService.get());
+        //IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
+        addService(ServiceManagerNative.CONTROLLER, controllerService.get());
         VAppPermissionManagerService.systemReady();
-        IPCBus.register(IAppPermissionManager.class, VAppPermissionManagerService.get());
+        addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
         VWaterMarkService.systemReady();
-        IPCBus.register(IWaterMark.class, VWaterMarkService.get());
+        addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
+
         initialized = true;
         return true;
+    }
+
+    private void addService(String name, IBinder service) {
+        ServiceCache.addService(name, service);
     }
 
     @Override

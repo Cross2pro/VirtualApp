@@ -41,9 +41,13 @@ public class NativeLibraryHelperCompat {
         return -1;
     }
 
+    /**
+     * @deprecated
+     * @see #isSupportNative32(ApplicationInfo)
+     */
     public static boolean isSupportNative32(String apkPath) {
         //system is 32bit
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
                 return true;
             }
@@ -65,12 +69,39 @@ public class NativeLibraryHelperCompat {
         return false;
     }
 
+    public static boolean isSupportNative32(ApplicationInfo ai) {
+        //system is 32bit
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
+                return true;
+            }
+            try {
+                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
+                if (primaryCpuAbi == null) {
+                    return true;
+                }
+                String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
+                boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
+                if (!TextUtils.isEmpty(secondaryCpuAbi)) {
+                    return true;
+                } else if(primaryArchIs64bit){
+                    return false;
+                }else{
+                    return true;
+                }
+            } catch (Throwable e) {
+                //ignore
+            }
+        }
+        return true;
+    }
+
     public static String getNativeLibraryDir32(ApplicationInfo ai) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
                 String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
-                if(primaryCpuAbi == null){
+                if (primaryCpuAbi == null) {
                     return null;
                 }
                 boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
@@ -89,7 +120,7 @@ public class NativeLibraryHelperCompat {
                     // Single-arch 32-bit.
                     return ai.nativeLibraryDir;
                 }
-            }catch (Throwable e){
+            } catch (Throwable e) {
                 return ai.nativeLibraryDir;
             }
         }
@@ -197,8 +228,8 @@ public class NativeLibraryHelperCompat {
                     continue;
                 }
                 if (name.startsWith("lib/") && !entry.isDirectory() && name.endsWith(".so")) {
-                    String so = name.substring(name.lastIndexOf("/")+1);
-                    if(!solist.contains(so)){
+                    String so = name.substring(name.lastIndexOf("/") + 1);
+                    if (!solist.contains(so)) {
                         solist.add(so);
                     }
                 }

@@ -261,6 +261,7 @@ class MethodProxies {
             return "getPackageInstaller";
         }
 
+
         @Override
         public Object call(final Object who, Method method, Object... args) throws Throwable {
             final IInterface installer = (IInterface) method.invoke(who, args);
@@ -586,6 +587,10 @@ class MethodProxies {
             ResolveInfo resolveInfo = VPackageManager.get().resolveService(intent, resolvedType, flags, userId);
             if (resolveInfo == null) {
                 resolveInfo = (ResolveInfo) method.invoke(who, args);
+                //check outside is visable
+                if (resolveInfo != null && isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
+                    return resolveInfo;
+                }
             }
             return resolveInfo;
         }
@@ -769,9 +774,12 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             //fix:getCallingUid
             int uid = (int) args[0];
-            if(uid == Process.myUid() || uid == getRealUid()){
+            if(uid == Process.myUid()){
                 //my
-                return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
+               return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
+            }else if(uid == getRealUid()){
+                //callingpkg, org
+                return VPackageManager.get().getPackagesForUid(VClient.get().getVCallingUid());
             }
 
             String[] insides = VPackageManager.get().getPackagesForUid(uid);
@@ -959,6 +967,10 @@ class MethodProxies {
             ResolveInfo resolveInfo = VPackageManager.get().resolveIntent(intent, resolvedType, flags, userId);
             if (resolveInfo == null) {
                 resolveInfo = (ResolveInfo) method.invoke(who, args);
+                //check outside is visible
+                if (resolveInfo != null && isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
+                    return resolveInfo;
+                }
             }
             return resolveInfo;
         }

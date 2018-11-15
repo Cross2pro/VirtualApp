@@ -80,6 +80,10 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
         return mInvocationStub.addMethodProxy(methodProxy);
     }
 
+    public void setDefaultMethodProxy(MethodProxy methodProxy){
+        mInvocationStub.setDefaultMethodProxy(methodProxy);
+    }
+
     protected void afterHookApply(T delegate) {
     }
 

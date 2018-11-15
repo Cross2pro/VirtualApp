@@ -13,6 +13,8 @@ import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,10 @@ public class NativeEngine {
     private static boolean sFlag = false;
 
     private static final String LIB_NAME = "va++";
+
+    private static List<String> whiteList = new ArrayList<>();
+
+    private static List<String> forbidList = new ArrayList<>();
 
     static {
         try {
@@ -114,6 +120,10 @@ public class NativeEngine {
     }
 
     public static void whitelistFile(String path) {
+        if(whiteList.contains(path)){
+            return;
+        }
+        whiteList.add(path);
         try {
             nativeIOWhitelist(path);
         } catch (Throwable e) {
@@ -125,6 +135,10 @@ public class NativeEngine {
         if (!path.endsWith("/")) {
             path = path + "/";
         }
+        if(whiteList.contains(path)){
+            return;
+        }
+        whiteList.add(path);
         try {
             nativeIOWhitelist(path);
         } catch (Throwable e) {
@@ -136,6 +150,10 @@ public class NativeEngine {
         if (!file && !path.endsWith("/")) {
             path = path + "/";
         }
+        if(forbidList.contains(path)){
+            return;
+        }
+        forbidList.add(path);
         try {
             nativeIOForbid(path);
         } catch (Throwable e) {
@@ -160,7 +178,7 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission};
+        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission, NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare, NativeMethods.gAudioRecordNativeSetup, NativeMethods.gMediaRecorderNativeSetup};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {
@@ -181,6 +199,8 @@ public class NativeEngine {
         int callingPid = Binder.getCallingPid();
         if (callingPid == VirtualCore.get().getSystemPid()) {
             return Process.SYSTEM_UID;
+        }else if(callingPid == Process.myPid()){
+            return VClient.get().getVUid();
         }
         //fix:getCallingUid
         return VClient.get().getVCallingUid();

@@ -544,8 +544,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             //vivo start bg's activity
             Intent error = new Intent(Constants.ACTION_NEED_PERMISSION);
             error.setPackage(VirtualCore.get().getHostPkg());
-            error.putExtra(Constants.EXTRA_PERMISSION_SEASON, "startActivityForBg");
-            error.putExtra(Constants.EXTRA_PERMISSION_EX, Log.getStackTraceString(e));
+            error.putExtra(Constants.EXTRA_SEASON, "startActivityForBg");
+            error.putExtra(Constants.EXTRA_ERROR, Log.getStackTraceString(e));
             VirtualCore.get().getContext().sendBroadcast(error);
         }
     }

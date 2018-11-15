@@ -7,10 +7,9 @@ package com.xdja.zs;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.server.interfaces.IControllerServiceCallback;
+import com.xdja.zs.IControllerServiceCallback;
 
 import java.util.HashMap;
 import java.util.HashSet;

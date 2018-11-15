@@ -7,11 +7,13 @@ import android.app.job.IJobService;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
@@ -32,14 +34,14 @@ import static com.lody.virtual.server.job.VJobSchedulerService.get;
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ShadowJobService extends Service {
-
+    private static final boolean debug = false;
     private static final String TAG = ShadowJobService.class.getSimpleName();
     private final SparseArray<JobSession> mJobSessions = new SparseArray<>();
     private JobScheduler mScheduler;
     private final IJobService mService = new IJobService.Stub() {
 
         @Override
-        public void startJob(JobParameters jobParams) throws RemoteException {
+        public void startJob(JobParameters jobParams) {
             int jobId = jobParams.getJobId();
             IBinder binder = mirror.android.app.job.JobParameters.callback.get(jobParams);
             IJobCallback callback = IJobCallback.Stub.asInterface(binder);
@@ -50,43 +52,56 @@ public class ShadowJobService extends Service {
             } else {
                 JobId key = entry.getKey();
                 JobConfig config = entry.getValue();
+                JobSession session;
                 synchronized (mJobSessions) {
-                    JobSession session = mJobSessions.get(jobId);
-                    if (session != null) {
-                        // Job Session has exist.
-                        emptyCallback(callback, jobId);
-                    } else {
+                    session = mJobSessions.get(jobId);
+                }
+                if (session != null) {
+                    // Job Session has exist.
+                    session.startJob(true);
+                } else {
+                    boolean bound = false;
+                    synchronized (mJobSessions) {
+                        mirror.android.app.job.JobParameters.jobId.set(jobParams, key.clientJobId);
                         session = new JobSession(jobId, callback, jobParams);
                         mirror.android.app.job.JobParameters.callback.set(jobParams, session.asBinder());
-                        mirror.android.app.job.JobParameters.jobId.set(jobParams, key.clientJobId);
+                        mJobSessions.put(jobId, session);
                         Intent service = new Intent();
                         service.setComponent(new ComponentName(key.packageName, config.serviceName));
                         service.putExtra("_VA_|_user_id_", VUserHandle.getUserId(key.vuid));
-                        boolean bound = false;
                         try {
-                            bound = bindService(service, session, 0);
+                            if (debug) {
+                                VLog.i(TAG, "ShadowJobService:binService:%s, jobId=%s",
+                                        service.getComponent(), jobId);
+                            }
+                            bound = bindService(service, session, Context.BIND_AUTO_CREATE | Context.BIND_NOT_FOREGROUND);
                         } catch (Throwable e) {
                             VLog.e(TAG, e);
                         }
-                        if (bound) {
-                            mJobSessions.put(jobId, session);
-                        } else {
-                            emptyCallback(callback, jobId);
-                            mScheduler.cancel(jobId);
-                            get().cancel(-1, jobId);
+                    }
+                    if (!bound) {
+                        synchronized (mJobSessions) {
+                            mJobSessions.remove(jobId);
                         }
+                        emptyCallback(callback, jobId);
+                        mScheduler.cancel(jobId);
+                        get().cancel(-1, jobId);
                     }
                 }
             }
         }
 
         @Override
-        public void stopJob(JobParameters jobParams) throws RemoteException {
+        public void stopJob(JobParameters jobParams) {
             int jobId = jobParams.getJobId();
+            JobSession session;
             synchronized (mJobSessions) {
-                JobSession session = mJobSessions.get(jobId);
+                session = mJobSessions.get(jobId);
                 if (session != null) {
-                    session.stopSession();
+                    if(debug) {
+                        VLog.i(TAG, "stopJob:%d", jobId);
+                    }
+                    session.stopSessionLocked();
                 }
             }
         }
@@ -122,6 +137,7 @@ public class ShadowJobService extends Service {
         private IJobCallback clientCallback;
         private JobParameters jobParams;
         private IJobService clientJobService;
+        private boolean isWorking;
 
         JobSession(int jobId, IJobCallback clientCallback, JobParameters jobParams) {
             this.jobId = jobId;
@@ -131,33 +147,67 @@ public class ShadowJobService extends Service {
 
         @Override
         public void acknowledgeStartMessage(int jobId, boolean ongoing) throws RemoteException {
+            isWorking = true;
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:acknowledgeStartMessage:%d", this.jobId);
+            }
             clientCallback.acknowledgeStartMessage(jobId, ongoing);
         }
 
         @Override
         public void acknowledgeStopMessage(int jobId, boolean reschedule) throws RemoteException {
+            isWorking = false;
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:acknowledgeStopMessage:%d", this.jobId);
+            }
             clientCallback.acknowledgeStopMessage(jobId, reschedule);
         }
 
         @Override
         public void jobFinished(int jobId, boolean reschedule) throws RemoteException {
+            isWorking = false;
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:jobFinished:", this.jobId);
+            }
             clientCallback.jobFinished(jobId, reschedule);
         }
 
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            clientJobService = IJobService.Stub.asInterface(service);
+        public void startJob(boolean wait){
+            if(isWorking){
+                if(debug) {
+                    VLog.w(TAG, "ShadowJobService:startJob:%d,but is working", jobId);
+                }
+                return;
+            }
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:startJob:%d", jobId);
+            }
             if (clientJobService == null) {
-                emptyCallback(clientCallback, jobId);
-                stopSession();
+                if(!wait) {
+                    emptyCallback(clientCallback, jobId);
+                    synchronized (mJobSessions) {
+                        stopSessionLocked();
+                    }
+                }
                 return;
             }
             try {
                 clientJobService.startJob(jobParams);
             } catch (RemoteException e) {
                 forceFinishJob();
-                e.printStackTrace();
+                if(debug) {
+                    Log.e(TAG, "ShadowJobService:startJob", e);
+                }
             }
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:onServiceConnected:%s", name);
+            }
+            clientJobService = IJobService.Stub.asInterface(service);
+            startJob(false);
         }
 
         @Override
@@ -171,11 +221,16 @@ public class ShadowJobService extends Service {
             } catch (RemoteException e) {
                 e.printStackTrace();
             } finally {
-                stopSession();
+                synchronized (mJobSessions) {
+                    stopSessionLocked();
+                }
             }
         }
 
-        void stopSession() {
+        void stopSessionLocked() {
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:stopSession:%d", jobId);
+            }
             if (clientJobService != null) {
                 try {
                     clientJobService.stopJob(jobParams);

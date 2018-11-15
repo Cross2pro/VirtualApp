@@ -14,7 +14,7 @@ using namespace facebook::jni;
 
 jclass vskmClass;
 
-static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject> javaMethods,
+static void jni_nativeLaunchEngine(alias_ref<jclass> clazz,JArrayClass<jobject> javaMethods,
                                    jstring packageName,
                                    jboolean isArt, jint apiLevel, jint cameraMethodType) {
     hookAndroidVM(javaMethods, packageName, isArt, apiLevel, cameraMethodType);

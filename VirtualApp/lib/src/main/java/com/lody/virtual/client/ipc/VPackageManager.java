@@ -15,7 +15,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
@@ -27,14 +27,26 @@ import java.util.List;
 public class VPackageManager {
 
     private static final VPackageManager sMgr = new VPackageManager();
-    private IPCSingleton<IPackageManager> singleton = new IPCSingleton<>(IPackageManager.class);
+
+    private IPackageManager mService;
+
+    public IPackageManager getService() {
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (VPackageManager.class) {
+                Object remote = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IPackageManager.class, remote);
+            }
+        }
+        return mService;
+    }
+
+    private Object getRemoteInterface() {
+        return IPackageManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.PACKAGE));
+    }
 
     public static VPackageManager get() {
         return sMgr;
-    }
-
-    public IPackageManager getService() {
-        return singleton.get();
     }
 
     public int checkPermission(String permission, String pkgName, int userId) {

@@ -27,6 +27,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.remote.SettingRuleInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
@@ -65,6 +66,8 @@ public class VAppManagerService extends IAppManager.Stub {
     private boolean mBooting;
     private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<>();
     private IAppRequestListener mAppRequestListener;
+    private SettingRulePersistenceLayer mSettingPersistenceLayer = new SettingRulePersistenceLayer(this);
+    private final ArrayList<SettingRuleInfo> mSettingRules = new ArrayList<>();
 
     public static VAppManagerService get() {
         return sService.get();
@@ -87,6 +90,7 @@ public class VAppManagerService extends IAppManager.Stub {
         synchronized (this) {
             mBooting = true;
             mPersistenceLayer.read();
+            mSettingPersistenceLayer.read();
             if(VASettings.CHECK_UPDATE_NOT_COPY_APK) {
                 upgradeApps();
             }
@@ -119,8 +123,11 @@ public class VAppManagerService extends IAppManager.Stub {
 
     private void linkUserAppLib(int userId, String packageName) {
         String libPath = VEnvironment.getAppLibDirectory(packageName).getPath();
-        String userLibPath = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();
+        String userLibPath = VEnvironment.getUserAppLibDirectory(userId, packageName).getPath();
         try {
+            if (FileUtils.isExist(userLibPath)) {
+                return;
+            }
             FileUtils.createSymlink(libPath, userLibPath);
         } catch (Exception e) {
             e.printStackTrace();
@@ -219,7 +226,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (res.isUpdate) {
             FileUtils.deleteDir(libDir);
             VEnvironment.getOdexFile(pkg.packageName).delete();
-            VActivityManagerService.get().killAppByPkg(pkg.packageName, 0);
+            VActivityManagerService.get().killAppByPkg(pkg.packageName, VUserHandle.USER_ALL);
         }
         if (!libDir.exists() && !libDir.mkdirs()) {
             return InstallResult.makeFailure("Unable to create lib dir.");
@@ -229,7 +236,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (existSetting != null && existSetting.notCopyApk) {
             notCopyApk = false;
         }
-        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName, packageFile)){
+        if(notCopyApk && VirtualCore.get().isDisableNotCopyApk(pkg.packageName)){
             notCopyApk = false;
         }
 
@@ -306,6 +313,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (!ps.isInstalled(userId)) {
                     ps.setInstalled(userId, true);
                     notifyAppInstalled(ps, userId);
+                    linkUserAppLib(userId, packageName);
                     mPersistenceLayer.save();
                     return true;
                 }
@@ -388,7 +396,7 @@ public class VAppManagerService extends IAppManager.Stub {
         String packageName = ps.packageName;
         try {
             BroadcastSystem.get().stopApp(packageName);
-            VActivityManagerService.get().killAppByPkg(packageName, 0);
+            VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             VEnvironment.getPackageResourcePath(packageName).delete();
             FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory(packageName));
             VEnvironment.getOdexFile(packageName).delete();
@@ -668,4 +676,44 @@ public class VAppManagerService extends IAppManager.Stub {
         return installPackage(path, flag, false);
     }
 
+    public List<SettingRuleInfo> getSettingRules() {
+        return mSettingRules;
+    }
+
+    @Override
+    public void addSettingRule(int rule, String packageName, boolean regex){
+        SettingRuleInfo settingRuleInfo = new SettingRuleInfo(rule, packageName, regex);
+        synchronized (mSettingRules) {
+            if (mSettingRules.contains(settingRuleInfo)) {
+                return;
+            }
+            mSettingRules.add(settingRuleInfo);
+            mSettingPersistenceLayer.save();
+        }
+    }
+
+    @Override
+    public void removeSettingRule(int rule, String packageName, boolean regex) {
+        SettingRuleInfo settingRuleInfo = new SettingRuleInfo(rule, packageName, regex);
+        synchronized (mSettingRules) {
+            if(mSettingRules.remove(settingRuleInfo)) {
+                mSettingPersistenceLayer.save();
+            }
+        }
+    }
+
+    @Override
+    public boolean inSettingRule(int rule, String packageName) {
+        synchronized (mSettingRules) {
+            for (SettingRuleInfo settingRuleInfo : mSettingRules) {
+                if (settingRuleInfo.rule != rule || settingRuleInfo.word == null) {
+                    continue;
+                }
+                if (settingRuleInfo.matches(packageName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

@@ -40,4 +40,6 @@
     <color name="gray2">#C0C0C0</color>
     <color name="dialogColorPrimary">#a0607191</color>
     <color name="dialogColorPrimary2">#50607191</color>
+
+    <color name="item_bg">#C0C0C0</color>
 </resources>

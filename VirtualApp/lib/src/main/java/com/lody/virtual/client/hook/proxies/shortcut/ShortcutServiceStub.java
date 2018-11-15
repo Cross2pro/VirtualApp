@@ -16,7 +16,6 @@ import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
-import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
@@ -34,7 +33,9 @@ import mirror.android.content.pm.ParceledListSlice;
 
 /**
  * @author Lody
+ * @see android.content.pm.ShortcutManager
  */
+@TargetApi(Build.VERSION_CODES.N_MR1)
 public class ShortcutServiceStub extends BinderInvocationProxy {
 
 
@@ -45,16 +46,6 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("getManifestShortcuts"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("getDynamicShortcuts"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("setDynamicShortcuts"));
-        addMethodProxy(new StaticMethodProxy("addDynamicShortcuts") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                return true;
-            }
-        });
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("createShortcutResultIntent"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("disableShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("enableShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getRemainingCallCount"));
@@ -65,37 +56,79 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceCallingPkgMethodProxy("onApplicationActive"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("hasShortcutHostPermission"));
 
-        addMethodProxy(new RequestPinShortcut());
-        addMethodProxy(new GetPinnedShortcuts());
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("updateShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("removeAllDynamicShortcuts"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("removeDynamicShortcuts"));
+
+        addMethodProxy(new WrapperShortcutInfo("requestPinShortcut", 1, false));
+        addMethodProxy(new UnWrapperShortcutInfo("getPinnedShortcuts"));
+        addMethodProxy(new WrapperShortcutInfo("addDynamicShortcuts", 1, false));
+        addMethodProxy(new WrapperShortcutInfo("setDynamicShortcuts", 1, false));
+        addMethodProxy(new UnWrapperShortcutInfo("getDynamicShortcuts"));
+        addMethodProxy(new WrapperShortcutInfo("createShortcutResultIntent", 1, null));
+        addMethodProxy(new WrapperShortcutInfo("updateShortcuts", 1, false));
+
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("getManifestShortcuts") {
+            @Override
+            public Object call(Object who, Method method, Object... args){
+                return ParceledListSliceCompat.create(new ArrayList<ShortcutInfo>());
+            }
+        });
+
     }
 
-    @TargetApi(Build.VERSION_CODES.N_MR1)
-    private static class RequestPinShortcut extends ReplaceCallingPkgMethodProxy {
-        public RequestPinShortcut() {
-            super("requestPinShortcut");
+    static class WrapperShortcutInfo extends ReplaceCallingPkgMethodProxy {
+        private int infoIndex;
+        private Object defValue;
+
+        public WrapperShortcutInfo(String name, int index, Object defValue) {
+            super(name);
+            infoIndex = index;
+            this.defValue = defValue;
         }
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (!VASettings.ENABLE_INNER_SHORTCUT) {
-                return false;
+                return defValue;
             }
-            ShortcutInfo shortcutInfo = (ShortcutInfo) args[1];
-            if (shortcutInfo == null) {
-                return false;
+            Object paramValue = args[infoIndex];
+            if (paramValue != null) {
+                if (paramValue instanceof ShortcutInfo) {
+                    ShortcutInfo shortcutInfo = (ShortcutInfo) paramValue;
+                    args[infoIndex] = wrapper(
+                            VClient.get().getCurrentApplication(), shortcutInfo, getAppPkg(), getAppUserId());
+                } else {
+                    List<ShortcutInfo> result = new ArrayList<>();
+                    List list = null;
+                    try {
+                        list = ParceledListSlice.getList.call(paramValue);
+                    } catch (Throwable e) {
+                        return defValue;
+                    }
+                    if (list != null) {
+                        for (int i = list.size() - 1; i >= 0; i--) {
+                            Object obj = list.get(i);
+                            if (obj != null && (obj instanceof ShortcutInfo)) {
+                                ShortcutInfo info = (ShortcutInfo) obj;
+                                ShortcutInfo target = unWrapper(
+                                        VClient.get().getCurrentApplication(), info, getAppPkg(), getAppUserId());
+                                if (target != null) {
+                                    result.add(target);
+                                }
+                            }
+                        }
+                    }
+                    args[infoIndex] = ParceledListSliceCompat.create(result);
+                }
+                return method.invoke(who, args);
             }
-            args[1] = wrapper(VClient.get().getCurrentApplication(), shortcutInfo, getAppPkg(), getAppUserId());
-            return super.call(who, method, args);
+            return defValue;
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.N_MR1)
-    private static class GetPinnedShortcuts extends ReplaceCallingPkgMethodProxy {
-        public GetPinnedShortcuts() {
-            super("getPinnedShortcuts");
+    static class UnWrapperShortcutInfo extends ReplaceCallingPkgMethodProxy {
+        public UnWrapperShortcutInfo(String name) {
+            super(name);
         }
 
         @Override
@@ -114,7 +147,8 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
                         Object obj = list.get(i);
                         if (obj != null && (obj instanceof ShortcutInfo)) {
                             ShortcutInfo info = (ShortcutInfo) obj;
-                            ShortcutInfo target = unWrapper(VClient.get().getCurrentApplication(), info, getAppPkg(), getAppUserId());
+                            ShortcutInfo target = unWrapper(
+                                    VClient.get().getCurrentApplication(), info, getAppPkg(), getAppUserId());
                             if (target != null) {
                                 result.add(target);
                             }
@@ -127,8 +161,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.N_MR1)
-    private static ShortcutInfo wrapper(Context appContext, ShortcutInfo shortcutInfo, String pkg, int userId) {
+    static ShortcutInfo wrapper(Context appContext, ShortcutInfo shortcutInfo, String pkg, int userId) {
         Icon icon = Reflect.on(shortcutInfo).opt("mIcon");
         Bitmap bmp;
         if (icon != null) {
@@ -155,8 +188,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
         return builder.build();
     }
 
-    @TargetApi(Build.VERSION_CODES.N_MR1)
-    private static ShortcutInfo unWrapper(Context appContext, ShortcutInfo shortcutInfo, String _pkg, int _userId) throws URISyntaxException {
+    static ShortcutInfo unWrapper(Context appContext, ShortcutInfo shortcutInfo, String _pkg, int _userId) throws URISyntaxException {
         Intent intent = shortcutInfo.getIntent();
         if (intent == null) {
             return null;

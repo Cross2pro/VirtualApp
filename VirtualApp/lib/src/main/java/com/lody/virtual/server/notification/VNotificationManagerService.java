@@ -7,7 +7,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.helper.utils.Singleton;
-import com.lody.virtual.server.interfaces.INotificationCallback;
+import com.xdja.zs.INotificationCallback;
 import com.lody.virtual.server.interfaces.INotificationManager;
 
 import java.util.ArrayList;
@@ -154,7 +154,6 @@ public class VNotificationManagerService extends INotificationManager.Stub {
         iNotificationCallback.cancelAllNotification(packageName);
     }
 
-    @Override
     public void cancelNotification(String pkg, String tag, int id, int userId) throws RemoteException {
         Log.e(TAG, "cancelNotification pkg: " + pkg);
         Log.e(TAG, "cancelNotification tag: " + tag);
@@ -187,7 +186,6 @@ public class VNotificationManagerService extends INotificationManager.Stub {
         iNotificationCallback.cancelNotification(pkg, size);
     }
 
-    @Override
     public void registerCallback(INotificationCallback iNotificationCallback) {
         this.iNotificationCallback = iNotificationCallback;
     }

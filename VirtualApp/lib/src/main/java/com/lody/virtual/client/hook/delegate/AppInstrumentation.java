@@ -5,6 +5,8 @@ import android.app.Application;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PersistableBundle;
@@ -21,7 +23,7 @@ import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.server.interfaces.IUiCallback;
+import com.xdja.zs.IUiCallback;
 
 import java.lang.reflect.Field;
 
@@ -113,7 +115,6 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
         if (icicle != null) {
             BundleCompat.clearParcelledData(icicle);
         }
-        VirtualCore.get().getComponentDelegate().beforeActivityCreate(activity);
         IBinder token = mirror.android.app.Activity.mToken.get(activity);
         ActivityClientRecord r = VActivityManager.get().getActivityRecord(token);
         if (r != null) {
@@ -132,10 +133,43 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
                 activity.setRequestedOrientation(info.screenOrientation);
+                boolean needWait = false;
+                //set orientation
+                Configuration configuration = activity.getResources().getConfiguration();
+                if (isOrientationLandscape(info.screenOrientation)) {
+                    needWait = configuration.orientation != Configuration.ORIENTATION_LANDSCAPE;
+                    configuration.orientation = Configuration.ORIENTATION_LANDSCAPE;
+                } else {
+                    needWait = configuration.orientation != Configuration.ORIENTATION_PORTRAIT;
+                    configuration.orientation = Configuration.ORIENTATION_PORTRAIT;
+                }
+                if(needWait) {
+                    try{
+                        Thread.sleep(800);
+                    }catch (Exception e){
+                        //ignore
+                    }
+                }
             }
         }
         super.callActivityOnCreate(activity, icicle);
-        VirtualCore.get().getComponentDelegate().afterActivityCreate(activity);
+    }
+
+    public void callSuperActivityOnCreate(Activity activity, Bundle icicle) {
+        super.callActivityOnCreate(activity, icicle);
+    }
+
+    private boolean isOrientationLandscape(int requestedOrientation) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            return (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                    || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+                    || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+                    || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
+        }else{
+            return (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+                    || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+                    || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+        }
     }
 
     @Override
@@ -148,10 +182,8 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public void callActivityOnResume(Activity activity) {
-        VirtualCore.get().getComponentDelegate().beforeActivityResume(activity);
         VActivityManager.get().onActivityResumed(activity);
         super.callActivityOnResume(activity);
-        VirtualCore.get().getComponentDelegate().afterActivityResume(activity);
         Intent intent = activity.getIntent();
         if (intent != null) {
             Bundle bundle = intent.getBundleExtra("_VA_|_sender_");
@@ -172,16 +204,12 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
     @Override
     public void callActivityOnDestroy(Activity activity) {
-        VirtualCore.get().getComponentDelegate().beforeActivityDestroy(activity);
         super.callActivityOnDestroy(activity);
-        VirtualCore.get().getComponentDelegate().afterActivityDestroy(activity);
     }
 
     @Override
     public void callActivityOnPause(Activity activity) {
-        VirtualCore.get().getComponentDelegate().beforeActivityPause(activity);
         super.callActivityOnPause(activity);
-        VirtualCore.get().getComponentDelegate().afterActivityPause(activity);
     }
 
 

@@ -33,6 +33,7 @@ public class MethodInvocationStub<T> {
     private T mBaseInterface;
     private T mProxyInterface;
     private String mIdentityName;
+    private MethodProxy mDefaultProxy;
     private LogInvocation.Condition mInvocationLoggingCondition = LogInvocation.Condition.NEVER;
 
 
@@ -139,7 +140,15 @@ public class MethodInvocationStub<T> {
      */
     @SuppressWarnings("unchecked")
     public <H extends MethodProxy> H getMethodProxy(String name) {
-        return (H) mInternalMethodProxies.get(name);
+        H proxy = (H) mInternalMethodProxies.get(name);
+        if(proxy == null){
+            return (H) mDefaultProxy;
+        }
+        return proxy;
+    }
+
+    public  void setDefaultMethodProxy(MethodProxy proxy){
+        mDefaultProxy = proxy;
     }
 
     /**

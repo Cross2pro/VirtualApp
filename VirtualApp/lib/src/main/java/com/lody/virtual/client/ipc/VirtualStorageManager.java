@@ -3,10 +3,8 @@ package com.lody.virtual.client.ipc;
 
 import android.os.RemoteException;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
-import com.lody.virtual.server.interfaces.IJobService;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.server.interfaces.IVirtualStorageService;
 
 /**
@@ -16,29 +14,39 @@ import com.lody.virtual.server.interfaces.IVirtualStorageService;
 public class VirtualStorageManager {
 
     private static final VirtualStorageManager sInstance = new VirtualStorageManager();
-    private IPCSingleton<IVirtualStorageService> singleton = new IPCSingleton<>(IVirtualStorageService.class);
-
 
     public static VirtualStorageManager get() {
         return sInstance;
     }
 
+    private IVirtualStorageService mService;
 
-    public IVirtualStorageService getRemote() {
-        return singleton.get();
+    public IVirtualStorageService getService() {
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (this) {
+                Object binder = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IVirtualStorageService.class, binder);
+            }
+        }
+        return mService;
     }
 
     public void setVirtualStorage(String packageName, int userId, String vsPath) {
         try {
-            getRemote().setVirtualStorage(packageName, userId, vsPath);
+            getService().setVirtualStorage(packageName, userId, vsPath);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
     }
 
+    private Object getRemoteInterface() {
+        return IVirtualStorageService.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.VS));
+    }
+
     public String getVirtualStorage(String packageName, int userId) {
         try {
-            return getRemote().getVirtualStorage(packageName, userId);
+            return getService().getVirtualStorage(packageName, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -46,7 +54,7 @@ public class VirtualStorageManager {
 
     public void setVirtualStorageState(String packageName, int userId, boolean enable) {
         try {
-            getRemote().setVirtualStorageState(packageName, userId, enable);
+            getService().setVirtualStorageState(packageName, userId, enable);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
@@ -54,7 +62,7 @@ public class VirtualStorageManager {
 
     public boolean isVirtualStorageEnable(String packageName, int userId) {
         try {
-            return getRemote().isVirtualStorageEnable(packageName, userId);
+            return getService().isVirtualStorageEnable(packageName, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

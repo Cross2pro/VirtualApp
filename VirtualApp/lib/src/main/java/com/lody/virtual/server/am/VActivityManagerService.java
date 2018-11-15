@@ -60,9 +60,11 @@ import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import mirror.android.app.IServiceConnectionO;
@@ -91,6 +93,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             .getSystemService(Context.ACTIVITY_SERVICE);
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
+    private final Map<String, Boolean> sIdeMap = new HashMap<>();
 
     public static VActivityManagerService get() {
         return sService.get();
@@ -185,7 +188,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public void onActivityCreated(ComponentName component, ComponentName caller, IBinder token, Intent intent, String affinity, int taskId, int launchMode, int flags) {
         int pid = Binder.getCallingPid();
-        ProcessRecord targetApp = findProcessLocked(pid);
+        ProcessRecord targetApp;
+        synchronized (mPidsSelfLocked) {
+            targetApp = findProcessLocked(pid);
+        }
         if (targetApp != null) {
             mMainStack.onActivityCreated(targetApp, component, caller, token, intent, affinity, taskId, launchMode, flags);
         }
@@ -307,7 +313,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public ComponentName startService(IBinder caller, Intent service, String resolvedType, int userId, int callingUid) {
         synchronized (this) {
-            return startServiceCommon(service, true, userId, callingUid);
+            return startServiceCommon(service, true, userId, -1);
         }
     }
 
@@ -599,7 +605,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 ActivityManager.RunningServiceInfo info = new ActivityManager.RunningServiceInfo();
                 info.uid = r.process.vuid;
                 info.pid = r.process.pid;
-                ProcessRecord processRecord = findProcessLocked(r.process.pid);
+                ProcessRecord processRecord;
+                synchronized (mPidsSelfLocked){
+                    processRecord = findProcessLocked(r.process.pid);
+                }
                 if (processRecord != null) {
                     info.process = processRecord.processName;
                     info.clientPackage = processRecord.info.packageName;
@@ -666,7 +675,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         int appId = VAppManagerService.get().getAppId(packageName);
         int uid = VUserHandle.getUid(userId, appId);
         synchronized (this) {
-            ProcessRecord app = findProcessLocked(callingPid);
+            ProcessRecord app;
+            synchronized (mPidsSelfLocked) {
+                app = findProcessLocked(callingPid);
+            }
             if (app == null) {
                 ApplicationInfo appInfo = VPackageManagerService.get().getApplicationInfo(packageName, 0, userId);
                 appInfo.flags |= ApplicationInfo.FLAG_HAS_CODE;
@@ -676,7 +688,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                     performStartProcessLocked(uid, vpid, appInfo, processName, callingUid);
                 }
             } else {
-                app.callingUid = callingUid;
+                app.setVCallingUid(callingUid);
             }
         }
     }
@@ -817,13 +829,19 @@ public class VActivityManagerService extends IActivityManager.Stub {
             VAppManagerService.get().savePersistenceData();
         }
         int uid = VUserHandle.getUid(userId, ps.appId);
-        ProcessRecord app = mProcessNames.get(processName, uid);
+        ProcessRecord app;
+        synchronized (mProcessNames) {
+            app = mProcessNames.get(processName, uid);
+        }
         if (app != null && app.client.asBinder().isBinderAlive()) {
             //change callinguid
-            app.callingUid = callingUid;
+            app.setVCallingUid(callingUid);
             return app;
         }
-        int vpid = queryFreeStubProcessLocked();
+        int vpid;
+        synchronized (mPidsSelfLocked) {
+            vpid = queryFreeStubProcessLocked();
+        }
         if (vpid == -1) {
             return null;
         }
@@ -856,7 +874,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     private ProcessRecord performStartProcessLocked(int vuid, int vpid, ApplicationInfo info, String processName, int callingUid) {
         ProcessRecord app = new ProcessRecord(info, processName, vuid, vpid);
-        app.callingUid = callingUid;
+        app.setVCallingUid(callingUid);
         Bundle extras = new Bundle();
         BundleCompat.putBinder(extras, "_VA_|_binder_", app);
         extras.putInt("_VA_|_vuid_", vuid);
@@ -1014,7 +1032,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    @Override
     public int getRunningAppMemorySize(String packageName, int userId) throws RemoteException {
         synchronized (mPidsSelfLocked) {
             int size = 0;
@@ -1032,7 +1049,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    @Override
     public void closeAllLongSocket(String packageName, int userId) throws RemoteException {
         synchronized (mPidsSelfLocked) {
             int N = mPidsSelfLocked.size();
@@ -1206,7 +1222,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                         VLog.logbug(TAG, VLog.getStackTraceString(new Exception("userId = " + userId)));
                         userId = 0;
                     }
-                    r = startProcessIfNeedLocked(info.processName, userId, info.packageName, callingUid);
+                    r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1);
                 }
             }
             if (r != null && r.appThread != null) {
@@ -1253,10 +1269,24 @@ public class VActivityManagerService extends IActivityManager.Stub {
         synchronized (mPidsSelfLocked) {
             ProcessRecord r = findProcessLocked(pid);
             if (r != null) {
-                return r.callingUid;
+                return r.getVCallingUid();
             }
         }
         return -1;
     }
 
+    @Override
+    public void setAppInactive(String packageName, boolean idle, int userId){
+        synchronized (sIdeMap) {
+            sIdeMap.put(packageName + "@" + userId, idle);
+        }
+    }
+
+    @Override
+    public boolean isAppInactive(String packageName, int userId) {
+        synchronized (sIdeMap) {
+            Boolean idle = sIdeMap.get(packageName + "@" + userId);
+            return idle != null && !idle;
+        }
+    }
 }

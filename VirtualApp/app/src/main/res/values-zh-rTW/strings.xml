@@ -51,6 +51,13 @@
     <string name="tip_delete">刪除應用</string>
     <string name="text_delete_app" formatted="false">是否移除應用 %s ?</string>
     <string name="menu_install_gms">安裝google服務框架</string>
+    <string name="title_app_device">独立设置</string>
+    <string name="title_user_device">全局设置</string>
+    <string name="menu_mock_phone">机型模擬</string>
+    <string name="mock_none">真机信息</string>
+    <string name="mock_device">模拟中</string>
+    <string name="dlg_reset_device">重置为真实手机信息</string>
+    <string name="mock_global">全局模拟中</string>
     <string-array name="weeks">
         <item>周日</item>
         <item>周一</item>

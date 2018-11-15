@@ -20,6 +20,7 @@ int add_keep_item(const char *path) {
     PathItem &item = keep_items[keep_item_count];
     item.path = strdup(path);
     item.size = strlen(path);
+    item.is_folder = (path[strlen(path) - 1] == '/');
     return ++keep_item_count;
 }
 
@@ -32,6 +33,7 @@ int add_dlopen_keep_item(const char *path){
     PathItem &item = dlopen_keep_items[dlopen_keep_items_count];
     item.path = strdup(path);
     item.size = strlen(path);
+    item.is_folder = (path[strlen(path) - 1] == '/');
     return ++dlopen_keep_items_count;
 }
 
@@ -188,9 +190,9 @@ const char *reverse_relocate_path(const char *_path) {
     char *path = canonicalize_filename(_path);
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
-        if (strcmp(item.path, path) == 0) {
+        if (match_path(item.is_folder, item.size, item.path, path)) {
             free(path);
-            return _path;
+            return path;
         }
     }
     for (int i = 0; i < replace_item_count; ++i) {

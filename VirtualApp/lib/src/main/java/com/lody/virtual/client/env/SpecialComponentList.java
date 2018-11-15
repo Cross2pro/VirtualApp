@@ -58,7 +58,12 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.SIM_STATE_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.location.PROVIDERS_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.location.MODE_CHANGED");
-        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SHUTDOWN);
+        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_HEADSET_PLUG);
+        SYSTEM_BROADCAST_ACTION.add("android.media.VOLUME_CHANGED_ACTION");
+        SYSTEM_BROADCAST_ACTION.add("android.intent.action.CONFIGURATION_CHANGED");
+        SYSTEM_BROADCAST_ACTION.add("android.intent.action.DYNAMIC_SENSOR_CHANGED");
+        SYSTEM_BROADCAST_ACTION.add("dynamic_sensor_change");
 
         ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
         ACTION_BLACK_LIST.add("com.sina.weibo.action.BACK_TO_FORGROUND");
@@ -75,8 +80,7 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put("android.intent.action.USER_ADDED", Constants.ACTION_USER_ADDED);
         PROTECTED_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
         //update images/videos by media provider
-        PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        PROTECTED_ACTION_MAP.put(Intent.ACTION_HEADSET_PLUG, Intent.ACTION_HEADSET_PLUG);
+
 
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic");
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic_mutiple");

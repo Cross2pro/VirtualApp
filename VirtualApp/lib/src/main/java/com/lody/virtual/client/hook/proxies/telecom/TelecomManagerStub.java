@@ -3,7 +3,6 @@ package com.lody.virtual.client.hook.proxies.telecom;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
-import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
@@ -48,13 +47,5 @@ public class TelecomManagerStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceCallingPkgMethodProxy("isTtySupported"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getCurrentTtyMode"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("placeCall"));
-    }
-
-    @Override
-    public void inject() throws Throwable {
-        super.inject();
-        if(isEnvBad()){
-            Log.w("kk", "inject fail ITelecomService");
-        }
     }
 }

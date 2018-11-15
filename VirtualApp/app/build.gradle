@@ -5,11 +5,11 @@ android {
     compileSdkVersion 25
     buildToolsVersion '26.0.2'
     defaultConfig {
-        applicationId "io.virtualapp"
+        applicationId "io.virtualapp.luohe"
         minSdkVersion 19
         targetSdkVersion 22
-        versionCode 18051410
-        versionName "2.0.0"
+        versionCode 18060820
+        versionName "2.0.3"
         multiDexEnabled true
 		vectorDrawables.useSupportLibrary = true
         ndk {

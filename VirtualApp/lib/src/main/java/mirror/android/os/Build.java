@@ -14,4 +14,6 @@ public class Build {
     public static RefStaticObject<String> PRODUCT;
     public static RefStaticObject<String> ID;
     public static RefStaticObject<String> DISPLAY;
+    public static RefStaticObject<String> MANUFACTURER;
+    public static RefStaticObject<String> FINGERPRINT;
 }

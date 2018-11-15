@@ -319,7 +319,6 @@ public class ChooseLocationActivity extends VActivity implements TencentLocation
             keyword = keyword.substring(pos + 1);
         }
         final String city = !TextUtils.isEmpty(target) ? target : (TextUtils.isEmpty(mCity) ? "中国" : mCity);
-        Log.d("kk", "search " + keyword + " of " + city);
 
         SearchParam.Region r = new SearchParam.Region().poi(city);
         SearchParam param = new SearchParam().keyword(keyword).boundary(r).page_size(50);

@@ -2,10 +2,11 @@ package com.xdja.zs;
 
 import android.os.RemoteException;
 
-import com.xdja.zs.IController;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
-
+import com.lody.virtual.client.ipc.LocalProxyUtils;
+import com.lody.virtual.client.ipc.ServiceManagerNative;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
+import com.xdja.zs.IController;
 /**
  * Created by zhangsong on 18-1-23.
  */
@@ -14,9 +15,22 @@ public class controllerManager {
     private static final controllerManager sInstance = new controllerManager();
     public static controllerManager get() { return sInstance; }
 
-    private IPCSingleton<IController> singleton = new IPCSingleton<>(IController.class);
+    private IController mService;
 
-    public IController getService() { return singleton.get(); }
+    private Object getRemoteInterface() {
+        return IAppPermission.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.APPPERMISSION));
+    }
+    public IController getService() {
+
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (this) {
+                Object binder = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IController.class, binder);
+            }
+        }
+        return mService;
+    }
 
     public static boolean isNetworkEnable()
     {

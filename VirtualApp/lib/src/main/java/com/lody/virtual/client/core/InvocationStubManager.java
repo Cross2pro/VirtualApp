@@ -47,7 +47,6 @@ import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
-import com.lody.virtual.client.hook.proxies.telephony.ICarrierConfigLoaderStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
 import com.lody.virtual.client.hook.proxies.usage.UsageStatsManagerStub;
@@ -155,13 +154,14 @@ public final class InvocationStubManager {
             addInjector(new SearchManagerStub());
             addInjector(new ContentServiceStub());
             addInjector(new ConnectivityStub());
+            addInjector(new BluetoothStub());
 
             if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
                 addInjector(new VibratorStub());
                 addInjector(new WifiManagerStub());
-                addInjector(new BluetoothStub());
                 addInjector(new ContextHubServiceStub());
             }
+
             if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
                 addInjector(new UserManagerStub());
             }
@@ -193,7 +193,6 @@ public final class InvocationStubManager {
             if (Build.VERSION.SDK_INT >= M) {
                 addInjector(new FingerprintManagerStub());
                 addInjector(new NetworkManagementStub());
-                addInjector(new ICarrierConfigLoaderStub());
             }
             if (Build.VERSION.SDK_INT >= N) {
                 addInjector(new WifiScannerStub());

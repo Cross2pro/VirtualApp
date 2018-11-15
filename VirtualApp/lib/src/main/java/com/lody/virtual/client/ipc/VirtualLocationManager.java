@@ -2,13 +2,11 @@ package com.lody.virtual.client.ipc;
 
 import android.os.RemoteException;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.remote.vloc.VCell;
 import com.lody.virtual.remote.vloc.VLocation;
-import com.lody.virtual.server.interfaces.IDeviceInfoManager;
 import com.lody.virtual.server.interfaces.IVirtualLocationManager;
 
 import java.util.List;
@@ -20,7 +18,6 @@ import java.util.List;
 public class VirtualLocationManager {
 
     private static final VirtualLocationManager sInstance = new VirtualLocationManager();
-    private IPCSingleton<IVirtualLocationManager> singleton = new IPCSingleton<>(IVirtualLocationManager.class);
 
     public static final int MODE_CLOSE = 0;
     public static final int MODE_USE_GLOBAL = 1;
@@ -30,8 +27,21 @@ public class VirtualLocationManager {
         return sInstance;
     }
 
+    private IVirtualLocationManager mService;
+
     public IVirtualLocationManager getService() {
-        return singleton.get();
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (this) {
+                Object binder = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IVirtualLocationManager.class, binder);
+            }
+        }
+        return mService;
+    }
+
+    private Object getRemoteInterface() {
+        return IVirtualLocationManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.VIRTUAL_LOC));
     }
 
     public int getMode(int userId, String pkg) {

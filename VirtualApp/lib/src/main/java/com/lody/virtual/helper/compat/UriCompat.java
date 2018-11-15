@@ -28,6 +28,42 @@ public class UriCompat {
     private static boolean DEBUG = false;
     public static String AUTH = "virtual.fileprovider";
 
+    private static final String SUFFIX = "@_outside";
+
+    /**
+     * 内外部都存在某个contentProvider的时候使用
+     * @return 是否是指定访问外部contentprovider
+     */
+    public static boolean isOutSide(String auth){
+        return auth != null && auth.endsWith(SUFFIX);
+    }
+
+    /**
+     * 内外部都存在某个contentProvider的时候使用
+     * @param auth 外部contentProvider的auth
+     * @return 经过处理的auth
+     */
+    public static String wrapperOutSide(String auth){
+        int index = auth.lastIndexOf(SUFFIX);
+        if(index < 0){
+            return auth + SUFFIX;
+        }
+        return auth;
+    }
+
+    /**
+     * 内外部都存在某个contentProvider的时候使用
+     * @param auth 经过处理的auth
+     * @return 外部contentProvider的auth
+     */
+    public static String unWrapperOutSide(String auth){
+        int index = auth.lastIndexOf(SUFFIX);
+        if(index > 0){
+            return auth.substring(0, index);
+        }
+        return auth;
+    }
+
     public static boolean needFake(Intent intent) {
         String pkg = intent.getPackage();
         //inside
@@ -44,6 +80,7 @@ public class UriCompat {
     }
 
     public static Uri fakeFileUri(Uri uri) {
+        if (uri == null) return null;
         if ("content".equals(uri.getScheme())) {
             //fake auth
             String auth = uri.getAuthority();

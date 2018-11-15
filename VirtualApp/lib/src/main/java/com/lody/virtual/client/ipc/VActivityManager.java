@@ -22,8 +22,8 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
@@ -47,17 +47,32 @@ public class VActivityManager {
 
     private static final VActivityManager sAM = new VActivityManager();
     private final Map<IBinder, ActivityClientRecord> mActivities = new HashMap<IBinder, ActivityClientRecord>(6);
-    private IPCSingleton<IActivityManager> singleton = new IPCSingleton<>(IActivityManager.class);
+    private IActivityManager mService;
+
+    public IActivityManager getService() {
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (VActivityManager.class) {
+                final Object remote = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IActivityManager.class, remote);
+            }
+        }
+        return mService;
+    }
+
+    private Object getRemoteInterface() {
+        return IActivityManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.ACTIVITY));
+    }
 
     public static VActivityManager get() {
         return sAM;
     }
 
-    public IActivityManager getService() {
-        return singleton.get();
+    public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+        return startActivity(intent, info, resultTo, options, resultWho, requestCode, userId, getUid());
     }
 
-    public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+    public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId, int callingUid) {
         if (info == null) {
             info = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (info == null) {
@@ -65,7 +80,7 @@ public class VActivityManager {
             }
         }
         try {
-            return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId, getUid());
+            return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId, callingUid);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -87,7 +102,7 @@ public class VActivityManager {
         if (info == null) {
             return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
         }
-        return startActivity(intent, info, null, null, null, 0, userId);
+        return startActivity(intent, info, null, null, null, 0, userId, 0);
     }
 
     public ActivityClientRecord onActivityCreate(ComponentName component, ComponentName caller, IBinder token, ActivityInfo info, Intent intent, String affinity, int taskId, int launchMode, int flags) {
@@ -536,5 +551,21 @@ public class VActivityManager {
             }
         }
         return true;
+    }
+
+    public void setAppInactive(String packageName, boolean idle, int userId){
+        try {
+            getService().setAppInactive(packageName, idle, userId);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public  boolean isAppInactive(String packageName, int userId){
+        try {
+            return getService().isAppInactive(packageName, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
     }
 }

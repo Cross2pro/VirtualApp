@@ -13,7 +13,7 @@ import android.os.RemoteException;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.AmsTask;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IAccountManager;
 
@@ -29,14 +29,25 @@ public class VAccountManager {
 
     private static VAccountManager sMgr = new VAccountManager();
 
-    private IPCSingleton<IAccountManager> singleton = new IPCSingleton<>(IAccountManager.class);
-
     public static VAccountManager get() {
         return sMgr;
     }
 
+    private IAccountManager mService;
+
     public IAccountManager getService() {
-        return singleton.get();
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (VAccountManager.class) {
+                Object remote = getStubInterface();
+                mService = LocalProxyUtils.genProxy(IAccountManager.class, remote);
+            }
+        }
+        return mService;
+    }
+
+    private Object getStubInterface() {
+        return IAccountManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.ACCOUNT));
     }
 
     public AuthenticatorDescription[] getAuthenticatorTypes() {

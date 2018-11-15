@@ -1,5 +1,6 @@
 package com.lody.virtual.client.natives;
 
+import android.annotation.SuppressLint;
 import android.hardware.Camera;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -24,19 +25,39 @@ public class NativeMethods {
 
     public static Method gAudioRecordNativeCheckPermission;
 
+    public static Method gAudioRecordNativeSetup;
+
+    public static Method gMediaRecorderNativeSetup;
+
     public static Method gCameraStartPreview;
-
     public static Method gCameraNativeTakePicture;
-
     public static Method gAudioRecordStart;
     public static Method gMediaRecordPrepare;
 
+    @SuppressLint("PrivateApi")
     public static void init() {
-//       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class, String.class}
-//       MediaRecorder.class, "native_setup", new Class[]{Object.class, String.class}
-
-//       AudioRecord.class, "native_setup", new Class[]{Object.class, Object.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class})
-//       AudioRecord.class, "native_setup", new Class[]{Object.class, Object.class, int[].class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class, Long.TYPE});
+        try {
+            gMediaRecorderNativeSetup = MediaRecorder.class.getDeclaredMethod("native_setup",
+                    Object.class, String.class, String.class);
+        } catch (NoSuchMethodException e) {
+            try {
+                gMediaRecorderNativeSetup = MediaRecorder.class.getDeclaredMethod("native_setup",
+                        Object.class, String.class);
+            } catch (NoSuchMethodException e1) {
+                //ignore
+            }
+        }
+        try {
+            gAudioRecordNativeSetup = AudioRecord.class.getDeclaredMethod("native_setup",
+                    Object.class, Object.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class);
+        } catch (NoSuchMethodException e) {
+            try {
+                gAudioRecordNativeSetup = AudioRecord.class.getDeclaredMethod("native_setup",
+                        Object.class, Object.class, int[].class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, int[].class, String.class, Long.TYPE);
+            } catch (NoSuchMethodException e1) {
+                //ignore
+            }
+        }
 
         String methodName =
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";

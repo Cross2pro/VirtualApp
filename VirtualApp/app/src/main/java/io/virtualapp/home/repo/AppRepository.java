@@ -4,11 +4,12 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
+import com.lody.virtual.client.core.SettingRule;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.AppData;
@@ -56,9 +58,22 @@ public class AppRepository implements AppDataSource {
     }
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
-        return ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
-                || (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0)
-                && !GmsSupport.isGoogleAppOrService(packageInfo.packageName);
+        if((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0){
+            return true;
+        }
+        if(packageInfo.applicationInfo.uid <= 1000){
+            return true;
+        }
+        if((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0){
+            if(packageInfo.applicationInfo.labelRes == 0 && TextUtils.isEmpty(packageInfo.applicationInfo.nonLocalizedLabel)){
+                return true;
+            }
+            if((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0){
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -162,6 +177,41 @@ public class AppRepository implements AppDataSource {
         return packageList;
     }
 
+    private final Map<String, Boolean> mCache = new HashMap<>();
+
+    private boolean isDisableNotCopyApk(PackageInfo pkg) {
+        synchronized (mCache) {
+            Boolean rs = mCache.get(pkg.packageName);
+            if (rs != null && rs) {
+                return true;
+            }
+        }
+        //check
+        File apk = new File(pkg.applicationInfo.publicSourceDir);
+        Set<String> soList = NativeLibraryHelperCompat.getSoListFromApk(apk);
+        if (soList == null || soList.contains("libme_unipay.so")) {
+            synchronized (mCache) {
+                mCache.put(pkg.packageName, true);
+            }
+            return true;
+        }
+        for (String so : soList) {
+            if (so.startsWith("libshella-")) {
+                synchronized (mCache) {
+                    mCache.put(pkg.packageName, true);
+                }
+                return true;
+            }
+        }
+        synchronized (mCache) {
+            mCache.put(pkg.packageName, false);
+        }
+        return false;
+    }
+    private boolean isGameFramework(String pkg){
+        return "com.huawei.hwid".equals(pkg);
+    }
+
     private List<AppInfo> convertPackageInfoToAppData(Context context, List<PackageInfo> pkgList,
                                                       boolean notCopyApk, boolean hideGApps) {
         PackageManager pm = context.getPackageManager();
@@ -176,12 +226,20 @@ public class AppRepository implements AppDataSource {
                 continue;
             }
             // ignore the System package
-            if (notCopyApk && isSystemApplication(pkg)) {
-                if (pm.getLaunchIntentForPackage(pkg.packageName) == null) {
+            if (notCopyApk) {
+                if(isSystemApplication(pkg)){
                     continue;
                 }
+                if (!isGameFramework(pkg.packageName) &&pm.getLaunchIntentForPackage(pkg.packageName) == null) {
+                    continue;
+                }
+                //check NotCopyApk
+                if (!VirtualCore.get().isDisableNotCopyApk(pkg.packageName)
+                        && isDisableNotCopyApk(pkg)) {
+                    VirtualCore.get().addSettingRule(SettingRule.DisableNotCopyApk, pkg.packageName);
+                }
             }
-            boolean only64Bit = !NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo.publicSourceDir);
+            boolean only64Bit = !NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo);
             if (only64Bit) {
                 //if support 64 then remove it;
                 continue;

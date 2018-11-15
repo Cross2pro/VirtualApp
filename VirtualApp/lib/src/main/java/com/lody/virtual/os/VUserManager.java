@@ -6,7 +6,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.ipcbus.IPCBus;
+import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.server.interfaces.IUserManager;
 
 import java.util.List;
@@ -108,7 +108,8 @@ public class VUserManager {
     /** @hide */
     public synchronized static VUserManager get() {
         if (sInstance == null) {
-            IUserManager remote = IPCBus.get(IUserManager.class);
+            IUserManager remote = IUserManager.Stub.asInterface(
+                    ServiceManagerNative.getService(ServiceManagerNative.USER));
             sInstance = new VUserManager(remote);
         }
         return sInstance;

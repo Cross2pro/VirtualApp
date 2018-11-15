@@ -2,6 +2,7 @@ package com.lody.virtual.client.hook.proxies.job;
 
 import android.annotation.TargetApi;
 import android.app.job.JobInfo;
+import android.app.job.JobWorkItem;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -113,6 +114,7 @@ public class JobServiceStub extends BinderInvocationProxy {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.O)
     private class enqueue extends MethodProxy {
 
         @Override
@@ -123,18 +125,19 @@ public class JobServiceStub extends BinderInvocationProxy {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             JobInfo jobInfo = (JobInfo) args[0];
-            Object workItem = redirect(args[1], getAppPkg());
+            JobWorkItem workItem = redirect(args[1], getAppPkg());
             return VJobScheduler.get().enqueue(jobInfo, workItem);
         }
     }
 
-    private Object redirect(Object item, String pkg) {
+    @TargetApi(Build.VERSION_CODES.O)
+    private JobWorkItem redirect(Object item, String pkg) {
         if (item != null) {
             Intent target = mirror.android.app.job.JobWorkItem.getIntent.call(item);
             Intent intent = ComponentUtils.redirectIntentSender(
                     ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target, null);
 
-            Object workItem = mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
+            JobWorkItem workItem = (JobWorkItem) mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
             int wordId = mirror.android.app.job.JobWorkItem.mWorkId.get(item);
             mirror.android.app.job.JobWorkItem.mWorkId.set(workItem, wordId);
 

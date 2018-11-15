@@ -2,7 +2,6 @@ package com.lody.virtual.client.hook.proxies.clipboard;
 
 import android.content.ClipData;
 import android.content.Context;
-import android.content.IOnPrimaryClipChangedListener;
 import android.os.Build;
 import android.os.IInterface;
 import android.text.TextUtils;
@@ -10,7 +9,6 @@ import android.text.TextUtils;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.ipc.VAppPermissionManager;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -18,6 +16,9 @@ import java.lang.reflect.Method;
 
 import mirror.android.content.ClipboardManager;
 import mirror.android.content.ClipboardManagerOreo;
+
+import com.xdja.zs.IOnPrimaryClipChangedListener;
+import com.xdja.zs.VAppPermissionManager;
 
 /**
  * @author Lody

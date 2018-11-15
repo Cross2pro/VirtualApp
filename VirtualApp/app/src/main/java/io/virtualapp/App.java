@@ -4,10 +4,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.support.multidex.MultiDexApplication;
 import android.support.v7.app.AppCompatDelegate;
 
+import com.lody.virtual.client.core.SettingRule;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.VASettings;
@@ -15,7 +15,6 @@ import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
-import io.virtualapp.delegate.MySettingHandler;
 import io.virtualapp.delegate.MyTaskDescDelegate;
 import jonathanfinerty.once.Once;
 
@@ -25,7 +24,6 @@ import jonathanfinerty.once.Once;
 public class App extends MultiDexApplication {
 
     private static App gApp;
-    private SharedPreferences mPreferences;
 
     public static App getApp() {
         return gApp;
@@ -34,14 +32,12 @@ public class App extends MultiDexApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
-
         VASettings.ENABLE_IO_REDIRECT = true;
         VASettings.ENABLE_INNER_SHORTCUT = false;
         //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
         VASettings.KEEP_ADMIN_PHONE_INFO = true;
         //google 支持（beta）
-        VASettings.ENABLE_GMS = mPreferences.getBoolean(VCommends.PREF_GMS_ENABLE, false);
+        VASettings.ENABLE_GMS = true;
         //禁止va连的app显示前台通知服务
         VASettings.DISABLE_FOREGROUND_SERVICE = true;
         //日志
@@ -60,12 +56,8 @@ public class App extends MultiDexApplication {
         //内部文件权限
         VASettings.FILE_ISOLATION = false;
 
-        //beta:检查内部的app之间的权限，默认：false关闭
-        VASettings.CHECK_PERMISSION_INSIDE = false;
-
         try {
             //
-            VirtualCore.get().setSettingHandler(new MySettingHandler());
             VirtualCore.get().startup(base);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -85,14 +77,16 @@ public class App extends MultiDexApplication {
                 AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
                 Once.initialise(App.this);
                 //某些rom做了限制，比如vivo
-                App.this.registerReceiver(new RomRequestBroadcastReceiver(),
-                        new IntentFilter(Constants.ACTION_NEED_PERMISSION));
+                IntentFilter filter = new IntentFilter(Constants.ACTION_PROCESS_ERROR);
+                filter.addAction(Constants.ACTION_NEED_PERMISSION);
+                filter.addAction(Constants.ACTION_PROCESS_ERROR);
+                App.this.registerReceiver(new VAppReceiver(), filter);
             }
 
             @Override
             public void onVirtualProcess() {
                 //listener components
-                virtualCore.setComponentDelegate(new MyComponentDelegate());
+                virtualCore.setAppCallback(new MyComponentDelegate());
                 //fake task description's icon and title
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
 //                SpecialComponentList.addDisableOutsideContentProvider("");
@@ -109,25 +103,47 @@ public class App extends MultiDexApplication {
                 virtualCore.addVisibleOutsidePackage("com.whatsapp");
                 virtualCore.addVisibleOutsidePackage("com.tencent.mm");
                 virtualCore.addVisibleOutsidePackage("com.immomo.momo");
+                /**
+                 * 下面代码可以在启动后添加，需要杀死目标app让设置生效，建议用killAllApps
+                 * @see VirtualCore#killAllApps()
+                 * @see VirtualCore#killApp(String, int)
+                 */
+                virtualCore.addSettingRule(SettingRule.UseRealDataDir, "com.tencent.tmgp.pubgmhd");
+                virtualCore.addSettingRule(SettingRule.DisableDlOpen, "com.facebook.katana");
+                virtualCore.addSettingRule(SettingRule.DisableDlOpen, "jianghu2.lanjing.com*");
+                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com*.fgo.*");
+                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com*.fatego*");
+                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.izhaohe.heroes*");
+                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.tencent.tmgp.pubgmhd*");
+                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.*.dwrg*");
+
+                //test code
+                virtualCore.addSettingRule(SettingRule.UseRealDataDir, "com.kk.vatest2");
+                //other regex
+                virtualCore.addSettingRuleRegex(SettingRule.UseOutsideLibraryFiles, "com.kk.demo[|.360|.huawei]");
             }
         });
     }
 
-    public static SharedPreferences getPreferences() {
-        return getApp().mPreferences;
-    }
-
-
-    private class  RomRequestBroadcastReceiver extends BroadcastReceiver{
+    private class VAppReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
             if(Constants.ACTION_NEED_PERMISSION.equals(intent.getAction())){
-                String season = intent.getStringExtra(Constants.EXTRA_PERMISSION_SEASON);
+                String season = intent.getStringExtra(Constants.EXTRA_SEASON);
                 //
-                String error = intent.getStringExtra(Constants.EXTRA_PERMISSION_EX);
+                String error = intent.getStringExtra(Constants.EXTRA_ERROR);
                 if("startActivityForBg".equals(season)){
                     //TODO vivo start activity by service
                     //跳到vivo的后台弹activity权限
+                }
+            }else if(Constants.ACTION_PROCESS_ERROR.equals(intent.getAction())){
+                String season = intent.getStringExtra(Constants.EXTRA_SEASON);
+                //
+                String error = intent.getStringExtra(Constants.EXTRA_ERROR);
+                if ("makeApplication".equals(season)) {
+
+                }else if("callApplicationOnCreate".equals(season)){
+
                 }
             }
         }

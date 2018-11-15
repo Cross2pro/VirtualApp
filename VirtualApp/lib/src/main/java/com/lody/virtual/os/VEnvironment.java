@@ -165,7 +165,7 @@ public class VEnvironment {
     }
 
     public static File getUserAppLibDirectory(int userId, String packageName) {
-        return ensureCreated(new File(getDataUserPackageDirectory(userId, packageName), "lib"));
+        return new File(getDataUserPackageDirectory(userId, packageName), "lib");
     }
 
     public static File getPackageCacheFile(String packageName) {

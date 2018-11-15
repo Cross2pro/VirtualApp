@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.InstallResult;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -65,12 +66,19 @@ public class GmsSupport {
                 info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
             } catch (PackageManager.NameNotFoundException e) {
                 // Ignore
+                continue;
             }
-            if (info == null || info.sourceDir == null || !hasDex(info.sourceDir)) {
+            if (info.sourceDir == null || !hasDex(info.sourceDir)) {
+                VLog.w("GmsSupport", "Error when find dex for path: " + info.sourceDir);
                 continue;
             }
             if (userId == 0) {
-                core.installPackage(info.sourceDir, InstallStrategy.NOT_COPY_APK);
+                InstallResult result =  core.installPackage(info.sourceDir, InstallStrategy.NOT_COPY_APK);
+                if(result.isSuccess){
+                    VLog.i("GmsSupport", "install ok:"+info.packageName);
+                }else{
+                    VLog.i("GmsSupport", "install fail:"+info.packageName+",error="+result.error);
+                }
             } else {
                 core.installPackageAsUser(userId, packageName);
             }
@@ -108,10 +116,8 @@ public class GmsSupport {
                 }
                 zipfile.close();
             } catch (Throwable e) {
-                VLog.logbug("GmsSupport", "Error when find dex for path: " + apkPath);
-                VLog.logbug("GmsSupport", VLog.getStackTraceString(e));
+               //ignore
             }
-            VLog.logbug("GmsSupport", "apk : " + apkPath + " hasDex: " + hasDex);
         }
         return hasDex;
     }

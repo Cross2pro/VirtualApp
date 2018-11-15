@@ -242,6 +242,24 @@ public class Reflect {
         return type;
     }
 
+    public static Object defaultValue(Class<?> _type){
+        Class<?> type = wrapper(_type);
+        if (type == null) {
+            return null;
+        } else if (type.isPrimitive()) {
+            if (Boolean.class == type) {
+                return false;
+            } else if (Number.class.isAssignableFrom(type)) {
+                return 0;
+            } else if (Character.class == type) {
+                return '\0';
+            } else if (Void.class == type) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     /**
      * 取得内部维护的实际对象
      *

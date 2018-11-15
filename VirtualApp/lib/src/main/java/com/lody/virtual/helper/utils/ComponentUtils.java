@@ -8,6 +8,7 @@ import android.content.pm.ComponentInfo;
 import android.net.Uri;
 import android.os.IBinder;
 import android.util.Log;
+import android.os.Process;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.VClient;
@@ -113,8 +114,13 @@ public class ComponentUtils {
             return !VirtualCore.get().isAppInstalled("com.google.android.gsf");
         }else if(GmsSupport.isGoogleAppOrService(applicationInfo.packageName)){
             return false;
+        }else if(SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName)){
+            return true;
+        }else if(applicationInfo.uid >= Process.FIRST_APPLICATION_UID && (applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0){
+            //app in /system,but it's updated
+            return false;
         }
-        return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0 || SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName);
+        return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }
 
     public static boolean isStubComponent(Intent intent) {

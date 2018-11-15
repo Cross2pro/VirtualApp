@@ -33,32 +33,32 @@ import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
-import com.lody.virtual.client.hook.delegate.ComponentDelegate;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
+import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.UriCompat;
-import com.lody.virtual.helper.ipcbus.IPCBus;
-import com.lody.virtual.helper.ipcbus.IPCSingleton;
-import com.lody.virtual.helper.ipcbus.IServerCache;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.ServiceCache;
+
 import com.lody.virtual.server.interfaces.IAppManager;
-import com.lody.virtual.server.interfaces.IAppPermissionCallback;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
-import com.lody.virtual.server.interfaces.IControllerServiceCallback;
-import com.lody.virtual.server.interfaces.INotificationCallback;
 import com.lody.virtual.server.interfaces.IPackageObserver;
-import com.lody.virtual.server.interfaces.IUiCallback;
-import com.lody.virtual.server.interfaces.IVSCallback;
+
+import com.xdja.zs.IAppPermissionCallback;
+import com.xdja.zs.IControllerServiceCallback;
+import com.xdja.zs.IVSCallback;
+import com.xdja.zs.IUiCallback;
+import com.xdja.zs.INotificationCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,43 +100,47 @@ public final class VirtualCore {
      * Real Process Name
      */
     private String processName;
-    private ProcessType processType;
-    private IPCSingleton<IAppManager> singleton = new IPCSingleton<>(IAppManager.class);
+    private ProcessType processType = ProcessType.Main;
     private boolean isStartUp;
     private PackageInfo hostPkgInfo;
     private int systemPid;
+    private IAppManager mService;
     private ConditionVariable initLock = new ConditionVariable();
-    private ComponentDelegate componentDelegate;
+    private AppCallback mAppCallback;
     private TaskDescriptionDelegate taskDescriptionDelegate;
-    private SettingHandler mSettingHandler;
 
     private VirtualCore() {
     }
 
-    public boolean isDisableDlOpen(String packageName, String apkPath) {
-        return mSettingHandler != null && mSettingHandler.isDisableDlOpen(packageName, apkPath);
+    public boolean isDisableDlOpen(String packageName) {
+        return getSettingRuleResult(SettingRule.DisableDlOpen, packageName);
     }
 
-    public boolean isDisableNotCopyApk(String packageName, File apkPath) {
-        return mSettingHandler != null && mSettingHandler.isDisableNotCopyApk(packageName, apkPath);
+    public boolean isDisableNotCopyApk(String packageName) {
+        return getSettingRuleResult(SettingRule.DisableNotCopyApk, packageName);
     }
 
     /**
      * check so for /data/data/app/lib is 64bit?
      */
-    public boolean isUseOwnLibraryFiles(String packageName, String apkPath){
-        return mSettingHandler == null || mSettingHandler.isUseOwnLibraryFiles(packageName, apkPath);
+    public boolean isUseOwnLibraryFiles(String packageName) {
+        return !getSettingRuleResult(SettingRule.UseOutsideLibraryFiles, packageName);
     }
 
     public boolean isUseRealDir(String packageName) {
         if (VASettings.USE_REAL_DATA_DIR) {
             return true;
         }
-        return mSettingHandler != null && mSettingHandler.isUseRealDataDir(packageName);
+        return getSettingRuleResult(SettingRule.UseRealDataDir, packageName);
     }
 
-    public void setSettingHandler(SettingHandler settingHandler) {
-        mSettingHandler = settingHandler;
+    /**
+     * @deprecated
+     * @see SettingRule
+     * @see #addSettingRule(SettingRule, String)
+     * @see #addSettingRuleRegex(SettingRule, String)
+     */
+    public void setSettingHandler(Object settingHandler) {
     }
 
     public static VirtualCore get() {
@@ -163,12 +167,20 @@ public final class VirtualCore {
         return VUserHandle.getUserId(myUid);
     }
 
-    public ComponentDelegate getComponentDelegate() {
-        return componentDelegate == null ? ComponentDelegate.EMPTY : componentDelegate;
+    public AppCallback getAppCallback() {
+        return mAppCallback == null ? AppCallback.EMPTY : mAppCallback;
     }
 
-    public void setComponentDelegate(ComponentDelegate delegate) {
-        this.componentDelegate = delegate;
+    /**
+     * @deprecated
+     * @see #setAppCallback
+     */
+    public void setComponentDelegate(AppCallback delegate) {
+        setAppCallback(delegate);
+    }
+
+    public void setAppCallback(AppCallback delegate) {
+        this.mAppCallback = delegate;
     }
 
     public void setCrashHandler(CrashHandler handler) {
@@ -185,43 +197,6 @@ public final class VirtualCore {
 
     public int[] getGids() {
         return hostPkgInfo.gids;
-    }
-
-    /***
-     * manifest's uses-permission
-     * PackageInfo#requestedPermissions
-     * @param permission
-     */
-    public boolean hasPermission(String permission){
-        if (hostPkgInfo.requestedPermissions == null) {
-            throw new RuntimeException("don't has a permission");
-        }
-        for (String per : hostPkgInfo.requestedPermissions) {
-            if (TextUtils.equals(per, permission)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /***
-     * manifest's uses-permission
-     * PackageInfo#requestedPermissions
-     * @param permissions
-     */
-    public boolean hasAnyPermission(String... permissions) {
-        if (permissions.length == 0) return true;
-        if (hostPkgInfo.requestedPermissions == null) {
-            throw new RuntimeException("don't has a permission");
-        }
-        for (String per : hostPkgInfo.requestedPermissions) {
-            for (String permission : permissions) {
-                if (TextUtils.equals(per, permission)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public Context getContext() {
@@ -261,19 +236,8 @@ public final class VirtualCore {
             //TODO compatible StubFileProvider context.getPackageName() + ".virtual.fileprovider";
             UriCompat.AUTH = context.getPackageName() + ".virtual.fileprovider";//.virtual.proxy.provider
 
-            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(),
-                    PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS);
-            IPCBus.initialize(new IServerCache() {
-                @Override
-                public void join(String serverName, IBinder binder) {
-                    ServiceCache.addService(serverName, binder);
-                }
+            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
 
-                @Override
-                public IBinder query(String serverName) {
-                    return ServiceManagerNative.getService(serverName);
-                }
-            });
             detectProcessType();
             InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
             invocationStubManager.init();
@@ -354,7 +318,18 @@ public final class VirtualCore {
     }
 
     private IAppManager getService() {
-        return singleton.get();
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (this) {
+                Object remote = getStubInterface();
+                mService = LocalProxyUtils.genProxy(IAppManager.class, remote);
+            }
+        }
+        return mService;
+    }
+
+    private Object getStubInterface() {
+        return IAppManager.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.APP));
     }
 
     /**
@@ -906,6 +881,104 @@ public final class VirtualCore {
         }
         return false;
     }
+
+    /**
+     * @param rule
+     * @see SettingRule#DisableDlOpen
+     * @see SettingRule#DisableNotCopyApk
+     * @see SettingRule#UseOutsideLibraryFiles
+     * @see SettingRule#UseRealDataDir
+     * @param packageNameOrWord packageName or regex
+     *             com.kk.demo or com.kk.demo.*  com.*.fgo
+     *             other regex:
+     *             @see #addSettingRuleRegex(SettingRule, String)
+     */
+    public void addSettingRule(SettingRule rule, String packageNameOrWord) {
+        if (packageNameOrWord == null) return;
+        if (packageNameOrWord.contains("*")) {
+            addSettingRule(rule, wrapperRegex(packageNameOrWord), true);
+            return;
+        }
+        addSettingRule(rule, packageNameOrWord, false);
+    }
+
+    /**
+     * @see SettingRule#DisableDlOpen
+     * @see SettingRule#DisableNotCopyApk
+     * @see SettingRule#UseOutsideLibraryFiles
+     * @see SettingRule#UseRealDataDir
+     * @param rule
+     * com.kk.demo
+     * com.kk.demo.1
+     * com.kk.demo.2
+     * @param word com.kk.demo*
+     */
+    public void addSettingRuleRegex(SettingRule rule, String word) {
+        addSettingRule(rule, wrapperRegex(word), true);
+    }
+
+    /**
+     * @see SettingRule#DisableDlOpen
+     * @see SettingRule#DisableNotCopyApk
+     * @see SettingRule#UseOutsideLibraryFiles
+     * @see SettingRule#UseRealDataDir
+     * @param rule
+     * @param word regex=true:packageName.matchs(word);regex=false:packageName.equals(word)
+     */
+    public void addSettingRule(SettingRule rule, String word, boolean regex) {
+        if (TextUtils.isEmpty(word)) {
+            return;
+        }
+        try {
+            getService().addSettingRule(rule.ordinal(), word, regex);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * @see SettingRule#DisableDlOpen
+     * @see SettingRule#DisableNotCopyApk
+     * @see SettingRule#UseOutsideLibraryFiles
+     * @see SettingRule#UseRealDataDir
+     * @param rule
+     * @param word regex=true:packageName.matchs(word);regex=false:packageName.equals(word)
+     */
+    public void removeSettingRule(SettingRule rule, String word, boolean regex) {
+        if (TextUtils.isEmpty(word)) {
+            return;
+        }
+        try {
+            getService().removeSettingRule(rule.ordinal(), word, regex);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    private String wrapperRegex(String word){
+        return word.replace(".", "\\.")
+                .replace("*", "[\\.a-zA-Z0-9_]*");
+    }
+
+    /**
+     *
+     * @see SettingRule#DisableDlOpen
+     * @see SettingRule#DisableNotCopyApk
+     * @see SettingRule#UseOutsideLibraryFiles
+     * @see SettingRule#UseRealDataDir
+     * @param rule
+     */
+    public boolean getSettingRuleResult(SettingRule rule, String packageName) {
+        if(rule == null || TextUtils.isEmpty(packageName)){
+            return false;
+        }
+        try {
+            return getService().inSettingRule(rule.ordinal(), packageName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
 
 
     public int getSystemPid() {
