@@ -9,12 +9,14 @@ import android.view.Window;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 
 public class ChooserActivity extends ResolverActivity {
     public static final String EXTRA_DATA = "android.intent.extra.virtual.data";
     public static final String EXTRA_WHO = "android.intent.extra.virtual.who";
+    public static final String EXTRA_INTENT = "android.intent.extra.virtual.intent";
     public static final String EXTRA_REQUEST_CODE = "android.intent.extra.virtual.request_code";
     public static final String ACTION;
     public static final String EXTRA_RESULTTO = "_va|ibinder|resultTo";
@@ -37,12 +39,15 @@ public class ChooserActivity extends ResolverActivity {
     @SuppressLint("MissingSuperCall")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Bundle extras = getIntent().getExtras();
         Intent intent = getIntent();
-        int userId = intent.getIntExtra(Constants.EXTRA_USER_HANDLE, VUserHandle.getCallingUserId());
-        mOptions = intent.getParcelableExtra(EXTRA_DATA);
-        mResultWho = intent.getStringExtra(EXTRA_WHO);
-        mRequestCode = intent.getIntExtra(EXTRA_REQUEST_CODE, 0);
-        mResultTo =  mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
+        int userId = extras.getInt(Constants.EXTRA_USER_HANDLE, VUserHandle.getCallingUserId());
+        //va api
+        mOptions = extras.getParcelable(EXTRA_DATA);
+        mResultWho = extras.getString(EXTRA_WHO);
+        mRequestCode = extras.getInt(EXTRA_REQUEST_CODE, 0);
+        mResultTo = BundleCompat.getBinder(extras, EXTRA_RESULTTO);
+        //system api
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
             VLog.w("ChooseActivity", "Target is not an intent: %s", targetParcelable);

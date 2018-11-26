@@ -65,7 +65,7 @@ import static android.accounts.AccountManager.ERROR_CODE_BAD_ARGUMENTS;
  */
 public class VAccountManagerService extends IAccountManager.Stub {
 
-    private static final Singleton<VAccountManagerService> sInstance = new Singleton<VAccountManagerService>(){
+    private static final Singleton<VAccountManagerService> sInstance = new Singleton<VAccountManagerService>() {
         @Override
         protected VAccountManagerService create() {
             return new VAccountManagerService();
@@ -74,7 +74,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     private static final long CHECK_IN_TIME = 30 * 24 * 60 * 1000L;
     private static final String TAG = VAccountManagerService.class.getSimpleName();
     private final SparseArray<List<VAccount>> accountsByUserId = new SparseArray<>();
-    private final SparseArray<List<VAccountVisibility>> accountsVisibilitiesByUserId = new SparseArray();
+    private final SparseArray<List<VAccountVisibility>> accountsVisibilitiesByUserId = new SparseArray<>();
     private final LinkedList<AuthTokenRecord> authTokenRecords = new LinkedList<>();
     private final LinkedHashMap<String, Session> mSessions = new LinkedHashMap<>();
     private final AuthenticatorCache cache = new AuthenticatorCache();
@@ -191,7 +191,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     }
 
     @Override
-    public final void getAuthToken(final int userId, final IAccountManagerResponse response, final Account account, final String authTokenType, final boolean notifyOnAuthFailure, boolean expectActivityLaunch, final Bundle loginOptions,int callingUid) {
+    public final void getAuthToken(final int userId, final IAccountManagerResponse response, final Account account, final String authTokenType, final boolean notifyOnAuthFailure, boolean expectActivityLaunch, final Bundle loginOptions, int callingUid) {
         if (response == null) {
             throw new IllegalArgumentException("response is null");
         }
@@ -849,6 +849,9 @@ public class VAccountManagerService extends IAccountManager.Stub {
             return false;
         }
         synchronized (accountsByUserId) {
+            if (getAccount(userId, account.name, account.type) != null) {
+                return false;
+            }
             VAccount vAccount = new VAccount(userId, account);
             vAccount.password = password;
             // convert the [Bundle] to [Map<String, String>]
@@ -1236,6 +1239,7 @@ public class VAccountManagerService extends IAccountManager.Stub {
     public void isCredentialsUpdateSuggested(IAccountManagerResponse response, Account account, String statusToken) throws RemoteException {
 
     }
+
     final static class AuthTokenRecord {
         public int userId;
         public Account account;

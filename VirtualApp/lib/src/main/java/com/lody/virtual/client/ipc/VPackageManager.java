@@ -16,6 +16,7 @@ import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
@@ -273,6 +274,14 @@ public class VPackageManager {
     public int checkSignatures(String pkg1, String pkg2){
         try {
             return getService().checkSignatures(pkg1, pkg2);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public String[] getDangrousPermissions(String packageName){
+        try {
+            return getService().getDangrousPermissions(packageName);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

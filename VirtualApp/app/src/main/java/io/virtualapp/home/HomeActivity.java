@@ -20,7 +20,6 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.View;
@@ -29,18 +28,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
-import com.lody.virtual.remote.VDeviceInfo;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,48 +95,16 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         overridePendingTransition(0, 0);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        if (VirtualCore.get().is64BitEngineInstalled()) {
+            Toast.makeText(this, "64Bit Engine installed.", Toast.LENGTH_SHORT).show();
+        }
         mUiHandler = new Handler(Looper.getMainLooper());
         bindViews();
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this).start();
-        initMagic();
 //        IBinderTool.printAllService();
 //        IBinderTool.printIBinder("android.content.IFlymePermissionService");
-        //debug
-        //testMockDevice();
-        //end debug
-    }
-
-    /**
-     * create default build.prop
-     * cat /system/build.prop -> /virtual/data/0/system/build.prop
-     * tip:Android7.0 + don't read /system/build.prop
-     *
-     * how use?
-     * @see  com.lody.virtual.client.ipc.VDeviceManager#createAppBuildEditor(String, int)
-     * @see  com.lody.virtual.client.ipc.VDeviceManager#createSystemBuildEditor(int)
-     * @see  com.lody.virtual.client.ipc.VDeviceManager.Editor
-     */
-    private void testMockDevice(){
-        VDeviceInfo deviceInfo = VDeviceManager.get().getDeviceInfo(0);
-        deviceInfo.setWifiMac("12:34:56:78:9a:bc");
-        VDeviceManager.get().updateDeviceInfo(0, deviceInfo);
-
-        VDeviceManager.Editor editor = VDeviceManager.get().createBuildEditor(0);
-        if(!editor.hasDefault()) {
-            editor.setDefault();
-        }
-        editor.setBrand("1");
-        editor.setBoard("2");
-        editor.setDevice("3");
-        editor.setDisplay("4");
-        editor.setID("5");
-        editor.setProduct("6");
-        editor.setSerial("7");
-        if (editor.save()) {
-            Log.e("kk", "mock build ok");
-        }
     }
 
     @Override
@@ -155,38 +116,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         filter.addAction(Constants.ACTION_PACKAGE_WILL_ADDED);
         filter.addDataScheme("package");
         registerReceiver(mReceiver, filter);
-    }
-    private void initMagic() {
-        try {
-            String filePath = getApplicationContext().getFilesDir().getAbsolutePath();
-            String fileName = filePath + "/magic.mgc";
-            File f = new File(fileName);
-            if (!f.exists()) {
-                new File(filePath).mkdirs();
-                new Thread().sleep(500);
-                copyBigDataToSD(fileName);
-            }
-        } catch (IOException e) {
-            Log.e("lxf", "copy magicto sdcard is failed!");
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void copyBigDataToSD(String strOutFileName) throws IOException {
-        InputStream myInput;
-        OutputStream myOutput = new FileOutputStream(strOutFileName);
-        myInput = this.getAssets().open("magic.mgc");
-        byte[] buffer = new byte[1024];
-        int length = myInput.read(buffer);
-        while (length > 0) {
-            myOutput.write(buffer, 0, length);
-            length = myInput.read(buffer);
-        }
-        myOutput.flush();
-        myInput.close();
-        myOutput.close();
     }
 
     @Override
@@ -231,37 +160,37 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         Menu menu = mPopupMenu.getMenu();
         setIconEnable(menu, true);
 
-            menu.add(R.string.menu_accounts).setIcon(R.drawable.ic_account).setOnMenuItemClickListener(item -> {
-                List<VUserInfo> users = VUserManager.get().getUsers();
-                List<String> names = new ArrayList<>(users.size());
-                for (VUserInfo info : users) {
-                    names.add(info.name);
-                }
-                CharSequence[] items = new CharSequence[names.size()];
-                for (int i = 0; i < names.size(); i++) {
-                    items[i] = names.get(i);
-                }
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.choose_user_title)
-                        .setItems(items, (dialog, which) -> {
-                            VUserInfo info = users.get(which);
-                            Intent intent = new Intent(this, ChooseTypeAndAccountActivity.class);
-                            intent.putExtra(ChooseTypeAndAccountActivity.KEY_USER_ID, info.id);
-                            startActivity(intent);
-                        }).show();
-                return false;
-            });
-        menu.add(R.string.menu_install_gms).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+        menu.add(R.string.menu_accounts).setIcon(R.drawable.ic_account).setOnMenuItemClickListener(item -> {
+            List<VUserInfo> users = VUserManager.get().getUsers();
+            List<String> names = new ArrayList<>(users.size());
+            for (VUserInfo info : users) {
+                names.add(info.name);
+            }
+            CharSequence[] items = new CharSequence[names.size()];
+            for (int i = 0; i < names.size(); i++) {
+                items[i] = names.get(i);
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.choose_user_title)
+                    .setItems(items, (dialog, which) -> {
+                        VUserInfo info = users.get(which);
+                        Intent intent = new Intent(this, ChooseTypeAndAccountActivity.class);
+                        intent.putExtra(ChooseTypeAndAccountActivity.KEY_USER_ID, info.id);
+                        startActivity(intent);
+                    }).show();
+            return false;
+        });
+        menu.add(R.string.menu_gms).setIcon(R.drawable.ic_google).setOnMenuItemClickListener(item -> {
             askInstallGms();
             return true;
         });
 
-        menu.add(R.string.menu_mock_phone).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+        menu.add(R.string.menu_mock_phone).setIcon(R.drawable.ic_device).setOnMenuItemClickListener(item -> {
             startActivity(new Intent(this, DeviceSettingsActivity.class));
             return true;
         });
 
-        menu.add(R.string.virtual_location).setIcon(R.drawable.ic_settings).setOnMenuItemClickListener(item -> {
+        menu.add(R.string.virtual_location).setIcon(R.drawable.ic_location).setOnMenuItemClickListener(item -> {
             if (mPresenter.getAppCount() == 0) {
                 Toast.makeText(this, R.string.tip_no_app, Toast.LENGTH_SHORT).show();
                 return false;
@@ -452,11 +381,16 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         mLaunchpadAdapter.refresh(model);
     }
 
-    @SuppressLint("ApplySharedPref")
     @Override
     public void askInstallGms() {
+        if (!GmsSupport.isOutsideGoogleFrameworkExist()) {
+            return;
+        }
+        if (GmsSupport.isInstalledGoogleService()) {
+            return;
+        }
         new AlertDialog.Builder(this)
-                .setTitle(R.string.tip_install_gms)
+                .setTitle(R.string.tip)
                 .setMessage(R.string.text_install_gms)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     defer().when(() -> {
@@ -465,8 +399,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                         mPresenter.dataChanged();
                     });
                 })
-                .setNegativeButton(android.R.string.cancel, (dialog, which) ->
-                        Toast.makeText(HomeActivity.this, "You can also find it in the Settings~", Toast.LENGTH_LONG).show())
+                .setNegativeButton(android.R.string.cancel, null)
                 .setCancelable(false)
                 .show();
     }
@@ -565,10 +498,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         @Override
         public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
             if (viewHolder instanceof LaunchpadAdapter.ViewHolder) {
-                LaunchpadAdapter.ViewHolder holder = (LaunchpadAdapter.ViewHolder) viewHolder;
                 viewHolder.itemView.setScaleX(1f);
                 viewHolder.itemView.setScaleY(1f);
-                viewHolder.itemView.setBackgroundColor(holder.color);
             }
             super.clearView(recyclerView, viewHolder);
             if (dragHolder == viewHolder) {
@@ -609,18 +540,18 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                     upAtCreateShortcutArea = true;
                     upAtDeleteAppArea = false;
                     mCreateShortcutTextView.setTextColor(Color.parseColor("#0099cc"));
-                    mDeleteAppTextView.setTextColor(Color.WHITE);
+                    mDeleteAppTextView.setTextColor(Color.BLACK);
                 } else {
                     upAtDeleteAppArea = true;
                     upAtCreateShortcutArea = false;
                     mDeleteAppTextView.setTextColor(Color.parseColor("#0099cc"));
-                    mCreateShortcutTextView.setTextColor(Color.WHITE);
+                    mCreateShortcutTextView.setTextColor(Color.BLACK);
                 }
             } else {
                 upAtCreateShortcutArea = false;
                 upAtDeleteAppArea = false;
-                mDeleteAppTextView.setTextColor(Color.WHITE);
-                mCreateShortcutTextView.setTextColor(Color.WHITE);
+                mDeleteAppTextView.setTextColor(Color.BLACK);
+                mCreateShortcutTextView.setTextColor(Color.BLACK);
             }
         }
     }

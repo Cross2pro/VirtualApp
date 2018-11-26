@@ -46,7 +46,7 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             mView.showGuide();
             Once.markDone(VCommends.TAG_SHOW_ADD_APP_GUIDE);
         }
-        if (!Once.beenDone(VCommends.TAG_ASK_INSTALL_GMS) && GmsSupport.isOutsideGoogleFrameworkExist()) {
+        if (!Once.beenDone(VCommends.TAG_ASK_INSTALL_GMS)) {
             mView.askInstallGms();
             Once.markDone(VCommends.TAG_ASK_INSTALL_GMS);
         }
@@ -127,16 +127,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 }
 
             }
-            //TODO install other app to current user
-//            if(!VirtualCore.get().isAppInstalledAsUser(nextUserId,"QQ")) {
-//                VirtualCore.get().installPackageAsUser(nextUserId, "QQ");
-//            }
-            //第一次安装之后设置一次就行
-            //如果该app需要选择文件，分享文件等与外界app的文件交互，则不能开启，需要在VC
-//            VirtualStorageManager.get().setVirtualStorage(info.packageName, addResult.userId,
-//                    //虚拟sdcard路径
-//                    new File(Environment.getExternalStorageDirectory(), "va_sdcard").getAbsolutePath());
-//            VirtualStorageManager.get().setVirtualStorageState(info.packageName, addResult.userId, true);
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
         }).done(res -> {

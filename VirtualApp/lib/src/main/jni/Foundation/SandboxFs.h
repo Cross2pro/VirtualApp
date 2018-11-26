@@ -26,7 +26,7 @@ enum RelocateResult {
     KEEP
 };
 
-const char *relocate_path(const char *_path, int *result, int dlopen = 0);
+const char *relocate_path(const char *_path, int *result);
 
 int relocate_path_inplace(char *_path, size_t size, int *result);
 

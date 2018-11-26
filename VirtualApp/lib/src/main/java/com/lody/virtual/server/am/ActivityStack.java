@@ -20,6 +20,7 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -29,6 +30,7 @@ import com.lody.virtual.remote.StubActivityRecord;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Objects;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
@@ -108,7 +110,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     private TaskRecord findTaskByIntentLocked(int userId, Intent intent) {
         for (int i = 0; i < this.mHistory.size(); i++) {
             TaskRecord r = this.mHistory.valueAt(i);
-            if (userId == r.userId && r.taskRoot != null && intent.getComponent().equals(r.taskRoot.getComponent())) {
+            if (userId == r.userId && r.taskRoot != null
+                    && ObjectsCompat.equals(intent.getComponent(), r.taskRoot.getComponent())) {
                 return r;
             }
         }
@@ -595,7 +598,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return null;
         }
         Intent targetIntent = new Intent();
-        targetIntent.setClassName(VirtualCore.get().getHostPkg(), fetchStubActivity(targetApp.vpid, info));
+        targetIntent.setClassName(VASettings.getStubPackageName(targetApp.is64bit), fetchStubActivity(targetApp.vpid, info));
         ComponentName component = intent.getComponent();
         if (component == null) {
             component = ComponentUtils.toComponentName(info);

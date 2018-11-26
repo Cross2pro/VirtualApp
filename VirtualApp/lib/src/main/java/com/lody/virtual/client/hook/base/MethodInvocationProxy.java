@@ -4,6 +4,9 @@ import android.content.Context;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.hook.annotations.Inject;
+import com.lody.virtual.client.hook.annotations.LogInvocation;
+import com.lody.virtual.client.hook.annotations.SkipInject;
 import com.lody.virtual.client.interfaces.IInjector;
 
 import java.lang.reflect.Constructor;

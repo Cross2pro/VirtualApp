@@ -2,7 +2,7 @@ package com.lody.virtual.client.hook.proxies.mount;
 
 import android.os.IInterface;
 
-import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.helper.compat.BuildCompat;
 

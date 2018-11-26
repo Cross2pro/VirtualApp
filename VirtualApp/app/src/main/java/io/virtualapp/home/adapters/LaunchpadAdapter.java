@@ -24,7 +24,6 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
 
     private LayoutInflater mInflater;
     private List<AppData> mList;
-    private SparseIntArray mColorArray = new SparseIntArray();
     private OnAppClickListener mAppClickListener;
 
     public LaunchpadAdapter(Context context) {
@@ -56,7 +55,6 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         AppData data = mList.get(position);
-        holder.color = getColor(position);
         holder.iconView.setImageDrawable(data.getIcon());
         holder.nameView.setText(data.getName());
         if (data.isFirstOpen() && !data.isLoading()) {
@@ -64,7 +62,6 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
         } else {
             holder.firstOpenDot.setVisibility(View.INVISIBLE);
         }
-        holder.itemView.setBackgroundColor(holder.color);
         holder.itemView.setOnClickListener(v -> {
             if (mAppClickListener != null) {
                 mAppClickListener.onAppClick(position, data);
@@ -95,41 +92,6 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
         }).done((res) -> iconView.setProgress(80, true));
     }
 
-    private int getColor(int position) {
-        int color = mColorArray.get(position);
-        if (color == 0) {
-            int type = position % 3;
-            int row = position / 3;
-            int rowType = row % 3;
-            if (rowType == 0) {
-                if (type == 0) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
-                } else if (type == 1) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
-                } else {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                }
-            } else if (rowType == 1) {
-                if (type == 0) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
-                } else if (type == 1) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                } else {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
-                }
-            } else {
-                if (type == 0) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                } else if (type == 1) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
-                } else {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
-                }
-            }
-            mColorArray.put(position, color);
-        }
-        return color;
-    }
 
     @Override
     public int getItemCount() {
@@ -167,7 +129,6 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public int color;
         LauncherIconView iconView;
         TextView nameView;
         LabelView spaceLabelView;

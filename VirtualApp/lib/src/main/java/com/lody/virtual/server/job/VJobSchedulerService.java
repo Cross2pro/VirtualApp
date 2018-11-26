@@ -117,7 +117,7 @@ public class VJobSchedulerService extends IJobService.Stub {
             dest.writeInt(this.clientJobId);
         }
 
-        public static final Parcelable.Creator<JobId> CREATOR = new Parcelable.Creator<JobId>() {
+        public static final Creator<JobId> CREATOR = new Creator<JobId>() {
             @Override
             public JobId createFromParcel(Parcel source) {
                 return new JobId(source);
@@ -163,7 +163,7 @@ public class VJobSchedulerService extends IJobService.Stub {
             dest.writeParcelable(this.extras, flags);
         }
 
-        public static final Parcelable.Creator<JobConfig> CREATOR = new Parcelable.Creator<JobConfig>() {
+        public static final Creator<JobConfig> CREATOR = new Creator<JobConfig>() {
             @Override
             public JobConfig createFromParcel(Parcel source) {
                 return new JobConfig(source);

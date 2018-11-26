@@ -79,4 +79,6 @@ interface IPackageManager{
     IBinder getPackageInstaller();
 
     int checkSignatures(String pkg1, String pkg2);
+
+    String[] getDangrousPermissions(String packageName);
 }

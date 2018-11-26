@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
-    android:background="@color/white"
     android:orientation="vertical">
 
     <include layout="@layout/content_toolbar"/>
@@ -17,7 +16,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/gray"
         android:orientation="vertical">
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,7 +32,32 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
+                android:gravity="center"
+                android:text="Android Id"/>
+
+            <EditText
+                android:id="@+id/edt_androidId"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                tools:text="123"
+                android:textColor="@android:color/black"
+                android:layout_weight="3"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/item_bg"
+            android:orientation="horizontal"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@android:color/black"
                 android:gravity="center"
                 android:text="IMEI"/>
 
@@ -40,7 +66,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -56,14 +82,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:gravity="center"
                 android:text="IMSI"/>
 
             <EditText
                 android:id="@+id/edt_imsi"
                 android:layout_width="0dp"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"/>
         </LinearLayout>
@@ -81,7 +107,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="Wifi Mac"/>
 
             <EditText
@@ -89,7 +115,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -106,7 +132,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:gravity="center"
                 android:text="厂商"/>
 
@@ -115,7 +141,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -133,7 +159,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="型号 "/>
 
             <EditText
@@ -141,7 +167,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -159,14 +185,14 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
-                android:text="手机制造商"/>
+                android:textColor="@android:color/black"
+                android:text="产品"/>
 
             <EditText
                 android:id="@+id/edt_name"
                 android:layout_width="0dp"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"/>
         </LinearLayout>
@@ -185,14 +211,14 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="设备"/>
 
             <EditText
                 android:id="@+id/edt_device"
                 android:layout_width="0dp"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"/>
         </LinearLayout>
@@ -211,14 +237,14 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="主板"/>
 
             <EditText
                 android:id="@+id/edt_board"
                 android:layout_width="0dp"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"/>
         </LinearLayout>
@@ -237,15 +263,15 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
-                android:text="显示屏ID"/>
+                android:textColor="@android:color/black"
+                android:text="显示ID"/>
 
             <EditText
                 android:id="@+id/edt_display"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -263,7 +289,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="修订版本"/>
 
             <EditText
@@ -271,7 +297,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -289,7 +315,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="硬件序列号"/>
 
             <EditText
@@ -297,7 +323,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -315,7 +341,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="硬件制造商"/>
 
             <EditText
@@ -323,7 +349,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
 
@@ -341,7 +367,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:text="硬件ID"/>
 
             <EditText
@@ -349,7 +375,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 tools:text="123"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@android:color/black"
                 android:layout_weight="3"/>
         </LinearLayout>
     </LinearLayout>

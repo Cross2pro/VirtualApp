@@ -119,6 +119,11 @@ public class ComponentUtils {
         }else if(applicationInfo.uid >= Process.FIRST_APPLICATION_UID && (applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0){
             //app in /system,but it's updated
             return false;
+        }else if(SpecialComponentList.isSpecSystemPackage(applicationInfo.packageName)){
+            return true;
+        }else if(applicationInfo.uid >= Process.FIRST_APPLICATION_UID && (applicationInfo.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0){
+            //app in /system,but it's updated
+            return false;
         }
         return (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }

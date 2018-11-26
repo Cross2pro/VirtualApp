@@ -27,6 +27,7 @@ import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
+import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
@@ -50,7 +51,7 @@ public class VActivityManager {
     private IActivityManager mService;
 
     public IActivityManager getService() {
-        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+        if (!IInterfaceUtils.isAlive(mService)) {
             synchronized (VActivityManager.class) {
                 final Object remote = getRemoteInterface();
                 mService = LocalProxyUtils.genProxy(IActivityManager.class, remote);
@@ -404,6 +405,14 @@ public class VActivityManager {
         }
     }
 
+    public int getSystemUid(){
+        try {
+            return getService().getSystemUid();
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
     public void sendActivityResult(IBinder resultTo, String resultWho, int requestCode) {
         ActivityClientRecord r = mActivities.get(resultTo);
         if (r != null && r.activity != null) {
@@ -464,7 +473,7 @@ public class VActivityManager {
         return VClient.get().getVUid();
     }
 
-    public int initProcess(String packageName, String processName, int userId) {
+    public ClientConfig initProcess(String packageName, String processName, int userId) {
         try {
             return getService().initProcess(packageName, processName, userId, getUid());
         } catch (RemoteException e) {

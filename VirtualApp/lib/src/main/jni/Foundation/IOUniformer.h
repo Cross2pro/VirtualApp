@@ -63,8 +63,6 @@ namespace IOUniformer {
 
     void whitelist(const char *path);
 
-    void dlopen_whitelist(const char* path);
-
     const char *query(const char *orig_path);
 
     const char *reverse(const char *redirected_path);

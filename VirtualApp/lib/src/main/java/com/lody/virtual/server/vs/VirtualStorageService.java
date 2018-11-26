@@ -1,6 +1,5 @@
 package com.lody.virtual.server.vs;
 
-import android.os.RemoteException;
 import android.util.SparseArray;
 
 import com.lody.virtual.server.interfaces.IVirtualStorageService;

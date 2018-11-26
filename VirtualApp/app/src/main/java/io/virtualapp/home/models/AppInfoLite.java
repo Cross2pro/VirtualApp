@@ -9,31 +9,33 @@ import android.os.Parcelable;
 
 public class AppInfoLite implements Parcelable {
 
-    public static final Creator<AppInfoLite> CREATOR = new Creator<AppInfoLite>() {
-        @Override
-        public AppInfoLite createFromParcel(Parcel source) {
-            return new AppInfoLite(source);
-        }
-
-        @Override
-        public AppInfoLite[] newArray(int size) {
-            return new AppInfoLite[size];
-        }
-    };
     public String packageName;
     public String path;
+    public String label;
     public boolean notCopyApk;
+    public int targetSdkVersion;
+    public String[] requestedPermissions;
 
-    public AppInfoLite(String packageName, String path, boolean notCopyApk) {
-        this.packageName = packageName;
-        this.path = path;
-        this.notCopyApk = notCopyApk;
+    public AppInfoLite(AppInfo appInfo) {
+        this(appInfo.packageName, appInfo.path, String.valueOf(appInfo.name), appInfo.fastOpen,
+                appInfo.targetSdkVersion, appInfo.requestedPermissions);
     }
 
-    protected AppInfoLite(Parcel in) {
-        this.packageName = in.readString();
-        this.path = in.readString();
-        this.notCopyApk = in.readByte() != 0;
+    public AppInfoLite(String packageName, String path, String label, boolean notCopyApk, int targetSdkVersion, String[] requestedPermissions) {
+        this.packageName = packageName;
+        this.path = path;
+        this.label = label;
+        this.notCopyApk = notCopyApk;
+        this.targetSdkVersion = targetSdkVersion;
+        this.requestedPermissions = requestedPermissions;
+    }
+
+    public AppInfoLite(String packageName, String path, String label, boolean notCopyApk, String[] requestedPermissions) {
+        this.packageName = packageName;
+        this.path = path;
+        this.label = label;
+        this.notCopyApk = notCopyApk;
+        this.requestedPermissions = requestedPermissions;
     }
 
     @Override
@@ -45,6 +47,30 @@ public class AppInfoLite implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
         dest.writeString(this.path);
+        dest.writeString(this.label);
         dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.targetSdkVersion);
+        dest.writeStringArray(this.requestedPermissions);
     }
+
+    protected AppInfoLite(Parcel in) {
+        this.packageName = in.readString();
+        this.path = in.readString();
+        this.label = in.readString();
+        this.notCopyApk = in.readByte() != 0;
+        this.targetSdkVersion = in.readInt();
+        this.requestedPermissions = in.createStringArray();
+    }
+
+    public static final Creator<AppInfoLite> CREATOR = new Creator<AppInfoLite>() {
+        @Override
+        public AppInfoLite createFromParcel(Parcel source) {
+            return new AppInfoLite(source);
+        }
+
+        @Override
+        public AppInfoLite[] newArray(int size) {
+            return new AppInfoLite[size];
+        }
+    };
 }

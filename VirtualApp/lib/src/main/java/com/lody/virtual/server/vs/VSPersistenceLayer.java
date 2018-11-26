@@ -57,7 +57,7 @@ class VSPersistenceLayer extends PersistenceLayer {
     }
 
     @Override
-    public void readPersistenceData(Parcel p) {
+    public void readPersistenceData(Parcel p, int version) {
         final SparseArray<HashMap<String, VSConfig>> configs = mService.getConfigs();
         int N = p.readInt();
         while (N-- > 0) {

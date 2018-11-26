@@ -14,14 +14,7 @@ namespace FunctionDef {
                                                jobject);
 
     typedef jint (*JNI_cameraNativeSetupFunc)(JNIEnv *, jobject,
-                                                 jobject, jobject, jobject, jobject, jobject,
-                                                 jobject, jobject, jobject);
-
-    typedef jint (*JNI_audioRecordNativeSetupFunc)(JNIEnv *, jobject,
                                               jobject, jobject, jobject, jobject, jobject,
-                                              jobject, jobject, jobject, jobject, jobject);
-
-    typedef jint (*JNI_mediaRecorderNativeSetupFunc)(JNIEnv *, jobject,
                                               jobject, jobject, jobject);
 
     typedef void (*Function_cameraStartPreviewFunc)(JNIEnv *, jobject);
@@ -63,12 +56,6 @@ static struct {
     int cameraMethodPkgIndex;
     Function_DalvikBridgeFunc orig_cameraNativeSetup_dvm;
     JNI_cameraNativeSetupFunc orig_cameraNativeSetupFunc;
-
-    Function_DalvikBridgeFunc orig_audioRecordNativeSetup_dvm;
-    JNI_audioRecordNativeSetupFunc orig_audioRecordNativeSetupFunc;
-
-    Function_DalvikBridgeFunc orig_mediaRecorderNativeSetup_dvm;
-    JNI_mediaRecorderNativeSetupFunc orig_mediaRecorderNativeSetupFunc;
 
     Function_cameraStartPreviewFunc orig_native_cameraStartPreviewFunc;
     Function_cameraNativeTakePictureFunc orig_native_cameraNativeTakePictureFunc;
@@ -195,32 +182,41 @@ new_bridge_cameraNativeSetupFunc(const void **args, void *pResult, const void *m
 }
 
 static jint new_native_cameraNativeSetupFunc_T(JNIEnv *env, jobject thiz,
-                                                 jobject o1, jobject o2, jobject o3, jobject o4, jobject o5,
-                                                 jobject o6, jobject o7, jobject o8) {
+                                               jobject o1, jobject o2, jobject o3, jobject o4,
+                                               jobject o5,
+                                               jobject o6, jobject o7, jobject o8) {
     jint index = patchEnv.cameraMethodPkgIndex;
     if (!controllerManagerNative::isCameraEnable()) {
         ALOGE("cameraNativeSetupFunc");
         return -19;
     }
-    if(index >= 0){
+    if (index >= 0) {
         jstring host = env->NewStringUTF(patchEnv.host_packageName);
-        switch (index){
+        switch (index) {
             case 0:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, host, o2, o3, o4, o5, o6, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, host, o2, o3, o4, o5, o6, o7,
+                                                           o8);
             case 1:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, host, o3, o4, o5, o6, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, host, o3, o4, o5, o6, o7,
+                                                           o8);
             case 2:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, host, o4, o5, o6, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, host, o4, o5, o6, o7,
+                                                           o8);
             case 3:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, host, o5, o6, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, host, o5, o6, o7,
+                                                           o8);
             case 4:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, host, o6, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, host, o6, o7,
+                                                           o8);
             case 5:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, host, o7, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, host, o7,
+                                                           o8);
             case 6:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, host, o8);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, host,
+                                                           o8);
             case 7:
-                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, host);
+                return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7,
+                                                           host);
         }
     }
     return patchEnv.orig_cameraNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8);
@@ -320,7 +316,7 @@ void hookJNIMethod(jmethodID method, void *new_jni_func, void **orig_jni_func) {
 
 
 void hookGetCallingUid(jboolean isArt) {
-    if(isArt) {
+    if (isArt) {
         JNIEnv *env = Environment::current();
         jclass binderClass = env->FindClass("android/os/Binder");
         jmethodID getCallingUid = env->GetStaticMethodID(binderClass, "getCallingUid", "()I");
@@ -328,13 +324,13 @@ void hookGetCallingUid(jboolean isArt) {
                       (void *) new_getCallingUid,
                       (void **) &patchEnv.orig_getCallingUid
         );
-    }else{
+    } else {
         auto binderClass = findClassLocal("android/os/Binder");
         binderClass->registerNatives({makeNativeMethod("getCallingUid", dvm_getCallingUid)});
     }
 }
 
-void hookOpenDexFileNative(jobject javaMethod, jboolean  isArt, int apiLevel) {
+void hookOpenDexFileNative(jobject javaMethod, jboolean isArt, int apiLevel) {
 
     if (!isArt) {
         size_t mtd_openDexNative = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
@@ -342,7 +338,7 @@ void hookOpenDexFileNative(jobject javaMethod, jboolean  isArt, int apiLevel) {
         void **jniFuncPtr = (void **) (mtd_openDexNative + nativeFuncOffset);
         patchEnv.orig_openDexFile_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
         *jniFuncPtr = (void *) new_bridge_openDexNativeFunc;
-    }else{
+    } else {
         jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
         void *jniFunc = vmGetJNIFunction(method);
         if (apiLevel < 24) {
@@ -370,89 +366,20 @@ void hookRuntimeNativeLoad() {
     }
 }
 
-//hookAudioRecordNativeSetup
-static jint new_native_audioRecordNativeSetupFunc_T(JNIEnv *env, jobject thiz,
-                                               jobject o1, jobject o2, jobject o3, jobject o4, jobject o5,
-                                               jobject o6, jobject o7, jobject o8, jobject o9, jobject o10) {
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-    return patchEnv.orig_audioRecordNativeSetupFunc(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8, host, o10);
-}
-
-static void
-new_bridge_audioRecordNativeSetupFunc(const void **args, void *pResult, const void *method, void *self) {
-    jint index = 8 + 1;
-    args[index] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-    patchEnv.orig_audioRecordNativeSetup_dvm(args, pResult, method, self);
-}
-
-inline void
-hookAudioRecordNativeSetup(jobject javaMethod, jboolean isArt, int apiLevel) {
-    if (!javaMethod) {
-        return;
-    }
-    if (!isArt) {
-        size_t mtd_native_setup = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
-        int nativeFuncOffset = patchEnv.native_offset;
-        void **jniFuncPtr = (void **) (mtd_native_setup + nativeFuncOffset);
-
-        patchEnv.orig_audioRecordNativeSetup_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
-        *jniFuncPtr = (void *) new_bridge_audioRecordNativeSetupFunc;
-    }else {
-        jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
-        hookJNIMethod(method,
-                      (void *) new_native_audioRecordNativeSetupFunc_T,
-                      (void **) &patchEnv.orig_audioRecordNativeSetupFunc
-        );
-    }
-}
-//hookMediaRecorderNativeSetup
-static jint new_native_mediaRecorderSetupFunc_T(JNIEnv *env, jobject thiz,
-                                                    jobject o1, jobject o2, jobject o3) {
-    jstring host = env->NewStringUTF(patchEnv.host_packageName);
-    return patchEnv.orig_mediaRecorderNativeSetupFunc(env, thiz, o1, host, host);
-}
-
-static void
-new_bridge_mediaRecorderSetupFunc(const void **args, void *pResult, const void *method, void *self) {
-    jint index = 8 + 1;
-    args[index] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
-    patchEnv.orig_mediaRecorderNativeSetup_dvm(args, pResult, method, self);
-}
-
-inline void
-hookMediaRecorderNativeSetup(jobject javaMethod, jboolean isArt, int apiLevel) {
-    if (!javaMethod) {
-        return;
-    }
-    if (!isArt) {
-        size_t mtd_native_setup = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
-        int nativeFuncOffset = patchEnv.native_offset;
-        void **jniFuncPtr = (void **) (mtd_native_setup + nativeFuncOffset);
-
-        patchEnv.orig_mediaRecorderNativeSetup_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
-        *jniFuncPtr = (void *) new_bridge_mediaRecorderSetupFunc;
-    }else {
-        jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
-        hookJNIMethod(method,
-                      (void *) new_native_mediaRecorderSetupFunc_T,
-                      (void **) &patchEnv.orig_mediaRecorderNativeSetupFunc
-        );
-    }
-}
-
 inline void
 hookCameraNativeSetup(jobject javaMethod, jboolean isArt, int apiLevel) {
     if (!javaMethod) {
         return;
     }
     if (!isArt) {
-        size_t mtd_cameraNativeSetup = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+        size_t mtd_cameraNativeSetup = (size_t) Environment::current()->FromReflectedMethod(
+                javaMethod);
         int nativeFuncOffset = patchEnv.native_offset;
         void **jniFuncPtr = (void **) (mtd_cameraNativeSetup + nativeFuncOffset);
 
         patchEnv.orig_cameraNativeSetup_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
         *jniFuncPtr = (void *) new_bridge_cameraNativeSetupFunc;
-    }else {
+    } else {
         jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
         hookJNIMethod(method,
                       (void *) new_native_cameraNativeSetupFunc_T,
@@ -571,6 +498,12 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
                    jstring packageName, jboolean isArt, jint apiLevel,
                    jint cameraMethodType) {
 
+    void (*libdl_set_sdk_version)(uint32_t) = (void (*)(uint32_t)) (dlsym(RTLD_DEFAULT,
+                                                                "android_set_application_target_sdk_version"));
+    if (libdl_set_sdk_version) {
+        libdl_set_sdk_version(23);
+    }
+
     JNIEnv *env = Environment::current();
 
     JNINativeMethod methods[] = {
@@ -642,7 +575,5 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
     hookMediaRecorderPrepareMethod(javaMethods.getElement(MEDIA_RECORDER_PREPARE).get(),isArt, apiLevel);
     hookAudioRecordNativeCheckPermission(
             javaMethods.getElement(AUDIO_NATIVE_CHECK_PERMISSION).get(), isArt, apiLevel);
-    hookAudioRecordNativeSetup(javaMethods.getElement(AUDIORECORD_SETUP).get(), isArt, apiLevel);
-    hookMediaRecorderNativeSetup(javaMethods.getElement(MEDIARECORDER_SETUP).get(), isArt, apiLevel);
     hookRuntimeNativeLoad();
 }

@@ -10,8 +10,8 @@ import io.virtualapp.R;
 import io.virtualapp.abs.ui.BaseAdapterPlus;
 import io.virtualapp.home.models.DeviceData;
 
-public class AppDeviceAdapter extends BaseAdapterPlus<DeviceData> {
-    public AppDeviceAdapter(Context context) {
+public class DeviceAdapter extends BaseAdapterPlus<DeviceData> {
+    public DeviceAdapter(Context context) {
         super(context);
     }
 
@@ -33,10 +33,8 @@ public class AppDeviceAdapter extends BaseAdapterPlus<DeviceData> {
             viewHolder.icon.setImageDrawable(item.icon);
         }
         viewHolder.label.setText(item.name);
-        if (item.getEditor().exists()) {
+        if (item.isMocking()) {
             viewHolder.location.setText(R.string.mock_device);
-        } else if (item.getUserEditor().exists()) {
-            viewHolder.location.setText(R.string.mock_global);
         } else {
             viewHolder.location.setText(R.string.mock_none);
         }

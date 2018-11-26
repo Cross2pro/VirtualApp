@@ -6,6 +6,7 @@ import android.app.job.IJobCallback;
 import android.app.job.IJobService;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
+import android.app.job.JobWorkItem;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,7 @@ import android.util.Log;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
 import com.lody.virtual.helper.collection.SparseArray;
+import com.lody.virtual.helper.compat.JobWorkItemCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 
@@ -63,7 +65,7 @@ public class ShadowJobService extends Service {
                     boolean bound = false;
                     synchronized (mJobSessions) {
                         mirror.android.app.job.JobParameters.jobId.set(jobParams, key.clientJobId);
-                        session = new JobSession(jobId, callback, jobParams);
+                        session = new JobSession(jobId, callback, jobParams, key.packageName);
                         mirror.android.app.job.JobParameters.callback.set(jobParams, session.asBinder());
                         mJobSessions.put(jobId, session);
                         Intent service = new Intent();
@@ -127,6 +129,21 @@ public class ShadowJobService extends Service {
     }
 
     @Override
+    public void onDestroy() {
+        if(debug) {
+            VLog.i(TAG, "ShadowJobService:onDestroy");
+        }
+        synchronized (mJobSessions) {
+            for (int i = mJobSessions.size() - 1; i >= 0; i--) {
+                JobSession session = mJobSessions.valueAt(i);
+                session.stopSessionLocked();
+            }
+            mJobSessions.clear();
+        }
+        super.onDestroy();
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         return mService.asBinder();
     }
@@ -138,11 +155,13 @@ public class ShadowJobService extends Service {
         private JobParameters jobParams;
         private IJobService clientJobService;
         private boolean isWorking;
+        private String packageName;
 
-        JobSession(int jobId, IJobCallback clientCallback, JobParameters jobParams) {
+        JobSession(int jobId, IJobCallback clientCallback, JobParameters jobParams, String packageName) {
             this.jobId = jobId;
             this.clientCallback = clientCallback;
             this.jobParams = jobParams;
+            this.packageName = packageName;
         }
 
         @Override
@@ -167,9 +186,29 @@ public class ShadowJobService extends Service {
         public void jobFinished(int jobId, boolean reschedule) throws RemoteException {
             isWorking = false;
             if(debug) {
-                VLog.i(TAG, "ShadowJobService:jobFinished:", this.jobId);
+                VLog.i(TAG, "ShadowJobService:jobFinished:%d", this.jobId);
             }
             clientCallback.jobFinished(jobId, reschedule);
+        }
+
+        @Override
+        public boolean completeWork(int jobId, int workId) throws RemoteException {
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:completeWork:%d", this.jobId);
+            }
+            return clientCallback.completeWork(jobId, workId);
+        }
+
+        @Override
+        public JobWorkItem dequeueWork(int jobId) throws RemoteException {
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:dequeueWork:%d", this.jobId);
+            }
+            JobWorkItem workItem = clientCallback.dequeueWork(jobId);
+            if(workItem != null){
+                return JobWorkItemCompat.redirect(workItem, packageName);
+            }
+            return null;
         }
 
         public void startJob(boolean wait){

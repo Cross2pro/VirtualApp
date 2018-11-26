@@ -4,7 +4,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:gravity="center"
-    app:cardElevation="10dp">
+    app:cardElevation="3dp">
 
     <io.virtualapp.widgets.LabelView
         xmlns:lv="http://schemas.android.com/apk/res-auto"
@@ -23,10 +23,10 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingBottom="35dp"
+        android:paddingBottom="30dp"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
-        android:paddingTop="35dp">
+        android:paddingTop="30dp">
 
         <io.virtualapp.widgets.LauncherIconView
             android:id="@+id/item_app_icon"
@@ -40,6 +40,7 @@
 
 
         <io.virtualapp.widgets.MarqueeTextView
+            android:textStyle="bold"
             android:id="@+id/item_app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -48,7 +49,7 @@
             android:gravity="center"
             android:marqueeRepeatLimit="marquee_forever"
             android:singleLine="true"
-            android:textColor="#ffffff"
+            android:textColor="@android:color/black"
             android:textSize="12sp" />
 
         <View

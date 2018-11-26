@@ -19,7 +19,7 @@ public class MyTaskDescDelegate implements TaskDescriptionDelegate {
             return null;
         }
         int userId = VUserManager.get().getUserHandle();
-        String suffix = " - " + (userId + 1) + "";
+        String suffix = " (" + (userId + 1) + ")";
         String oldLabel = oldTaskDescription.getLabel() != null ? oldTaskDescription.getLabel() : "";
 
         if (!oldLabel.endsWith(suffix)) {

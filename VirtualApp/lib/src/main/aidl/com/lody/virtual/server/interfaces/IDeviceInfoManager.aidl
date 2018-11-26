@@ -13,11 +13,4 @@ interface IDeviceInfoManager{
 
     void updateDeviceInfo(int userId,in  VDeviceInfo info);
 
-    Map getMockConfig(int userId, String packageName, boolean auto);
-
-    void setMockConfig(int userId, String packageName,in Map list);
-
-    int getMockMode(int userId, String packageName);
-
-    void removeMockConfig(int userId, String packageName);
 }

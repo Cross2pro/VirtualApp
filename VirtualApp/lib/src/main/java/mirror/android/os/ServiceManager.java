@@ -19,4 +19,5 @@ public class ServiceManager {
     public static RefStaticMethod<IBinder> getService;
     public static RefStaticMethod<String[]> listServices;
     public static RefStaticObject<Map<String, IBinder>> sCache;
+    public static RefStaticObject<IInterface> sServiceManager;
 }

@@ -1,6 +1,7 @@
 package com.lody.virtual.client.stub;
 
 import com.lody.virtual.client.core.SettingRule;
+import com.lody.virtual.BuildConfig;
 
 import java.util.Locale;
 
@@ -10,10 +11,12 @@ import java.util.Locale;
 
 public class VASettings {
 
+    public static String ARM64_PACKAGE_NAME_SUFFIX = ".addon.arm64";
+
     /**
-     * @hide
+     * hide notification of running is background.
      */
-    public static boolean _64BitMode = false;
+    public static boolean HIDE_FOREGROUND_NOTIFICATION = false;
 
     /**
      * beta
@@ -41,6 +44,7 @@ public class VASettings {
 
     /**
      * support google services
+     *
      * @deprecated
      */
     public static boolean ENABLE_GMS = false;
@@ -55,13 +59,17 @@ public class VASettings {
     public static boolean DISABLE_FOREGROUND_SERVICE = false;
 
     /**
-     * @deprecated
      * @see com.lody.virtual.client.core.VirtualCore#addSettingRule(SettingRule, String, boolean)
      * /data/data/va/virtual/data/xxx/->/data/data/xxxx/
+     * @deprecated
      */
     public static boolean USE_REAL_DATA_DIR = false;
 
     public static final String ACTION_BADGER_CHANGE = "com.lody.virtual.BADGER_CHANGE";
+
+    public static String PACKAGE_NAME = BuildConfig.APPLICATION_ID;
+    public static String PACKAGE_NAME_64BIT = BuildConfig.APPLICATION_ID + ARM64_PACKAGE_NAME_SUFFIX;
+
     public static String STUB_ACTIVITY = ShadowActivity.class.getName();
     public static String STUB_DIALOG = ShadowDialogActivity.class.getName();
     public static String STUB_CP = ShadowContentProvider.class.getName();
@@ -70,6 +78,7 @@ public class VASettings {
 
     public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
+    public static String STUB_CP_AUTHORITY_64BIT = "virtual_stub_64bit_";
     public static int STUB_COUNT = 100;
     public static String[] PRIVILEGE_APPS = new String[]{
             "com.google.android.gms"
@@ -105,8 +114,12 @@ public class VASettings {
         return String.format(Locale.ENGLISH, "%s$P%d", STUB_SERVICE, index);
     }
 
-    public static String getStubAuthority(int index) {
-        return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, index);
+    public static String getStubAuthority(int index, boolean is64bit) {
+        return String.format(Locale.ENGLISH, "%s%d", is64bit ? STUB_CP_AUTHORITY_64BIT : STUB_CP_AUTHORITY, index);
+    }
+
+    public static String getStubPackageName(boolean is64bit) {
+        return is64bit ? PACKAGE_NAME_64BIT : PACKAGE_NAME;
     }
 
     public static class Wifi {

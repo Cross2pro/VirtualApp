@@ -15,11 +15,10 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-dontshrink
 -keepattributes *Annotation*,InnerClasses
 -keepattributes Signature,EnclosingMethod
 -keepclassmembers class * implements java.io.Serializable {*;}
--keepclassmembers class * implements android.io.Parcelable {*;}
--keep class * implements android.os.Parcelable {*;}
 
 -dontwarn android.**
 -dontwarn org.eclipse.**
@@ -30,37 +29,41 @@
 -dontwarn com.lody.virtual.server.job.VJobSchedulerService
 
 # Parcelable
--keep class * implements android.io.Parcelable{
-    *;
+-keep class * implements android.os.Parcelable {
+  public static final android.os.Parcelable$Creator *;
 }
-# ibinder
--keep class * extends android.os.Binder{
-    *;
-}
-# map
--keep class c.t.m.g.**{*;}
--keep class com.tencent.**{*;}
-# hook
--keep class com.lody.virtual.client.hook.base.Inject{*;}
--keep class com.lody.virtual.client.hook.base.LogInvocation{*;}
--keep class com.lody.virtual.client.hook.base.LogInvocation$Condition{*;}
--keep class com.lody.virtual.client.hook.base.SkipInject{*;}
-#-keep class com.lody.virtual.client.badger.**{*;}
-#-keep class com.lody.virtual.client.hook.base{*;}
-#-keep class com.lody.virtual.client.hook.delegate{*;}
-#-keep class com.lody.virtual.client.hook.providers{*;}
--keep class com.lody.virtual.client.hook.proxies.** {*;}
--keep class com.lody.virtual.client.ipc.**{*;}
 
--keep class * implements com.lody.virtual.client.badger.IBadger{
-    public *;
+# ibinder
+-keepclassmembers class * extends android.os.Binder{
+    public <methods>;
 }
--keep class * implements com.lody.virtual.server.interfaces.IPCInterface{
-    public *;
+
+#fix multi dex
+-keep @interface com.lody.virtual.client.hook.annotations.** {*;}
+
+#Parcelable map old version data
+-keep class com.lody.virtual.server.pm.PackageSetting{
+ public static final android.os.Parcelable$Creator *;
 }
+-keep class com.lody.virtual.server.pm.PackageUserState{
+ public static final android.os.Parcelable$Creator *;
+}
+-keep class com.lody.virtual.server.location.VirtualLocationService$VLocConfig{
+ public static final android.os.Parcelable$Creator *;
+}
+-keep class com.lody.virtual.server.vs.VSConfig{
+ public static final android.os.Parcelable$Creator *;
+}
+
+#ipc
+-keepclassmembers class com.lody.virtual.client.ipc.**{public *;}
+-keepclassmembers class * implements com.lody.virtual.client.badger.IBadger{
+    public <methods>;
+}
+
 # jni
 -keep class com.lody.virtual.client.NativeEngine {
-    public static void onKillProcess(...);
+    public static boolean onKillProcess(...);
     public static int onGetCallingUid(...);
     public static void onOpenDexFileNative(...);
     public static int onGetUid(...);
@@ -70,9 +73,21 @@
 -keep class android.**{
     *;
 }
+-keep @interface mirror.** {*;}
 -keepclassmembers class mirror.**{
-    *;
+   public *;
+}
+#64bit
+-keep class com.lody.virtual.server.bit64.V64BitHelper{
+    public <methods>;
 }
 -repackageclass z1
+
+# map
+-keep class c.t.m.g.**{*;}
+-keep class com.tencent.**{*;}
+# once
+-keep class jonathanfinerty.once.**{public *;}
+#debug
 #-keepattributes SourceFile,LineNumberTable
 

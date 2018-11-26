@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@color/white"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:background="@color/desktopColorA">
+    android:layout_height="wrap_content">
 
     <ImageView
         android:id="@+id/item_app_checked"
@@ -22,7 +22,7 @@
         lv:lv_gravity="BOTTOM_LEFT"
         lv:lv_text="2"
         lv:lv_text_all_caps="false"
-        lv:lv_text_color="@android:color/white"
+        lv:lv_text_color="@android:color/black"
         lv:lv_text_size="12sp" />
 
     <LinearLayout
@@ -42,6 +42,7 @@
             android:layout_marginBottom="12dp" />
 
         <io.virtualapp.widgets.MarqueeTextView
+            android:textStyle="bold"
             android:id="@+id/item_app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -50,7 +51,7 @@
             android:gravity="center"
             android:marqueeRepeatLimit="marquee_forever"
             android:singleLine="true"
-            android:textColor="#ffffff"
+            android:textColor="@android:color/black"
             android:textSize="12sp" />
 
     </LinearLayout>

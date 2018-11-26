@@ -7,11 +7,10 @@ import android.os.Build;
 import android.os.IInterface;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.BinderInvocationStub;
-import com.lody.virtual.client.hook.base.Inject;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
-import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
@@ -45,7 +44,7 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
     }
 
     @Override
-    public void inject() throws Throwable {
+    public void inject() {
         if (BuildCompat.isOreo()) {
             //Android Oreo(8.X)
             Object singleton = ActivityManagerOreo.IActivityManagerSingleton.get();
@@ -75,7 +74,6 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 }
             });
             addMethodProxy(new ReplaceLastUidMethodProxy("checkPermissionWithToken"));
-            addMethodProxy(new isUserRunning());
             addMethodProxy(new ResultStaticMethodProxy("updateConfiguration", 0));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("setAppLockedVerifying"));
             addMethodProxy(new StaticMethodProxy("checkUriPermission") {
@@ -124,16 +122,4 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
         return ActivityManagerNative.getDefault.call() != getInvocationStub().getProxyInterface();
     }
 
-    private class isUserRunning extends MethodProxy {
-        @Override
-        public String getMethodName() {
-            return "isUserRunning";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) {
-            int userId = (int) args[0];
-            return userId == 0;
-        }
-    }
 }

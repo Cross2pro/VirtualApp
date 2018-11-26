@@ -1,4 +1,4 @@
-package com.lody.virtual.client.hook.base;
+package com.lody.virtual.client.hook.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Inject {
-	Class<?> value();
+public @interface SkipInject {
+
 }

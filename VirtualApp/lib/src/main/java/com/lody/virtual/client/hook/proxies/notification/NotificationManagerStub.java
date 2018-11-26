@@ -3,7 +3,7 @@ package com.lody.virtual.client.hook.proxies.notification;
 import android.os.Build;
 import android.os.IInterface;
 
-import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;

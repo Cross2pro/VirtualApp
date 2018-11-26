@@ -22,7 +22,7 @@ public class DeviceInfoPersistenceLayer extends PersistenceLayer {
 
     @Override
     public int getCurrentVersion() {
-        return 1;
+        return VDeviceInfo.VERSION;
     }
 
     @Override
@@ -49,20 +49,20 @@ public class DeviceInfoPersistenceLayer extends PersistenceLayer {
     }
 
     @Override
-    public void readPersistenceData(Parcel p) {
+    public void readPersistenceData(Parcel p, int version) {
         SparseArray<VDeviceInfo> infos = mService.getDeviceInfos();
         infos.clear();
         int size = p.readInt();
         while (size-- > 0) {
             int userId = p.readInt();
-            VDeviceInfo info = new VDeviceInfo(p);
+            VDeviceInfo info = new VDeviceInfo(p, version);
             infos.put(userId, info);
         }
     }
 
     @Override
     public boolean onVersionConflict(int fileVersion, int currentVersion) {
-        return false;
+        return true;
     }
 
     @Override

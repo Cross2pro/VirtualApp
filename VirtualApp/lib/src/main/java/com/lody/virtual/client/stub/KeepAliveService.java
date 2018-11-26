@@ -18,7 +18,9 @@ public class KeepAliveService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        HiddenForeNotification.bindForeground(this);
+        if(!VASettings.HIDE_FOREGROUND_NOTIFICATION) {
+            HiddenForeNotification.bindForeground(this);
+        }
     }
 
     @Override

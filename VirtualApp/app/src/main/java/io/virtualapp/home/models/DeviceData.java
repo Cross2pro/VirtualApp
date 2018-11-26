@@ -4,24 +4,17 @@ import android.content.Context;
 
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.remote.VDeviceInfo;
 
 public class DeviceData extends SettingsData {
-    private VDeviceManager.Editor mEditor;
-    private VDeviceManager.Editor mGEditor;
-
+    private VDeviceInfo defInfo;
     public DeviceData(Context context, InstalledAppInfo installedAppInfo, int userId) {
         super(context, installedAppInfo, userId);
+        defInfo = VDeviceManager.get().getDefaultDeviceInfo(context);
     }
-    public VDeviceManager.Editor getUserEditor() {
-        if (mGEditor == null) {
-            mGEditor = VDeviceManager.get().createSystemBuildEditor(userId);
-        }
-        return mGEditor;
-    }
-    public VDeviceManager.Editor getEditor() {
-        if (mEditor == null) {
-            mEditor = VDeviceManager.get().createAppBuildEditor(packageName, userId);
-        }
-        return mEditor;
+
+    public boolean isMocking() {
+        VDeviceInfo deviceInfo = VDeviceManager.get().getDeviceInfo(userId);
+        return !deviceInfo.isEmpty(defInfo);
     }
 }

@@ -32,10 +32,6 @@ public class NativeEngine {
 
     private static final String LIB_NAME = "va++";
 
-    private static List<String> whiteList = new ArrayList<>();
-
-    private static List<String> forbidList = new ArrayList<>();
-
     static {
         try {
             System.loadLibrary(LIB_NAME);
@@ -79,16 +75,6 @@ public class NativeEngine {
         return origPath;
     }
 
-    public static void dlOpenWhitelist(String path){
-        if (!path.endsWith("/")) {
-            path = path + "/";
-        }
-        try {
-            nativeDlOpenWhitelist(path);
-        } catch (Throwable e) {
-            VLog.e(TAG, VLog.getStackTraceString(e));
-        }
-    }
 
     public static void redirectDirectory(String origPath, String newPath) {
         if (!origPath.endsWith("/")) {
@@ -120,10 +106,6 @@ public class NativeEngine {
     }
 
     public static void whitelistFile(String path) {
-        if(whiteList.contains(path)){
-            return;
-        }
-        whiteList.add(path);
         try {
             nativeIOWhitelist(path);
         } catch (Throwable e) {
@@ -135,10 +117,6 @@ public class NativeEngine {
         if (!path.endsWith("/")) {
             path = path + "/";
         }
-        if(whiteList.contains(path)){
-            return;
-        }
-        whiteList.add(path);
         try {
             nativeIOWhitelist(path);
         } catch (Throwable e) {
@@ -150,10 +128,6 @@ public class NativeEngine {
         if (!file && !path.endsWith("/")) {
             path = path + "/";
         }
-        if(forbidList.contains(path)){
-            return;
-        }
-        forbidList.add(path);
         try {
             nativeIOForbid(path);
         } catch (Throwable e) {
@@ -165,9 +139,6 @@ public class NativeEngine {
         try {
             String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
                     "lib/lib" + LIB_NAME + ".so").getAbsolutePath();
-            if (!new File(soPath).exists()) {
-                throw new RuntimeException("Cannot find so " + soPath);
-            }
             nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt(), needDlOpen);
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
@@ -178,7 +149,7 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission, NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare, NativeMethods.gAudioRecordNativeSetup, NativeMethods.gMediaRecorderNativeSetup};
+        Method[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission, NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType);
         } catch (Throwable e) {
@@ -248,6 +219,7 @@ public class NativeEngine {
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel, boolean needDlOpen);
 
     public static int onGetUid(int uid) {
+        Thread.currentThread().setContextClassLoader(VClient.class.getClassLoader());
         return VClient.get().getBaseVUid();
     }
 }

@@ -3,6 +3,7 @@ package com.lody.virtual.client.hook.base;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.hook.annotations.LogInvocation;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.VLog;
 

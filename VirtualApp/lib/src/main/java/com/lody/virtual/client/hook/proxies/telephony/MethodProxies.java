@@ -16,7 +16,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.hook.base.SkipInject;
+import com.lody.virtual.client.hook.annotations.SkipInject;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;

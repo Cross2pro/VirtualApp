@@ -38,7 +38,6 @@ public class ListAppActivity extends VActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimaryDark)));
         setContentView(R.layout.activity_clone_app);
         mToolBar = (Toolbar) findViewById(R.id.clone_app_tool_bar);
         mTabLayout = (TabLayout) mToolBar.findViewById(R.id.clone_app_tab_layout);

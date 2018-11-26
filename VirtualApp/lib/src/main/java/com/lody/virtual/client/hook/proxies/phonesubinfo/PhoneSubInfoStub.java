@@ -1,7 +1,7 @@
 package com.lody.virtual.client.hook.proxies.phonesubinfo;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
-import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 

@@ -14,4 +14,6 @@ public class AppInfo {
     public CharSequence name;
     public int cloneCount;
     public boolean only64Bit;
+    public int targetSdkVersion;
+    public String[] requestedPermissions;
 }

@@ -2,7 +2,6 @@ package com.lody.virtual.server.location;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.RemoteException;
 
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.PersistenceLayer;
@@ -98,7 +97,7 @@ public class VirtualLocationService extends IVirtualLocationManager.Stub {
         }
 
         @Override
-        public void readPersistenceData(Parcel p) {
+        public void readPersistenceData(Parcel p, int version) {
             mGlobalConfig.set(new VLocConfig(p));
             mLocConfigs.clear();
             int size = p.readInt();

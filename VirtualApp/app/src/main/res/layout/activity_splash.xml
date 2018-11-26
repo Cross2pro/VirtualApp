@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:gravity="bottom"
     android:orientation="vertical"
+    android:background="@color/colorPrimary"
     tools:context=".splash.SplashActivity">
 
 
@@ -14,7 +15,7 @@
         android:layout_gravity="bottom|center"
         android:layout_marginBottom="20dp"
         android:text="@string/app_name"
-        android:textColor="@android:color/white"
+        android:textColor="@android:color/black"
         android:textSize="26sp" />
 
 

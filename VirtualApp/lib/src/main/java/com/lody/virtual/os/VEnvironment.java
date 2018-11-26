@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.EncodeUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -24,6 +25,11 @@ public class VEnvironment {
     private static final File DALVIK_CACHE_DIRECTORY;
     private static final File EXTERNAL_STORAGE_DIRECTORY;
     private static final File EMULATED_DIRECTORY;
+
+    private static final File ROOT64;
+    private static final File DATA_DIRECTORY64;
+    private static final File USER_DIRECTORY64;
+    private static final File DALVIK_CACHE_DIRECTORY64;
 
     private static final String DIRECTORY_MUSIC = "Music";
     private static final String DIRECTORY_PODCASTS = "Podcasts";
@@ -63,6 +69,17 @@ public class VEnvironment {
         EXTERNAL_STORAGE_DIRECTORY = ensureCreated(new File(ROOT, "storage"));
         // Point to: /storage/emulated
         EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
+
+
+        File host64 = new File("/data/data/" + VASettings.PACKAGE_NAME_64BIT);
+        // Point to: /
+        ROOT64 = ensureCreated(new File(host64, "virtual"));
+        // Point to: /data/
+        DATA_DIRECTORY64 = ensureCreated(new File(ROOT64, "data"));
+        // Point to: /data/user/
+        USER_DIRECTORY64 = ensureCreated(new File(DATA_DIRECTORY64, "user"));
+        // Point to: /opt/
+        DALVIK_CACHE_DIRECTORY64 = ensureCreated(new File(ROOT64, "opt"));
     }
 
     public static void systemReady() {
@@ -85,23 +102,74 @@ public class VEnvironment {
     }
 
     private static File ensureCreated(File folder) {
-        if (!folder.exists() && !folder.mkdirs()) {
-            VLog.w(TAG, "Unable to create the directory: %s.", folder.getPath());
+        if (!folder.exists()) {
+            folder.mkdirs();
         }
         return folder;
     }
 
+    public static void chmodPackageDictionary(File packageFile) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (FileUtils.isSymlink(packageFile)) {
+                    return;
+                }
+                FileUtils.chmod(packageFile.getParentFile().getAbsolutePath(), FileUtils.FileMode.MODE_755);
+                FileUtils.chmod(packageFile.getAbsolutePath(), FileUtils.FileMode.MODE_755);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void linkUserAppLib(int userId, String packageName){
+        linkUserAppLib(userId, packageName, VirtualCore.get().is64BitEngine());
+    }
+
+    public static void linkUserAppLib(int userId, String packageName, boolean is64Bit) {
+        String libPath;
+        String userLibPath;
+        if(is64Bit){
+            libPath = VEnvironment.getAppLibDirectory64(packageName).getPath();
+            userLibPath = VEnvironment.getUserAppLibDirectory64(userId, packageName).getPath();
+        }else{
+            libPath = VEnvironment.getAppLibDirectory(packageName).getPath();
+            userLibPath = VEnvironment.getUserAppLibDirectory(userId, packageName).getPath();
+        }
+        try {
+            if (FileUtils.isExist(userLibPath)) {
+                return;
+            }
+            FileUtils.createSymlink(libPath, userLibPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static File getDataUserPackageDirectory(int userId,
                                                    String packageName) {
-        return ensureCreated(new File(getUserSystemDirectory(userId), packageName));
+        return ensureCreated(new File(getUserDataDirectory(userId), packageName));
+    }
+
+    public static File getDataUserPackageDirectory64(int userId,
+                                                   String packageName) {
+        return ensureCreated(new File(getUserDataDirectory64(userId), packageName));
     }
 
     public static File getPackageResourcePath(String packageName) {
         return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
 
+    public static File getPackageResourcePath64(String packageName) {
+        return new File(getDataAppPackageDirectory64(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
+    }
+
     public static File getDataAppDirectory() {
         return ensureCreated(new File(getDataDirectory(), "app"));
+    }
+
+    public static File getDataAppDirectory64() {
+        return ensureCreated(new File(getDataDirectory64(), "app"));
     }
 
     public static File getUidListFile() {
@@ -128,6 +196,14 @@ public class VEnvironment {
         return new File(getSystemSecureDirectory(), "device-info.ini");
     }
 
+    public static File getSettingRuleFile() {
+        return new File(getSystemSecureDirectory(), "app-setting.ini");
+    }
+
+    public static File getBuildInfoFile() {
+        return new File(getSystemSecureDirectory(), "device-build.ini");
+    }
+
     public static File getPackageListFile() {
         return new File(getSystemSecureDirectory(), "packages.ini");
     }
@@ -143,7 +219,6 @@ public class VEnvironment {
         return new File(getSystemSecureDirectory(), "packages.ini.bak");
     }
 
-
     public static File getJobConfigFile() {
         return new File(getSystemSecureDirectory(), "job-list.ini");
     }
@@ -152,20 +227,40 @@ public class VEnvironment {
         return DALVIK_CACHE_DIRECTORY;
     }
 
+    public static File getDalvikCacheDirectory64() {
+        return DALVIK_CACHE_DIRECTORY64;
+    }
+
     public static File getOdexFile(String packageName) {
         return new File(DALVIK_CACHE_DIRECTORY, "data@app@" + packageName + "-1@base.apk@classes.dex");
+    }
+
+    public static File getOdexFile64(String packageName) {
+        return new File(DALVIK_CACHE_DIRECTORY64, "data@app@" + packageName + "-1@base.apk@classes.dex");
     }
 
     public static File getDataAppPackageDirectory(String packageName) {
         return ensureCreated(new File(getDataAppDirectory(), packageName));
     }
 
+    public static File getDataAppPackageDirectory64(String packageName) {
+        return ensureCreated(new File(getDataAppDirectory64(), packageName));
+    }
+
     public static File getAppLibDirectory(String packageName) {
         return ensureCreated(new File(getDataAppPackageDirectory(packageName), "lib"));
     }
 
+    public static File getAppLibDirectory64(String packageName) {
+        return ensureCreated(new File(getDataAppPackageDirectory64(packageName), "lib"));
+    }
+
     public static File getUserAppLibDirectory(int userId, String packageName) {
         return new File(getDataUserPackageDirectory(userId, packageName), "lib");
+    }
+
+    public static File getUserAppLibDirectory64(int userId, String packageName) {
+        return new File(getDataUserPackageDirectory64(userId, packageName), "lib");
     }
 
     public static File getPackageCacheFile(String packageName) {
@@ -194,24 +289,45 @@ public class VEnvironment {
         return new File(USER_DIRECTORY, String.valueOf(userId));
     }
 
+    public static File getUserDataDirectory64(int userId) {
+        return new File(USER_DIRECTORY64, String.valueOf(userId));
+    }
+
     public static File getSystemDirectory(int userId) {
         return new File(getUserDataDirectory(userId), "system");
     }
 
+	public static File getSystemDirectory64(int userId) {
+        return new File(getUserDataDirectory64(userId), "system");
+    }
+
+    /**
+     * @deprecated
+     */
     public static File getSystemBuildFile(int userId) {
         return new File(getSystemDirectory(userId), "build.prop");
     }
 
+    /**
+     * @deprecated
+     */
     public static File getAppBuildFile(String packageName, int userId) {
         return new File(getSystemDirectory(userId), packageName + "_build.prop");
     }
 
-    public static File getWifiMacFile(int userId) {
+    public static File getWifiMacFile(int userId, boolean is64Bit) {
+        if(is64Bit){
+            return new File(getSystemDirectory64(userId), "wifiMacAddress");
+        }
         return new File(getSystemDirectory(userId), "wifiMacAddress");
     }
 
     public static File getDataDirectory() {
         return DATA_DIRECTORY;
+    }
+
+    public static File getDataDirectory64() {
+        return DATA_DIRECTORY64;
     }
 
     public static File getSystemSecureDirectory() {

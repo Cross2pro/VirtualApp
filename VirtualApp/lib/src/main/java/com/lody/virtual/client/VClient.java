@@ -51,7 +51,6 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.utils.FileUtils;
-import com.lody.virtual.helper.utils.PropertiesUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
 import com.lody.virtual.helper.utils.VLog;
@@ -132,6 +131,7 @@ public final class VClient extends IVClient.Stub {
     private Application mInitialApplication;
     private CrashHandler crashHandler;
     private InstalledAppInfo mAppInfo;
+    private int targetSdkVersion;
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -172,6 +172,12 @@ public final class VClient extends IVClient.Stub {
 
     public ApplicationInfo getCurrentApplicationInfo() {
         return mBoundApplication != null ? mBoundApplication.appInfo : null;
+    }
+
+    public int getCurrentTargetSdkVersion() {
+        return targetSdkVersion == 0 ?
+                VirtualCore.get().getTargetSdkVersion()
+                : targetSdkVersion;
     }
 
     public CrashHandler getCrashHandler() {
@@ -291,15 +297,8 @@ public final class VClient extends IVClient.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        File build = null;
-        int mode = VDeviceManager.get().getMockMode(userId, packageName);
-        if(mode != VDeviceManager.MOCK_MODE_NONE){
-            build = mode == VDeviceManager.MOCK_MODE_APP ?
-                    VEnvironment.getAppBuildFile(packageName, userId)
-                    : VEnvironment.getSystemBuildFile(userId);
-
-            VDeviceManager.get().attachBuildProp(build, packageName, userId);
-        }
+        VDeviceInfo deviceInfo = getDeviceInfo();
+        VDeviceManager.get().attachBuildProp(deviceInfo);
 
         ActivityThread.mInitialApplication.set(
                 VirtualCore.mainThread(),
@@ -316,6 +315,7 @@ public final class VClient extends IVClient.Stub {
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, userId);
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
+        targetSdkVersion = data.appInfo.targetSdkVersion;
         VLog.i(TAG, "Binding application %s (%s)", data.appInfo.packageName, data.processName);
         mBoundApplication = data;
         VirtualRuntime.setupRuntime(data.processName, data.appInfo);
@@ -328,7 +328,7 @@ public final class VClient extends IVClient.Stub {
             mirror.android.os.Message.updateCheckRecycle.call(targetSdkVersion);
         }
         if (VASettings.ENABLE_IO_REDIRECT) {
-            startIOUniformer(build);
+            startIOUniformer(deviceInfo);
         }
         NativeEngine.launchEngine();
         Object mainThread = VirtualCore.mainThread();
@@ -512,13 +512,22 @@ public final class VClient extends IVClient.Stub {
     }
 
     @SuppressLint("SdCardPath")
-    private void startIOUniformer(File build) {
+    private void startIOUniformer(VDeviceInfo deviceInfo) {
         ApplicationInfo info = mBoundApplication.appInfo;
         String packageName = info.packageName;
         int userId = VUserHandle.myUserId();
-        File wifiMacAddressFile = getDeviceInfo().getWifiFile(userId);
+        final boolean is64Bit = VirtualCore.get().is64BitEngine();
+        File wifiMacAddressFile = getDeviceInfo().getWifiFile(userId, is64Bit);
         String wifiMacAddressPath = wifiMacAddressFile != null ? wifiMacAddressFile.getPath() : null;
-        String dataDir = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();//info.dataDir;
+        String dataDir, libPath;
+        if (is64Bit) {
+            dataDir = VEnvironment.getDataUserPackageDirectory64(userId, packageName).getPath();
+            libPath = VEnvironment.getAppLibDirectory64(packageName).getAbsolutePath();
+        } else {
+            dataDir  = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();
+            libPath = VEnvironment.getAppLibDirectory(packageName).getAbsolutePath();
+        }
+
         if (!TextUtils.isEmpty(wifiMacAddressPath)) {
             NativeEngine.redirectFile("/sys/class/net/wlan0/address", wifiMacAddressPath);
             NativeEngine.redirectFile("/sys/class/net/eth0/address", wifiMacAddressPath);
@@ -527,25 +536,35 @@ public final class VClient extends IVClient.Stub {
             //default wifi mac
         }
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            if (build != null && build.exists()) {
-                NativeEngine.redirectFile("/system/build.prop", build.getAbsolutePath());
-            }
+//            if (deviceInfo != null && !deviceInfo.isEmpty()) {
+//                NativeEngine.forbid("/system/build.prop", true);
+//            }
         }
 
         if(VASettings.FILE_ISOLATION) {
+            File odexFile, systemDir, appDir;
+            if (is64Bit) {
+                odexFile = VEnvironment.getOdexFile64(packageName);
+                systemDir = VEnvironment.getSystemDirectory64(userId);
+                appDir = VEnvironment.getDataAppPackageDirectory64(packageName);
+            } else {
+                odexFile = VEnvironment.getOdexFile(packageName);
+                systemDir = VEnvironment.getSystemDirectory(userId);
+                appDir = VEnvironment.getDataAppPackageDirectory(packageName);
+            }
             //getPath         ->  /data/data/va/
             //getAbsolutePath ->  /data/user/0/
             //io hook: whitelist->replace path(/data/data/pkg/)->forbid
             // odex
-            NativeEngine.whitelistFile(VEnvironment.getOdexFile(packageName).getPath());
-            NativeEngine.whitelistFile(VEnvironment.getOdexFile(packageName).getAbsolutePath());
+            NativeEngine.whitelistFile(odexFile.getPath());
+            NativeEngine.whitelistFile(odexFile.getAbsolutePath());
             // /virtual/data/0/system/
-            NativeEngine.whitelist(VEnvironment.getSystemDirectory(userId).getPath());
-            NativeEngine.whitelist(VEnvironment.getSystemDirectory(userId).getAbsolutePath());
+            NativeEngine.whitelist(systemDir.getPath());
+            NativeEngine.whitelist(systemDir.getAbsolutePath());
             // /virtual/data/app/{pkg}/
-            NativeEngine.whitelist(VEnvironment.getDataAppPackageDirectory(packageName).getPath());
-            NativeEngine.whitelist(VEnvironment.getDataAppPackageDirectory(packageName).getAbsolutePath());
-            // /virtual/data/0/{pkg}/
+            NativeEngine.whitelist(appDir.getPath());
+            NativeEngine.whitelist(appDir.getAbsolutePath());
+            // user data /virtual/data/0/{pkg}/
             File dataDirFile = new File(dataDir);
             NativeEngine.whitelist(dataDirFile.getPath());
             NativeEngine.whitelist(dataDirFile.getAbsolutePath());
@@ -555,13 +574,12 @@ public final class VClient extends IVClient.Stub {
             NativeEngine.forbid(vaDataDir.getAbsolutePath(), false);
         }
 
-
+        VEnvironment.linkUserAppLib(userId, packageName, is64Bit);
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, dataDir);
         }
-        String libPath = VEnvironment.getAppLibDirectory(packageName).getAbsolutePath();
 
         if(isNotCopyApk()) {
             ApplicationInfo outside = null;
@@ -572,24 +590,12 @@ public final class VClient extends IVClient.Stub {
             }
             if (outside != null) {
                 if(VirtualCore.get().isUseOwnLibraryFiles(packageName)){
-                    if (VASettings._64BitMode) {
+                    if (VirtualCore.get().is64BitEngine()) {
                         NativeEngine.redirectDirectory(outside.nativeLibraryDir, libPath);
                     } else {
                         String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
                         if (!TextUtils.isEmpty(path)) {
                             NativeEngine.redirectDirectory(path, libPath);
-                        }
-                    }
-                }else {
-                    if (VASettings._64BitMode) {
-                        NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
-                        NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
-                    } else {
-                        //if need check 64bit,please check after install.
-                        //@see com.lody.virtual.helper.compat.NativeLibraryHelperCompat#isSupportNative32
-                        if (!TextUtils.isEmpty(NativeLibraryHelperCompat.getNativeLibraryDir32(outside))) {
-                            NativeEngine.dlOpenWhitelist("/data/data/" + packageName + "/lib/");
-                            NativeEngine.dlOpenWhitelist(outside.nativeLibraryDir);
                         }
                     }
                 }

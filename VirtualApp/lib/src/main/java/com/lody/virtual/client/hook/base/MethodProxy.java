@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.hook.annotations.LogInvocation;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.ComponentUtils;

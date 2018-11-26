@@ -34,7 +34,7 @@ public abstract class PersistenceLayer {
 
     public abstract void writePersistenceData(Parcel p);
 
-    public abstract void readPersistenceData(Parcel p);
+    public abstract void readPersistenceData(Parcel p, int version);
 
     public boolean onVersionConflict(int fileVersion, int currentVersion) {
         return false;
@@ -83,7 +83,7 @@ public abstract class PersistenceLayer {
                     throw new IOException("Unable to process the bad version persistence file.");
                 }
             }
-            readPersistenceData(p);
+            readPersistenceData(p, fileVersion);
         } catch (Exception e) {
             if (!(e instanceof FileNotFoundException)) {
                 e.printStackTrace();

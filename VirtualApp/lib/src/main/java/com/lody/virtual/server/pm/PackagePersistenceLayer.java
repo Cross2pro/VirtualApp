@@ -53,7 +53,7 @@ class PackagePersistenceLayer extends PersistenceLayer {
     }
 
     @Override
-    public void readPersistenceData(Parcel p) {
+    public void readPersistenceData(Parcel p, int version) {
         int count = p.readInt();
         while (count-- > 0) {
             PackageSetting setting = new PackageSetting(p);

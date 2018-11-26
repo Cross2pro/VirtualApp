@@ -1,7 +1,6 @@
 package com.lody.virtual.client.hook.proxies.location;
 
 import android.os.Build;
-import android.util.Log;
 
 import com.lody.virtual.client.env.VirtualGPSSatalines;
 import com.lody.virtual.client.ipc.VLocationManager;
@@ -9,12 +8,13 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.remote.vloc.VLocation;
 
-import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
+import mirror.android.location.GpsStatus;
+import mirror.android.location.GpsStatusL;
 import mirror.android.location.LocationManager;
 
 /**
@@ -55,39 +55,40 @@ public class MockLocationHelper {
         }
     }
 
-    public static void setGpsStatus(Object locationManager) {
+    public static void fakeGpsStatusN(android.location.LocationManager locationManager) {
+        if(LocationManager.mGpsStatusListeners == null){
+            return;
+        }
+        HashMap mGpsStatusListeners = LocationManager.mGpsStatusListeners.get(locationManager);
+        for(Object listenerTransport : mGpsStatusListeners.values()){
+            invokeSvStatusChanged(listenerTransport);
+            break;
+        }
+    }
 
+    public static void fakeGpsStatus(android.location.LocationManager locationManager) {
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.N){
+            fakeGpsStatusN(locationManager);
+            return;
+        }
+        android.location.GpsStatus mGpsStatus = null;
+        try {
+            mGpsStatus = Reflect.on(locationManager).get("mGpsStatus");
+        } catch (Throwable e) {
+            //ignore
+        }
+        if (mGpsStatus == null) {
+            return;
+        }
         VirtualGPSSatalines satalines = VirtualGPSSatalines.get();
-        Method setStatus = null;
         int svCount = satalines.getSvCount();
         float[] snrs = satalines.getSnrs();
         int[] prns = satalines.getPrns();
         float[] elevations = satalines.getElevations();
         float[] azimuths = satalines.getAzimuths();
 
-        Object mGpsStatus = null;
         try {
-            mGpsStatus = Reflect.on(locationManager).get("mGpsStatus");
-        } catch (Throwable e) {
-
-        }
-        if (mGpsStatus == null) {
-            return;
-        }
-        try {
-            setStatus = mGpsStatus.getClass().getDeclaredMethod("setStatus", Integer.TYPE, int[].class, float[].class, float[].class, float[].class, Integer.TYPE, Integer.TYPE, Integer.TYPE);
-            setStatus.setAccessible(true);
-            int ephemerisMask = satalines.getEphemerisMask();
-            int almanacMask = satalines.getAlmanacMask();
-            int usedInFixMask = satalines.getUsedInFixMask();
-            setStatus.invoke(mGpsStatus, svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
-        } catch (Exception e) {
-            // ignore
-        }
-        if (setStatus == null) {
-            try {
-                setStatus = mGpsStatus.getClass().getDeclaredMethod("setStatus", Integer.TYPE, int[].class, float[].class, float[].class, float[].class, int[].class, int[].class, int[].class);
-                setStatus.setAccessible(true);
+            if (GpsStatusL.setStatus != null) {
                 svCount = satalines.getSvCount();
                 int length = satalines.getPrns().length;
                 elevations = satalines.getElevations();
@@ -104,10 +105,15 @@ public class MockLocationHelper {
                 for (int i = 0; i < length; i++) {
                     usedInFixMask[i] = satalines.getUsedInFixMask();
                 }
-                setStatus.invoke(mGpsStatus, svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
-            } catch (Exception e) {
-                e.printStackTrace();
+                GpsStatusL.setStatus.call(mGpsStatus, svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
+            } else if (GpsStatus.setStatus != null) {
+                int ephemerisMask = satalines.getEphemerisMask();
+                int almanacMask = satalines.getAlmanacMask();
+                int usedInFixMask = satalines.getUsedInFixMask();
+                GpsStatus.setStatus.call(mGpsStatus, svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);
             }
+        } catch (Exception e) {
+            // ignore
         }
     }
 

@@ -12,6 +12,7 @@ import android.os.Process;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.utils.VLog;
 
 /**
  * @author Lody

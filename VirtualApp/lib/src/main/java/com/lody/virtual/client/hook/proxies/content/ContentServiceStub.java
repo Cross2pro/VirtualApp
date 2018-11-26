@@ -10,6 +10,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ClientConfig;
 
 import java.lang.reflect.Method;
 
@@ -62,9 +63,9 @@ public class ContentServiceStub extends BinderInvocationProxy {
             final int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
-                if (targetVPid != -1) {
-                    String targetAuthority = VASettings.getStubAuthority(targetVPid);
+                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                if (config != null) {
+                    String targetAuthority = VASettings.getStubAuthority(config.vpid, config.is64Bit);
                     return uri.buildUpon().authority(targetAuthority).build();
                 }
             }

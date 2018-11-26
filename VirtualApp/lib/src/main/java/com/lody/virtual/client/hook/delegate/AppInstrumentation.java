@@ -37,6 +37,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     private static final String TAG = AppInstrumentation.class.getSimpleName();
 
     private static AppInstrumentation gDefault;
+    private final Activity mUtilActivity = new Activity();
 
     private AppInstrumentation(Instrumentation base) {
         super(base);
@@ -112,9 +113,6 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
         checkActivityCallback();
-        if (icicle != null) {
-            BundleCompat.clearParcelledData(icicle);
-        }
         IBinder token = mirror.android.app.Activity.mToken.get(activity);
         ActivityClientRecord r = VActivityManager.get().getActivityRecord(token);
         if (r != null) {
@@ -132,8 +130,8 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
             if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                activity.setRequestedOrientation(info.screenOrientation);
-                boolean needWait = false;
+                setActivityOrientation(activity, info.screenOrientation);
+                boolean needWait;
                 //set orientation
                 Configuration configuration = activity.getResources().getConfiguration();
                 if (isOrientationLandscape(info.screenOrientation)) {
@@ -153,6 +151,12 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
         }
         super.callActivityOnCreate(activity, icicle);
+    }
+
+    private void setActivityOrientation(Activity activity, int orientation) {
+        IBinder token = mirror.android.app.Activity.mToken.get(activity);
+        mirror.android.app.Activity.mToken.set(mUtilActivity, token);
+        mUtilActivity.setRequestedOrientation(orientation);
     }
 
     public void callSuperActivityOnCreate(Activity activity, Bundle icicle) {

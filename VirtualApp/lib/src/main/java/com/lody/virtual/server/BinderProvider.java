@@ -14,10 +14,12 @@ import android.os.RemoteException;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.stub.KeepAliveService;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
 import com.lody.virtual.server.job.VJobSchedulerService;
@@ -59,9 +61,15 @@ public final class BinderProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
+
         if (!VirtualCore.get().isStartup()) {
             return false;
         }
+
+        if(VASettings.PACKAGE_NAME.equals(context.getPackageName())){
+            V64BitHelper.check64BitRunning(null);
+        }
+
         VPackageManagerService.systemReady();
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         VActivityManagerService.systemReady(context);

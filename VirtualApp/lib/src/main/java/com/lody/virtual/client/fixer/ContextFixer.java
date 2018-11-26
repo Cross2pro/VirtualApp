@@ -4,7 +4,6 @@ import android.app.AlarmManager;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.location.LocationManager;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -12,6 +11,7 @@ import android.os.DropBoxManager;
 import android.os.IInterface;
 import android.util.Log;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationStub;
@@ -22,6 +22,7 @@ import com.lody.virtual.client.hook.proxies.graphics.GraphicsStatsStub;
 import com.lody.virtual.client.hook.proxies.wifi.WifiManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VLocationManager;
+import com.lody.virtual.helper.compat.StrictModeCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -79,6 +80,13 @@ public class ContextFixer {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             ContentResolverJBMR2.mPackageName.set(context.getContentResolver(), hostPkg);
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (VirtualCore.get().getTargetSdkVersion() >= Build.VERSION_CODES.N
+                    && VClient.get().getCurrentTargetSdkVersion() < Build.VERSION_CODES.N) {
+                //fix file
+                StrictModeCompat.disableDeathOnFileUriExposure();
+            }
+        }
         if (context.getApplicationInfo().targetSdkVersion < 10) {
             try {
                 Class<?> cAsyncTask = context.getClassLoader().loadClass(AsyncTask.class.getName());
@@ -90,8 +98,8 @@ public class ContextFixer {
                 Log.w(TAG, "setDefaultExecutor", e);
             }
         }
-        final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        VLocationManager.get().setLocationManager(locationManager);
+        //fake gps's location
+        VLocationManager.get().setLocationManager(context);
     }
 
     private static <T extends IInjector> IInterface getIInterface(Class<T> injectorClass) {
@@ -99,11 +107,11 @@ public class ContextFixer {
         return injector == null ? null : injector.getProxyInterface();
     }
 
-    private static boolean fixBinder = false;
+    private static boolean CONTEXT_BINDER_FIXED = false;
 
     private static void fixBinders(Context context) {
-        if(fixBinder)return;
-        fixBinder = true;
+        if (CONTEXT_BINDER_FIXED) return;
+        CONTEXT_BINDER_FIXED = true;
         final String TAG = "fixBinders";
         //dropbox
         IInterface binder = getIInterface(DropBoxManagerStub.class);
@@ -167,7 +175,7 @@ public class ContextFixer {
                 } catch (Exception e) {
                     VLog.w(TAG, "WifiManager:mService:%s", Log.getStackTraceString(e));
                 }
-            }else if (mirror.android.net.wifi.WifiManager.sService != null) {
+            } else if (mirror.android.net.wifi.WifiManager.sService != null) {
                 //sumsung
                 try {
                     mirror.android.net.wifi.WifiManager.sService.set(binder);

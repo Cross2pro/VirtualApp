@@ -37,38 +37,39 @@ public class PackageUtils {
         return packageInfo.versionCode;
     }
 
-    public static boolean checkUpdate(Context context, String packageName) {
+    public static void checkUpdate(String packageName) {
         InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(packageName, 0);
         if (installedAppInfo == null || !installedAppInfo.notCopyApk) {
-            return false;
+            return;
         }
-        return checkUpdate(context, installedAppInfo, packageName);
+        checkUpdate(installedAppInfo, packageName);
     }
 
-    public static boolean checkUpdate(Context context, InstalledAppInfo installedAppInfo, String packageName) {
+    public static void checkUpdate(InstalledAppInfo installedAppInfo, String packageName) {
         if (!VirtualCore.get().isAppInstalled(packageName)) {
-            return false;
+            return;
         }
-        PackageInfo packageInfo = null;
+        PackageInfo outsidePackageInfo = null;
         try {
-            packageInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
+            outsidePackageInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, 0);
         } catch (Throwable e) {
-
+            e.printStackTrace();
         }
-        if (packageInfo == null) {
+        if (outsidePackageInfo == null) {
             //uninstall
-            return false;
+            return;
         }
-        PackageInfo vpackageInfo = installedAppInfo.getPackageInfo(0);
+        PackageInfo insidePackageInfo = installedAppInfo.getPackageInfo(0);
         //update apk
-        if (!new File(installedAppInfo.apkPath).exists() || vpackageInfo == null || packageInfo.versionCode != vpackageInfo.versionCode) {
+        if (!new File(installedAppInfo.apkPath).exists()
+                || insidePackageInfo == null
+                || outsidePackageInfo.versionCode != insidePackageInfo.versionCode) {
             VirtualCore.get().killApp(packageName, VUserHandle.USER_ALL);
-            InstallResult result = VirtualCore.get().installPackage(packageInfo.applicationInfo.publicSourceDir,
-                    InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.NOT_COPY_APK);
-            if (!result.isSuccess) {
-                return false;
-            }
+            VirtualCore.get().installPackage(outsidePackageInfo.applicationInfo.publicSourceDir,
+                    InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.NOT_COPY_APK,
+                    result -> {
+                        // nothing
+                    });
         }
-        return true;
     }
 }

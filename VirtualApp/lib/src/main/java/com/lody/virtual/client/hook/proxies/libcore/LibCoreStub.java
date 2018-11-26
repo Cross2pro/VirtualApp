@@ -1,7 +1,7 @@
 package com.lody.virtual.client.hook.proxies.libcore;
 
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
-import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceUidMethodProxy;
 

@@ -30,7 +30,7 @@
                 android:gravity="center_vertical"
                 android:maxLines="2"
                 app:ftMaxTextSize="20sp"
-                android:background="@color/colorPrimaryDark"
+                android:background="@android:color/black"
                 app:ftMinTextSize="10sp"
                 tools:text="hello"/>
 

@@ -28,6 +28,7 @@ import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
+import com.lody.virtual.helper.compat.PermissionCompat;
 import com.lody.virtual.helper.utils.SignaturesUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VEnvironment;
@@ -35,6 +36,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -107,6 +109,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
     private final HashMap<String, VPackage.ProviderComponent> mProvidersByAuthority = new HashMap<>();
 
     private final Map<String, VPackage> mPackages = PackageCacheManager.PACKAGE_CACHE;
+    private final Map<String, String[]> mDangrousPermissions = new HashMap<>();
 
 
     public VPackageManagerService() {
@@ -153,7 +156,10 @@ public class VPackageManagerService extends IPackageManager.Stub {
                     }
                 } else if (Intent.ACTION_PACKAGE_ADDED.equals(intent.getAction())) {
                     //ignore
-                } else if(Intent.ACTION_PACKAGE_REPLACED.equals(intent.getAction())){
+                    if(VASettings.PACKAGE_NAME_64BIT.equals(pkg)){
+                        V64BitHelper.check64BitRunning(null);
+                    }
+                } else if (Intent.ACTION_PACKAGE_REPLACED.equals(intent.getAction())) {
                     if (VASettings.CHECK_UPDATE_NOT_COPY_APK && installedAppInfo.notCopyApk) {
                         VirtualCore.get().getContext().sendBroadcast(
                                 new Intent(Constants.ACTION_PACKAGE_WILL_ADDED,
@@ -162,7 +168,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
                         if (applicationInfo != null) {
                             int flag = InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE;
                             //发送广播，显示升级对话框
-                            VAppManagerService.get().installPackage(applicationInfo.publicSourceDir, flag);
+                            VAppManagerService.get().installPackage(applicationInfo.publicSourceDir, flag, true);
                         }
                     }
                 }
@@ -234,6 +240,17 @@ public class VPackageManagerService extends IPackageManager.Stub {
         for (int i = 0; i < N; i++) {
             VPackage.PermissionGroupComponent group = pkg.permissionGroups.get(i);
             mPermissionGroups.put(group.className, group);
+        }
+        //d permissions
+        synchronized (mDangrousPermissions) {
+            mDangrousPermissions.put(pkg.packageName, PermissionCompat.findDangrousPermissions(pkg.requestedPermissions));
+        }
+    }
+
+    @Override
+    public String[] getDangrousPermissions(String packageName){
+        synchronized (mDangrousPermissions){
+            return mDangrousPermissions.get(packageName);
         }
     }
 
@@ -309,35 +326,38 @@ public class VPackageManagerService extends IPackageManager.Stub {
         return null;
     }
 
-    private PackageSetting getPackageSettingLocked(String packageName){
+    private PackageSetting getPackageSettingLocked(String packageName) {
         VPackage p;
-        synchronized (mPackages){
-            p=mPackages.get(packageName);
+        synchronized (mPackages) {
+            p = mPackages.get(packageName);
         }
-        if(p != null){
+        if (p != null) {
             return (PackageSetting) p.mExtras;
         }
         return null;
     }
 
-    private void wrapperApplicationInfoPath(PackageSetting ps, ApplicationInfo ai, int userId){
+    private void wrapperApplicationInfoPath(PackageSetting ps, ApplicationInfo ai, int userId) {
         if (VASettings.ENABLE_IO_REDIRECT && VirtualCore.get().isUseRealDir(ai.packageName)) {
-            String hostDataDir = VirtualCore.get().getContext().getApplicationInfo().dataDir;
-            ai.dataDir = hostDataDir.replace(VirtualCore.get().getHostPkg(), ai.packageName);
-        }else{
-            ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+            ai.dataDir = "/data/data/" + ai.packageName + "/";
+        } else {
+            if (VAppManagerService.shouldRun64BitProcess(ai.packageName)) {
+                ai.dataDir = VEnvironment.getDataUserPackageDirectory64(userId, ai.packageName).getPath();
+            } else {
+                ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+            }
         }
-        if(ps == null){
+        if (ps == null) {
             return;
         }
         if (VASettings.ENABLE_IO_REDIRECT && ps.notCopyApk) {
-            if(VirtualCore.get().isUseOwnLibraryFiles(ai.packageName)) {
+            if (VirtualCore.get().isUseOwnLibraryFiles(ai.packageName)) {
                 ai.nativeLibraryDir = ps.libPath;
-            }else{
+            } else {
                 ApplicationInfo outside = VPackageManagerService.get()
                         .getOutSideApplicationInfo(ai.packageName);
                 if (outside != null) {
-                    if (VASettings._64BitMode) {
+                    if (VirtualCore.get().is64BitEngine()) {
                         ai.nativeLibraryDir = outside.nativeLibraryDir;
                     } else {
                         //if need check 64bit,please check after install.
@@ -484,7 +504,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
         flags = updateFlagsNought(flags);
         List<ResolveInfo> query = queryIntentActivities(intent, resolvedType, flags, 0);
         ResolveInfo resolveInfo = chooseBestActivity(intent, resolvedType, flags, query);
-        if(resolveInfo != null && resolveInfo.activityInfo != null) {
+        if (resolveInfo != null && resolveInfo.activityInfo != null) {
             PackageSetting ps = getPackageSettingLocked(resolveInfo.activityInfo.packageName);
             wrapperApplicationInfoPath(ps, resolveInfo.activityInfo.applicationInfo, userId);
         }
@@ -803,7 +823,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
         checkUserId(userId);
         flags = updateFlagsNought(flags);
         final VPackage.ProviderComponent provider;
-        synchronized (mProvidersByAuthority){
+        synchronized (mProvidersByAuthority) {
             provider = mProvidersByAuthority.get(name);
         }
         if (provider != null) {
@@ -827,9 +847,9 @@ public class VPackageManagerService extends IPackageManager.Stub {
             VPackage p = mPackages.get(packageName);
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
-                ApplicationInfo applicationInfo= PackageParserEx.generateApplicationInfo(p, flags, ps.readUserState(userId),
+                ApplicationInfo applicationInfo = PackageParserEx.generateApplicationInfo(p, flags, ps.readUserState(userId),
                         userId, ps.notCopyApk);
-                if(applicationInfo != null){
+                if (applicationInfo != null) {
                     wrapperApplicationInfoPath(ps, applicationInfo, userId);
                 }
                 return applicationInfo;
@@ -937,12 +957,12 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
 
-    private boolean hasRequestedPermission(String permission, String packageName){
+    private boolean hasRequestedPermission(String permission, String packageName) {
         VPackage pkg;
         synchronized (mPackages) {
             pkg = mPackages.get(packageName);
         }
-        if(pkg != null && pkg.requestedPermissions!=null){
+        if (pkg != null && pkg.requestedPermissions != null) {
             return pkg.requestedPermissions.contains(permission);
         }
         return false;
@@ -960,7 +980,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
 
     @Override
     public int checkSignatures(String pkg1, String pkg2) {
-        if(TextUtils.equals(pkg1, pkg2)){
+        if (TextUtils.equals(pkg1, pkg2)) {
             return PackageManager.SIGNATURE_MATCH;
         }
         PackageInfo pkgOne, pkgTwo;
@@ -968,14 +988,14 @@ public class VPackageManagerService extends IPackageManager.Stub {
         pkgOne = getPackageInfo(pkg1, PackageManager.GET_SIGNATURES, 0);
         pkgTwo = getPackageInfo(pkg2, PackageManager.GET_SIGNATURES, 0);
 
-        if(pkgOne == null){
+        if (pkgOne == null) {
             try {
                 pkgOne = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg1, PackageManager.GET_SIGNATURES);
             } catch (PackageManager.NameNotFoundException e) {
                 return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
             }
         }
-        if(pkgTwo == null){
+        if (pkgTwo == null) {
             try {
                 pkgTwo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(pkg2, PackageManager.GET_SIGNATURES);
             } catch (PackageManager.NameNotFoundException e) {

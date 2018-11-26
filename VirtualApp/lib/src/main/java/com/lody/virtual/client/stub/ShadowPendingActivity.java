@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.remote.StubActivityRecord;
 
 /**
@@ -28,16 +29,22 @@ public class ShadowPendingActivity extends Activity {
         if (r.intent == null) {
             return;
         }
+        r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
         if(!VASettings.NEW_INTENTSENDER){
             r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             VActivityManager.get().startActivity(r.intent, r.userId);
         }else {
-            IBinder resultTo = mirror.android.content.Intent.getIBinderExtra.call(intent, EXTRA_RESULTTO);
+            Bundle extras = intent.getExtras();
+            if(extras == null){
+                VActivityManager.get().startActivity(r.intent, r.userId);
+                return;
+            }
+            IBinder resultTo = BundleCompat.getBinder(extras, EXTRA_RESULTTO);
             r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             if (resultTo != null) {
-                int requestCode = intent.getIntExtra(EXTRA_REQUESTCODE, 0);
-                String resultWho = intent.getStringExtra(EXTRA_RESULTWHO);
-                Bundle options = intent.getBundleExtra(EXTRA_OPTIONS);
+                int requestCode = extras.getInt(EXTRA_REQUESTCODE, 0);
+                String resultWho = extras.getString(EXTRA_RESULTWHO);
+                Bundle options = extras.getBundle(EXTRA_OPTIONS);
                 int res = VActivityManager.get().startActivity(r.intent, null, resultTo, options, resultWho, requestCode, r.userId);
                 if (res != 0 && requestCode > 0) {
                     VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);

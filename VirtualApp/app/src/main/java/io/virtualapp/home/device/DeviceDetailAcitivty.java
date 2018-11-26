@@ -3,7 +3,9 @@ package io.virtualapp.home.device;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -45,11 +47,10 @@ public class DeviceDetailAcitivty extends VActivity {
     private String mTitle;
     private int mUserId;
     private int mPosition;
-    private VDeviceManager.Editor mEditor;
-    private VDeviceInfo mVDeviceInfo;
+    private VDeviceInfo mDeviceInfo;
     private TelephonyManager mTelephonyManager;
     private WifiManager mWifiManager;
-    private EditText edt_imei, edt_imsi, edt_mac;
+    private EditText edt_androidId, edt_imei, edt_imsi, edt_mac;
     private EditText edt_brand, edt_model, edt_name, edt_device, edt_board, edt_display, edt_id, edt_serial, edt_manufacturer, edt_fingerprint;
 
     @Override
@@ -60,6 +61,7 @@ public class DeviceDetailAcitivty extends VActivity {
         Toolbar toolbar = bind(R.id.top_toolbar);
         setSupportActionBar(toolbar);
         enableBackHome();
+        edt_androidId = (EditText) findViewById(R.id.edt_androidId);
         edt_imei = (EditText) findViewById(R.id.edt_imei);
         edt_imsi = (EditText) findViewById(R.id.edt_imsi);
         edt_mac = (EditText) findViewById(R.id.edt_mac);
@@ -74,7 +76,7 @@ public class DeviceDetailAcitivty extends VActivity {
         edt_serial = (EditText) findViewById(R.id.edt_serial);
         edt_manufacturer = (EditText) findViewById(R.id.edt_manufacturer);
         edt_fingerprint = (EditText) findViewById(R.id.edt_fingerprint);
-        mWifiManager= (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        mWifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         mTelephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
         if (TextUtils.isEmpty(mTitle)) {
             mPackageName = getIntent().getStringExtra("pkg");
@@ -82,12 +84,7 @@ public class DeviceDetailAcitivty extends VActivity {
             mTitle = getIntent().getStringExtra("title");
         }
         setTitle(mTitle);
-        if (TextUtils.isEmpty(mPackageName)) {
-            mEditor = VDeviceManager.get().createSystemBuildEditor(mUserId);
-        } else {
-            mEditor = VDeviceManager.get().createAppBuildEditor(mPackageName, mUserId);
-        }
-        mVDeviceInfo = VDeviceManager.get().getDeviceInfo(mUserId);
+        mDeviceInfo = VDeviceManager.get().getDeviceInfo(mUserId);
         updateInfos();
     }
 
@@ -117,47 +114,40 @@ public class DeviceDetailAcitivty extends VActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_save:
-                if (mEditor != null) {
-                    fillInfos();
-                    mEditor.save();
-                    VDeviceManager.get().updateDeviceInfo(mUserId, mVDeviceInfo);
-                    Intent intent = new Intent();
-                    intent.putExtra("pkg", mPackageName);
-                    intent.putExtra("user", mUserId);
-                    intent.putExtra("pos", mPosition);
-                    intent.putExtra("result", "save");
-                    setResult(RESULT_OK, intent);
-                    if (TextUtils.isEmpty(mPackageName)) {
-                        VirtualCore.get().killAllApps();
-                    } else {
-                        VirtualCore.get().killApp(mPackageName, mUserId);
-                    }
-                    killApp();
-                    updateInfos();
-                    Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
+            case R.id.action_save: {
+                fillInfos();
+                updateInfos();
+                VDeviceManager.get().updateDeviceInfo(mUserId, mDeviceInfo);
+                Intent intent = new Intent();
+                intent.putExtra("pkg", mPackageName);
+                intent.putExtra("user", mUserId);
+                intent.putExtra("pos", mPosition);
+                intent.putExtra("result", "save");
+                setResult(RESULT_OK, intent);
+                if (TextUtils.isEmpty(mPackageName)) {
+                    VirtualCore.get().killAllApps();
+                } else {
+                    VirtualCore.get().killApp(mPackageName, mUserId);
                 }
-                break;
+                killApp();
+                Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
+            }
+            break;
             case R.id.action_reset:
                 new AlertDialog.Builder(this)
                         .setMessage(R.string.dlg_reset_device)
                         .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                            if (mEditor != null) {
-                                mVDeviceInfo.setIccId(null);
-                                mVDeviceInfo.setWifiMac(null);
-                                mVDeviceInfo.setDeviceId(null);
-                                VDeviceManager.get().updateDeviceInfo(mUserId, mVDeviceInfo);
+                            mDeviceInfo.empty();
+                            VDeviceManager.get().updateDeviceInfo(mUserId, mDeviceInfo);
 
-                                mEditor.reset(true);
-                                Intent intent = new Intent();
-                                intent.putExtra("pkg", mPackageName);
-                                intent.putExtra("user", mUserId);
-                                intent.putExtra("pos", mPosition);
-                                intent.putExtra("result", "reset");
-                                setResult(RESULT_OK, intent);
-                                killApp();
-                                updateInfos();
-                            }
+                            Intent intent = new Intent();
+                            intent.putExtra("pkg", mPackageName);
+                            intent.putExtra("user", mUserId);
+                            intent.putExtra("pos", mPosition);
+                            intent.putExtra("result", "reset");
+                            setResult(RESULT_OK, intent);
+                            killApp();
+                            updateInfos();
                         })
                         .setNegativeButton(android.R.string.cancel, (dialog, which) -> {
                             dialog.dismiss();
@@ -176,65 +166,56 @@ public class DeviceDetailAcitivty extends VActivity {
         return text.getText().toString().trim();
     }
 
-    private void fillInfos() {
-        if (mEditor == null) {
+    private void setValue(EditText text, String value, String defValue) {
+        if (TextUtils.isEmpty(value)) {
+            text.setText(defValue);
             return;
         }
-        mEditor.setBrand(getValue(edt_brand));
-        mEditor.setModel(getValue(edt_model));
-        mEditor.setProduct(getValue(edt_name));
-        mEditor.setDevice(getValue(edt_device));
-        mEditor.setBoard(getValue(edt_board));
-        mEditor.setDisplay(getValue(edt_display));
-        mEditor.setID(getValue(edt_id));
-        mEditor.setSerial(getValue(edt_serial));
-        mEditor.setManufacturer(getValue(edt_manufacturer));
-        mEditor.setFingerprint(getValue(edt_fingerprint));
-
-        mVDeviceInfo.setDeviceId(getValue(edt_imei));
-        mVDeviceInfo.setIccId(getValue(edt_imsi));
-        mVDeviceInfo.setWifiMac(getValue(edt_mac));
+        text.setText(value);
     }
 
-    private void updateInfos() {
-        if (mEditor == null) {
-            return;
-        }
-        edt_brand.setText(mEditor.getBrand());
-        edt_model.setText(mEditor.getModel());
-        edt_name.setText(mEditor.getProduct());
-        edt_device.setText(mEditor.getDevice());
-        edt_board.setText(mEditor.getBoard());
-        edt_display.setText(mEditor.getDisplay());
-        edt_id.setText(mEditor.getID());
-        edt_serial.setText(mEditor.getSerial());
-        edt_manufacturer.setText(mEditor.getManufacturer());
-        edt_fingerprint.setText(mEditor.getFingerprint());
+    private void fillInfos() {
+        mDeviceInfo.setBrand(getValue(edt_brand));
+        mDeviceInfo.setModel(getValue(edt_model));
+        mDeviceInfo.setProduct(getValue(edt_name));
+        mDeviceInfo.setDevice(getValue(edt_device));
+        mDeviceInfo.setBoard(getValue(edt_board));
+        mDeviceInfo.setDisplay(getValue(edt_display));
+        mDeviceInfo.setID(getValue(edt_id));
+        mDeviceInfo.setSerial(getValue(edt_serial));
+        mDeviceInfo.setManufacturer(getValue(edt_manufacturer));
+        mDeviceInfo.setFingerprint(getValue(edt_fingerprint));
 
-        String value = mVDeviceInfo.getDeviceId();
-        if(TextUtils.isEmpty(value)){
-            value = mTelephonyManager.getDeviceId();
-        }
-        edt_imei.setText(value);
-
-        value = mVDeviceInfo.getIccId();
-        if(TextUtils.isEmpty(value)){
-            value = mTelephonyManager.getSimSerialNumber();
-        }
-        edt_imsi.setText(value);
-
-        value = mVDeviceInfo.getWifiMac();
-        if(TextUtils.isEmpty(value)){
-            value = getDefaultWifiMac();
-        }
-        edt_mac.setText(value);
+        mDeviceInfo.setDeviceId(getValue(edt_imei));
+        mDeviceInfo.setIccId(getValue(edt_imsi));
+        mDeviceInfo.setWifiMac(getValue(edt_mac));
+        mDeviceInfo.setAndroidId(getValue(edt_androidId));
     }
 
     @SuppressLint("HardwareIds")
-    private String getDefaultWifiMac(){
-        String[] files = {"/sys/class/net/wlan0/address", "/sys/class/net/eth0/address","/sys/class/net/wifi/address"};
+    private void updateInfos() {
+        setValue(edt_brand, mDeviceInfo.getBrand(), Build.BRAND);
+        setValue(edt_model, mDeviceInfo.getModel(), Build.MODEL);
+        setValue(edt_name, mDeviceInfo.getProduct(), Build.PRODUCT);
+        setValue(edt_device, mDeviceInfo.getDevice(), Build.DEVICE);
+        setValue(edt_board, mDeviceInfo.getBoard(), Build.BOARD);
+        setValue(edt_display, mDeviceInfo.getDisplay(), Build.DISPLAY);
+        setValue(edt_id, mDeviceInfo.getID(), Build.ID);
+        setValue(edt_serial, mDeviceInfo.getSerial(), Build.SERIAL);
+        setValue(edt_manufacturer, mDeviceInfo.getManufacturer(), Build.MANUFACTURER);
+        setValue(edt_fingerprint, mDeviceInfo.getFingerprint(), Build.FINGERPRINT);
+
+        setValue(edt_imei, mDeviceInfo.getDeviceId(), mTelephonyManager.getDeviceId());
+        setValue(edt_imsi, mDeviceInfo.getIccId(), mTelephonyManager.getSimSerialNumber());
+        setValue(edt_mac, mDeviceInfo.getWifiMac(), getDefaultWifiMac());
+        setValue(edt_androidId, mDeviceInfo.getAndroidId(), Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+    }
+
+    @SuppressLint("HardwareIds")
+    private String getDefaultWifiMac() {
+        String[] files = {"/sys/class/net/wlan0/address", "/sys/class/net/eth0/address", "/sys/class/net/wifi/address"};
         String mac = mWifiManager.getConnectionInfo().getMacAddress();
-        if(TextUtils.isEmpty(mac)) {
+        if (TextUtils.isEmpty(mac)) {
             for (String file : files) {
                 try {
                     mac = loadFileAsString(file);

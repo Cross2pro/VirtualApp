@@ -37,6 +37,8 @@ import java.util.List;
 import mirror.android.content.pm.ApplicationInfoL;
 import mirror.android.content.pm.ApplicationInfoN;
 
+import static com.lody.virtual.server.pm.VAppManagerService.shouldRun64BitProcess;
+
 /**
  * @author Lody
  */
@@ -231,8 +233,11 @@ public class PackageParserEx {
     }
 
     private static void initApplicationAsUser(ApplicationInfo ai, int userId, boolean notCopyApk) {
-        ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
-
+        if (shouldRun64BitProcess(ai.packageName)) {
+            ai.dataDir = VEnvironment.getDataUserPackageDirectory64(userId, ai.packageName).getPath();
+        } else {
+            ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             ApplicationInfoL.scanSourceDir.set(ai, ai.dataDir);
             ApplicationInfoL.scanPublicSourceDir.set(ai, ai.dataDir);

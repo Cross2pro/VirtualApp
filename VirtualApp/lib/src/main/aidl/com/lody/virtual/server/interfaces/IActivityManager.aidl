@@ -9,6 +9,7 @@ import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import com.lody.virtual.remote.ClientConfig;
 
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
@@ -21,11 +22,13 @@ import com.lody.virtual.remote.VParceledListSlice;
  */
 interface IActivityManager{
 
-    int initProcess(String packageName, String processName, int userId, int callingUid);
+    ClientConfig initProcess(String packageName, String processName, int userId, int callingUid);
 
     int getFreeStubCount();
 
     int getSystemPid();
+
+    int getSystemUid();
 
     int getUidByPid(int pid);
 

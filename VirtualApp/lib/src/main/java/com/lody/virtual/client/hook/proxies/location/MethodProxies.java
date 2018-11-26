@@ -7,8 +7,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.hook.base.SkipInject;
-import com.xdja.zs.VAppPermissionManager;
+import com.lody.virtual.client.hook.annotations.SkipInject;
 import com.lody.virtual.client.ipc.VLocationManager;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.remote.vloc.VLocation;
@@ -17,6 +16,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import mirror.android.location.LocationRequestL;
+import com.xdja.zs.VAppPermissionManager;
 
 /**
  * @author Lody

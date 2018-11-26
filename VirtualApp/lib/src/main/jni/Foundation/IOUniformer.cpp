@@ -31,67 +31,6 @@ std::map<uint32_t, MmapFileInfo *> MmapInfoMap;
 using namespace xdja;
 
 void IOUniformer::init_env_before_all() {
-    if (iu_loaded)
-        return;
-    char *api_level_chars = getenv("V_API_LEVEL");
-    char *preview_api_level_chars = getenv("V_PREVIEW_API_LEVEL");
-    char *need_dlopen_chars = getenv("V_NEED_DLOPEN");
-    if (api_level_chars) {
-        int api_level = atoi(api_level_chars);
-        int preview_api_level;
-        preview_api_level = atoi(preview_api_level_chars);
-        int need_dlopen = atoi(need_dlopen_chars);
-
-        char keep_env_name[25];
-        char forbid_env_name[25];
-        char dlopen_keep_env_name[25];
-        char replace_src_env_name[25];
-        char replace_dst_env_name[25];
-        int i = 0;
-        while (true) {
-            sprintf(keep_env_name, "V_KEEP_ITEM_%d", i);
-            char *item = getenv(keep_env_name);
-            if (!item) {
-                break;
-            }
-            add_keep_item(item);
-            i++;
-        }
-        i = 0;
-        while (true) {
-            sprintf(dlopen_keep_env_name, "V_DLOPEN_KEEP_ITEM_%d", i);
-            char *item = getenv(dlopen_keep_env_name);
-            if (!item) {
-                break;
-            }
-            add_dlopen_keep_item(item);
-            i++;
-        }
-        i = 0;
-        while (true) {
-            sprintf(forbid_env_name, "V_FORBID_ITEM_%d", i);
-            char *item = getenv(forbid_env_name);
-            if (!item) {
-                break;
-            }
-            add_forbidden_item(item);
-            i++;
-        }
-        i = 0;
-        while (true) {
-            sprintf(replace_src_env_name, "V_REPLACE_ITEM_SRC_%d", i);
-            char *item_src = getenv(replace_src_env_name);
-            if (!item_src) {
-                break;
-            }
-            sprintf(replace_dst_env_name, "V_REPLACE_ITEM_DST_%d", i);
-            char *item_dst = getenv(replace_dst_env_name);
-            add_replace_item(item_src, item_dst);
-            i++;
-        }
-        startUniformer(getenv("V_SO_PATH"), api_level, preview_api_level, need_dlopen);
-        iu_loaded = true;
-    }
 }
 
 
@@ -120,9 +59,6 @@ void IOUniformer::whitelist(const char *_path) {
     add_keep_item(_path);
 }
 
-void IOUniformer::dlopen_whitelist(const char *_path){
-    add_dlopen_keep_item(_path);
-}
 
 void IOUniformer::forbid(const char *_path) {
     add_forbidden_item(_path);
@@ -132,6 +68,7 @@ void IOUniformer::forbid(const char *_path) {
 const char *IOUniformer::reverse(const char *_path) {
     return reverse_relocate_path(_path);
 }
+
 
 __BEGIN_DECLS
 
@@ -801,55 +738,41 @@ HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
     return ret;
 }
 
-int inline getArrayItemCount(char *const array[]) {
-    int i;
-    for (i = 0; array[i]; ++i);
-    return i;
-}
 
+static size_t strcat2(char **dst_out, ...) {
+    size_t len = 0, len_sub;
+    va_list argp;
+    char *src;
+    char *dst = NULL, *dst_p;
 
-char **build_new_env(char *const envp[]) {
-    char *provided_ld_preload = NULL;
-    int provided_ld_preload_index = -1;
-    int orig_envp_count = getArrayItemCount(envp);
+    *dst_out = NULL;
 
-    for (int i = 0; i < orig_envp_count; i++) {
-        if (strstr(envp[i], "LD_PRELOAD")) {
-            provided_ld_preload = envp[i];
-            provided_ld_preload_index = i;
-        }
+    va_start(argp, dst_out);
+    for (;;) {
+        if ((src = va_arg(argp, char *)) == NULL) break;
+        len += strlen(src);
     }
-    char ld_preload[200];
-    char *so_path = getenv("V_SO_PATH");
-    if (provided_ld_preload) {
-        sprintf(ld_preload, "LD_PRELOAD=%s:%s", so_path, provided_ld_preload + 11);
-    } else {
-        sprintf(ld_preload, "LD_PRELOAD=%s", so_path);
+    va_end(argp);
+
+    if (len == 0) return 0;
+
+    dst = (char *) malloc(sizeof(char) * (len + 1));
+    if (dst == NULL) return (size_t) -1;
+    dst_p = dst;
+
+    va_start(argp, dst_out);
+    for (;;) {
+        if ((src = va_arg(argp, char *)) == NULL) break;
+        len_sub = strlen(src);
+        memcpy(dst_p, src, len_sub);
+        dst_p += len_sub;
     }
-    int new_envp_count = orig_envp_count
-                         + get_keep_item_count()
-                         + get_forbidden_item_count()
-                         + get_replace_item_count() * 2 + 1
-                         + get_dlopen_keep_item_count()
-                         + 4;
-    if (provided_ld_preload) {
-        new_envp_count--;
-    }
-    char **new_envp = (char **) malloc(new_envp_count * sizeof(char *));
-    int cur = 0;
-    new_envp[cur++] = ld_preload;
-    for (int i = 0; i < orig_envp_count; ++i) {
-        if (i != provided_ld_preload_index) {
-            new_envp[cur++] = envp[i];
-        }
-    }
-    for (int i = 0; environ[i]; ++i) {
-        if (environ[i][0] == 'V' && environ[i][1] == '_') {
-            new_envp[cur++] = environ[i];
-        }
-    }
-    new_envp[cur] = NULL;
-    return new_envp;
+    va_end(argp);
+    *dst_p = '\0';
+
+    *dst_out = dst;
+
+    return len;
 }
 
 // int (*origin_execve)(const char *pathname, char *const argv[], char *const envp[]);
@@ -870,11 +793,30 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
         }
     }
     if (strstr(pathname, "dex2oat")) {
-        char **new_envp = build_new_env(envp);
-        int ret = syscall(__NR_execve, redirect_path, argv, new_envp);
+        for (int i = 0; argv[i]; ++i) {
+            char *arg = argv[i];
+            if (!strncmp(arg, "--dex-file=", 11)) {
+                int r;
+                const char *path = arg + 11;
+                const char *new_path = relocate_path(path, &r);
+                char *new_arg = NULL;
+                strcat2(&new_arg, "--dex-file=", new_path, NULL);
+                if (new_arg) {
+                    argv[i] = new_arg;
+                }
+            } else if (!strncmp(arg, "--oat-file=", 11)) {
+                int r;
+                const char *path = arg + 11;
+                const char *new_path = relocate_path(path, &r);
+                char *new_arg = NULL;
+                strcat2(&new_arg, "--oat-file=", new_path, NULL);
+                if (new_arg) {
+                    argv[i] = new_arg;
+                }
+            }
+        }
+        int ret = syscall(__NR_execve, redirect_path, argv, envp);
         FREE(redirect_path, pathname);
-        //free mem
-        free(new_envp);
         return ret;
     }
     int ret = syscall(__NR_execve, redirect_path, argv, envp);
@@ -885,73 +827,6 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
     FREE(redirect_path, pathname);
     return ret;
 }
-
-const char *relocate_path_dlopen(const char *path, int *result) {
-    if (path[0] == '/' || path[0] == '.') {
-        return relocate_path(path, result, 1);
-    }
-    *result = NOT_MATCH;
-    return path;
-}
-
-HOOK_DEF(void*, dlopen, const char *filename, int flag) {
-    int res;
-    const char *redirect_path = relocate_path_dlopen(filename, &res);
-    void *ret = orig_dlopen(redirect_path, flag);
-
-    /*zString op("dlopen ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());*/
-
-    onSoLoaded(filename, ret);
-    ALOGD("dlopen : %s, return : %p.", redirect_path, ret);
-    FREE(redirect_path, filename);
-    return ret;
-}
-
-HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extinfo) {
-    int res;
-    const char *redirect_path = relocate_path_dlopen(filename, &res);
-    void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
-
-    /*zString op("do_dlopen_V19 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());*/
-
-    onSoLoaded(filename, ret);
-    ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-    FREE(redirect_path, filename);
-    return ret;
-}
-
-HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
-         void *caller_addr) {
-    int res;
-    const char *redirect_path = relocate_path_dlopen(name, &res);
-    void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
-
-    /*zString op("do_dlopen_V24 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());*/
-
-    onSoLoaded(name, ret);
-    ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-    FREE(redirect_path, name);
-    return ret;
-}
-
-HOOK_DEF(void*, do_dlopen_V26, const char *name, int flags, const void *extinfo,
-         void *caller_addr) {
-    int res;
-    const char *redirect_path = relocate_path_dlopen(name, &res);
-    void *ret = orig_do_dlopen_V26(redirect_path, flags, extinfo, caller_addr);
-
-    /*zString op("do_dlopen_V26 ret %p err %s", ret, getErr);
-    doFileTrace(redirect_path, op.toString());*/
-
-    onSoLoaded(name, ret);
-    ALOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
-    FREE(redirect_path, name);
-    return ret;
-}
-
 
 //void *dlsym(void *handle,const char *symbol)
 HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
@@ -1791,36 +1666,9 @@ int findSymbol(const char *name, const char *libn,
     return find_name(getpid(), name, libn, addr);
 }
 
-void hook_dlopen(int api_level) {
-    void *symbol = NULL;
-    if (api_level > 25) {
-        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv", "linker",
-                       (unsigned long *) &symbol) == 0) {
-            MSHookFunction(symbol, (void *) new_do_dlopen_V26,
-                           (void **) &orig_do_dlopen_V26);
-        }
-    } else if (api_level > 23) {
-        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPv", "linker",
-                       (unsigned long *) &symbol) == 0) {
-            MSHookFunction(symbol, (void *) new_do_dlopen_V24,
-                           (void **) &orig_do_dlopen_V24);
-        }
-    } else if (api_level >= 19) {
-        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfo", "linker",
-                       (unsigned long *) &symbol) == 0) {
-            MSHookFunction(symbol, (void *) new_do_dlopen_V19,
-                           (void **) &orig_do_dlopen_V19);
-        }
-    } else {
-        if (findSymbol("__dl_dlopen", "linker",
-                       (unsigned long *) &symbol) == 0) {
-            MSHookFunction(symbol, (void *) new_dlopen, (void **) &orig_dlopen);
-        }
-    }
-}
 
-
-void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level,int need_dlopen) {
+void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level,
+                                 int need_dlopen) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
     char api_level_chars[5];
@@ -1891,10 +1739,6 @@ void IOUniformer::startUniformer(const char *so_path, int api_level, int preview
 //            HOOK_SYMBOL(handle, execv);
         }
         dlclose(handle);
-    }
-
-    if(need_dlopen == 1){
-        hook_dlopen(api_level);
     }
 
     originalInterface::original_lseek = orig_lseek;

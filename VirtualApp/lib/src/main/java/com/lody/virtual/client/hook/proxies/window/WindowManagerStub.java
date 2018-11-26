@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
-import com.lody.virtual.client.hook.base.Inject;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 
 import mirror.android.view.Display;

@@ -85,7 +85,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@android:string/cancel"
-            android:textColor="@color/colorPrimaryDark" />
+            android:textColor="@android:color/black" />
 
         <View
             android:layout_width="1px"
@@ -99,6 +99,6 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@android:string/ok"
-            android:textColor="@color/colorPrimaryDark" />
+            android:textColor="@android:color/black" />
     </LinearLayout>
 </LinearLayout>

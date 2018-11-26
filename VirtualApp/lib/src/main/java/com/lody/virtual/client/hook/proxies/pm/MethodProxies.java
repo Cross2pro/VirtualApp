@@ -774,7 +774,8 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             //fix:getCallingUid
             int uid = (int) args[0];
-            if(uid == Process.myUid()){
+            if(uid == Process.myUid() || uid == getRealUid()
+                    || uid == VirtualCore.get().getSystemUid()){
                 //my
                return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
             }else if(uid == getRealUid()){

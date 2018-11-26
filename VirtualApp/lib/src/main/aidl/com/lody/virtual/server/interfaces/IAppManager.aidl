@@ -7,6 +7,8 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
+import android.os.ResultReceiver;
+
 import java.util.List;
 
 /**
@@ -26,7 +28,7 @@ interface IAppManager{
 
     InstalledAppInfo getInstalledAppInfo(String pkg, int flags);
 
-    InstallResult installPackage(String path, int flags);
+    oneway void installPackage(String path, int flags, in ResultReceiver receiver);
 
     boolean isPackageLaunched(int userId, String packageName);
 
@@ -63,4 +65,6 @@ interface IAppManager{
     void addSettingRule(int rule, String packageName, boolean regex);
 
     boolean inSettingRule(int rule, String packageName);
+
+    boolean isShouldRun64BitProcess(String packageName);
 }

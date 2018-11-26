@@ -31,14 +31,6 @@ public class VirtualStorageManager {
         return mService;
     }
 
-    public void setVirtualStorage(String packageName, int userId, String vsPath) {
-        try {
-            getService().setVirtualStorage(packageName, userId, vsPath);
-        } catch (RemoteException e) {
-            VirtualRuntime.crash(e);
-        }
-    }
-
     private Object getRemoteInterface() {
         return IVirtualStorageService.Stub
                 .asInterface(ServiceManagerNative.getService(ServiceManagerNative.VS));
@@ -65,6 +57,14 @@ public class VirtualStorageManager {
             return getService().isVirtualStorageEnable(packageName, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void setVirtualStorage(String packageName, int userId, String vsPath) {
+        try {
+            getService().setVirtualStorage(packageName, userId, vsPath);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
         }
     }
 }

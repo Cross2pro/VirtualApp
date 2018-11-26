@@ -32,11 +32,6 @@ static void jni_nativeIOWhitelist(alias_ref<jclass> jclazz, jstring _path) {
     IOUniformer::whitelist(path.c_str());
 }
 
-static void jni_nativeDlOpenWhitelist(alias_ref<jclass> jclazz, jstring _path){
-    ScopeUtfString path(_path);
-    IOUniformer::dlopen_whitelist(path.c_str());
-}
-
 static void jni_nativeIOForbid(alias_ref<jclass> jclazz, jstring _path) {
     ScopeUtfString path(_path);
     IOUniformer::forbid(path.c_str());
@@ -109,8 +104,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
                                          jni_nativeLaunchEngine),
                         makeNativeMethod("nativeCloseAllSocket",
                                          jni_nativeCloseAllSocket),
-                        makeNativeMethod("nativeDlOpenWhitelist",
-                                         jni_nativeDlOpenWhitelist),
                         makeNativeMethod("nativeChangeDecryptState",
                                          jni_nativeChangeDecryptState),
                         makeNativeMethod("nativeGetDecryptState",

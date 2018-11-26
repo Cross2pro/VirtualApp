@@ -2,6 +2,7 @@ package io.virtualapp.home;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.OrientationHelper;
@@ -98,7 +99,9 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
             }
         });
         mAdapter.setSelectionListener(count -> {
-            mInstallButton.setEnabled(count > 0);
+            boolean selectedApp = count > 0;
+            mInstallButton.setTextColor(selectedApp ? Color.WHITE : Color.parseColor("#cfcfcf"));
+            mInstallButton.setEnabled(selectedApp);
             mInstallButton.setText(String.format(Locale.ENGLISH, getResources().getString(R.string.install_d), count));
         });
         mInstallButton.setOnClickListener(v -> {
@@ -106,7 +109,7 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
             ArrayList<AppInfoLite> dataList = new ArrayList<AppInfoLite>(selectedIndices.length);
             for (int index : selectedIndices) {
                 AppInfo info = mAdapter.getItem(index);
-                dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen));
+                dataList.add(new AppInfoLite(info));
             }
             Intent data = new Intent();
             data.putParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST, dataList);

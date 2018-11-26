@@ -1,6 +1,9 @@
-package com.lody.virtual.client.hook.base;
+package com.lody.virtual.client.hook.annotations;
 
 import android.util.Log;
+
+import com.lody.virtual.client.hook.base.MethodInvocationStub;
+import com.lody.virtual.client.hook.base.MethodProxy;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

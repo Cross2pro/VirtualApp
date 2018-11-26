@@ -61,6 +61,7 @@ import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.UriCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
@@ -73,6 +74,7 @@ import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.xdja.zs.controllerManager;
 
@@ -526,12 +528,16 @@ class MethodProxies {
             }
             // chooser
             if (ChooserActivity.check(intent)) {
+                Bundle extras = new Bundle();
+                extras.putInt(Constants.EXTRA_USER_HANDLE, userId);
+                extras.putBundle(ChooserActivity.EXTRA_DATA, options);
+                extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
+                extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
+                BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
+                //
                 intent.setComponent(new ComponentName(getHostContext(), ChooserActivity.class));
-                intent.putExtra(Constants.EXTRA_USER_HANDLE, userId);
-                intent.putExtra(ChooserActivity.EXTRA_DATA, options);
-                intent.putExtra(ChooserActivity.EXTRA_WHO, resultWho);
-                intent.putExtra(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
-                mirror.android.content.Intent.putExtra.call(intent, ChooserActivity.EXTRA_RESULTTO, resultTo);
+                intent.setAction(null);
+                intent.putExtras(extras);
                 return method.invoke(who, args);
             }
 
@@ -543,7 +549,6 @@ class MethodProxies {
                     intent.setData(Uri.parse("package:" + getHostPkg()));
                 }
             }
-
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
                 VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
@@ -559,7 +564,6 @@ class MethodProxies {
                 }
                 return method.invoke(who, args);
             }
-            // UriCompat.fakeFileUri(intent);
             int res = VActivityManager.get().startActivity(intent, activityInfo, resultTo, options, resultWho, requestCode, VUserHandle.myUserId());
             if (res != 0 && resultTo != null && requestCode > 0) {
                 VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
@@ -683,6 +687,10 @@ class MethodProxies {
             return false;
         }
 
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
     }
 
     static class StartActivities extends MethodProxy {
@@ -1046,10 +1054,12 @@ class MethodProxies {
                     int requestCode = (int) args[requestCodeIndex];
                     Bundle options = (Bundle) args[optionsIndex];
 
-                    intent.putExtra(ShadowPendingActivity.EXTRA_REQUESTCODE, requestCode);
-                    intent.putExtra(ShadowPendingActivity.EXTRA_RESULTWHO, resultWho);
-                    intent.putExtra(ShadowPendingActivity.EXTRA_OPTIONS, options);
-                    mirror.android.content.Intent.putExtra.call(intent, ShadowPendingActivity.EXTRA_RESULTTO, resultTo);
+                    Bundle extras = new Bundle();
+                    extras.putInt(ShadowPendingActivity.EXTRA_REQUESTCODE, requestCode);
+                    extras.putString(ShadowPendingActivity.EXTRA_RESULTWHO, resultWho);
+                    extras.putBundle(ShadowPendingActivity.EXTRA_OPTIONS, options);
+                    BundleCompat.putBinder(extras, ShadowPendingActivity.EXTRA_RESULTTO, resultTo);
+                    intent.putExtras(extras);
                 }
             }
             return super.call(who, method, args);
@@ -1227,7 +1237,7 @@ class MethodProxies {
             }
             List<ActivityManager.RunningAppProcessInfo> infoList = new ArrayList<>(_infoList);
             for (ActivityManager.RunningAppProcessInfo info : infoList) {
-                if (info.uid == VirtualCore.get().myUid()) {
+                if (info.uid == getRealUid()) {
                     if (VActivityManager.get().isAppPid(info.pid)) {
                         List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
                         String processName = VActivityManager.get().getAppProcessName(info.pid);
@@ -1619,7 +1629,9 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
-            if(isServerProcess() && name.startsWith(VASettings.STUB_CP_AUTHORITY)){
+            if (isServerProcess() &&
+                    (name.startsWith(VASettings.STUB_CP_AUTHORITY))
+                    || name.startsWith(VASettings.STUB_CP_AUTHORITY_64BIT)) {
                 //is server process
                 return method.invoke(who, args);
             }
@@ -1632,11 +1644,11 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                int targetVPid = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
-                if (targetVPid == -1) {
+                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                if (config == null) {
                     return null;
                 }
-                args[nameIdx] = VASettings.getStubAuthority(targetVPid);
+                args[nameIdx] = VASettings.getStubAuthority(config.vpid, config.is64Bit);
                 Object holder = method.invoke(who, args);
                 if (holder == null) {
                     return null;
@@ -1658,9 +1670,9 @@ class MethodProxies {
                 }
                 return holder;
             }
-            if(SpecialComponentList.isDisableOutsideContentProvider(name)){
+            if (SpecialComponentList.isDisableOutsideContentProvider(name)) {
                 return null;
-            }else{
+            } else {
                 VLog.w("ActivityManger", "getContentProvider:%s", name);
             }
             Object holder = method.invoke(who, args);
@@ -1668,7 +1680,7 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     info = ContentProviderHolderOreo.info.get(holder);
-                    if(!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())){
+                    if (!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())) {
                         return null;
                     }
                     if (provider != null) {
@@ -1678,7 +1690,7 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     info = IActivityManager.ContentProviderHolder.info.get(holder);
-                    if(!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())){
+                    if (!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())) {
                         return null;
                     }
                     if (provider != null) {
@@ -2066,6 +2078,20 @@ class MethodProxies {
                 return 0;
             }
             return super.call(who, method, args);
+        }
+    }
+
+
+    static class isUserRunning extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "isUserRunning";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) {
+            int userId = (int) args[0];
+            return userId == 0;
         }
     }
 }

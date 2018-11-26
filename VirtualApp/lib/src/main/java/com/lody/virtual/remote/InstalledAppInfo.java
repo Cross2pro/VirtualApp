@@ -30,7 +30,14 @@ public final class InstalledAppInfo implements Parcelable {
         this.appId = appId;
     }
 
-    public File getOdexFile() {
+    public File getOdexFile(){
+        return getOdexFile(VirtualCore.get().is64BitEngine());
+    }
+
+    public File getOdexFile(boolean is64Bit) {
+        if(is64Bit){
+            return VEnvironment.getOdexFile64(packageName);
+        }
         return VEnvironment.getOdexFile(packageName);
     }
 

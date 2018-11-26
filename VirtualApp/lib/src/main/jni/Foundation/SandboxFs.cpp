@@ -9,7 +9,6 @@ PathItem *dlopen_keep_items;
 int keep_item_count;
 int forbidden_item_count;
 int replace_item_count;
-int dlopen_keep_items_count;
 
 int add_keep_item(const char *path) {
     char keep_env_name[25];
@@ -24,18 +23,6 @@ int add_keep_item(const char *path) {
     return ++keep_item_count;
 }
 
-int add_dlopen_keep_item(const char *path){
-    char keep_env_name[25];
-    sprintf(keep_env_name, "V_DLOPEN_KEEP_ITEM_%d", dlopen_keep_items_count);
-    setenv(keep_env_name, path, 1);
-    dlopen_keep_items = (PathItem *) realloc(dlopen_keep_items,
-                                      dlopen_keep_items_count * sizeof(PathItem) + sizeof(PathItem));
-    PathItem &item = dlopen_keep_items[dlopen_keep_items_count];
-    item.path = strdup(path);
-    item.size = strlen(path);
-    item.is_folder = (path[strlen(path) - 1] == '/');
-    return ++dlopen_keep_items_count;
-}
 
 int add_forbidden_item(const char *path) {
     char forbidden_env_name[25];
@@ -95,9 +82,6 @@ int get_replace_item_count() {
     return replace_item_count;
 }
 
-int get_dlopen_keep_item_count(){
-    return dlopen_keep_items_count;
-}
 
 inline bool match_path(bool is_folder, size_t size, const char *item_path, const char *path) {
     if (is_folder) {
@@ -113,20 +97,10 @@ inline bool match_path(bool is_folder, size_t size, const char *item_path, const
 }
 
 
-const char *relocate_path(const char *path, int *result, int dlopen) {
+const char *relocate_path(const char *path, int *result) {
     if (path == NULL) {
         *result = NOT_MATCH;
         return NULL;
-    }
-
-    if(dlopen == 1){
-        for (int i = 0; i < dlopen_keep_items_count; ++i) {
-            PathItem &item = dlopen_keep_items[i];
-            if (match_path(item.is_folder, item.size, item.path, path)) {
-                *result = KEEP;
-                return path;
-            }
-        }
     }
 
     for (int i = 0; i < keep_item_count; ++i) {
@@ -141,7 +115,7 @@ const char *relocate_path(const char *path, int *result, int dlopen) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.orig_size, item.orig_path, path)) {
             *result = MATCH;
-            int len = strlen(path);
+            size_t len = strlen(path);
             if (len < item.orig_size) {
                 //remove last /
                 std::string redirect_path(item.new_path, 0, item.new_size - 1);

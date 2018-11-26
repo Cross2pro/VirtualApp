@@ -1,6 +1,7 @@
 package com.lody.virtual.client.ipc;
 
 import android.app.PendingIntent;
+import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @see android.location.LocationManager
+ * @see LocationManager
  * <p>
  * 实现代码多，资源回收不及时：拦截gps状态，定位请求，并且交给虚拟定位服务，虚拟服务根据一样的条件，再次向系统定位服务请求
  * LocationManager.addgpslistener
@@ -34,21 +35,21 @@ public class VLocationManager {
     private Handler mWorkHandler;
     private HandlerThread mHandlerThread;
     private final List<Object> mGpsListeners = new ArrayList<>();
-    private LocationManager mLocationManager;
     private static VLocationManager sVLocationManager = new VLocationManager();
+    private boolean mInit;
 
     private VLocationManager() {
-
     }
 
     public static VLocationManager get() {
         return sVLocationManager;
     }
 
-    public void setLocationManager(LocationManager locationManager) {
-        if(mLocationManager == null) {
-            mLocationManager = locationManager;
-            MockLocationHelper.invokeSvStatusChanged(locationManager);
+    public void setLocationManager(Context context) {
+        if(!mInit) {
+            mInit = true;
+            final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            MockLocationHelper.fakeGpsStatus(locationManager);
         }
     }
 

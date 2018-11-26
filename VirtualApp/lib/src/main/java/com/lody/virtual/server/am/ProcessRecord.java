@@ -7,11 +7,12 @@ import android.os.IInterface;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ClientConfig;
 
 import java.util.HashSet;
 import java.util.Set;
 
-final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
+final class ProcessRecord extends Binder {
 
 	final ConditionVariable lock = new ConditionVariable();
 	public final ApplicationInfo info; // all about the first app in the process
@@ -22,17 +23,23 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 	public int pid;
 	public int vuid;
 	public int vpid;
-	private int callingUid;
+	public boolean is64bit;
+	public int callingUid;
 	public int userId;
 	boolean doneExecuting;
-    int priority;
 
-	public ProcessRecord(ApplicationInfo info, String processName, int vuid, int vpid) {
+	public ProcessRecord(ApplicationInfo info, String processName, int vuid, int vpid, boolean is64bit) {
+		this(info, processName, vuid, vpid, -1, is64bit);
+	}
+
+	public ProcessRecord(ApplicationInfo info, String processName, int vuid, int vpid, int callingUid, boolean is64bit) {
 		this.info = info;
 		this.vuid = vuid;
 		this.vpid = vpid;
 		this.userId = VUserHandle.getUserId(vuid);
+		this.callingUid = callingUid;
 		this.processName = processName;
+		this.is64bit = is64bit;
 	}
 
     public void setVCallingUid(int callingUid) {
@@ -61,7 +68,7 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
         }
     }
 
-    @Override
+	@Override
 	public boolean equals(Object o) {
 		if (this == o)
 			return true;
@@ -71,8 +78,10 @@ final class ProcessRecord extends Binder implements Comparable<ProcessRecord> {
 		return processName != null ? processName.equals(record.processName) : record.processName == null;
 	}
 
-    @Override
-    public int compareTo(ProcessRecord another) {
-        return this.priority - another.priority;
-    }
+	public ClientConfig getClientConfig() {
+		ClientConfig config = new ClientConfig();
+		config.is64Bit = is64bit;
+		config.vpid = vpid;
+		return config;
+	}
 }

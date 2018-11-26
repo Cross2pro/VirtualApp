@@ -4,14 +4,12 @@ import android.annotation.TargetApi;
 import android.app.job.JobInfo;
 import android.app.job.JobWorkItem;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.ipc.VJobScheduler;
-import com.lody.virtual.helper.compat.ActivityManagerCompat;
-import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.compat.JobWorkItemCompat;
 
 import java.lang.reflect.Method;
 
@@ -125,29 +123,8 @@ public class JobServiceStub extends BinderInvocationProxy {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             JobInfo jobInfo = (JobInfo) args[0];
-            JobWorkItem workItem = redirect(args[1], getAppPkg());
+            JobWorkItem workItem = JobWorkItemCompat.redirect((JobWorkItem)args[1], getAppPkg());
             return VJobScheduler.get().enqueue(jobInfo, workItem);
         }
-    }
-
-    @TargetApi(Build.VERSION_CODES.O)
-    private JobWorkItem redirect(Object item, String pkg) {
-        if (item != null) {
-            Intent target = mirror.android.app.job.JobWorkItem.getIntent.call(item);
-            Intent intent = ComponentUtils.redirectIntentSender(
-                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target, null);
-
-            JobWorkItem workItem = (JobWorkItem) mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
-            int wordId = mirror.android.app.job.JobWorkItem.mWorkId.get(item);
-            mirror.android.app.job.JobWorkItem.mWorkId.set(workItem, wordId);
-
-            Object obj = mirror.android.app.job.JobWorkItem.mGrants.get(item);
-            mirror.android.app.job.JobWorkItem.mGrants.set(workItem, obj);
-
-            int deliveryCount = mirror.android.app.job.JobWorkItem.mDeliveryCount.get(item);
-            mirror.android.app.job.JobWorkItem.mDeliveryCount.set(workItem, deliveryCount);
-            return workItem;
-        }
-        return null;
     }
 }

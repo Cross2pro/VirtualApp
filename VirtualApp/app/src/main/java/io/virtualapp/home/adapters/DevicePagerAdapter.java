@@ -19,13 +19,13 @@ public class DevicePagerAdapter extends FragmentPagerAdapter {
 
     public DevicePagerAdapter(FragmentManager fm) {
         super(fm);
-        titles.add(App.getApp().getString(R.string.title_app_device));
+//        titles.add(App.getApp().getString(R.string.title_app_device));
         titles.add(App.getApp().getString(R.string.title_user_device));
     }
 
     @Override
     public Fragment getItem(int position) {
-        return DeviceFragment.newInstance(position==0);
+        return DeviceFragment.newInstance();
     }
 
     @Override

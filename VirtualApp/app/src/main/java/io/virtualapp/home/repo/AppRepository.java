@@ -60,7 +60,7 @@ public class AppRepository implements AppDataSource {
     private static boolean isSystemApplication(PackageInfo packageInfo) {
         if((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_PERSISTENT) != 0){
             return true;
-        }
+    }
         if(packageInfo.applicationInfo.uid <= 1000){
             return true;
         }
@@ -123,7 +123,7 @@ public class AppRepository implements AppDataSource {
                 }
                 //fix:无法获取名字和图标，有时候x进程没死，收不到升级广播
                 if(info.notCopyApk){
-                    PackageUtils.checkUpdate(mContext, info, info.packageName);
+                    PackageUtils.checkUpdate(info, info.packageName);
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
@@ -143,7 +143,7 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public Promise<List<AppInfo>, Throwable, Void> getInstalledApps(Context context) {
-        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, context.getPackageManager().getInstalledPackages(0), true, true));
+        return VUiKit.defer().when(() -> convertPackageInfoToAppData(context, context.getPackageManager().getInstalledPackages(PackageManager.GET_PERMISSIONS), true, true));
     }
 
     @Override
@@ -164,7 +164,7 @@ public class AppRepository implements AppDataSource {
                     continue;
                 PackageInfo pkgInfo = null;
                 try {
-                    pkgInfo = context.getPackageManager().getPackageArchiveInfo(f.getAbsolutePath(), 0);
+                    pkgInfo = context.getPackageManager().getPackageArchiveInfo(f.getAbsolutePath(), PackageManager.GET_PERMISSIONS);
                     pkgInfo.applicationInfo.sourceDir = f.getAbsolutePath();
                     pkgInfo.applicationInfo.publicSourceDir = f.getAbsolutePath();
                 } catch (Exception e) {
@@ -217,6 +217,8 @@ public class AppRepository implements AppDataSource {
         PackageManager pm = context.getPackageManager();
         List<AppInfo> list = new ArrayList<>(pkgList.size());
         String hostPkg = VirtualCore.get().getHostPkg();
+        boolean support64 = VirtualCore.get().is64BitEngineInstalled();
+
         for (PackageInfo pkg : pkgList) {
             // ignore the host package
             if (hostPkg.equals(pkg.packageName)) {
@@ -241,8 +243,10 @@ public class AppRepository implements AppDataSource {
             }
             boolean only64Bit = !NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo);
             if (only64Bit) {
-                //if support 64 then remove it;
-                continue;
+                if(!support64 || !notCopyApk) {
+                    //if support 64 then remove it;
+                    continue;
+                }
             }
             if(notCopyApk && !GmsSupport.hasDex(pkg.applicationInfo.publicSourceDir)){
                 continue;
@@ -259,6 +263,8 @@ public class AppRepository implements AppDataSource {
             info.icon = ai.loadIcon(pm);
             info.name = ai.loadLabel(pm);
             info.only64Bit = only64Bit;
+            info.targetSdkVersion = pkg.applicationInfo.targetSdkVersion;
+            info.requestedPermissions = pkg.requestedPermissions;
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             if (installedAppInfo != null) {
                 info.cloneCount = installedAppInfo.getInstalledUsers().length;
@@ -274,7 +280,7 @@ public class AppRepository implements AppDataSource {
         if (info.notCopyApk) {
             flags |= InstallStrategy.NOT_COPY_APK;
         }
-        return VirtualCore.get().installPackage(info.path, flags);
+        return VirtualCore.get().installPackageSync(info.path, flags);
     }
 
     @Override

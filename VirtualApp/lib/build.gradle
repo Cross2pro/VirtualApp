@@ -1,16 +1,15 @@
 apply plugin: 'com.android.library'
 
 def version = '3.0.8'
-def version_code = 18060820
+def version_code = 18061315
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.2'
-
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 22
         versionCode version_code
         versionName version
+
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + version + '"'
         externalNativeBuild {
             ndkBuild {

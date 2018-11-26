@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">罗盒多开</string>
+    <string name="app_name">VirtualApp</string>
     <string name="desktop">桌面</string>
     <string name="add_app">添加App</string>
     <string name="preparing">正在打开App，请稍等…</string>
@@ -23,7 +23,7 @@
     <string name="external_storage">外置存储</string>
     <string name="install_d">安装 (%d)</string>
     <string name="install_too_much_once_time">不能一次性安装超过9个App!</string>
-    <string name="tip_install_gms">提示</string>
+    <string name="tip">提示</string>
     <string name="text_install_gms">是否启用Google Service支持？</string>
     <string name="choose_user_title">请选择一个用户</string>
     <string name="real_location">真实位置</string>
@@ -50,7 +50,7 @@
     <string name="input_loc_error">输入内容有误，请检查格式：纬度-90~90，经度-180~180</string>
     <string name="tip_delete">删除应用</string>
     <string name="text_delete_app" formatted="false">是否移除应用 %s ?</string>
-    <string name="menu_install_gms">安装google服务框架</string>
+    <string name="menu_gms">google框架</string>
     <string name="title_app_device">独立设置</string>
     <string name="title_user_device">全局设置</string>
     <string name="menu_mock_phone">机型模拟</string>
@@ -58,6 +58,13 @@
     <string name="mock_device">模拟中</string>
     <string name="dlg_reset_device">重置为真实手机信息</string>
     <string name="mock_global">全局模拟中</string>
+    <string name="permission_tip_title">重要提示：</string>
+    <string name="permission_tips_content">%1$s 不支持动态申请权限, 您必须提前赋予它需要的所有必要权限, 请在它接下来的权限请求中全部选择允许，否则它将无法运行。</string>
+    <string name="permission_tips_confirm">我知道了</string>
+    <string name="permission_denied_tips_content">%1$s 没有获取到某些运行必须要使用的权限；它不支持动态申请权限. 请去您设备的系统权限管理中赋予本应用必要权限。</string>
+    <string name="permission_denied_ok">启动失败</string>
+    <string name="start_app_failed">启动 %1$s 失败</string>
+    <string name="any_apps">部分应用</string>
     <string-array name="weeks">
         <item>周日</item>
         <item>周一</item>

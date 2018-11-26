@@ -17,7 +17,7 @@ public class SettingRulePersistenceLayer extends PersistenceLayer {
     private VAppManagerService mService;
 
     public SettingRulePersistenceLayer(VAppManagerService service) {
-        super(VEnvironment.getDeviceInfoFile());
+        super(VEnvironment.getSettingRuleFile());
         this.mService = service;
     }
 
@@ -47,7 +47,7 @@ public class SettingRulePersistenceLayer extends PersistenceLayer {
     }
 
     @Override
-    public void readPersistenceData(Parcel p) {
+    public void readPersistenceData(Parcel p, int version) {
         List<SettingRuleInfo> infos = mService.getSettingRules();
         infos.clear();
         int size = p.readInt();
