@@ -3,13 +3,13 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '26.0.3'
+    buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "io.virtualapp"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 18061315
-        versionName "2.0.3"
+        versionCode 180070613
+        versionName "2.2.0"
         multiDexEnabled false
         vectorDrawables.useSupportLibrary = true
         buildConfigField 'String','ARM64_PACKAGE_NAME','"io.virtualapp.addon.arm64"'
@@ -18,7 +18,7 @@ android {
             ARM64_PACKAGE_NAME:'io.virtualapp.addon.arm64'
         ]
         ndk {
-            abiFilters "armeabi", "armeabi-v7a", "x86"
+            abiFilters "armeabi", "armeabi-v7a", "x86", "arm64-v8a"
         }
     }
     sourceSets {
@@ -28,10 +28,12 @@ android {
     }
 
     buildTypes {
-//        debug {
+        debug {
+            debuggable false
+            jniDebuggable false
 //            minifyEnabled true
 //            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'proguard-rules-debug.pro'
-//        }
+        }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -49,7 +51,19 @@ android {
         // but continue the build even when errors are found:
         abortOnError false
     }
+    //排除arm64的so
 }
+//gradle.taskGraph.beforeTask {task ->
+//    if(task.name.startsWith("package")){
+//        android.packagingOptions.exclude('lib/arm64-v8a/*.so')
+//    }
+//}
+//gradle.taskGraph.afterTask {task ->
+//    if(task.name.startsWith("package")){
+//        android.packagingOptions.excludes.remove('lib/arm64-v8a/*.so')
+//    }
+//}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile project(':lib')

@@ -114,7 +114,7 @@ interface IActivityManager{
 
     void processRestarted(String packageName, String processName, int userId, int callingUid);
 
-    void broadcastFinish(in PendingResultData res);
+    boolean broadcastFinish(in IBinder token);
 
     void notifyBadgerChange(in BadgerInfo info);
 

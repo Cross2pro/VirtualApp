@@ -496,12 +496,13 @@ public class VActivityManager {
         }
     }
 
-    public void broadcastFinish(PendingResultData res) {
+    public boolean broadcastFinish(IBinder token) {
         try {
-            getService().broadcastFinish(res);
+            return getService().broadcastFinish(token);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
+        return false;
     }
 
     public String getPackageForIntentSender(IBinder binder) {
@@ -577,4 +578,5 @@ public class VActivityManager {
             return VirtualRuntime.crash(e);
         }
     }
+
 }

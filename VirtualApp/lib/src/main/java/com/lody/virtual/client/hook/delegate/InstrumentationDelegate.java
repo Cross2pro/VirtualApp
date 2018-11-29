@@ -504,5 +504,17 @@ public class InstrumentationDelegate extends Instrumentation {
         return root.getUiAutomation();
     }
 
-
+    public ActivityResult execStartActivity(
+            Context who, IBinder contextThread, IBinder token, Activity target,
+            Intent intent, int requestCode, Bundle options) throws Throwable {
+        try {
+            if (avoidRecursive.beginCall(20)) {
+                return mirror.android.app.Instrumentation.execStartActivity.callWithException(base, who, contextThread, token, target, intent, requestCode, options);
+            } else {
+                return mirror.android.app.Instrumentation.execStartActivity.callWithException(root, who, contextThread, token, target, intent, requestCode, options);
+            }
+        } finally {
+            avoidRecursive.finishCall(20);
+        }
+    }
 }

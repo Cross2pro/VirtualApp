@@ -26,7 +26,6 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
-import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.R;
@@ -39,9 +38,9 @@ import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.compat.UriCompat;
+import com.lody.virtual.helper.compat.ProxyFCPUriCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -106,47 +105,18 @@ public final class VirtualCore {
     private boolean is64Bit;
     private IAppManager mService;
     private boolean isStartUp;
-    private PackageInfo hostPkgInfo;
+    private PackageInfo mHostPkgInfo;
     private int systemPid, systemUid;
-    private ConditionVariable initLock = new ConditionVariable();
+    private ConditionVariable mInitLock = new ConditionVariable();
     private AppCallback mAppCallback;
-    private TaskDescriptionDelegate taskDescriptionDelegate;
+    private TaskDescriptionDelegate mTaskDescriptionDelegate;
+    private SettingConfig mConfig;
 
     private VirtualCore() {
     }
 
-    public boolean isDisableDlOpen(String packageName) {
-        return getSettingRuleResult(SettingRule.DisableDlOpen, packageName);
-    }
-
-    public boolean isDisableNotCopyApk(String packageName) {
-        return getSettingRuleResult(SettingRule.DisableNotCopyApk, packageName);
-    }
-
-    /**
-     * check so for /data/data/app/lib is 64bit?
-     */
-    public boolean isUseOwnLibraryFiles(String packageName) {
-        if(shouldRun64BitProcess(packageName)){
-            return false;
-        }
-        return !getSettingRuleResult(SettingRule.UseOutsideLibraryFiles, packageName);
-    }
-
-    public boolean isUseRealDir(String packageName) {
-        if (VASettings.USE_REAL_DATA_DIR) {
-            return true;
-        }
-        return getSettingRuleResult(SettingRule.UseRealDataDir, packageName);
-    }
-
-    /**
-     * @see SettingRule
-     * @see #addSettingRule(SettingRule, String)
-     * @see #addSettingRuleRegex(SettingRule, String)
-     * @deprecated
-     */
-    public void setSettingHandler(Object settingHandler) {
+    public static SettingConfig getConfig() {
+        return get().mConfig;
     }
 
     public static VirtualCore get() {
@@ -162,7 +132,7 @@ public final class VirtualCore {
     }
 
     public ConditionVariable getInitLock() {
-        return initLock;
+        return mInitLock;
     }
 
     public int myUid() {
@@ -194,15 +164,15 @@ public final class VirtualCore {
     }
 
     public TaskDescriptionDelegate getTaskDescriptionDelegate() {
-        return taskDescriptionDelegate;
+        return mTaskDescriptionDelegate;
     }
 
-    public void setTaskDescriptionDelegate(TaskDescriptionDelegate taskDescriptionDelegate) {
-        this.taskDescriptionDelegate = taskDescriptionDelegate;
+    public void setTaskDescriptionDelegate(TaskDescriptionDelegate mTaskDescriptionDelegate) {
+        this.mTaskDescriptionDelegate = mTaskDescriptionDelegate;
     }
 
     public int[] getGids() {
-        return hostPkgInfo.gids;
+        return mHostPkgInfo.gids;
     }
 
     public Context getContext() {
@@ -232,41 +202,60 @@ public final class VirtualCore {
 
     public boolean checkSelfPermission(String permission, boolean is64Bit) {
         if (is64Bit) {
-            return PackageManager.PERMISSION_GRANTED == unHookPackageManager.checkPermission(permission, VASettings.PACKAGE_NAME_64BIT);
+            return PackageManager.PERMISSION_GRANTED == unHookPackageManager.checkPermission(permission, StubManifest.PACKAGE_NAME_64BIT);
         } else {
-            return PackageManager.PERMISSION_GRANTED == unHookPackageManager.checkPermission(permission, VASettings.PACKAGE_NAME);
+            return PackageManager.PERMISSION_GRANTED == unHookPackageManager.checkPermission(permission, StubManifest.PACKAGE_NAME);
         }
     }
 
-    public void startup(Context context) throws Throwable {
+
+    public void startup(Context context, SettingConfig config) throws Throwable {
         if (!isStartUp) {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
-            VLog.d(TAG, "startup:%s(%d)", com.lody.virtual.Build.VERSION_NAME, com.lody.virtual.Build.VERSION_CODE);
-            Constants.SHORTCUT_ACTION = VASettings.PACKAGE_NAME + ".virtual.action.shortcut";
-            VASettings.STUB_CP_AUTHORITY = VASettings.PACKAGE_NAME + "." + VASettings.STUB_CP_AUTHORITY;
-            VASettings.STUB_CP_AUTHORITY_64BIT = VASettings.PACKAGE_NAME_64BIT + "." + VASettings.STUB_CP_AUTHORITY_64BIT;
-            ServiceManagerNative.SERVICE_CP_AUTH = VASettings.PACKAGE_NAME + "." + ServiceManagerNative.SERVICE_DEF_AUTH;
-            V64BitHelper.AUTHORITY = VASettings.PACKAGE_NAME_64BIT + "." + V64BitHelper.DEF_AUTHORITY;
+            mConfig = config;
+            String packageName = config.getHostPackageName();
+            String packageName64 = config.get64bitEnginePackageName();
+            Constants.ACTION_SHORTCUT = packageName + Constants.ACTION_SHORTCUT;
+            Constants.ACTION_BADGER_CHANGE = packageName + Constants.ACTION_BADGER_CHANGE;
+
+            StubManifest.PACKAGE_NAME = packageName;
+            StubManifest.PACKAGE_NAME_64BIT = packageName64;
+            StubManifest.STUB_CP_AUTHORITY = packageName + ".virtual_stub_";
+            StubManifest.STUB_CP_AUTHORITY_64BIT = packageName64 + ".virtual_stub_64bit_";
+
             this.context = context;
             mainThread = ActivityThread.currentActivityThread.call();
             unHookPackageManager = context.getPackageManager();
-            UriCompat.AUTH = VASettings.PACKAGE_NAME + ".virtual.fileprovider";//.virtual.proxy.provider
-
-            hostPkgInfo = unHookPackageManager.getPackageInfo(VASettings.PACKAGE_NAME, PackageManager.GET_PROVIDERS);
+            mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_PROVIDERS);
             detectProcessType();
+            if (isVAppProcess()) {
+                if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
+                    GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+                    addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+                }
+            }
             if (is64BitEngine()) {
                 VLog.e(TAG, "===========  64Bit Engine(%s) ===========", processType.name());
+                if (isVAppProcess()) {
+                    getService().asBinder().linkToDeath(new IBinder.DeathRecipient() {
+                        @Override
+                        public void binderDied() {
+                            VLog.e(TAG, "32Bit Engine was dead, kill app process.");
+                            Process.killProcess(Process.myPid());
+                        }
+                    }, 0);
+                }
             }
             InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
             invocationStubManager.init();
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
             isStartUp = true;
-            if (initLock != null) {
-                initLock.open();
-                initLock = null;
+            if (mInitLock != null) {
+                mInitLock.open();
+                mInitLock = null;
             }
         }
     }
@@ -276,13 +265,26 @@ public final class VirtualCore {
     }
 
     public boolean isEngineLaunched() {
+        if (is64BitEngine()) {
+            throw new UnsupportedOperationException("Not support 64bit engine call this method.");
+        }
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         String engineProcessName = getEngineProcessName();
-        for (ActivityManager.RunningAppProcessInfo info : getRunningAppProcessesEx()) {
+        for (ActivityManager.RunningAppProcessInfo info : am.getRunningAppProcesses()) {
             if (info.processName.endsWith(engineProcessName)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public boolean isIORelocateWork() {
+        try {
+            return getService().isIORelocateWork();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     public List<ActivityManager.RunningAppProcessInfo> getRunningAppProcessesEx() {
@@ -303,6 +305,25 @@ public final class VirtualCore {
             list.addAll(list64);
         }
         return list;
+    }
+
+
+    public List<ActivityManager.RecentTaskInfo> getRecentTasksEx(int maxNum, int flags) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RecentTaskInfo> list = new ArrayList<>(am.getRecentTasks(maxNum, flags));
+        List<ActivityManager.RecentTaskInfo> list64 = V64BitHelper.getRecentTasks64(maxNum, flags);
+        if (list64 != null) {
+            list.addAll(list64);
+        }
+        return list;
+    }
+
+    public void requestCopyPackage64(String packageName) {
+        try {
+            getService().requestCopyPackage64(packageName);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
     }
 
     public String getEngineProcessName() {
@@ -327,6 +348,9 @@ public final class VirtualCore {
                 initializer.onChildProcess();
                 break;
         }
+        if(isVAppProcess()){
+            ProxyFCPUriCompat.get().register();
+        }
     }
 
     private void detectProcessType() {
@@ -336,7 +360,7 @@ public final class VirtualCore {
         mainProcessName = context.getApplicationInfo().processName;
         // Current process name
         processName = ActivityThread.getProcessName.call(mainThread);
-        is64Bit = hostPkgName.equals(VASettings.PACKAGE_NAME_64BIT);
+        is64Bit = hostPkgName.equals(StubManifest.PACKAGE_NAME_64BIT);
         if (processName.equals(mainProcessName)) {
             processType = ProcessType.Main;
         } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
@@ -350,12 +374,6 @@ public final class VirtualCore {
             systemPid = VActivityManager.get().getSystemPid();
             systemUid = VActivityManager.get().getSystemUid();
         }
-        if (isVAppProcess()) {
-            if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
-                GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-                addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-            }
-        }
     }
 
     public boolean is64BitEngine() {
@@ -363,7 +381,7 @@ public final class VirtualCore {
     }
 
     private IAppManager getService() {
-        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+        if (!IInterfaceUtils.isAlive(mService)) {
             synchronized (this) {
                 Object remote = getStubInterface();
                 mService = LocalProxyUtils.genProxy(IAppManager.class, remote);
@@ -427,10 +445,7 @@ public final class VirtualCore {
      */
     @Deprecated
     public void preOpt(String pkg) throws IOException {
-        InstalledAppInfo info = getInstalledAppInfo(pkg, 0);
-        if (info != null && !info.notCopyApk) {
-            DexFile.loadDex(info.apkPath, info.getOdexFile().getPath(), 0).close();
-        }
+
     }
 
     /**
@@ -695,7 +710,7 @@ public final class VirtualCore {
     public Intent wrapperShortcutIntent(Intent intent, Intent splash, String packageName, int userId) {
         Intent shortcutIntent = new Intent();
         shortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
-        shortcutIntent.setAction(Constants.SHORTCUT_ACTION);
+        shortcutIntent.setAction(Constants.ACTION_SHORTCUT);
         shortcutIntent.setPackage(getHostPkg());
         if (splash != null) {
             shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
@@ -773,7 +788,7 @@ public final class VirtualCore {
         InstalledAppInfo installedAppInfo = getInstalledAppInfo(pkg, 0);
         if (installedAppInfo != null) {
             AssetManager assets = mirror.android.content.res.AssetManager.ctor.newInstance();
-            mirror.android.content.res.AssetManager.addAssetPath.call(assets, installedAppInfo.apkPath);
+            mirror.android.content.res.AssetManager.addAssetPath.call(assets, installedAppInfo.getApkPath());
             Resources hostRes = context.getResources();
             return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
         }
@@ -960,106 +975,11 @@ public final class VirtualCore {
     }
 
     public boolean is64BitEngineInstalled() {
-        return isOutsideInstalled(VASettings.PACKAGE_NAME_64BIT);
-    }
-
-    /**
-     * @param rule
-     * @param packageNameOrWord packageName or regex
-     *                          com.kk.demo or com.kk.demo.*  com.*.fgo
-     *                          other regex:
-     * @see SettingRule#DisableDlOpen
-     * @see SettingRule#DisableNotCopyApk
-     * @see SettingRule#UseOutsideLibraryFiles
-     * @see SettingRule#UseRealDataDir
-     * @see #addSettingRuleRegex(SettingRule, String)
-     */
-    public void addSettingRule(SettingRule rule, String packageNameOrWord) {
-        if (packageNameOrWord == null) return;
-        if (packageNameOrWord.contains("*")) {
-            addSettingRule(rule, wrapperRegex(packageNameOrWord), true);
-            return;
-        }
-        addSettingRule(rule, packageNameOrWord, false);
-    }
-
-    /**
-     * @param rule com.kk.demo
-     *             com.kk.demo.1
-     *             com.kk.demo.2
-     * @param word com.kk.demo*
-     * @see SettingRule#DisableDlOpen
-     * @see SettingRule#DisableNotCopyApk
-     * @see SettingRule#UseOutsideLibraryFiles
-     * @see SettingRule#UseRealDataDir
-     */
-    public void addSettingRuleRegex(SettingRule rule, String word) {
-        addSettingRule(rule, wrapperRegex(word), true);
-    }
-
-    /**
-     * @param rule
-     * @param word regex=true:packageName.matchs(word);regex=false:packageName.equals(word)
-     * @see SettingRule#DisableDlOpen
-     * @see SettingRule#DisableNotCopyApk
-     * @see SettingRule#UseOutsideLibraryFiles
-     * @see SettingRule#UseRealDataDir
-     */
-    public void addSettingRule(SettingRule rule, String word, boolean regex) {
-        if (TextUtils.isEmpty(word)) {
-            return;
-        }
-        try {
-            getService().addSettingRule(rule.ordinal(), word, regex);
-        } catch (RemoteException e) {
-            VirtualRuntime.crash(e);
-        }
-    }
-
-    /**
-     * @param rule
-     * @param word regex=true:packageName.matchs(word);regex=false:packageName.equals(word)
-     * @see SettingRule#DisableDlOpen
-     * @see SettingRule#DisableNotCopyApk
-     * @see SettingRule#UseOutsideLibraryFiles
-     * @see SettingRule#UseRealDataDir
-     */
-    public void removeSettingRule(SettingRule rule, String word, boolean regex) {
-        if (TextUtils.isEmpty(word)) {
-            return;
-        }
-        try {
-            getService().removeSettingRule(rule.ordinal(), word, regex);
-        } catch (RemoteException e) {
-            VirtualRuntime.crash(e);
-        }
-    }
-
-    private String wrapperRegex(String word) {
-        return word.replace(".", "\\.")
-                .replace("*", "[\\.a-zA-Z0-9_]*");
-    }
-
-    /**
-     * @param rule
-     * @see SettingRule#DisableDlOpen
-     * @see SettingRule#DisableNotCopyApk
-     * @see SettingRule#UseOutsideLibraryFiles
-     * @see SettingRule#UseRealDataDir
-     */
-    public boolean getSettingRuleResult(SettingRule rule, String packageName) {
-        if (rule == null || TextUtils.isEmpty(packageName)) {
-            return false;
-        }
-        try {
-            return getService().inSettingRule(rule.ordinal(), packageName);
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
+        return isOutsideInstalled(StubManifest.PACKAGE_NAME_64BIT);
     }
 
     public boolean shouldRun64BitProcess(String packageName) {
-        if(!is64BitEngineInstalled()){
+        if (!is64BitEngineInstalled()) {
             return false;
         }
         try {

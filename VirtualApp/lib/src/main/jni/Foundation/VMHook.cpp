@@ -4,6 +4,7 @@
 #include <Jni/VAJni.h>
 #include <utils/controllerManagerNative.h>
 #include "VMHook.h"
+#include "SandboxFs.h"
 
 namespace FunctionDef {
     typedef void (*Function_DalvikBridgeFunc)(const void **, void *, const void *, void *);
@@ -499,8 +500,8 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
                    jint cameraMethodType) {
 
     void (*libdl_set_sdk_version)(uint32_t) = (void (*)(uint32_t)) (dlsym(RTLD_DEFAULT,
-                                                                "android_set_application_target_sdk_version"));
-    if (libdl_set_sdk_version) {
+                                                                          "android_set_application_target_sdk_version"));
+    if (libdl_set_sdk_version && apiLevel > 23) {
         libdl_set_sdk_version(23);
     }
 

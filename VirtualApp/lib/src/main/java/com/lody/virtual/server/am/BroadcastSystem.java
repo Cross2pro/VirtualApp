@@ -191,15 +191,18 @@ public class BroadcastSystem {
         }
     }
 
-    void broadcastFinish(PendingResultData res) {
+    boolean broadcastFinish(IBinder token) {
+        BroadcastRecord record;
         synchronized (mBroadcastRecords) {
-            BroadcastRecord record = mBroadcastRecords.remove(res.mToken);
-            if (record == null) {
-                VLog.e(TAG, "Unable to find the BroadcastRecord by token: " + res.mToken);
-            }
+            record = mBroadcastRecords.remove(token);
         }
-        mTimeoutHandler.removeMessages(0, res.mToken);
-        res.finish();
+        if (record == null) {
+            VLog.e(TAG, "Unable to find the BroadcastRecord by token: " + token);
+            return false;
+        }
+        mTimeoutHandler.removeMessages(0, token);
+        record.pendingResult.finish();
+        return true;
     }
 
     void broadcastSent(int vuid, ActivityInfo receiverInfo, PendingResultData res) {

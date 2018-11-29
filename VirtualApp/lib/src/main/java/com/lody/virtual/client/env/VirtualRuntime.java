@@ -4,14 +4,13 @@ import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Process;
-import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
 
 import mirror.android.ddm.DdmHandleAppName;
 import mirror.android.ddm.DdmHandleAppNameJBMR1;
+import mirror.dalvik.system.VMRuntime;
 
 /**
  * @author Lody
@@ -55,6 +54,17 @@ public class VirtualRuntime {
     public static <T> T crash(Throwable e) throws RuntimeException {
         e.printStackTrace();
         throw new RuntimeException("transact remote server failed", e);
+    }
+
+    public static boolean is64bit() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+        }
+        try {
+            return VMRuntime.is64Bit.call(VMRuntime.getRuntime.call());
+        }catch (Throwable e){
+            return false;
+        }
     }
 
     public static void exit() {

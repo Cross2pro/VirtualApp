@@ -114,6 +114,14 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 token,
                 false
         );
+        if(info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+            try {
+                IActivityManager.setRequestedOrientation.call(ActivityManagerNative.getDefault.call(),
+                        token, info.screenOrientation);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
         VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
         ClassLoader appClassLoader = VClient.get().getClassLoader(info.applicationInfo);
         intent.setExtrasClassLoader(appClassLoader);

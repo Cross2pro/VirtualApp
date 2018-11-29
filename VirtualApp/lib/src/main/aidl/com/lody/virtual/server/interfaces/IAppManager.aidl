@@ -1,5 +1,6 @@
 package com.lody.virtual.server.interfaces;
 
+import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
 
 import com.lody.virtual.remote.InstallResult;
@@ -29,6 +30,8 @@ interface IAppManager{
     InstalledAppInfo getInstalledAppInfo(String pkg, int flags);
 
     oneway void installPackage(String path, int flags, in ResultReceiver receiver);
+
+    void requestCopyPackage64(String packageName);
 
     boolean isPackageLaunched(int userId, String packageName);
 
@@ -60,11 +63,7 @@ interface IAppManager{
 
     IAppRequestListener getAppRequestListener();
 
-    void removeSettingRule(int rule, String packageName, boolean regex);
-
-    void addSettingRule(int rule, String packageName, boolean regex);
-
-    boolean inSettingRule(int rule, String packageName);
-
     boolean isShouldRun64BitProcess(String packageName);
+
+    boolean isIORelocateWork();
 }

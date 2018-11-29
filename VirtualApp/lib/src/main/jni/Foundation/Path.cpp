@@ -3,31 +3,29 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-
-
-#ifdef PATH_DEBUG
+#include <syscall.h>
 #include <fb/include/fb/ALog.h>
-#endif
+
 
 int copy_cwd(char *resolved_path, int index) {
-    char buffer[PATH_MAX];
-    char *cwd = getcwd(buffer, PATH_MAX);
-    if (cwd == NULL) {
-        cwd = realpath(".", buffer);
-    }
-    if (cwd == NULL) {
-        resolved_path[index++] = '.';
-    } else {
-        for (int j = 0; cwd[j]; ++j) {
-            resolved_path[index++] = cwd[j];
-        }
-    }
+    resolved_path[index++] = '.';
     if (resolved_path[index - 1] != '/') {
         resolved_path[index++] = '/';
     }
     return index;
 }
 
+/**
+ *
+ * @author Lody
+ *
+ * /data////////data -> /data/data
+ *
+ * /data/data/../../ -> /
+ *
+ * etc.
+ *
+ */
 char *
 canonicalize_filename(const char *pathname) {
     char *resolved_path = (char *) malloc(PATH_MAX);
@@ -102,12 +100,6 @@ canonicalize_filename(const char *pathname) {
                 break;
             }
             default: {
-                if (index == 0) {
-                    index = copy_cwd(resolved_path, index);
-                    if (resolved_path[index - 1] != '/') {
-                        resolved_path[index++] = '/';
-                    }
-                }
                 resolved_path[index++] = c;
                 break;
             }
@@ -115,5 +107,10 @@ canonicalize_filename(const char *pathname) {
         prev_c = c;
     }
     resolved_path[index] = '\0';
+#ifdef PATH_DEBUG
+    if (strcmp(pathname, resolved_path)) {
+        ALOGE("diff %s -> %s", pathname, resolved_path);
+    }
+#endif
     return resolved_path;
 }

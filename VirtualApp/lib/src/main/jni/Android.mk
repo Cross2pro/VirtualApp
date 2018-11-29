@@ -1,27 +1,35 @@
 LOCAL_PATH := $(call my-dir)
 MAIN_LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
-LOCAL_MODULE := va++
 
-LOCAL_CFLAGS := -Wno-error=format-security -fpermissive
+ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
+LOCAL_MODULE := v++_64
+else
+LOCAL_MODULE := v++
+endif
+
+LOCAL_CFLAGS := -Wno-error=format-security -fpermissive -O2
 LOCAL_CFLAGS += -DLOG_TAG=\"VA++\"
 LOCAL_CFLAGS += -fno-rtti -fno-exceptions
-LOCAL_CFLAGS += -D_DEBUG_
 
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Foundation
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Jni
 
 LOCAL_SRC_FILES := Jni/VAJni.cpp \
-				   Foundation/IOUniformer.cpp \
+				   Foundation/Elf/elf_common.cpp \
+				   Foundation/Elf/elf_file.cpp \
+				   Foundation/Elf/elf_mapped.cpp \
+				   Foundation/IORelocator.cpp \
 				   Foundation/VMHook.cpp \
-				   Foundation/SymbolFinder.cpp \
+				   Foundation/Symbol.cpp \
 				   Foundation/Path.cpp \
 				   Foundation/SandboxFs.cpp \
 				   Substrate/hde64.c \
                    Substrate/SubstrateDebug.cpp \
                    Substrate/SubstrateHook.cpp \
                    Substrate/SubstratePosixMemory.cpp \
+                   Substrate/And64InlineHook.cpp \
                    transparentED/ff_Recognizer.cpp \
                    transparentED/EncryptFile.cpp \
                    transparentED/originalInterface.cpp \

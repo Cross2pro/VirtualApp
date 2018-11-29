@@ -772,14 +772,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            //fix:getCallingUid
             int uid = (int) args[0];
             if(uid == Process.myUid() || uid == getRealUid()
                     || uid == VirtualCore.get().getSystemUid()){
-                //my
                return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
             }else if(uid == getRealUid()){
-                //callingpkg, org
                 return VPackageManager.get().getPackagesForUid(VClient.get().getVCallingUid());
             }
 
@@ -799,7 +796,7 @@ class MethodProxies {
             List<String> result = new ArrayList<>();
             result.addAll(Arrays.asList(insides));
             result.addAll(Arrays.asList(outsides));
-            return result.toArray(new String[result.size()]);
+            return result.toArray(new String[0]);
         }
 
         @Override

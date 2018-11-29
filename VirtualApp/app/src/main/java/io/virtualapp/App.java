@@ -6,12 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v7.app.AppCompatDelegate;
-import android.util.Log;
 
-import com.lody.virtual.client.core.SettingRule;
+import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.VLog;
 
 import io.virtualapp.delegate.MyAppRequestListener;
@@ -26,6 +24,37 @@ public class App extends Application {
 
     private static App gApp;
 
+    private SettingConfig mConfig = new SettingConfig() {
+        @Override
+        public String getHostPackageName() {
+            return BuildConfig.APPLICATION_ID;
+        }
+
+        @Override
+        public String get64bitEnginePackageName() {
+            return BuildConfig.ARM64_PACKAGE_NAME;
+        }
+
+        @Override
+        public boolean isUseRealDataDir(String packageName) {
+            //使用真实data目录
+            return "com.tencent.tmgp.pubgmhd".equals(packageName);
+        }
+
+        @Override
+        public AppLibConfig getAppLibConfig(String packageName) {
+            if("com.bilibili.fgo.qihoo".equals(packageName)){
+                return AppLibConfig.UseRealLib;
+            }
+            return super.getAppLibConfig(packageName);
+        }
+
+        @Override
+        public boolean isDisableNotCopyApk(String pacakgeName) {
+            return super.isDisableNotCopyApk(pacakgeName);
+        }
+    };
+
     public static App getApp() {
         return gApp;
     }
@@ -33,36 +62,10 @@ public class App extends Application {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        // 64位包名
-        VASettings.PACKAGE_NAME = BuildConfig.APPLICATION_ID;
-        VASettings.PACKAGE_NAME_64BIT = BuildConfig.ARM64_PACKAGE_NAME;
-        VASettings.ENABLE_IO_REDIRECT = true;
-        VASettings.ENABLE_INNER_SHORTCUT = false;
-        //第一个用户（userid=0)的数据（IMEI)和真机一样，其他随机生成
-        VASettings.KEEP_ADMIN_PHONE_INFO = true;
-        //google 支持（beta）
-        VASettings.ENABLE_GMS = true;
-        //禁止va连的app显示前台通知服务
-        VASettings.DISABLE_FOREGROUND_SERVICE = true;
-        //日志
-        VLog.OPEN_LOG = BuildConfig.DEBUG;
-
-        //外部app访问内部的provider，仅文件
-        VASettings.PROVIDER_ONLY_FILE = true;
-
-        //解决google登录后无法返回app
-        VASettings.NEW_INTENTSENDER = true;
-
-        //双开的app，根据用户升级，自动升级内部的app，需要监听
-        //false则只有va的服务启动才去检查更新,需要用户监听升级广播和启动得时候检查
-        VASettings.CHECK_UPDATE_NOT_COPY_APK = true;
-
-        //内部文件权限
-        VASettings.FILE_ISOLATION = false;
-
+        //demo always is debug
+        VLog.OPEN_LOG = true;
         try {
-            //
-            VirtualCore.get().startup(base);
+            VirtualCore.get().startup(base, mConfig);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -81,14 +84,14 @@ public class App extends Application {
                 AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
                 Once.initialise(App.this);
                 //某些rom做了限制，比如vivo
-                IntentFilter filter = new IntentFilter(Constants.ACTION_PROCESS_ERROR);
+                IntentFilter filter = new IntentFilter();
                 filter.addAction(Constants.ACTION_NEED_PERMISSION);
-                filter.addAction(Constants.ACTION_PROCESS_ERROR);
                 App.this.registerReceiver(new VAppReceiver(), filter);
             }
 
             @Override
             public void onVirtualProcess() {
+//                new ANRWatchDog().start();
                 //listener components
                 virtualCore.setAppCallback(new MyComponentDelegate());
                 //fake task description's icon and title
@@ -111,24 +114,6 @@ public class App extends Application {
                 virtualCore.addVisibleOutsidePackage("com.whatsapp");
                 virtualCore.addVisibleOutsidePackage("com.tencent.mm");
                 virtualCore.addVisibleOutsidePackage("com.immomo.momo");
-                /**
-                 * 下面代码可以在启动后添加，需要杀死目标app让设置生效，建议用killAllApps
-                 * @see VirtualCore#killAllApps()
-                 * @see VirtualCore#killApp(String, int)
-                 */
-                virtualCore.addSettingRule(SettingRule.UseRealDataDir, "com.tencent.tmgp.pubgmhd");
-                virtualCore.addSettingRule(SettingRule.DisableDlOpen, "com.facebook.katana");
-                virtualCore.addSettingRule(SettingRule.DisableDlOpen, "jianghu2.lanjing.com*");
-                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com*.fgo.*");
-                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com*.fatego*");
-                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.izhaohe.heroes*");
-                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.tencent.tmgp.pubgmhd*");
-                virtualCore.addSettingRule(SettingRule.UseOutsideLibraryFiles, "com.*.dwrg*");
-
-                //test code
-                virtualCore.addSettingRule(SettingRule.UseRealDataDir, "com.kk.vatest2");
-                //other regex
-                virtualCore.addSettingRuleRegex(SettingRule.UseOutsideLibraryFiles, "com.kk.demo[|.360|.huawei]");
             }
         });
     }
@@ -136,24 +121,17 @@ public class App extends Application {
     private class VAppReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            String season = intent.getStringExtra(Constants.EXTRA_SEASON);
+            //
+            String error = intent.getStringExtra(Constants.EXTRA_ERROR);
             if (Constants.ACTION_NEED_PERMISSION.equals(intent.getAction())) {
-                String season = intent.getStringExtra(Constants.EXTRA_SEASON);
-                //
-                String error = intent.getStringExtra(Constants.EXTRA_ERROR);
                 if ("startActivityForBg".equals(season)) {
                     //TODO vivo start activity by service
                     //跳到vivo的后台弹activity权限
                 }
-            } else if (Constants.ACTION_PROCESS_ERROR.equals(intent.getAction())) {
-                String season = intent.getStringExtra(Constants.EXTRA_SEASON);
-                //
-                String error = intent.getStringExtra(Constants.EXTRA_ERROR);
-                if ("makeApplication".equals(season)) {
-
-                } else if ("callApplicationOnCreate".equals(season)) {
-
-                } else if ("requestPermissions".equals(season)) {
-                    Log.e("kk", "requestPermissions:" + error);
+            }else if(Constants.ACTION_PROCESS_ERROR.equals(intent.getAction())){
+                if("requestPermissions".equals(season)){
+                    //user cancel
                 }
             }
         }

@@ -28,13 +28,11 @@ import android.os.RemoteException;
 import android.os.StrictMode;
 import android.text.TextUtils;
 import android.os.Environment;
-import android.util.Log;
-
 
 import com.lody.virtual.client.core.CrashHandler;
 import com.lody.virtual.client.core.InvocationStubManager;
+import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
@@ -45,7 +43,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -61,6 +59,7 @@ import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceInfo;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
+import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -131,7 +130,7 @@ public final class VClient extends IVClient.Stub {
     private Application mInitialApplication;
     private CrashHandler crashHandler;
     private InstalledAppInfo mAppInfo;
-    private int targetSdkVersion;
+    private int mTargetSdkVersion;
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -175,9 +174,9 @@ public final class VClient extends IVClient.Stub {
     }
 
     public int getCurrentTargetSdkVersion() {
-        return targetSdkVersion == 0 ?
+        return mTargetSdkVersion == 0 ?
                 VirtualCore.get().getTargetSdkVersion()
-                : targetSdkVersion;
+                : mTargetSdkVersion;
     }
 
     public CrashHandler getCrashHandler() {
@@ -204,7 +203,7 @@ public final class VClient extends IVClient.Stub {
         return VUserHandle.getAppId(vuid);
     }
 
-    public int getVCallingUid(){
+    public int getVCallingUid() {
         return VActivityManager.get().getCallingUid();
     }
 
@@ -299,7 +298,7 @@ public final class VClient extends IVClient.Stub {
         }
         VDeviceInfo deviceInfo = getDeviceInfo();
         VDeviceManager.get().attachBuildProp(deviceInfo);
-
+        final boolean is64Bit = VirtualCore.get().is64BitEngine();
         ActivityThread.mInitialApplication.set(
                 VirtualCore.mainThread(),
                 null
@@ -311,11 +310,16 @@ public final class VClient extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
+        if (VirtualCore.get().is64BitEngine()) {
+            if (!new File(info.getApkPath()).exists()) {
+                VirtualCore.get().requestCopyPackage64(packageName);
+            }
+        }
         mAppInfo = info;
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, userId);
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
-        targetSdkVersion = data.appInfo.targetSdkVersion;
+        mTargetSdkVersion = data.appInfo.targetSdkVersion;
         VLog.i(TAG, "Binding application %s (%s)", data.appInfo.packageName, data.processName);
         mBoundApplication = data;
         VirtualRuntime.setupRuntime(data.processName, data.appInfo);
@@ -327,14 +331,25 @@ public final class VClient extends IVClient.Stub {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && targetSdkVersion < Build.VERSION_CODES.LOLLIPOP) {
             mirror.android.os.Message.updateCheckRecycle.call(targetSdkVersion);
         }
-        if (VASettings.ENABLE_IO_REDIRECT) {
-            startIOUniformer(deviceInfo);
+        //tmp dir
+        if (is64Bit) {
+            System.setProperty("java.io.tmpdir",
+                    new File(VEnvironment.getDataUserPackageDirectory64(userId, info.packageName), "cache").getAbsolutePath());
+        } else {
+            System.setProperty("java.io.tmpdir",
+                    new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache").getAbsolutePath());
+        }
+        if (VirtualCore.getConfig().isEnableIORedirect()) {
+            if (VirtualCore.get().isIORelocateWork()) {
+                startIORelocater(is64Bit);
+            } else {
+                VLog.w(TAG, "IO Relocate verify fail.");
+            }
         }
         NativeEngine.launchEngine();
         Object mainThread = VirtualCore.mainThread();
         NativeEngine.startDexOverride();
         Context context = createPackageContext(data.appInfo.packageName);
-        System.setProperty("java.io.tmpdir", context.getCacheDir().getAbsolutePath());
         File codeCacheDir;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             codeCacheDir = context.getCodeCacheDir();
@@ -384,13 +399,8 @@ public final class VClient extends IVClient.Stub {
 
         try {
             mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
-        }catch (Throwable e) {
+        } catch (Throwable e) {
             unlock(lock);
-            Intent error = new Intent(Constants.ACTION_PROCESS_ERROR);
-            error.setPackage(VirtualCore.get().getHostPkg());
-            error.putExtra(Constants.EXTRA_SEASON, "makeApplication");
-            error.putExtra(Constants.EXTRA_ERROR, Log.getStackTraceString(e));
-            VirtualCore.get().getContext().sendBroadcast(error);
             throw new RuntimeException("Unable to makeApplication", e);
         }
         if (mInitialApplication == null) {
@@ -415,11 +425,6 @@ public final class VClient extends IVClient.Stub {
                 mInitialApplication = createdApp;
             }
         } catch (Exception e) {
-            Intent error = new Intent(Constants.ACTION_PROCESS_ERROR);
-            error.setPackage(VirtualCore.get().getHostPkg());
-            error.putExtra(Constants.EXTRA_SEASON, "callApplicationOnCreate");
-            error.putExtra(Constants.EXTRA_ERROR, Log.getStackTraceString(e));
-            VirtualCore.get().getContext().sendBroadcast(error);
             if (!mInstrumentation.onException(mInitialApplication, e)) {
                 throw new RuntimeException(
                         "Unable to create application " + mInitialApplication.getClass().getName()
@@ -430,7 +435,7 @@ public final class VClient extends IVClient.Stub {
         VirtualCore.get().getAppCallback().afterApplicationCreate(mInitialApplication);
     }
 
-    private void unlock(ConditionVariable lock){
+    private void unlock(ConditionVariable lock) {
         if (lock != null) {
             lock.open();
             mTempLock = null;
@@ -512,19 +517,18 @@ public final class VClient extends IVClient.Stub {
     }
 
     @SuppressLint("SdCardPath")
-    private void startIOUniformer(VDeviceInfo deviceInfo) {
+    private void startIORelocater(final boolean is64Bit) {
         ApplicationInfo info = mBoundApplication.appInfo;
         String packageName = info.packageName;
         int userId = VUserHandle.myUserId();
-        final boolean is64Bit = VirtualCore.get().is64BitEngine();
         File wifiMacAddressFile = getDeviceInfo().getWifiFile(userId, is64Bit);
-        String wifiMacAddressPath = wifiMacAddressFile != null ? wifiMacAddressFile.getPath() : null;
+        String wifiMacAddressPath = wifiMacAddressFile != null && wifiMacAddressFile.exists() ? wifiMacAddressFile.getPath() : null;
         String dataDir, libPath;
         if (is64Bit) {
             dataDir = VEnvironment.getDataUserPackageDirectory64(userId, packageName).getPath();
             libPath = VEnvironment.getAppLibDirectory64(packageName).getAbsolutePath();
         } else {
-            dataDir  = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();
+            dataDir = VEnvironment.getDataUserPackageDirectory(userId, packageName).getPath();
             libPath = VEnvironment.getAppLibDirectory(packageName).getAbsolutePath();
         }
 
@@ -532,16 +536,8 @@ public final class VClient extends IVClient.Stub {
             NativeEngine.redirectFile("/sys/class/net/wlan0/address", wifiMacAddressPath);
             NativeEngine.redirectFile("/sys/class/net/eth0/address", wifiMacAddressPath);
             NativeEngine.redirectFile("/sys/class/net/wifi/address", wifiMacAddressPath);
-        } else {
-            //default wifi mac
         }
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-//            if (deviceInfo != null && !deviceInfo.isEmpty()) {
-//                NativeEngine.forbid("/system/build.prop", true);
-//            }
-        }
-
-        if(VASettings.FILE_ISOLATION) {
+        if (VirtualCore.getConfig().isEnableAppFileSystemIsolation()) {
             File odexFile, systemDir, appDir;
             if (is64Bit) {
                 odexFile = VEnvironment.getOdexFile64(packageName);
@@ -552,9 +548,6 @@ public final class VClient extends IVClient.Stub {
                 systemDir = VEnvironment.getSystemDirectory(userId);
                 appDir = VEnvironment.getDataAppPackageDirectory(packageName);
             }
-            //getPath         ->  /data/data/va/
-            //getAbsolutePath ->  /data/user/0/
-            //io hook: whitelist->replace path(/data/data/pkg/)->forbid
             // odex
             NativeEngine.whitelistFile(odexFile.getPath());
             NativeEngine.whitelistFile(odexFile.getAbsolutePath());
@@ -573,6 +566,12 @@ public final class VClient extends IVClient.Stub {
             NativeEngine.forbid(vaDataDir.getPath(), false);
             NativeEngine.forbid(vaDataDir.getAbsolutePath(), false);
         }
+        NativeEngine.whitelist("/dev/");
+
+        String cache = new File(dataDir, "cache").getAbsolutePath();
+        NativeEngine.redirectDirectory("/tmp/", cache);
+        //mock cache
+//        System.setProperty("java.io.tmpdir", "/data/data/" + packageName + "/cache");
 
         VEnvironment.linkUserAppLib(userId, packageName, is64Bit);
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
@@ -580,8 +579,12 @@ public final class VClient extends IVClient.Stub {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, dataDir);
         }
-
-        if(isNotCopyApk()) {
+        SettingConfig.AppLibConfig appLibConfig = VirtualCore.getConfig().getAppLibConfig(packageName);
+        if (appLibConfig == SettingConfig.AppLibConfig.UseFakePathLib) {
+            NativeEngine.redirectDirectory(info.nativeLibraryDir, libPath);
+            NativeEngine.readOnly(libPath);
+        }
+        if(isNotCopyApk()){
             ApplicationInfo outside = null;
             try {
                 outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
@@ -589,8 +592,8 @@ public final class VClient extends IVClient.Stub {
                 //ignore
             }
             if (outside != null) {
-                if(VirtualCore.get().isUseOwnLibraryFiles(packageName)){
-                    if (VirtualCore.get().is64BitEngine()) {
+                if(appLibConfig != SettingConfig.AppLibConfig.UseRealLib){
+                    if (is64Bit) {
                         NativeEngine.redirectDirectory(outside.nativeLibraryDir, libPath);
                     } else {
                         String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
@@ -599,11 +602,13 @@ public final class VClient extends IVClient.Stub {
                         }
                     }
                 }
+                NativeEngine.redirectDirectory(outside.dataDir, dataDir);
             }
         }
 
         NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
+        NativeEngine.redirectDirectory("/data/app/" + packageName + "/lib/", libPath);
 
         //safekey adapter
         String subPathData = "/Android/data/"+info.packageName;
@@ -637,8 +642,6 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
-
-        NativeEngine.enableIORedirect(!VirtualCore.get().isDisableDlOpen(info.packageName));
     }
 
     @SuppressLint("SdCardPath")
@@ -704,10 +707,10 @@ public final class VClient extends IVClient.Stub {
         if (mTempLock != null) {
             mTempLock.block();
         }
-        if(!isBound()) {
+        if (!isBound()) {
             VClient.get().bindApplication(info.packageName, info.processName);
         }
-        if(VClient.get().getCurrentApplication() == null){
+        if (VClient.get().getCurrentApplication() == null) {
             return null;
         }
         IInterface provider = null;
@@ -734,8 +737,8 @@ public final class VClient extends IVClient.Stub {
     private void fixInstalledProviders(String packageName, int userId) {
         clearSettingProvider();
         List<Object> removes = new ArrayList<>();
-        Map<Object,Object> clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
-        for (Map.Entry<Object,Object> e : clientMap.entrySet()) {
+        Map<Object, Object> clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
+        for (Map.Entry<Object, Object> e : clientMap.entrySet()) {
             Object clientRecord = e.getValue();
             if (BuildCompat.isOreo()) {
                 IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
@@ -744,7 +747,7 @@ public final class VClient extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
+                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
                     if (needCheckProvider) {
                         if (!VActivityManager.get().checkProviderPermission(info, packageName, userId)) {
                             removes.add(e.getKey());
@@ -762,7 +765,7 @@ public final class VClient extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
-                if (!info.authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
+                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
                     if (needCheckProvider) {
                         if (!VActivityManager.get().checkProviderPermission(info, packageName, userId)) {
                             removes.add(e.getKey());
@@ -776,13 +779,13 @@ public final class VClient extends IVClient.Stub {
             } else {
                 String authority = ActivityThread.ProviderClientRecord.mName.get(clientRecord);
                 IInterface provider = ActivityThread.ProviderClientRecord.mProvider.get(clientRecord);
-                if (provider != null && !authority.startsWith(VASettings.STUB_CP_AUTHORITY)) {
+                if (provider != null && !authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, authority, provider);
                     ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);
                 }
             }
         }
-        if(needCheckProvider) {
+        if (needCheckProvider) {
             if (removes.size() > 0) {
                 for (Object obj : removes) {
                     clientMap.remove(obj);
@@ -792,7 +795,6 @@ public final class VClient extends IVClient.Stub {
         }
     }
 
-    @Override
     public void clearSettingProvider() {
         Object cache;
         cache = Settings.System.sNameValueCache.get();
@@ -896,7 +898,7 @@ public final class VClient extends IVClient.Stub {
             if (!isBound()) {
                 bindApplication(data.component.getPackageName(), data.processName);
             }
-            if(VClient.get().getCurrentApplication() == null){
+            if (VClient.get().getCurrentApplication() == null) {
                 return;
             }
             Context context = mInitialApplication.getBaseContext();
@@ -918,7 +920,7 @@ public final class VClient extends IVClient.Stub {
                     "Unable to start receiver " + data.component
                             + ": " + e.toString(), e);
         }
-        VActivityManager.get().broadcastFinish(data.resultData);
+        VActivityManager.get().broadcastFinish(data.resultData.mToken);
     }
 
     private void handleCreateService(CreateServiceData data) {

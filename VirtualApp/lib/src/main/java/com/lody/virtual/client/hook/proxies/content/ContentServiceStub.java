@@ -8,7 +8,7 @@ import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
 
@@ -65,7 +65,7 @@ public class ContentServiceStub extends BinderInvocationProxy {
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
                 ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
                 if (config != null) {
-                    String targetAuthority = VASettings.getStubAuthority(config.vpid, config.is64Bit);
+                    String targetAuthority = StubManifest.getStubAuthority(config.vpid, config.is64Bit);
                     return uri.buildUpon().authority(targetAuthority).build();
                 }
             }

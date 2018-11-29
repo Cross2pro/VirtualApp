@@ -32,7 +32,7 @@ public class VDeviceManager {
     private IDeviceInfoManager mService;
 
     public IDeviceInfoManager getService() {
-        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+        if (!IInterfaceUtils.isAlive(mService)) {
             synchronized (this) {
                 Object binder = getRemoteInterface();
                 mService = LocalProxyUtils.genProxy(IDeviceInfoManager.class, binder);
@@ -102,8 +102,8 @@ public class VDeviceManager {
     }
 
     public void attachBuildProp(VDeviceInfo info){
-        mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
-        if(info != null) {
+//      mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
+        if (info != null) {
             setBuild(mirror.android.os.Build.DEVICE, info.getDevice());
             setBuild(mirror.android.os.Build.SERIAL, info.getSerial());
             setBuild(mirror.android.os.Build.MODEL, info.getModel());

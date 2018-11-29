@@ -1,16 +1,13 @@
 package com.lody.virtual.client.hook.proxies.service;
 
-import android.content.Context;
 import android.os.IInterface;
 
-import com.lody.virtual.client.core.InvocationStubManager;
+import com.lody.virtual.client.core.ServiceLocalManager;
+import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
-import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
-import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
-import com.lody.virtual.client.hook.proxies.phonesubinfo.PhoneSubInfoStub;
-import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.Method;
 
@@ -23,7 +20,7 @@ public class ServiceManagerStub extends MethodInvocationProxy<MethodInvocationSt
     }
 
     @Override
-    public void inject() throws Throwable {
+    public void inject() {
         ServiceManager.sServiceManager.set(getInvocationStub().getProxyInterface());
     }
 
@@ -34,30 +31,27 @@ public class ServiceManagerStub extends MethodInvocationProxy<MethodInvocationSt
             @Override
             public Object call(Object who, Method method, Object... args) throws Throwable {
                 String name = (String) args[0];
-                if (name.equals(Context.TELEPHONY_SERVICE)) {
-                    MethodInvocationStub<IInterface> stub = InvocationStubManager.getInstance().getInvocationStub(TelephonyStub.class);
-                    if (stub != null) {
-                        return stub.getProxyInterface().asBinder();
-                    }
+                BinderInvocationStub proxy = ServiceLocalManager.getService(name);
+                if(proxy != null){
+                    //getInterfaceDescriptor,queryLocalInterface
+                    VLog.d("kk", "ServiceLocalManager.getService:%s->%s", name, proxy);
+                    return proxy;
                 }
-                if (name.equals("iphonesubinfo")) {
-                    MethodInvocationStub<IInterface> stub = InvocationStubManager.getInstance().getInvocationStub(PhoneSubInfoStub.class);
-                    if (stub != null) {
-                        return stub.getProxyInterface().asBinder();
-                    }
+                VLog.d("kk", "ServiceLocalManager.getService:%s no find", name);
+                return super.call(who, method, args);
+            }
+        });
+        addMethodProxy(new StaticMethodProxy("checkService"){
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                String name = (String) args[0];
+                BinderInvocationStub proxy = ServiceLocalManager.getService(name);
+                if(proxy != null){
+                    //getInterfaceDescriptor,queryLocalInterface
+                    VLog.d("kk", "ServiceLocalManager.checkService:%s->%s", name, proxy);
+                    return proxy;
                 }
-                if (name.equals(Context.APP_OPS_SERVICE)) {
-                    MethodInvocationStub<IInterface> stub = InvocationStubManager.getInstance().getInvocationStub(AppOpsManagerStub.class);
-                    if (stub != null) {
-                        return stub.getProxyInterface().asBinder();
-                    }
-                }
-                if (name.equals(Context.NOTIFICATION_SERVICE)) {
-                    MethodInvocationStub<IInterface> stub = InvocationStubManager.getInstance().getInvocationStub(NotificationManagerStub.class);
-                    if (stub != null) {
-                        return stub.getProxyInterface().asBinder();
-                    }
-                }
+                VLog.d("kk", "ServiceLocalManager.checkService:%s no find", name);
                 return super.call(who, method, args);
             }
         });

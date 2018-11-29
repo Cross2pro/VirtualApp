@@ -52,9 +52,6 @@ public class Constants {
      * @deprecated
      */
     public static final String EXTRA_PERMISSION_EX = EXTRA_ERROR;
-
-	public static String META_KEY_IDENTITY = "X-Identity";
-	public static String META_VALUE_STUB = "Stub-User";
 	/**
 	 * Server process name of VA
 	 */
@@ -64,5 +61,11 @@ public class Constants {
 	 */
 	public static String SHORTCUT_PROXY_ACTIVITY_NAME = ShortcutHandleActivity.class.getName();
 
-	public static String SHORTCUT_ACTION = ".virtual.action.shortcut";
+	public static String ACTION_SHORTCUT = ".virtual.action.shortcut";
+
+	public static String ACTION_BADGER_CHANGE = ".virtual.action.BADGER_CHANGE";
+
+	public static String NOTIFICATION_CHANNEL = "virtual_default";
+
+    public static String NOTIFICATION_DAEMON_CHANNEL = "virtual_daemon";
 }

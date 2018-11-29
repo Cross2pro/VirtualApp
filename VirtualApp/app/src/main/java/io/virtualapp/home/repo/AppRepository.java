@@ -8,8 +8,8 @@ import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
-import com.lody.virtual.client.core.SettingRule;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
@@ -43,6 +43,7 @@ public class AppRepository implements AppDataSource {
     private final Map<String, String> mLabels = new HashMap<>();
     private static final List<String> SCAN_PATH_LIST = Arrays.asList(
             ".",
+            "backups/apps",
             "wandoujia/app",
             "tencent/tassistant/apk",
             "BaiduAsa9103056",
@@ -216,12 +217,9 @@ public class AppRepository implements AppDataSource {
                                                       boolean notCopyApk, boolean hideGApps) {
         PackageManager pm = context.getPackageManager();
         List<AppInfo> list = new ArrayList<>(pkgList.size());
-        String hostPkg = VirtualCore.get().getHostPkg();
-        boolean support64 = VirtualCore.get().is64BitEngineInstalled();
-
         for (PackageInfo pkg : pkgList) {
             // ignore the host package
-            if (hostPkg.equals(pkg.packageName)) {
+            if (StubManifest.isHostPackageName(pkg.packageName)) {
                 continue;
             }
             if (hideGApps && GmsSupport.isGoogleAppOrService(pkg.packageName)) {
@@ -232,41 +230,31 @@ public class AppRepository implements AppDataSource {
                 if(isSystemApplication(pkg)){
                     continue;
                 }
-                if (!isGameFramework(pkg.packageName) &&pm.getLaunchIntentForPackage(pkg.packageName) == null) {
-                    continue;
-                }
-                //check NotCopyApk
-                if (!VirtualCore.get().isDisableNotCopyApk(pkg.packageName)
-                        && isDisableNotCopyApk(pkg)) {
-                    VirtualCore.get().addSettingRule(SettingRule.DisableNotCopyApk, pkg.packageName);
-                }
-            }
-            boolean only64Bit = !NativeLibraryHelperCompat.isSupportNative32(pkg.applicationInfo);
-            if (only64Bit) {
-                if(!support64 || !notCopyApk) {
-                    //if support 64 then remove it;
+                if (!isGameFramework(pkg.packageName) && pm.getLaunchIntentForPackage(pkg.packageName) == null) {
                     continue;
                 }
             }
-            if(notCopyApk && !GmsSupport.hasDex(pkg.applicationInfo.publicSourceDir)){
+            if (notCopyApk && !GmsSupport.hasDex(pkg.applicationInfo.publicSourceDir)) {
                 continue;
             }
+            //TODO all can add,but lunch need check 64lib
+
             ApplicationInfo ai = pkg.applicationInfo;
             String path = ai.publicSourceDir != null ? ai.publicSourceDir : ai.sourceDir;
             if (path == null) {
                 continue;
             }
+            InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             AppInfo info = new AppInfo();
             info.packageName = pkg.packageName;
             info.fastOpen = notCopyApk;
             info.path = path;
             info.icon = ai.loadIcon(pm);
             info.name = ai.loadLabel(pm);
-            info.only64Bit = only64Bit;
             info.targetSdkVersion = pkg.applicationInfo.targetSdkVersion;
             info.requestedPermissions = pkg.requestedPermissions;
-            InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             if (installedAppInfo != null) {
+                info.path = installedAppInfo.getApkPath();
                 info.cloneCount = installedAppInfo.getInstalledUsers().length;
             }
             list.add(info);

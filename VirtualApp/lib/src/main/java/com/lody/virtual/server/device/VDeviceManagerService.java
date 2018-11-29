@@ -4,8 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VDeviceManager;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.remote.VDeviceInfo;
 import com.lody.virtual.server.interfaces.IDeviceInfoManager;
@@ -68,7 +68,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
         synchronized (mDeviceInfos) {
             info = mDeviceInfos.get(userId);
             if (info == null) {
-                if (VASettings.KEEP_ADMIN_PHONE_INFO && userId == 0) {
+                if (VirtualCore.getConfig().isKeepAdminDeviceInfo() && userId == 0) {
                     info = VDeviceManager.defaultDevice(mContext);
                 } else {
                     info = generateRandomDeviceInfo(userId);

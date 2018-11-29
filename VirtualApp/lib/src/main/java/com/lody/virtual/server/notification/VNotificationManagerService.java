@@ -127,7 +127,7 @@ public class VNotificationManagerService extends INotificationManager.Stub {
     }
 
     @Override
-    public void cancelAllNotification(String packageName, int userId) throws RemoteException {
+    public void cancelAllNotification(String packageName, int userId) {
         Log.e(TAG, "cancelAllNotification packageName: " + packageName);
         Log.e(TAG, "cancelAllNotification userId: " + userId);
         List<NotificationInfo> infos = new ArrayList<>();
@@ -151,7 +151,10 @@ public class VNotificationManagerService extends INotificationManager.Stub {
         if (iNotificationCallback == null) {
             return;
         }
-        iNotificationCallback.cancelAllNotification(packageName);
+        try {
+            iNotificationCallback.cancelAllNotification(packageName);
+        } catch (Exception e)
+        {}
     }
 
     public void cancelNotification(String pkg, String tag, int id, int userId) throws RemoteException {

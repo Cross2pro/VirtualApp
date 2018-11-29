@@ -1,17 +1,21 @@
 #include <stdlib.h>
 #include "SandboxFs.h"
 #include "Path.h"
+#include<setjmp.h>
+
+#define FORCE_CLOSE_NORMALIZE_PATH
 
 PathItem *keep_items;
 PathItem *forbidden_items;
+PathItem *readonly_items;
 ReplaceItem *replace_items;
-PathItem *dlopen_keep_items;
 int keep_item_count;
 int forbidden_item_count;
+int readonly_item_count;
 int replace_item_count;
 
 int add_keep_item(const char *path) {
-    char keep_env_name[25];
+    char keep_env_name[KEY_MAX];
     sprintf(keep_env_name, "V_KEEP_ITEM_%d", keep_item_count);
     setenv(keep_env_name, path, 1);
     keep_items = (PathItem *) realloc(keep_items,
@@ -25,7 +29,7 @@ int add_keep_item(const char *path) {
 
 
 int add_forbidden_item(const char *path) {
-    char forbidden_env_name[25];
+    char forbidden_env_name[KEY_MAX];
     sprintf(forbidden_env_name, "V_FORBID_ITEM_%d", forbidden_item_count);
     setenv(forbidden_env_name, path, 1);
     forbidden_items = (PathItem *) realloc(forbidden_items,
@@ -38,9 +42,23 @@ int add_forbidden_item(const char *path) {
     return ++forbidden_item_count;
 }
 
+int add_readonly_item(const char *path) {
+    char readonly_env_name[KEY_MAX];
+    sprintf(readonly_env_name, "V_READONLY_ITEM_%d", readonly_item_count);
+    setenv(readonly_env_name, path, 1);
+    readonly_items = (PathItem *) realloc(readonly_items,
+                                          readonly_item_count * sizeof(PathItem) +
+                                          sizeof(PathItem));
+    PathItem &item = readonly_items[readonly_item_count];
+    item.path = strdup(path);
+    item.size = strlen(path);
+    item.is_folder = (path[strlen(path) - 1] == '/');
+    return ++readonly_item_count;
+}
+
 int add_replace_item(const char *orig_path, const char *new_path) {
-    char src_env_name[25];
-    char dst_env_name[25];
+    char src_env_name[KEY_MAX];
+    char dst_env_name[KEY_MAX];
     sprintf(src_env_name, "V_REPLACE_ITEM_SRC_%d", replace_item_count);
     sprintf(dst_env_name, "V_REPLACE_ITEM_DST_%d", replace_item_count);
     setenv(src_env_name, orig_path, 1);
@@ -66,6 +84,10 @@ PathItem *get_forbidden_item() {
     return forbidden_items;
 }
 
+PathItem *get_readonly_item() {
+    return readonly_items;
+}
+
 ReplaceItem *get_replace_items() {
     return replace_items;
 }
@@ -83,9 +105,10 @@ int get_replace_item_count() {
 }
 
 
-inline bool match_path(bool is_folder, size_t size, const char *item_path, const char *path) {
+inline bool
+match_path(bool is_folder, size_t size, const char *item_path, const char *path, size_t pathLen) {
     if (is_folder) {
-        if (strlen(path) < size) {
+        if (pathLen < size) {
             // ignore the last '/'
             return strncmp(item_path, path, size - 1) == 0;
         } else {
@@ -96,109 +119,145 @@ inline bool match_path(bool is_folder, size_t size, const char *item_path, const
     }
 }
 
-
-const char *relocate_path(const char *path, int *result) {
-    if (path == NULL) {
-        *result = NOT_MATCH;
-        return NULL;
+bool isReadOnly(const char * path) {
+    for (int i = 0; i < readonly_item_count; ++i) {
+        PathItem &item = readonly_items[i];
+        if (match_path(item.is_folder, item.size, item.path, path, strlen(path))) {
+            return true;
+        }
     }
+    return false;
+}
+
+const char *relocate_path(const char *path, bool normalize_path) {
+#ifdef FORCE_CLOSE_NORMALIZE_PATH
+    normalize_path = false;
+#endif
+    if (NULL == path) {
+        return path;
+    }
+    if (normalize_path) {
+        path = canonicalize_filename(path);
+    }
+    const char *result = path;
+    size_t len = strlen(result);
 
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
-        if (match_path(item.is_folder, item.size, item.path, path)) {
-            *result = KEEP;
-            return path;
-        }
-    }
-
-    for (int i = 0; i < replace_item_count; ++i) {
-        ReplaceItem &item = replace_items[i];
-        if (match_path(item.is_folder, item.orig_size, item.orig_path, path)) {
-            *result = MATCH;
-            size_t len = strlen(path);
-            if (len < item.orig_size) {
-                //remove last /
-                std::string redirect_path(item.new_path, 0, item.new_size - 1);
-                return strdup(redirect_path.c_str());
-            } else {
-                std::string redirect_path(item.new_path);
-                redirect_path += path + item.orig_size;
-                return strdup(redirect_path.c_str());
-            }
+        if (match_path(item.is_folder, item.size, item.path, path, len)) {
+            result = path;
+            goto finally;
         }
     }
 
     for (int i = 0; i < forbidden_item_count; ++i) {
         PathItem &item = forbidden_items[i];
-        if (match_path(item.is_folder, item.size, item.path, path)) {
-            *result = FORBID;
-            // Permission denied
-            errno = 13;
-            return NULL;
+        if (match_path(item.is_folder, item.size, item.path, path, len)) {
+            result = NULL;
+            goto finally;
         }
     }
 
-    *result = NOT_MATCH;
-    return path;
-}
-
-
-int relocate_path_inplace(char *_path, size_t size, int *result) {
-    const char *redirect_path = relocate_path(_path, result);
-    if (redirect_path && redirect_path != _path) {
-        if (strlen(redirect_path) <= size) {
-            strcpy(_path, redirect_path);
-        } else {
-            return -1;
+    for (int i = 0; i < replace_item_count; ++i) {
+        ReplaceItem &item = replace_items[i];
+        if (match_path(item.is_folder, item.orig_size, item.orig_path, path, len)) {
+            if (len < item.orig_size) {
+                //remove last /
+                result = strdup(item.new_path);
+                goto finally;
+            } else {
+                char *relocated_path = (char *) malloc(PATH_MAX);
+                memset(relocated_path, 0, PATH_MAX);
+                strcat(relocated_path, item.new_path);
+                strcat(relocated_path, path + item.orig_size);
+                result = relocated_path;
+                goto finally;
+            }
         }
-        free((void *) redirect_path);
     }
-    return 0;
+    finally:
+    if (normalize_path && result != path) {
+        free((void *) path);
+    }
+    return result;
 }
 
+int relocate_path_inplace(char *_path, size_t size, bool normalize_path) {
+#ifdef FORCE_CLOSE_NORMALIZE_PATH
+    normalize_path = false;
+#endif
+    int ret = -1;
+    const char *redirect_path = relocate_path(_path, normalize_path);
+    if (redirect_path) {
+        ret = 0;
+        if (redirect_path != _path) {
+            if (strlen(redirect_path) <= size) {
+                strcpy(_path, redirect_path);
+            }
+        }
+    }
+    free((void *) redirect_path);
+    return ret;
+}
 
-const char *reverse_relocate_path(const char *_path) {
-    if (_path == NULL) {
+const char *reverse_relocate_path(const char *path, bool normalize_path) {
+#ifdef FORCE_CLOSE_NORMALIZE_PATH
+    normalize_path = false;
+#endif
+    if (path == NULL) {
         return NULL;
     }
-    char *path = canonicalize_filename(_path);
+    if (normalize_path) {
+        path = canonicalize_filename(path);
+    }
+    const char *result = path;
+    size_t len = strlen(path);
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
-        if (match_path(item.is_folder, item.size, item.path, path)) {
-            free(path);
-            return path;
+        if (match_path(item.is_folder, item.size, item.path, path, len)) {
+            result = path;
+            goto finally;
         }
     }
     for (int i = 0; i < replace_item_count; ++i) {
         ReplaceItem &item = replace_items[i];
-        if (match_path(item.is_folder, item.new_size, item.new_path, path)) {
+        if (match_path(item.is_folder, item.new_size, item.new_path, path, len)) {
             int len = strlen(path);
             if (len < item.new_size) {
-                //remove last /
-                std::string reverse_path(item.orig_path, 0, item.orig_size - 1);
-                free(path);
-                return strdup(reverse_path.c_str());
+                result = strdup(item.orig_path);
+                goto finally;
             } else {
-                std::string reverse_path(item.orig_path);
-                reverse_path += path + item.new_size;
-                free(path);
-                return strdup(reverse_path.c_str());
+                char *reverse_path = (char *) malloc(PATH_MAX);
+                memset(reverse_path, 0, PATH_MAX);
+                strcat(reverse_path, item.orig_path);
+                strcat(reverse_path, path + item.new_size);
+                result = reverse_path;
+                goto finally;
             }
         }
     }
-    return _path;
+    finally:
+    if (normalize_path && result != path) {
+        free((void *) path);
+    }
+    return result;
 }
 
 
-int reverse_relocate_path_inplace(char *_path, size_t size) {
-    const char *redirect_path = reverse_relocate_path(_path);
-    if (redirect_path && redirect_path != _path) {
-        if (strlen(redirect_path) <= size) {
-            strcpy(_path, redirect_path);
-        } else {
-            return -1;
+int reverse_relocate_path_inplace(char *path, size_t size, bool normalize_path) {
+#ifdef FORCE_CLOSE_NORMALIZE_PATH
+    normalize_path = false;
+#endif
+    int ret = -1;
+    const char *redirect_path = reverse_relocate_path(path, normalize_path);
+    if (redirect_path) {
+        ret = 0;
+        if (redirect_path != path) {
+            if (strlen(redirect_path) <= size) {
+                strcpy(path, redirect_path);
+            }
+            free((void *) redirect_path);
         }
-        free((void *) redirect_path);
     }
-    return 0;
+    return ret;
 }

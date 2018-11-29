@@ -16,11 +16,19 @@ import java.io.Serializable;
  */
 public class ProviderCall {
 
-	public static Bundle call(String authority, String methodName, String arg, Bundle bundle) {
+    public static Bundle callSafely(String authority, String methodName, String arg, Bundle bundle) {
+        try {
+            return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+	public static Bundle call(String authority, String methodName, String arg, Bundle bundle) throws IllegalAccessException {
 		return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
 	}
 
-	public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle) {
+	public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle) throws IllegalAccessException {
 		Uri uri = Uri.parse("content://" + authority);
 		return ContentProviderCompat.call(context, uri, method, arg, bundle);
 	}
@@ -71,8 +79,17 @@ public class ProviderCall {
 			return this;
 		}
 
-		public Bundle call() {
+		public Bundle call() throws IllegalAccessException {
 			return ProviderCall.call(auth, context, method, arg, bundle);
+		}
+
+		public Bundle callSafely()  {
+			try {
+				return call();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			}
+			return null;
 		}
 
 	}

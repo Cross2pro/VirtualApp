@@ -44,7 +44,6 @@ import com.lody.virtual.client.hook.proxies.pm.PackageManagerStub;
 import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
-import com.lody.virtual.client.hook.proxies.service.ServiceManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
@@ -126,11 +125,6 @@ public final class InvocationStubManager {
             return;
         }
         if (VirtualCore.get().isVAppProcess()) {
-            try {
-                addInjector(new ServiceManagerStub());
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
             addInjector(new LibCoreStub());
             addInjector(new ActivityManagerStub());
             addInjector(new PackageManagerStub());
@@ -212,6 +206,11 @@ public final class InvocationStubManager {
             if (mirror.oem.IFlymePermissionService.TYPE != null) {
                 addInjector(new FlymePermissionServiceStub());
             }
+//            try {
+//                addInjector(new ServiceManagerStub());
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
@@ -231,6 +230,18 @@ public final class InvocationStubManager {
                 IInjector.inject();
             } catch (Throwable e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    public void checkAllEnv() {
+        for (IInjector injector : mInjectors.values()) {
+            if (injector.isEnvBad()) {
+                try {
+                    injector.inject();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

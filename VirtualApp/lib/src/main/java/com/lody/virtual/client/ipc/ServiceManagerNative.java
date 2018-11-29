@@ -20,6 +20,7 @@ public class ServiceManagerNative {
     public static final String USER = "user";
     public static final String APP = "app";
     public static final String ACCOUNT = "account";
+    public static final String CONTENT = "content";
     public static final String JOB = "job";
     public static final String NOTIFICATION = "notification";
     public static final String VS = "vs";
@@ -37,11 +38,15 @@ public class ServiceManagerNative {
 
     private static IServiceFetcher sFetcher;
 
+    private static String getAuthority() {
+        return VirtualCore.getConfig().getBinderProviderAuthority();
+    }
+
     private static IServiceFetcher getServiceFetcher() {
         if (sFetcher == null || !sFetcher.asBinder().isBinderAlive()) {
             synchronized (ServiceManagerNative.class) {
                 Context context = VirtualCore.get().getContext();
-                Bundle response = new ProviderCall.Builder(context, SERVICE_CP_AUTH).methodName("@").call();
+                Bundle response = new ProviderCall.Builder(context, getAuthority()).methodName("@").callSafely();
                 if (response != null) {
                     IBinder binder = BundleCompat.getBinder(response, "_VA_|_binder_");
                     linkBinderDied(binder);
@@ -53,7 +58,7 @@ public class ServiceManagerNative {
     }
 
     public static void ensureServerStarted() {
-        new ProviderCall.Builder(VirtualCore.get().getContext(), SERVICE_CP_AUTH).methodName("ensure_created").call();
+        new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName("ensure_created").callSafely();
     }
 
     public static void clearServerFetcher() {

@@ -118,13 +118,15 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <!-- sdcard -->
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- 电量 -->
-    <uses-permission android:name="android.permission.BATTERY_STATS"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.BATTERY_STATS"
+        tools:ignore="ProtectedPermissions" />
     <!-- 身体传感器 -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
@@ -138,11 +140,13 @@
     <!-- 通话状态 -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!-- 修改当前配置-->
-    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.CHANGE_CONFIGURATION"
+        tools:ignore="ProtectedPermissions" />
     <!-- 设置 -->
-    <uses-permission android:name="android.permission.WRITE_SETTINGS"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
     <!-- 最近任务/进程 -->
     <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
@@ -169,8 +173,9 @@
     <!-- browser history end -->
 
     <!-- 清空应用缓存-->
-    <uses-permission android:name="android.permission.CLEAR_APP_CACHE"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.CLEAR_APP_CACHE"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
     <!-- 同步设置 -->
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
@@ -186,16 +191,18 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <!-- 系统日志 -->
-    <uses-permission android:name="android.permission.READ_LOGS"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
     <!-- 重启应用 -->
     <uses-permission android:name="android.permission.RESTART_PACKAGES" />
     <!-- 时间/时区 -->
     <uses-permission
         android:name="android.permission.SET_TIME"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.SET_TIME_ZONE"
-                     tools:ignore="ProtectedPermissions"/>
+    <uses-permission
+        android:name="android.permission.SET_TIME_ZONE"
+        tools:ignore="ProtectedPermissions" />
     <!-- 墙纸 -->
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
@@ -214,13 +221,13 @@
     <!-- system app start -->
     <uses-permission
         android:name="android.permission.GET_INTENT_SENDER_INTENT"
-        tools:ignore="ProtectedPermissions"/>
+        tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.BIND_DIRECTORY_SEARCH"
-        tools:ignore="ProtectedPermissions"/>
+        tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.UPDATE_APP_OPS_STATS"
-        tools:ignore="ProtectedPermissions"/>
+        tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.INSTALL_PACKAGES"
         tools:ignore="ProtectedPermissions" />
@@ -315,19 +322,19 @@
         </activity>
 
         <activity
+            android:name=".client.stub.ShadowPendingActivity"
             android:exported="true"
             android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
-            android:name=".client.stub.ShadowPendingActivity"
             android:process="@string/engine_process_name" />
 
         <service
-            android:exported="true"
             android:name=".client.stub.ShadowPendingService"
+            android:exported="true"
             android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name" />
         <receiver
-            android:exported="true"
             android:name=".client.stub.ShadowPendingReceiver"
+            android:exported="true"
             android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name" />
 
@@ -342,8 +349,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:process="@string/engine_process_name"
             android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
+            android:process="@string/engine_process_name"
             android:screenOrientation="portrait" />
 
         <activity
@@ -351,8 +358,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:exported="false"
-            android:process="@string/engine_process_name"
             android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
+            android:process="@string/engine_process_name"
             android:screenOrientation="portrait" />
 
         <activity
@@ -360,8 +367,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:finishOnCloseSystemDialogs="true"
+            android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name"
             android:screenOrientation="portrait"
             android:theme="@style/VAAlertTheme" />
@@ -371,8 +378,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:finishOnCloseSystemDialogs="true"
+            android:permission="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name"
             android:screenOrientation="portrait"
             android:theme="@style/VAAlertTheme" />
@@ -3412,12 +3419,12 @@
 
         <activity
             android:name=".client.stub.RequestPermissionsActivity"
-            android:launchMode="singleTop"
-            android:noHistory="true"
-            android:taskAffinity="com.lody.virtual.permission"
-            android:process=":x"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+            android:launchMode="singleTop"
+            android:noHistory="true"
+            android:process=":x"
+            android:taskAffinity="com.lody.virtual.permission"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 </manifest>

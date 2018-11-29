@@ -21,6 +21,7 @@ import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.xdja.zs.IUiCallback;
@@ -130,36 +131,28 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
             if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                setActivityOrientation(activity, info.screenOrientation);
-                boolean needWait;
-                //set orientation
-                Configuration configuration = activity.getResources().getConfiguration();
-                if (isOrientationLandscape(info.screenOrientation)) {
-                    needWait = configuration.orientation != Configuration.ORIENTATION_LANDSCAPE;
-                    configuration.orientation = Configuration.ORIENTATION_LANDSCAPE;
-                } else {
-                    needWait = configuration.orientation != Configuration.ORIENTATION_PORTRAIT;
-                    configuration.orientation = Configuration.ORIENTATION_PORTRAIT;
-                }
-                if(needWait) {
-                    try{
-                        Thread.sleep(800);
-                    }catch (Exception e){
-                        //ignore
+                if(activity.getRequestedOrientation() != info.screenOrientation) {
+                    ActivityManagerCompat.setActivityOrientation(activity, info.screenOrientation);
+                    boolean needWait;
+                    //set orientation
+                    Configuration configuration = activity.getResources().getConfiguration();
+                    if (isOrientationLandscape(info.screenOrientation)) {
+                        needWait = configuration.orientation != Configuration.ORIENTATION_LANDSCAPE;
+                        configuration.orientation = Configuration.ORIENTATION_LANDSCAPE;
+                    } else {
+                        needWait = configuration.orientation != Configuration.ORIENTATION_PORTRAIT;
+                        configuration.orientation = Configuration.ORIENTATION_PORTRAIT;
+                    }
+                    if (needWait) {
+                        try {
+                            Thread.sleep(800);
+                        } catch (Exception e) {
+                            //ignore
+                        }
                     }
                 }
             }
         }
-        super.callActivityOnCreate(activity, icicle);
-    }
-
-    private void setActivityOrientation(Activity activity, int orientation) {
-        IBinder token = mirror.android.app.Activity.mToken.get(activity);
-        mirror.android.app.Activity.mToken.set(mUtilActivity, token);
-        mUtilActivity.setRequestedOrientation(orientation);
-    }
-
-    public void callSuperActivityOnCreate(Activity activity, Bundle icicle) {
         super.callActivityOnCreate(activity, icicle);
     }
 

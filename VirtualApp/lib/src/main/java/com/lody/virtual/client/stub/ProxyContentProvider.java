@@ -18,8 +18,9 @@ import android.provider.OpenableColumns;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.ContentProviderCompat;
-import com.lody.virtual.helper.compat.UriCompat;
+import com.lody.virtual.helper.compat.ProxyFCPUriCompat;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,7 +28,10 @@ import java.io.FileNotFoundException;
 import static android.content.ContentResolver.SCHEME_FILE;
 
 public class ProxyContentProvider extends ContentProvider {
+
     private static final boolean DEBUG = false;
+
+    private static final boolean PROVIDER_ONLY_FILE = true;
 
     private static final String[] COLUMNS = {
         OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE
@@ -51,15 +55,29 @@ public class ProxyContentProvider extends ContentProvider {
     }
 
     private Uri wrapperUri(String form, Uri uri) {
-        if(DEBUG) {
+        if (DEBUG) {
             Log.i("UriCompat", "wrapperUri:" + form);
         }
-        return UriCompat.wrapperUri(uri);
+        return ProxyFCPUriCompat.get().wrapperUri(uri);
+    }
+
+    private boolean disableReadWrite(){
+        if(PROVIDER_ONLY_FILE){
+            return true;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+            String pkg = getCallingPackage();
+            return !(VirtualCore.getConfig().get64bitEnginePackageName().equals(pkg)
+                    || VirtualCore.getConfig().getHostPackageName().equals(pkg));
+        }
+       return false;
     }
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        if(VASettings.PROVIDER_ONLY_FILE)return null;
+        if (disableReadWrite()){
+            return null;
+        }
         Uri a = wrapperUri("query", uri);
         getContext().grantUriPermission(getCallingPackage(), uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
@@ -92,7 +110,7 @@ public class ProxyContentProvider extends ContentProvider {
 
 
         try {
-            Cursor cursor = ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            Cursor cursor = ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .query(a, projection, selection, selectionArgs, sortOrder);
             return cursor;
         } catch (Exception e) {
@@ -102,7 +120,6 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
-        if(VASettings.PROVIDER_ONLY_FILE)return null;
         Uri a = wrapperUri("getType", uri);
         if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
             final File file = new File(a.getPath());
@@ -118,7 +135,7 @@ public class ProxyContentProvider extends ContentProvider {
         }
 
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .getType(a);
         } catch (Exception e) {
             return null;
@@ -127,10 +144,12 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues contentValues) {
-        if(VASettings.PROVIDER_ONLY_FILE)return uri;
+        if (disableReadWrite()){
+            return uri;
+        }
         Uri a = wrapperUri("insert", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .insert(a, contentValues);
         } catch (Exception e) {
             e.printStackTrace();
@@ -140,12 +159,14 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     public int bulkInsert(Uri uri, ContentValues[] values) {
-        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        if (disableReadWrite()){
+            return 0;
+        }
         Uri a = wrapperUri("insert", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .bulkInsert(a, values);
-        }catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             return 0;
         }
@@ -153,10 +174,12 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String str, String[] strArr) {
-        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        if (disableReadWrite()){
+            return 0;
+        }
         Uri a = wrapperUri("delete", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .delete(a, str, strArr);
         } catch (Exception e) {
             e.printStackTrace();
@@ -166,10 +189,12 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     public int update(Uri uri, ContentValues contentValues, String str, String[] strArr) {
-        if(VASettings.PROVIDER_ONLY_FILE)return 0;
+        if (disableReadWrite()){
+            return 0;
+        }
         Uri a = wrapperUri("update", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .update(a, contentValues, str, strArr);
         } catch (Exception e) {
             e.printStackTrace();
@@ -185,10 +210,10 @@ public class ProxyContentProvider extends ContentProvider {
             return fd != null ? new AssetFileDescriptor(fd, 0, -1) : null;
         }
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .openAssetFile(a, str);
         } catch (Throwable e) {
-            if(DEBUG) {
+            if (DEBUG) {
                 Log.w("UriCompat", "openAssetFile2", e);
             }
             return null;
@@ -197,13 +222,13 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    public AssetFileDescriptor openAssetFile(Uri uri, String str, CancellationSignal cancellationSignal) throws FileNotFoundException {
+    public AssetFileDescriptor openAssetFile(Uri uri, String str, CancellationSignal cancellationSignal) {
         Uri a = wrapperUri("openAssetFile2", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .openAssetFile(a, str, cancellationSignal);
         } catch (Throwable e) {
-            if(DEBUG) {
+            if (DEBUG) {
                 Log.w("UriCompat", "openAssetFile2", e);
             }
             return null;
@@ -242,10 +267,10 @@ public class ProxyContentProvider extends ContentProvider {
             return ParcelFileDescriptor.open(new java.io.File(a.getPath()), modeToMode(str));
         }
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .openFile(a, str);
         } catch (Exception e) {
-            if(DEBUG) {
+            if (DEBUG) {
                 Log.w("UriCompat", "openFile", e);
             }
             return null;
@@ -254,13 +279,13 @@ public class ProxyContentProvider extends ContentProvider {
 
     @Override
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    public ParcelFileDescriptor openFile(Uri uri, String str, CancellationSignal cancellationSignal) throws FileNotFoundException {
+    public ParcelFileDescriptor openFile(Uri uri, String str, CancellationSignal cancellationSignal) {
         Uri a = wrapperUri("openFile2", uri);
         try {
-            return ContentProviderCompat.crazyAcquireContentProvider(getContext(), a)
+            return ContentProviderCompat.acquireContentProvider(getContext(), a)
                     .openFile(a, str, cancellationSignal);
         } catch (Exception e) {
-            if(DEBUG) {
+            if (DEBUG) {
                 Log.w("UriCompat", "openFile2", e);
             }
             return null;

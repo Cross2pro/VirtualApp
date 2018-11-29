@@ -13,13 +13,12 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
@@ -27,10 +26,9 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
-import java.util.Objects;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
@@ -186,9 +184,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
      * as well. A new TaskRecord will be recreated in `onActivityCreated`
      */
     private void optimizeTasksLocked() {
-        // noinspection deprecation
-        ArrayList<ActivityManager.RecentTaskInfo> recentTask = new ArrayList<>(mAM.getRecentTasks(Integer.MAX_VALUE,
-                ActivityManager.RECENT_WITH_EXCLUDED | ActivityManager.RECENT_IGNORE_UNAVAILABLE));
+        List<ActivityManager.RecentTaskInfo> recentTask = VirtualCore.get().getRecentTasksEx(Integer.MAX_VALUE,
+                ActivityManager.RECENT_WITH_EXCLUDED | ActivityManager.RECENT_IGNORE_UNAVAILABLE);
         int N = mHistory.size();
         while (N-- > 0) {
             TaskRecord task = mHistory.valueAt(N);
@@ -543,7 +540,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         try {
             mirror.android.app.IActivityManager.startActivity.call(ActivityManagerNative.getDefault.call(),
                     (Object[]) args);
-        }catch (Throwable e){
+        } catch (Throwable e) {
             //vivo start bg's activity
             Intent error = new Intent(Constants.ACTION_NEED_PERMISSION);
             error.setPackage(VirtualCore.get().getHostPkg());
@@ -585,9 +582,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
         if (isDialogStyle) {
-            return VASettings.getStubDialogName(vpid);
+            return StubManifest.getStubDialogName(vpid);
         } else {
-            return VASettings.getStubActivityName(vpid);
+            return StubManifest.getStubActivityName(vpid);
         }
     }
 
@@ -598,7 +595,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return null;
         }
         Intent targetIntent = new Intent();
-        targetIntent.setClassName(VASettings.getStubPackageName(targetApp.is64bit), fetchStubActivity(targetApp.vpid, info));
+        targetIntent.setClassName(StubManifest.getStubPackageName(targetApp.is64bit), fetchStubActivity(targetApp.vpid, info));
         ComponentName component = intent.getComponent();
         if (component == null) {
             component = ComponentUtils.toComponentName(info);

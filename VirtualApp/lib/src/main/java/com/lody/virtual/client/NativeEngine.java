@@ -30,11 +30,16 @@ public class NativeEngine {
 
     private static boolean sFlag = false;
 
-    private static final String LIB_NAME = "va++";
+    private static final String LIB_NAME = "v++";
+    private static final String LIB_NAME_64 = "v++_64";
 
     static {
         try {
-            System.loadLibrary(LIB_NAME);
+            if (VirtualRuntime.is64bit()) {
+                System.loadLibrary(LIB_NAME_64);
+            } else {
+                System.loadLibrary(LIB_NAME);
+            }
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -50,7 +55,7 @@ public class NativeEngine {
         sDexOverrideMap = new HashMap<>(installedAppInfos.size());
         for (InstalledAppInfo info : installedAppInfos) {
             try {
-                sDexOverrideMap.put(new File(info.apkPath).getCanonicalPath(), info);
+                sDexOverrideMap.put(new File(info.getApkPath()).getCanonicalPath(), info);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -105,6 +110,25 @@ public class NativeEngine {
         }
     }
 
+    public static void readOnlyFile(String path) {
+        try {
+            nativeIOReadOnly(path);
+        } catch (Throwable e) {
+            VLog.e(TAG, VLog.getStackTraceString(e));
+        }
+    }
+
+    public static void readOnly(String path) {
+        if (!path.endsWith("/")) {
+            path = path + "/";
+        }
+        try {
+            nativeIOReadOnly(path);
+        } catch (Throwable e) {
+            VLog.e(TAG, VLog.getStackTraceString(e));
+        }
+    }
+
     public static void whitelistFile(String path) {
         try {
             nativeIOWhitelist(path);
@@ -135,11 +159,11 @@ public class NativeEngine {
         }
     }
 
-    public static void enableIORedirect(boolean needDlOpen) {
+    public static void enableIORedirect() {
         try {
-            String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir,
-                    "lib/lib" + LIB_NAME + ".so").getAbsolutePath();
-            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt(), needDlOpen);
+            String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().nativeLibraryDir,
+                    "lib" + LIB_NAME + ".so").getAbsolutePath();
+            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -180,7 +204,6 @@ public class NativeEngine {
     public static void onOpenDexFileNative(String[] params) {
         String dexOrJarPath = params[0];
         String outputPath = params[1];
-        VLog.d(TAG, "beforeOpenDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
         try {
             String canonical = new File(dexOrJarPath).getCanonicalPath();
             InstalledAppInfo info = sDexOverrideMap.get(canonical);
@@ -191,6 +214,7 @@ public class NativeEngine {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        VLog.i(TAG, "OpenDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
     }
 
 
@@ -216,10 +240,11 @@ public class NativeEngine {
 
     private static native void nativeDlOpenWhitelist(String path);
 
-    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel, boolean needDlOpen);
+    private static native void nativeIOReadOnly(String path);
+
+    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
 
     public static int onGetUid(int uid) {
-        Thread.currentThread().setContextClassLoader(VClient.class.getClassLoader());
         return VClient.get().getBaseVUid();
     }
 }

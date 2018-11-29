@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.hook.annotations.LogInvocation;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
@@ -71,6 +72,10 @@ public abstract class MethodProxy {
 
     protected static int getRealUid() {
         return VirtualCore.get().myUid();
+    }
+
+    protected static SettingConfig getConfig() {
+        return VirtualCore.getConfig();
     }
 
     protected static VDeviceInfo getDeviceInfo() {

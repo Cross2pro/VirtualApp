@@ -28,11 +28,11 @@ public class RegisteredServicesParser {
         return null;
     }
 
-    public Resources getResources(Context context, ApplicationInfo appInfo) throws Exception {
+    public Resources getResources(Context context, ApplicationInfo appInfo) {
         PackageSetting ps = PackageCacheManager.getSetting(appInfo.packageName);
         if (ps != null) {
             AssetManager assets = mirror.android.content.res.AssetManager.ctor.newInstance();
-            mirror.android.content.res.AssetManager.addAssetPath.call(assets, ps.apkPath);
+            mirror.android.content.res.AssetManager.addAssetPath.call(assets, ps.getApkPath(false));
             Resources hostRes = context.getResources();
             return new Resources(assets, hostRes.getDisplayMetrics(), hostRes.getConfiguration());
         }

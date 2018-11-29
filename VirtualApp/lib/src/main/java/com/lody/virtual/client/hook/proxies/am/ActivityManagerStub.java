@@ -12,6 +12,7 @@ import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
@@ -66,13 +67,7 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
     protected void onBindMethods() {
         super.onBindMethods();
         if (VirtualCore.get().isVAppProcess()) {
-            addMethodProxy(new StaticMethodProxy("navigateUpTo") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    //throw new RuntimeException("Call navigateUpTo!!!!");
-                    return 0;
-                }
-            });
+            addMethodProxy(new ReplaceLastPkgMethodProxy("getAppStartMode"));
             addMethodProxy(new ReplaceLastUidMethodProxy("checkPermissionWithToken"));
             addMethodProxy(new ResultStaticMethodProxy("updateConfiguration", 0));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("setAppLockedVerifying"));
@@ -80,38 +75,6 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 @Override
                 public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
                     return PackageManager.PERMISSION_GRANTED;
-                }
-            });
-            addMethodProxy(new StaticMethodProxy("getRecentTasks") {
-                @Override
-                public Object call(Object who, Method method, Object... args) throws Throwable {
-                    Object _infos = method.invoke(who, args);
-                    //noinspection unchecked
-                    List<ActivityManager.RecentTaskInfo> infos =
-                            ParceledListSliceCompat.isReturnParceledListSlice(method)
-                                    ? ParceledListSlice.getList.call(_infos)
-                                    : (List) _infos;
-                    for (ActivityManager.RecentTaskInfo info : infos) {
-                        AppTaskInfo taskInfo = VActivityManager.get().getTaskInfo(info.id);
-                        if (taskInfo == null) {
-                            continue;
-                        }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            try {
-                                info.topActivity = taskInfo.topActivity;
-                                info.baseActivity = taskInfo.baseActivity;
-                            } catch (Throwable e) {
-                                // ignore
-                            }
-                        }
-                        try {
-                            info.origActivity = taskInfo.baseActivity;
-                            info.baseIntent = taskInfo.baseIntent;
-                        } catch (Throwable e) {
-                            // ignore
-                        }
-                    }
-                    return _infos;
                 }
             });
         }

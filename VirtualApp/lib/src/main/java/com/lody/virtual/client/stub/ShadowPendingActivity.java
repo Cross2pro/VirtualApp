@@ -30,28 +30,22 @@ public class ShadowPendingActivity extends Activity {
             return;
         }
         r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-        if(!VASettings.NEW_INTENTSENDER){
-            r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+        Bundle extras = intent.getExtras();
+        if (extras == null) {
             VActivityManager.get().startActivity(r.intent, r.userId);
-        }else {
-            Bundle extras = intent.getExtras();
-            if(extras == null){
-                VActivityManager.get().startActivity(r.intent, r.userId);
-                return;
+            return;
+        }
+        IBinder resultTo = BundleCompat.getBinder(extras, EXTRA_RESULTTO);
+        if (resultTo != null) {
+            int requestCode = extras.getInt(EXTRA_REQUESTCODE, 0);
+            String resultWho = extras.getString(EXTRA_RESULTWHO);
+            Bundle options = extras.getBundle(EXTRA_OPTIONS);
+            int res = VActivityManager.get().startActivity(r.intent, null, resultTo, options, resultWho, requestCode, r.userId);
+            if (res != 0 && requestCode > 0) {
+                VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
             }
-            IBinder resultTo = BundleCompat.getBinder(extras, EXTRA_RESULTTO);
-            r.intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-            if (resultTo != null) {
-                int requestCode = extras.getInt(EXTRA_REQUESTCODE, 0);
-                String resultWho = extras.getString(EXTRA_RESULTWHO);
-                Bundle options = extras.getBundle(EXTRA_OPTIONS);
-                int res = VActivityManager.get().startActivity(r.intent, null, resultTo, options, resultWho, requestCode, r.userId);
-                if (res != 0 && requestCode > 0) {
-                    VActivityManager.get().sendActivityResult(resultTo, resultWho, requestCode);
-                }
-            } else {
-                VActivityManager.get().startActivity(r.intent, r.userId);
-            }
+        } else {
+            VActivityManager.get().startActivity(r.intent, r.userId);
         }
     }
 }

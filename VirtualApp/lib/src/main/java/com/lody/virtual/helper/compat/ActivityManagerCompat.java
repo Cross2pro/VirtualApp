@@ -1,10 +1,13 @@
 package com.lody.virtual.helper.compat;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 
+import mirror.android.app.ActivityManager;
 import mirror.android.app.ActivityManagerNative;
+import mirror.android.app.IActivityManager;
 import mirror.android.app.IActivityManagerICS;
 import mirror.android.app.IActivityManagerL;
 import mirror.android.app.IActivityManagerN;
@@ -25,19 +28,22 @@ public class ActivityManagerCompat {
 	 * Result for IActivityManager.startActivity: an error where the
 	 * given Intent could not be resolved to an activity.
 	 */
-	public static final int START_INTENT_NOT_RESOLVED = -1;
+    public static final int START_INTENT_NOT_RESOLVED = ActivityManager.START_INTENT_NOT_RESOLVED == null ?
+            -1 : ActivityManager.START_INTENT_NOT_RESOLVED.get();
 
 	/**
 	 * Result for IActivityManager.startActivity: trying to start a background user
 	 * activity that shouldn't be displayed for all users.
 	 */
-	public static final int START_NOT_CURRENT_USER_ACTIVITY = -8;
+	public static final int START_NOT_CURRENT_USER_ACTIVITY = ActivityManager.START_NOT_CURRENT_USER_ACTIVITY == null ?
+            -8 : ActivityManager.START_NOT_CURRENT_USER_ACTIVITY.get();
 
 	/**
 	 * Result for IActivityManaqer.startActivity: activity wasn't really started, but
 	 * a task was simply brought to the foreground.
 	 */
-	public static final int START_TASK_TO_FRONT = 2;
+	public static final int START_TASK_TO_FRONT = ActivityManager.START_TASK_TO_FRONT == null ?
+            2 : ActivityManager.START_TASK_TO_FRONT.get();
 
 	/**
 	 * Type for IActivityManaqer.getIntentSender: this PendingIntent is
@@ -84,4 +90,24 @@ public class ActivityManagerCompat {
 
 		return false;
 	}
+
+
+    public static void setActivityOrientation(Activity activity, int orientation) {
+        try {
+            activity.setRequestedOrientation(orientation);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            //samsung is WindowManager.setRequestedOrientation
+            Activity parent =  mirror.android.app.Activity.mParent.get(activity);
+            while (parent != null) {
+                parent =  mirror.android.app.Activity.mParent.get(parent);
+            }
+            IBinder token = mirror.android.app.Activity.mToken.get(parent);
+            try {
+                IActivityManager.setRequestedOrientation.call(ActivityManagerNative.getDefault.call(), token, orientation);
+            }catch (Throwable ex){
+                ex.printStackTrace();
+            }
+        }
+    }
 }

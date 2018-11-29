@@ -14,12 +14,12 @@ import android.os.RemoteException;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.stub.KeepAliveService;
-import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
-import com.lody.virtual.server.bit64.V64BitHelper;
+import com.lody.virtual.server.content.VContentService;
 import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IServiceFetcher;
 import com.lody.virtual.server.job.VJobSchedulerService;
@@ -42,15 +42,19 @@ import com.xdja.zs.VAppPermissionManagerService;
 public final class BinderProvider extends ContentProvider {
 
     private final ServiceFetcher mServiceFetcher = new ServiceFetcher();
-    private boolean initialized = false;
+    private static boolean sInitialized = false;
 
     @Override
     public boolean onCreate() {
         return init();
     }
 
+    public static boolean isInitialized() {
+        return sInitialized;
+    }
+
     private boolean init() {
-        if (initialized) {
+        if (sInitialized) {
             return false;
         }
         Context context = getContext();
@@ -65,11 +69,10 @@ public final class BinderProvider extends ContentProvider {
         if (!VirtualCore.get().isStartup()) {
             return false;
         }
-
-        if(VASettings.PACKAGE_NAME.equals(context.getPackageName())){
-            V64BitHelper.check64BitRunning(null);
+        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
+            NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
         }
-
         VPackageManagerService.systemReady();
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         VActivityManagerService.systemReady(context);
@@ -85,7 +88,9 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.NOTIFICATION, VNotificationManagerService.get());
         VAppManagerService.get().scanApps();
         VAccountManagerService.systemReady();
+        VContentService.systemReady();
         addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());
+        addService(ServiceManagerNative.CONTENT, VContentService.get());
         addService(ServiceManagerNative.VS, VirtualStorageService.get());
         VDeviceManagerService.systemReady(context);
         addService(ServiceManagerNative.DEVICE, VDeviceManagerService.get());
@@ -99,7 +104,7 @@ public final class BinderProvider extends ContentProvider {
         VWaterMarkService.systemReady();
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
 
-        initialized = true;
+        sInitialized = true;
         return true;
     }
 
@@ -109,7 +114,7 @@ public final class BinderProvider extends ContentProvider {
 
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
-        if (!initialized) {
+        if (!sInitialized) {
             init();
         }
         if ("@".equals(method)) {

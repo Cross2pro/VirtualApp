@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -15,6 +14,8 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+
+import com.lody.virtual.client.core.VirtualCore;
 
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
@@ -46,10 +47,13 @@ public class ListAppActivity extends VActivity {
         mViewPager.setAdapter(new AppPagerAdapter(getSupportFragmentManager()));
         mTabLayout.setupWithViewPager(mViewPager);
         // Request permission to access external storage
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M
+                && VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.M) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
             }
+        } else {
+            mViewPager.setAdapter(new AppPagerAdapter(getSupportFragmentManager()));
         }
     }
 

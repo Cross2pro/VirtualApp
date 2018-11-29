@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
+import com.lody.virtual.client.core.VirtualCore;
+
 
 /**
  * @author Lody
@@ -18,7 +20,7 @@ public class KeepAliveService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        if(!VASettings.HIDE_FOREGROUND_NOTIFICATION) {
+        if(!VirtualCore.getConfig().isHideForegroundNotification()) {
             HiddenForeNotification.bindForeground(this);
         }
     }

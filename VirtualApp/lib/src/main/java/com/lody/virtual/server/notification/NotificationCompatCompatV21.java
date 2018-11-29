@@ -10,7 +10,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Reflect;
+
+import mirror.android.app.NotificationO;
 
 import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
 
@@ -29,6 +33,13 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
     @Override
     public boolean dealNotification(int id, Notification notification, String packageName) {
         Context appContext = getAppContext(packageName);
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            if(VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
+                if (TextUtils.isEmpty(notification.getChannelId())) {
+                    NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
+                }
+            }
+        }
         return resolveRemoteViews(appContext, packageName, notification)
                 || resolveRemoteViews(appContext, packageName, notification.publicVersion);
     }
@@ -38,8 +49,7 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
             return false;
         }
         String sourcePath = null;
-        //PackageInfo packageInfo = getPackageInfo(packageName);
-        PackageInfo packageInfo = null;
+        PackageInfo packageInfo = getPackageInfo(packageName);
         ApplicationInfo host = getHostContext().getApplicationInfo();
         if (packageInfo != null) {
             sourcePath = packageInfo.applicationInfo.sourceDir;

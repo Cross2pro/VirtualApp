@@ -1,8 +1,9 @@
 package mirror.android.app;
 
 
-import android.app.*;
 import android.app.Activity;
+import android.app.Application;
+import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;

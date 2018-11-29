@@ -36,7 +36,7 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.ProviderCall;
 import com.lody.virtual.client.ipc.VNotificationManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
@@ -77,7 +77,7 @@ import mirror.android.app.IServiceConnectionO;
 
 import static com.lody.virtual.os.VBinder.getCallingPid;
 import static com.lody.virtual.os.VUserHandle.getUserId;
-import static com.lody.virtual.server.pm.VAppManagerService.shouldRun64BitProcess;
+import static com.lody.virtual.server.pm.VAppManagerService.isShouldRun64BitProcess;
 
 /**
  * @author Lody
@@ -257,15 +257,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public IBinder acquireProviderClient(int userId, ProviderInfo info, int callingUid) {
-        ProcessRecord callerApp;
-        synchronized (mPidsSelfLocked) {
-            callerApp = findProcessLocked(VBinder.getCallingPid());
-        }
-        /*
-        if (callerApp == null) {
-            throw new SecurityException("Who are you?");
-        }
-        */
+        //season: ProxyContentProvider
         String processName = info.processName;
         ProcessRecord r;
         synchronized (this) {
@@ -372,9 +364,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private void startShadowService(ProcessRecord processRecord) {
-        String serviceName = VASettings.getStubServiceName(processRecord.vpid);
+        String serviceName = StubManifest.getStubServiceName(processRecord.vpid);
         Intent intent = new Intent();
-        intent.setClassName(VASettings.getStubPackageName(processRecord.is64bit), serviceName);
+        intent.setClassName(StubManifest.getStubPackageName(processRecord.is64bit), serviceName);
         VirtualCore.get().getContext().bindService(intent, new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -700,7 +692,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                     return;
                 }
                 int vpid = parseVPid(stubProcessName);
-                boolean run64Bit = shouldRun64BitProcess(packageName);
+                boolean run64Bit = VAppManagerService.get().isShouldRun64BitProcess(packageName);
                 if (vpid != -1) {
                     performStartProcessLocked(vuid, vpid, run64Bit, appInfo, processName, callingUid);
                 }
@@ -714,9 +706,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
         String prefix;
         if(stubProcessName == null){
             return -1;
-        }else if (stubProcessName.startsWith(VASettings.PACKAGE_NAME_64BIT)) {
-            prefix = VASettings.PACKAGE_NAME_64BIT + ":p";
-        } else if (stubProcessName.startsWith(VASettings.PACKAGE_NAME)) {
+        }else if (stubProcessName.startsWith(StubManifest.PACKAGE_NAME_64BIT)) {
+            prefix = StubManifest.PACKAGE_NAME_64BIT + ":p";
+        } else if (stubProcessName.startsWith(StubManifest.PACKAGE_NAME)) {
             prefix = VirtualCore.get().getHostPkg() + ":p";
         } else {
             return -1;
@@ -828,7 +820,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public int getFreeStubCount() {
-        return VASettings.STUB_COUNT - mPidsSelfLocked.size();
+        return StubManifest.STUB_COUNT - mPidsSelfLocked.size();
     }
 
     @Override
@@ -867,7 +859,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             app.setVCallingUid(callingUid);
             return app;
         }
-        boolean run64bit = shouldRun64BitProcess(ps);
+        boolean run64bit = isShouldRun64BitProcess(ps);
         int vpid;
         synchronized (mPidsSelfLocked) {
             vpid = queryFreeStubProcessLocked(run64bit);
@@ -954,7 +946,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         extras.putInt("_VA_|_vpid_", vpid);
         extras.putString("_VA_|_process_", processName);
         extras.putString("_VA_|_pkg_", info.packageName);
-        Bundle res = ProviderCall.call(VASettings.getStubAuthority(vpid, is64bit), "_VA_|_init_process_", null, extras);
+        Bundle res = ProviderCall.callSafely(StubManifest.getStubAuthority(vpid, is64bit), "_VA_|_init_process_", null, extras);
         if (res == null) {
             return null;
         }
@@ -965,7 +957,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private int queryFreeStubProcessLocked(boolean is64bit) {
-        for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
+        for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
             int N = mPidsSelfLocked.size();
             boolean using = false;
             while (N-- > 0) {
@@ -1082,7 +1074,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
                         }catch (Exception e){
                             e.printStackTrace();
                         }
-
                     }
                 }
             }
@@ -1324,13 +1315,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     @Override
-    public void broadcastFinish(PendingResultData res) {
-        BroadcastSystem.get().broadcastFinish(res);
+    public boolean broadcastFinish(IBinder token) {
+        return BroadcastSystem.get().broadcastFinish(token);
     }
 
     @Override
     public void notifyBadgerChange(BadgerInfo info) {
-        Intent intent = new Intent(VASettings.ACTION_BADGER_CHANGE);
+        Intent intent = new Intent(Constants.ACTION_BADGER_CHANGE);
         intent.putExtra("userId", info.userId);
         intent.putExtra("packageName", info.packageName);
         intent.putExtra("badgerCount", info.badgerCount);

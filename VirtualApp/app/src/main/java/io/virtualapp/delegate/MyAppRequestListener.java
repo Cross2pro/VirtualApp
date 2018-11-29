@@ -21,7 +21,7 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
     @Override
     public void onRequestInstall(String path) {
         Toast.makeText(context, "Installing: " + path, Toast.LENGTH_SHORT).show();
-        VirtualCore.get().installPackage(path, InstallStrategy.UPDATE_IF_EXIST, res -> {
+        VirtualCore.get().installPackage(path, InstallStrategy.FORCE_UPDATE, res -> {
             String info;
             if (res.isSuccess) {
                 if (res.isUpdate) {

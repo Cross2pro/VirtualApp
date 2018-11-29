@@ -2,6 +2,7 @@ package com.lody.virtual.remote;
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -17,7 +18,9 @@ import java.io.File;
 public final class InstalledAppInfo implements Parcelable {
 
     public String packageName;
+    @Deprecated
     public String apkPath;
+    @Deprecated
     public String libPath;
     public boolean notCopyApk;
     public int appId;
@@ -28,6 +31,26 @@ public final class InstalledAppInfo implements Parcelable {
         this.libPath = libPath;
         this.notCopyApk = notCopyApk;
         this.appId = appId;
+    }
+
+    public String getApkPath()  {
+        return getApkPath(VirtualCore.get().is64BitEngine());
+    }
+
+    public String getApkPath(boolean is64bit)  {
+        if (notCopyApk) {
+            try {
+                ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+                return info.publicSourceDir;
+            } catch (PackageManager.NameNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        if (is64bit) {
+            return VEnvironment.getPackageResourcePath64(packageName).getPath();
+        } else {
+            return VEnvironment.getPackageResourcePath(packageName).getPath();
+        }
     }
 
     public File getOdexFile(){

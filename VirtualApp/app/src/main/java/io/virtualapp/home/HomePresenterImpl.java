@@ -1,16 +1,17 @@
 package io.virtualapp.home;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.widget.Toast;
 
-import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
+import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.AppData;
@@ -88,6 +89,7 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             private boolean justEnableHidden;
         }
         AddResult addResult = new AddResult();
+        ProgressDialog dialog = ProgressDialog.show(mActivity, null, mActivity.getString(R.string.tip_add_apps));
         VUiKit.defer().when(() -> {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
             addResult.justEnableHidden = installedAppInfo != null;
@@ -129,6 +131,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             }
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
+        }).fail((e)->{
+            dialog.dismiss();
         }).done(res -> {
             boolean multipleVersion = addResult.justEnableHidden && addResult.userId != 0;
             if (!multipleVersion) {
@@ -142,6 +146,7 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 mView.addAppToLauncher(data);
                 handleLoadingApp(data);
             }
+            dialog.dismiss();
         });
     }
 
@@ -171,17 +176,20 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
 
     @Override
     public void deleteApp(AppData data) {
-        try {
-            mView.removeAppToLauncher(data);
+        mView.removeAppToLauncher(data);
+        ProgressDialog dialog = ProgressDialog.show(mActivity, mActivity.getString(R.string.tip_delete), data.getName());
+        VUiKit.defer().when(() -> {
             if (data instanceof PackageAppData) {
                 mRepo.removeVirtualApp(((PackageAppData) data).packageName, 0);
             } else {
                 MultiplePackageAppData appData = (MultiplePackageAppData) data;
                 mRepo.removeVirtualApp(appData.appInfo.packageName, appData.userId);
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        }).fail((e) -> {
+            dialog.dismiss();
+        }).done((rs) -> {
+            dialog.dismiss();
+        });
     }
 
     @Override

@@ -1,9 +1,13 @@
 package com.lody.virtual.server.pm;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.SparseArray;
 
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 /**
@@ -25,7 +29,12 @@ public class PackageSetting implements Parcelable {
     };
     private static final PackageUserState DEFAULT_USER_STATE = new PackageUserState();
     public String packageName;
+    /**
+     * @see #getApkPath(boolean)
+     */
+    @Deprecated
     public String apkPath;
+    @Deprecated
     public String libPath;
     public boolean notCopyApk;
     @Deprecated
@@ -53,6 +62,22 @@ public class PackageSetting implements Parcelable {
         this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
         this.skipDexOpt = in.readByte() != 0;
         this.flag = in.readInt();
+    }
+
+    public String getApkPath(boolean is64bit)  {
+        if (notCopyApk) {
+            try {
+                ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+                return info.publicSourceDir;
+            } catch (PackageManager.NameNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        if (is64bit) {
+            return VEnvironment.getPackageResourcePath64(packageName).getPath();
+        } else {
+            return VEnvironment.getPackageResourcePath(packageName).getPath();
+        }
     }
 
     public InstalledAppInfo getAppInfo() {

@@ -19,7 +19,6 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.PermissionCompat;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.bit64.V64BitHelper;
 
 import java.util.Locale;
 
@@ -47,7 +46,16 @@ public class LoadingActivity extends VActivity {
     private Intent preLunchIntent;
     private int preLunchUserId;
 
-    public static void launch(Context context, String packageName, int userId) {
+    public static boolean launch(Context context, String packageName, int userId) {
+        if(VirtualCore.get().shouldRun64BitProcess(packageName)){
+            if(!VirtualCore.get().is64BitEngineInstalled()){
+                //need install support64
+                Toast.makeText(context,
+                        "need install app:" + VirtualCore.getConfig().get64bitEnginePackageName(),
+                        Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
         Intent intent = VirtualCore.get().getLaunchIntent(packageName, userId);
         if (intent != null) {
             Intent loadingPageIntent = new Intent(context, LoadingActivity.class);
@@ -56,7 +64,9 @@ public class LoadingActivity extends VActivity {
             loadingPageIntent.putExtra(KEY_INTENT, intent);
             loadingPageIntent.putExtra(KEY_USER, userId);
             context.startActivity(loadingPageIntent);
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -85,9 +95,6 @@ public class LoadingActivity extends VActivity {
             boolean isBit64 = VirtualCore.get().shouldRun64BitProcess(info.packageName);
             ApplicationInfo applicationInfo = info.getApplicationInfo(0);
             //check permissions with lock
-            if(isBit64){
-                V64BitHelper.check64BitRunning(this);
-            }
             if(Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                 if (PermissionCompat.needCheckPermission(applicationInfo.targetSdkVersion)) {
                     //check per

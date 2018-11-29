@@ -1,9 +1,14 @@
 package io.virtualapp.home.location;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.AdapterView;
@@ -48,7 +53,12 @@ public class LocationSettingsActivity extends VActivity implements AdapterView.O
         mAppLocationAdapter = new AppLocationAdapter(this);
         mListView.setAdapter(mAppLocationAdapter);
         mListView.setOnItemClickListener(this);
-        loadData();
+        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M
+                && VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+        } else {
+            loadData();
+        }
     }
 
     private void readLocation(LocationData locationData) {
@@ -126,4 +136,13 @@ public class LocationSettingsActivity extends VActivity implements AdapterView.O
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
+               return;
+            }
+        }
+        loadData();
+    }
 }

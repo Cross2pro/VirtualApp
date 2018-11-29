@@ -20,7 +20,9 @@
 /* }}} */
 
 #define SubstrateInternal
+
 #include "CydiaSubstrate.h"
+#include <Substrate/And64InlineHook.hpp>
 
 #include <sys/mman.h>
 
@@ -52,6 +54,7 @@ X 4790  ldr r*,[pc,#*]    */
 // grep pc WebCore.pc | cut -c 40- | sed -Ee 's/^ldr *(ip|r[0-9]*),\[pc,\#0x[0-9a-f]*\].*/ ldr r*,[pc,#*]/;s/^add *r[0-9]*,pc,r[0-9]*.*/ add r*, pc,r*/;s/^(st|ld)r *r([0-9]*),\[pc,r([0-9]*)\].*/ \1r r\2,[pc,r\3]/;s/^fld(s|d) *(s|d)[0-9]*,\[pc,#0x[0-9a-f]*].*/fld\1 \2*,[pc,#*]/' | sort | uniq -c | sort -n
 
 #include "SubstrateARM.hpp"
+#include "And64InlineHook.hpp"
 
 #define T$Label(l, r) \
     (((r) - (l)) * 2 - 4 + ((l) % 2 == 0 ? 0 : 2))
@@ -82,9 +85,9 @@ X 4790  ldr r*,[pc,#*]    */
     (0x2000 | ((rn) << 8) | ((im) & 0xff))
 #define T$it$_cd(cd, ms) /* it<ms>, cd */ \
     (0xbf00 | ((cd) << 4) | (ms))
-#define T$cbz$_rn_$im(op,rn,im) /* cb<op>z rn, #im */ \
+#define T$cbz$_rn_$im(op, rn, im) /* cb<op>z rn, #im */ \
     (0xb100 | ((op) << 11) | (((im) & 0x40) >> 6 << 9) | (((im) & 0x3e) >> 1 << 3) | (rn))
-#define T$b$_$im(cond,im) /* b<cond> #im */ \
+#define T$b$_$im(cond, im) /* b<cond> #im */ \
     (cond == A$al ? 0xe000 | (((im) >> 1) & 0x7ff) : 0xd000 | ((cond) << 8) | (((im) >> 1) & 0xff))
 
 #define T1$ldr_rt_$rn_im$(rt, rn, im) /* ldr rt, [rn, #im] */ \
@@ -105,7 +108,8 @@ X 4790  ldr r*,[pc,#*]    */
     (T2$msr_apsr_nzcvqg_rn(rn) << 16 | T1$msr_apsr_nzcvqg_rn(rn))
 
 static inline bool A$pcrel$r(uint32_t ic) {
-    return (ic & 0x0c000000) == 0x04000000 && (ic & 0xf0000000) != 0xf0000000 && (ic & 0x000f0000) == 0x000f0000;
+    return (ic & 0x0c000000) == 0x04000000 && (ic & 0xf0000000) != 0xf0000000 &&
+           (ic & 0x000f0000) == 0x000f0000;
 }
 
 static inline bool T$32bit$i(uint16_t ic) {
@@ -121,7 +125,8 @@ static inline bool T$pcrel$b(uint16_t ic) {
 }
 
 static inline bool T2$pcrel$b(uint16_t *ic) {
-    return (ic[0] & 0xf800) == 0xf000 && ((ic[1] & 0xd000) == 0x9000 || (ic[1] & 0xd000) == 0x8000 && (ic[0] & 0x0380) != 0x0380);
+    return (ic[0] & 0xf800) == 0xf000 &&
+           ((ic[1] & 0xd000) == 0x9000 || (ic[1] & 0xd000) == 0x8000 && (ic[0] & 0x0380) != 0x0380);
 }
 
 static inline bool T$pcrel$bl(uint16_t *ic) {
@@ -153,13 +158,15 @@ extern "C" size_t MSGetInstructionWidth(void *start) {
     if ((reinterpret_cast<uintptr_t>(start) & 0x1) == 0)
         return MSGetInstructionWidthARM(start);
     else
-        return MSGetInstructionWidthThumb(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(start) & ~0x1));
+        return MSGetInstructionWidthThumb(
+                reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(start) & ~0x1));
 }
 
-static size_t SubstrateHookFunctionThumb(SubstrateProcessRef process, void *symbol, void *replace, void **result) {
+static size_t SubstrateHookFunctionThumb(SubstrateProcessRef process, void *symbol, void *replace,
+                                         void **result) {
     if (symbol == NULL)
         return 0;
-printf("SubstrateHookFunctionThumb\n");
+    printf("SubstrateHookFunctionThumb\n");
     uint16_t *area(reinterpret_cast<uint16_t *>(symbol));
 
     unsigned align((reinterpret_cast<uintptr_t>(area) & 0x2) == 0 ? 0 : 1);
@@ -169,11 +176,11 @@ printf("SubstrateHookFunctionThumb\n");
     uint16_t *trail(reinterpret_cast<uint16_t *>(arm + 2));
 
     if (
-        (align == 0 || area[0] == T$nop) &&
-        thumb[0] == T$bx(A$pc) &&
-        thumb[1] == T$nop &&
-        arm[0] == A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8)
-    ) {
+            (align == 0 || area[0] == T$nop) &&
+            thumb[0] == T$bx(A$pc) &&
+            thumb[1] == T$nop &&
+            arm[0] == A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8)
+            ) {
         if (result != NULL)
             *result = reinterpret_cast<void *>(arm[1]);
 
@@ -204,329 +211,335 @@ printf("SubstrateHookFunctionThumb\n");
 
     if (result != NULL) {
 
-    size_t length(used);
-    for (unsigned offset(0); offset != used / sizeof(uint16_t); ++offset)
-        if (T$pcrel$ldr(backup[offset]))
-            length += 3 * sizeof(uint16_t);
-        else if (T$pcrel$b(backup[offset]))
-            length += 6 * sizeof(uint16_t);
-        else if (T2$pcrel$b(backup + offset)) {
-            length += 5 * sizeof(uint16_t);
-            ++offset;
-        } else if (T$pcrel$bl(backup + offset)) {
-            length += 5 * sizeof(uint16_t);
-            ++offset;
-        } else if (T$pcrel$cbz(backup[offset])) {
-            length += 16 * sizeof(uint16_t);
-        } else if (T$pcrel$ldrw(backup[offset])) {
-            length += 4 * sizeof(uint16_t);
-            ++offset;
-        } else if (T$pcrel$add(backup[offset]))
-            length += 6 * sizeof(uint16_t);
-        else if (T$32bit$i(backup[offset]))
-            ++offset;
+        size_t length(used);
+        for (unsigned offset(0); offset != used / sizeof(uint16_t); ++offset)
+            if (T$pcrel$ldr(backup[offset]))
+                length += 3 * sizeof(uint16_t);
+            else if (T$pcrel$b(backup[offset]))
+                length += 6 * sizeof(uint16_t);
+            else if (T2$pcrel$b(backup + offset)) {
+                length += 5 * sizeof(uint16_t);
+                ++offset;
+            } else if (T$pcrel$bl(backup + offset)) {
+                length += 5 * sizeof(uint16_t);
+                ++offset;
+            } else if (T$pcrel$cbz(backup[offset])) {
+                length += 16 * sizeof(uint16_t);
+            } else if (T$pcrel$ldrw(backup[offset])) {
+                length += 4 * sizeof(uint16_t);
+                ++offset;
+            } else if (T$pcrel$add(backup[offset]))
+                length += 6 * sizeof(uint16_t);
+            else if (T$32bit$i(backup[offset]))
+                ++offset;
 
-    unsigned pad((length & 0x2) == 0 ? 0 : 1);
-    length += (pad + 2) * sizeof(uint16_t) + 2 * sizeof(uint32_t);
+        unsigned pad((length & 0x2) == 0 ? 0 : 1);
+        length += (pad + 2) * sizeof(uint16_t) + 2 * sizeof(uint32_t);
 
-    uint16_t *buffer(reinterpret_cast<uint16_t *>(mmap(
-        NULL, length, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0
-    )));
+        uint16_t *buffer(reinterpret_cast<uint16_t *>(mmap(
+                NULL, length, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0
+        )));
 
-    if (buffer == MAP_FAILED) {
-        MSLog(MSLogLevelError, "MS:Error:mmap() = %d", errno);
-        *result = NULL;
-        return 0;
-    }
+        if (buffer == MAP_FAILED) {
+            MSLog(MSLogLevelError, "MS:Error:mmap() = %d", errno);
+            *result = NULL;
+            return 0;
+        }
 
-    if (false) fail: {
-        munmap(buffer, length);
-        *result = NULL;
-        return 0;
-    }
+        if (false)
+            fail:
+            {
+                munmap(buffer, length);
+                *result = NULL;
+                return 0;
+            }
 
-    size_t start(pad), end(length / sizeof(uint16_t));
-    uint32_t *trailer(reinterpret_cast<uint32_t *>(buffer + end));
-    for (unsigned offset(0); offset != used / sizeof(uint16_t); ++offset) {
-        if (T$pcrel$ldr(backup[offset])) {
-            union {
-                uint16_t value;
+        size_t start(pad), end(length / sizeof(uint16_t));
+        uint32_t *trailer(reinterpret_cast<uint32_t *>(buffer + end));
+        for (unsigned offset(0); offset != used / sizeof(uint16_t); ++offset) {
+            if (T$pcrel$ldr(backup[offset])) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t immediate : 8;
-                    uint16_t rd : 3;
-                    uint16_t : 5;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t immediate : 8;
+                        uint16_t rd : 3;
+                        uint16_t : 5;
+                    };
+                } bits = {backup[offset + 0]};
 
-            buffer[start+0] = T$ldr_rd_$pc_im_4$(bits.rd, T$Label(start+0, end-2) / 4);
-            buffer[start+1] = T$ldr_rd_$rn_im_4$(bits.rd, bits.rd, 0);
+                buffer[start + 0] = T$ldr_rd_$pc_im_4$(bits.rd, T$Label(start + 0, end - 2) / 4);
+                buffer[start + 1] = T$ldr_rd_$rn_im_4$(bits.rd, bits.rd, 0);
 
-            // XXX: this code "works", but is "wrong": the mechanism is more complex than this
-            *--trailer = ((reinterpret_cast<uint32_t>(area + offset) + 4) & ~0x2) + bits.immediate * 4;
+                // XXX: this code "works", but is "wrong": the mechanism is more complex than this
+                *--trailer = ((reinterpret_cast<uint32_t>(area + offset) + 4) & ~0x2) +
+                             bits.immediate * 4;
 
-            start += 2;
-            end -= 2;
-        } else if (T$pcrel$b(backup[offset])) {
-            union {
-                uint16_t value;
+                start += 2;
+                end -= 2;
+            } else if (T$pcrel$b(backup[offset])) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t imm8 : 8;
-                    uint16_t cond : 4;
-                    uint16_t /*1101*/ : 4;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t imm8 : 8;
+                        uint16_t cond : 4;
+                        uint16_t /*1101*/ : 4;
+                    };
+                } bits = {backup[offset + 0]};
 
-            intptr_t jump(bits.imm8 << 1);
-            jump |= 1;
-            jump <<= 23;
-            jump >>= 23;
+                intptr_t jump(bits.imm8 << 1);
+                jump |= 1;
+                jump <<= 23;
+                jump >>= 23;
 
-            buffer[start+0] = T$b$_$im(bits.cond, (end-6 - (start+0)) * 2 - 4);
+                buffer[start + 0] = T$b$_$im(bits.cond, (end - 6 - (start + 0)) * 2 - 4);
 
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
-            *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
-            *--trailer = T$nop << 16 | T$bx(A$pc);
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
+                *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
+                *--trailer = T$nop << 16 | T$bx(A$pc);
 
-            start += 1;
-            end -= 6;
-        } else if (T2$pcrel$b(backup + offset)) {
-            union {
-                uint16_t value;
+                start += 1;
+                end -= 6;
+            } else if (T2$pcrel$b(backup + offset)) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t imm6 : 6;
-                    uint16_t cond : 4;
-                    uint16_t s : 1;
-                    uint16_t : 5;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t imm6 : 6;
+                        uint16_t cond : 4;
+                        uint16_t s : 1;
+                        uint16_t : 5;
+                    };
+                } bits = {backup[offset + 0]};
 
-            union {
-                uint16_t value;
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t imm11 : 11;
-                    uint16_t j2 : 1;
-                    uint16_t a : 1;
-                    uint16_t j1 : 1;
-                    uint16_t : 2;
-                };
-            } exts = {backup[offset+1]};
+                    struct {
+                        uint16_t imm11 : 11;
+                        uint16_t j2 : 1;
+                        uint16_t a : 1;
+                        uint16_t j1 : 1;
+                        uint16_t : 2;
+                    };
+                } exts = {backup[offset + 1]};
 
-            intptr_t jump(1);
-            jump |= exts.imm11 << 1;
-            jump |= bits.imm6 << 12;
+                intptr_t jump(1);
+                jump |= exts.imm11 << 1;
+                jump |= bits.imm6 << 12;
 
-            if (exts.a) {
+                if (exts.a) {
+                    jump |= bits.s << 24;
+                    jump |= (~(bits.s ^ exts.j1) & 0x1) << 23;
+                    jump |= (~(bits.s ^ exts.j2) & 0x1) << 22;
+                    jump |= bits.cond << 18;
+                    jump <<= 7;
+                    jump >>= 7;
+                } else {
+                    jump |= bits.s << 20;
+                    jump |= exts.j2 << 19;
+                    jump |= exts.j1 << 18;
+                    jump <<= 11;
+                    jump >>= 11;
+                }
+
+                buffer[start + 0] = T$b$_$im(exts.a ? A$al : bits.cond,
+                                             (end - 6 - (start + 0)) * 2 - 4);
+
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
+                *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
+                *--trailer = T$nop << 16 | T$bx(A$pc);
+
+                ++offset;
+                start += 1;
+                end -= 6;
+            } else if (T$pcrel$bl(backup + offset)) {
+                union {
+                    uint16_t value;
+
+                    struct {
+                        uint16_t immediate : 10;
+                        uint16_t s : 1;
+                        uint16_t : 5;
+                    };
+                } bits = {backup[offset + 0]};
+
+                union {
+                    uint16_t value;
+
+                    struct {
+                        uint16_t immediate : 11;
+                        uint16_t j2 : 1;
+                        uint16_t x : 1;
+                        uint16_t j1 : 1;
+                        uint16_t : 2;
+                    };
+                } exts = {backup[offset + 1]};
+
+                int32_t jump(0);
                 jump |= bits.s << 24;
                 jump |= (~(bits.s ^ exts.j1) & 0x1) << 23;
                 jump |= (~(bits.s ^ exts.j2) & 0x1) << 22;
-                jump |= bits.cond << 18;
+                jump |= bits.immediate << 12;
+                jump |= exts.immediate << 1;
+                jump |= exts.x;
                 jump <<= 7;
                 jump >>= 7;
-            } else {
-                jump |= bits.s << 20;
-                jump |= exts.j2 << 19;
-                jump |= exts.j1 << 18;
-                jump <<= 11;
-                jump >>= 11;
-            }
 
-            buffer[start+0] = T$b$_$im(exts.a ? A$al : bits.cond, (end-6 - (start+0)) * 2 - 4);
+                buffer[start + 0] = T$push_r(1 << A$r7);
+                buffer[start + 1] = T$ldr_rd_$pc_im_4$(A$r7,
+                                                       ((end - 2 - (start + 1)) * 2 - 4 + 2) / 4);
+                buffer[start + 2] = T$mov_rd_rm(A$lr, A$r7);
+                buffer[start + 3] = T$pop_r(1 << A$r7);
+                buffer[start + 4] = T$blx(A$lr);
 
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
-            *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
-            *--trailer = T$nop << 16 | T$bx(A$pc);
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
 
-            ++offset;
-            start += 1;
-            end -= 6;
-        } else if (T$pcrel$bl(backup + offset)) {
-            union {
-                uint16_t value;
+                ++offset;
+                start += 5;
+                end -= 2;
+            } else if (T$pcrel$cbz(backup[offset])) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t immediate : 10;
-                    uint16_t s : 1;
-                    uint16_t : 5;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t rn : 3;
+                        uint16_t immediate : 5;
+                        uint16_t : 1;
+                        uint16_t i : 1;
+                        uint16_t : 1;
+                        uint16_t op : 1;
+                        uint16_t : 4;
+                    };
+                } bits = {backup[offset + 0]};
 
-            union {
-                uint16_t value;
+                intptr_t jump(1);
+                jump |= bits.i << 6;
+                jump |= bits.immediate << 1;
 
-                struct {
-                    uint16_t immediate : 11;
-                    uint16_t j2 : 1;
-                    uint16_t x : 1;
-                    uint16_t j1 : 1;
-                    uint16_t : 2;
-                };
-            } exts = {backup[offset+1]};
+                //jump <<= 24;
+                //jump >>= 24;
 
-            int32_t jump(0);
-            jump |= bits.s << 24;
-            jump |= (~(bits.s ^ exts.j1) & 0x1) << 23;
-            jump |= (~(bits.s ^ exts.j2) & 0x1) << 22;
-            jump |= bits.immediate << 12;
-            jump |= exts.immediate << 1;
-            jump |= exts.x;
-            jump <<= 7;
-            jump >>= 7;
+                unsigned rn(bits.rn);
+                unsigned rt(rn == A$r7 ? A$r6 : A$r7);
 
-            buffer[start+0] = T$push_r(1 << A$r7);
-            buffer[start+1] = T$ldr_rd_$pc_im_4$(A$r7, ((end-2 - (start+1)) * 2 - 4 + 2) / 4);
-            buffer[start+2] = T$mov_rd_rm(A$lr, A$r7);
-            buffer[start+3] = T$pop_r(1 << A$r7);
-            buffer[start+4] = T$blx(A$lr);
+                buffer[start + 0] = T$push_r(1 << rt);
+                buffer[start + 1] = T1$mrs_rd_apsr(rt);
+                buffer[start + 2] = T2$mrs_rd_apsr(rt);
+                buffer[start + 3] = T$cbz$_rn_$im(bits.op, rn, (end - 10 - (start + 3)) * 2 - 4);
+                buffer[start + 4] = T1$msr_apsr_nzcvqg_rn(rt);
+                buffer[start + 5] = T2$msr_apsr_nzcvqg_rn(rt);
+                buffer[start + 6] = T$pop_r(1 << rt);
 
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
-
-            ++offset;
-            start += 5;
-            end -= 2;
-        } else if (T$pcrel$cbz(backup[offset])) {
-            union {
-                uint16_t value;
-
-                struct {
-                    uint16_t rn : 3;
-                    uint16_t immediate : 5;
-                    uint16_t : 1;
-                    uint16_t i : 1;
-                    uint16_t : 1;
-                    uint16_t op : 1;
-                    uint16_t : 4;
-                };
-            } bits = {backup[offset+0]};
-
-            intptr_t jump(1);
-            jump |= bits.i << 6;
-            jump |= bits.immediate << 1;
-
-            //jump <<= 24;
-            //jump >>= 24;
-
-            unsigned rn(bits.rn);
-            unsigned rt(rn == A$r7 ? A$r6 : A$r7);
-
-            buffer[start+0] = T$push_r(1 << rt);
-            buffer[start+1] = T1$mrs_rd_apsr(rt);
-            buffer[start+2] = T2$mrs_rd_apsr(rt);
-            buffer[start+3] = T$cbz$_rn_$im(bits.op, rn, (end-10 - (start+3)) * 2 - 4);
-            buffer[start+4] = T1$msr_apsr_nzcvqg_rn(rt);
-            buffer[start+5] = T2$msr_apsr_nzcvqg_rn(rt);
-            buffer[start+6] = T$pop_r(1 << rt);
-
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
-            *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
-            *--trailer = T$nop << 16 | T$bx(A$pc);
-            *--trailer = T$nop << 16 | T$pop_r(1 << rt);
-            *--trailer = T$msr_apsr_nzcvqg_rn(rt);
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4 + jump;
+                *--trailer = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
+                *--trailer = T$nop << 16 | T$bx(A$pc);
+                *--trailer = T$nop << 16 | T$pop_r(1 << rt);
+                *--trailer = T$msr_apsr_nzcvqg_rn(rt);
 
 #if 0
-            if ((start & 0x1) == 0)
+                if ((start & 0x1) == 0)
+                    buffer[start++] = T$nop;
+                buffer[start++] = T$bx(A$pc);
                 buffer[start++] = T$nop;
-            buffer[start++] = T$bx(A$pc);
-            buffer[start++] = T$nop;
 
-            uint32_t *arm(reinterpret_cast<uint32_t *>(buffer + start));
-            arm[0] = A$add(A$lr, A$pc, 1);
-            arm[1] = A$ldr_rd_$rn_im$(A$pc, A$pc, (trailer - arm) * sizeof(uint32_t) - 8);
+                uint32_t *arm(reinterpret_cast<uint32_t *>(buffer + start));
+                arm[0] = A$add(A$lr, A$pc, 1);
+                arm[1] = A$ldr_rd_$rn_im$(A$pc, A$pc, (trailer - arm) * sizeof(uint32_t) - 8);
 #endif
 
-            start += 7;
-            end -= 10;
-        } else if (T$pcrel$ldrw(backup[offset])) {
-            union {
-                uint16_t value;
+                start += 7;
+                end -= 10;
+            } else if (T$pcrel$ldrw(backup[offset])) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t : 7;
-                    uint16_t u : 1;
-                    uint16_t : 8;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t : 7;
+                        uint16_t u : 1;
+                        uint16_t : 8;
+                    };
+                } bits = {backup[offset + 0]};
 
-            union {
-                uint16_t value;
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t immediate : 12;
-                    uint16_t rt : 4;
-                };
-            } exts = {backup[offset+1]};
+                    struct {
+                        uint16_t immediate : 12;
+                        uint16_t rt : 4;
+                    };
+                } exts = {backup[offset + 1]};
 
-            buffer[start+0] = T1$ldr_rt_$rn_im$(exts.rt, A$pc, T$Label(start+0, end-2));
-            buffer[start+1] = T2$ldr_rt_$rn_im$(exts.rt, A$pc, T$Label(start+0, end-2));
+                buffer[start + 0] = T1$ldr_rt_$rn_im$(exts.rt, A$pc, T$Label(start + 0, end - 2));
+                buffer[start + 1] = T2$ldr_rt_$rn_im$(exts.rt, A$pc, T$Label(start + 0, end - 2));
 
-            buffer[start+2] = T1$ldr_rt_$rn_im$(exts.rt, exts.rt, 0);
-            buffer[start+3] = T2$ldr_rt_$rn_im$(exts.rt, exts.rt, 0);
+                buffer[start + 2] = T1$ldr_rt_$rn_im$(exts.rt, exts.rt, 0);
+                buffer[start + 3] = T2$ldr_rt_$rn_im$(exts.rt, exts.rt, 0);
 
-            // XXX: this code "works", but is "wrong": the mechanism is more complex than this
-            *--trailer = ((reinterpret_cast<uint32_t>(area + offset) + 4) & ~0x2) + (bits.u == 0 ? -exts.immediate : exts.immediate);
+                // XXX: this code "works", but is "wrong": the mechanism is more complex than this
+                *--trailer = ((reinterpret_cast<uint32_t>(area + offset) + 4) & ~0x2) +
+                             (bits.u == 0 ? -exts.immediate : exts.immediate);
 
-            ++offset;
-            start += 4;
-            end -= 2;
-        } else if (T$pcrel$add(backup[offset])) {
-            union {
-                uint16_t value;
+                ++offset;
+                start += 4;
+                end -= 2;
+            } else if (T$pcrel$add(backup[offset])) {
+                union {
+                    uint16_t value;
 
-                struct {
-                    uint16_t rd : 3;
-                    uint16_t rm : 3;
-                    uint16_t h2 : 1;
-                    uint16_t h1 : 1;
-                    uint16_t : 8;
-                };
-            } bits = {backup[offset+0]};
+                    struct {
+                        uint16_t rd : 3;
+                        uint16_t rm : 3;
+                        uint16_t h2 : 1;
+                        uint16_t h1 : 1;
+                        uint16_t : 8;
+                    };
+                } bits = {backup[offset + 0]};
 
-            if (bits.h1) {
-                MSLog(MSLogLevelError, "MS:Error:pcrel(%u):add (rd > r7)", offset);
-                goto fail;
+                if (bits.h1) {
+                    MSLog(MSLogLevelError, "MS:Error:pcrel(%u):add (rd > r7)", offset);
+                    goto fail;
+                }
+
+                unsigned rt(bits.rd == A$r7 ? A$r6 : A$r7);
+
+                buffer[start + 0] = T$push_r(1 << rt);
+                buffer[start + 1] = T$mov_rd_rm(rt, (bits.h1 << 3) | bits.rd);
+                buffer[start + 2] = T$ldr_rd_$pc_im_4$(bits.rd, T$Label(start + 2, end - 2) / 4);
+                buffer[start + 3] = T$add_rd_rm((bits.h1 << 3) | bits.rd, rt);
+                buffer[start + 4] = T$pop_r(1 << rt);
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4;
+
+                start += 5;
+                end -= 2;
+            } else if (T$32bit$i(backup[offset])) {
+                buffer[start++] = backup[offset];
+                buffer[start++] = backup[++offset];
+            } else {
+                buffer[start++] = backup[offset];
             }
-
-            unsigned rt(bits.rd == A$r7 ? A$r6 : A$r7);
-
-            buffer[start+0] = T$push_r(1 << rt);
-            buffer[start+1] = T$mov_rd_rm(rt, (bits.h1 << 3) | bits.rd);
-            buffer[start+2] = T$ldr_rd_$pc_im_4$(bits.rd, T$Label(start+2, end-2) / 4);
-            buffer[start+3] = T$add_rd_rm((bits.h1 << 3) | bits.rd, rt);
-            buffer[start+4] = T$pop_r(1 << rt);
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 4;
-
-            start += 5;
-            end -= 2;
-        } else if (T$32bit$i(backup[offset])) {
-            buffer[start++] = backup[offset];
-            buffer[start++] = backup[++offset];
-        } else {
-            buffer[start++] = backup[offset];
         }
-    }
 
-    buffer[start++] = T$bx(A$pc);
-    buffer[start++] = T$nop;
+        buffer[start++] = T$bx(A$pc);
+        buffer[start++] = T$nop;
 
-    uint32_t *transfer = reinterpret_cast<uint32_t *>(buffer + start);
-    transfer[0] = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
-    transfer[1] = reinterpret_cast<uint32_t>(area + used / sizeof(uint16_t)) + 1;
+        uint32_t *transfer = reinterpret_cast<uint32_t *>(buffer + start);
+        transfer[0] = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
+        transfer[1] = reinterpret_cast<uint32_t>(area + used / sizeof(uint16_t)) + 1;
 
-    if (mprotect(buffer, length, PROT_READ | PROT_EXEC) == -1) {
-        MSLog(MSLogLevelError, "MS:Error:mprotect():%d", errno);
-        return 0;
-    }
+        if (mprotect(buffer, length, PROT_READ | PROT_EXEC) == -1) {
+            MSLog(MSLogLevelError, "MS:Error:mprotect():%d", errno);
+            return 0;
+        }
 
-    *result = reinterpret_cast<uint8_t *>(buffer + pad) + 1;
+        *result = reinterpret_cast<uint8_t *>(buffer + pad) + 1;
 
-    if (MSDebug) {
-        char name[16];
-        sprintf(name, "%p", *result);
-        MSLogHexEx(buffer, length, 2, name);
-    }
+        if (MSDebug) {
+            char name[16];
+            sprintf(name, "%p", *result);
+            MSLogHexEx(buffer, length, 2, name);
+        }
 
     }
 
@@ -551,14 +564,15 @@ printf("SubstrateHookFunctionThumb\n");
         sprintf(name, "%p", area);
         MSLogHexEx(area, used + sizeof(uint16_t), 2, name);
     }
-	
-	return used;
+
+    return used;
 }
 
-static size_t SubstrateHookFunctionARM(SubstrateProcessRef process, void *symbol, void *replace, void **result) {
+static size_t
+SubstrateHookFunctionARM(SubstrateProcessRef process, void *symbol, void *replace, void **result) {
     if (symbol == NULL)
         return 0;
-printf("SubstrateHookFunctionARM\n");
+    printf("SubstrateHookFunctionARM\n");
     uint32_t *area(reinterpret_cast<uint32_t *>(symbol));
     uint32_t *arm(area);
 
@@ -574,104 +588,108 @@ printf("SubstrateHookFunctionARM\n");
 
     if (result != NULL) {
 
-    if (backup[0] == A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8)) {
-        *result = reinterpret_cast<void *>(backup[1]);
-        
-		return sizeof(backup[0]);
-    }
+        if (backup[0] == A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8)) {
+            *result = reinterpret_cast<void *>(backup[1]);
 
-    size_t length(used);
-    for (unsigned offset(0); offset != used / sizeof(uint32_t); ++offset)
-        if (A$pcrel$r(backup[offset])) {
-            if ((backup[offset] & 0x02000000) == 0 || (backup[offset] & 0x0000f000 >> 12) != (backup[offset] & 0x0000000f))
-                length += 2 * sizeof(uint32_t);
-            else
-                length += 4 * sizeof(uint32_t);
+            return sizeof(backup[0]);
         }
 
-    length += 2 * sizeof(uint32_t);
-
-    uint32_t *buffer(reinterpret_cast<uint32_t *>(mmap(
-        NULL, length, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0
-    )));
-
-    if (buffer == MAP_FAILED) {
-        MSLog(MSLogLevelError, "MS:Error:mmap() = %d", errno);
-        *result = NULL;
-        return 0;
-    }
-
-    if (false) fail: {
-        munmap(buffer, length);
-        *result = NULL;
-        return 0;
-    }
-
-    size_t start(0), end(length / sizeof(uint32_t));
-    uint32_t *trailer(reinterpret_cast<uint32_t *>(buffer + end));
-    for (unsigned offset(0); offset != used / sizeof(uint32_t); ++offset)
-        if (A$pcrel$r(backup[offset])) {
-            union {
-                uint32_t value;
-
-                struct {
-                    uint32_t rm : 4;
-                    uint32_t : 1;
-                    uint32_t shift : 2;
-                    uint32_t shiftamount : 5;
-                    uint32_t rd : 4;
-                    uint32_t rn : 4;
-                    uint32_t l : 1;
-                    uint32_t w : 1;
-                    uint32_t b : 1;
-                    uint32_t u : 1;
-                    uint32_t p : 1;
-                    uint32_t mode : 1;
-                    uint32_t type : 2;
-                    uint32_t cond : 4;
-                };
-            } bits = {backup[offset+0]}, copy(bits);
-
-            bool guard;
-            if (bits.mode == 0 || bits.rd != bits.rm) {
-                copy.rn = bits.rd;
-                guard = false;
-            } else {
-                copy.rn = bits.rm != A$r0 ? A$r0 : A$r1;
-                guard = true;
+        size_t length(used);
+        for (unsigned offset(0); offset != used / sizeof(uint32_t); ++offset)
+            if (A$pcrel$r(backup[offset])) {
+                if ((backup[offset] & 0x02000000) == 0 ||
+                    (backup[offset] & 0x0000f000 >> 12) != (backup[offset] & 0x0000000f))
+                    length += 2 * sizeof(uint32_t);
+                else
+                    length += 4 * sizeof(uint32_t);
             }
 
-            if (guard)
-                buffer[start++] = A$stmdb_sp$_$rs$((1 << copy.rn));
+        length += 2 * sizeof(uint32_t);
 
-            buffer[start+0] = A$ldr_rd_$rn_im$(copy.rn, A$pc, (end-1 - (start+0)) * 4 - 8);
-            buffer[start+1] = copy.value;
+        uint32_t *buffer(reinterpret_cast<uint32_t *>(mmap(
+                NULL, length, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0
+        )));
 
-            start += 2;
+        if (buffer == MAP_FAILED) {
+            MSLog(MSLogLevelError, "MS:Error:mmap() = %d", errno);
+            *result = NULL;
+            return 0;
+        }
 
-            if (guard)
-                buffer[start++] = A$ldmia_sp$_$rs$((1 << copy.rn));
+        if (false)
+            fail:
+            {
+                munmap(buffer, length);
+                *result = NULL;
+                return 0;
+            }
 
-            *--trailer = reinterpret_cast<uint32_t>(area + offset) + 8;
-            end -= 1;
-        } else
-            buffer[start++] = backup[offset];
+        size_t start(0), end(length / sizeof(uint32_t));
+        uint32_t *trailer(reinterpret_cast<uint32_t *>(buffer + end));
+        for (unsigned offset(0); offset != used / sizeof(uint32_t); ++offset)
+            if (A$pcrel$r(backup[offset])) {
+                union {
+                    uint32_t value;
 
-    buffer[start+0] = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
-    buffer[start+1] = reinterpret_cast<uint32_t>(area + used / sizeof(uint32_t));
+                    struct {
+                        uint32_t rm : 4;
+                        uint32_t : 1;
+                        uint32_t shift : 2;
+                        uint32_t shiftamount : 5;
+                        uint32_t rd : 4;
+                        uint32_t rn : 4;
+                        uint32_t l : 1;
+                        uint32_t w : 1;
+                        uint32_t b : 1;
+                        uint32_t u : 1;
+                        uint32_t p : 1;
+                        uint32_t mode : 1;
+                        uint32_t type : 2;
+                        uint32_t cond : 4;
+                    };
+                } bits = {backup[offset + 0]}, copy(bits);
 
-    if (mprotect(buffer, length, PROT_READ | PROT_EXEC) == -1) {
-        MSLog(MSLogLevelError, "MS:Error:mprotect():%d", errno);
-        goto fail;
-    }
+                bool guard;
+                if (bits.mode == 0 || bits.rd != bits.rm) {
+                    copy.rn = bits.rd;
+                    guard = false;
+                } else {
+                    copy.rn = bits.rm != A$r0 ? A$r0 : A$r1;
+                    guard = true;
+                }
 
-    *result = buffer;
+                if (guard)
+                    buffer[start++] = A$stmdb_sp$_$rs$((1 << copy.rn));
 
-    if (MSDebug) {
-        char name[16];
-        sprintf(name, "%p", *result);
-        MSLogHexEx(buffer, length, 4, name);
-    }
+                buffer[start + 0] = A$ldr_rd_$rn_im$(copy.rn, A$pc,
+                                                     (end - 1 - (start + 0)) * 4 - 8);
+                buffer[start + 1] = copy.value;
+
+                start += 2;
+
+                if (guard)
+                    buffer[start++] = A$ldmia_sp$_$rs$((1 << copy.rn));
+
+                *--trailer = reinterpret_cast<uint32_t>(area + offset) + 8;
+                end -= 1;
+            } else
+                buffer[start++] = backup[offset];
+
+        buffer[start + 0] = A$ldr_rd_$rn_im$(A$pc, A$pc, 4 - 8);
+        buffer[start + 1] = reinterpret_cast<uint32_t>(area + used / sizeof(uint32_t));
+
+        if (mprotect(buffer, length, PROT_READ | PROT_EXEC) == -1) {
+            MSLog(MSLogLevelError, "MS:Error:mprotect():%d", errno);
+            goto fail;
+        }
+
+        *result = buffer;
+
+        if (MSDebug) {
+            char name[16];
+            sprintf(name, "%p", *result);
+            MSLogHexEx(buffer, length, 4, name);
+        }
 
     }
 
@@ -687,18 +705,23 @@ printf("SubstrateHookFunctionARM\n");
         sprintf(name, "%p", area);
         MSLogHexEx(area, used + sizeof(uint32_t), 4, name);
     }
-	
-	return used;
+
+    return used;
 }
 
-static size_t SubstrateHookFunction(SubstrateProcessRef process, void *symbol, void *replace, void **result) {
+static size_t
+SubstrateHookFunction(SubstrateProcessRef process, void *symbol, void *replace, void **result) {
     if (MSDebug)
-        MSLog(MSLogLevelNotice, "SubstrateHookFunction(%p, %p, %p, %p)\n", process, symbol, replace, result);
+        MSLog(MSLogLevelNotice, "SubstrateHookFunction(%p, %p, %p, %p)\n", process, symbol, replace,
+              result);
+
     if ((reinterpret_cast<uintptr_t>(symbol) & 0x1) == 0)
         return SubstrateHookFunctionARM(process, symbol, replace, result);
     else
-        return SubstrateHookFunctionThumb(process, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symbol) & ~0x1), replace, result);
+        return SubstrateHookFunctionThumb(process, reinterpret_cast<void *>(
+                reinterpret_cast<uintptr_t>(symbol) & ~0x1), replace, result);
 }
+
 #endif
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -924,7 +947,11 @@ static void SubstrateHookFunction(SubstrateProcessRef process, void *symbol, voi
 #endif
 
 _extern void MSHookFunction(void *symbol, void *replace, void **result) {
-     SubstrateHookFunction(NULL, symbol, replace, result);
+#ifdef __aarch64__
+    A64HookFunction(symbol, replace, result);
+#else
+    SubstrateHookFunction(NULL, symbol, replace, result);
+#endif
 }
 
 #if defined(__APPLE__) && defined(__arm__)

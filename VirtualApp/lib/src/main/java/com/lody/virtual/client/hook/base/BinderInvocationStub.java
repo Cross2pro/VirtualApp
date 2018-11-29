@@ -9,6 +9,7 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.lody.virtual.client.core.ServiceLocalManager;
 import com.lody.virtual.client.core.VirtualCore;
 
 import java.io.FileDescriptor;
@@ -68,6 +69,7 @@ public class BinderInvocationStub extends MethodInvocationStub<IInterface> imple
     public void replaceService(String name) {
         if (mBaseBinder != null) {
             ServiceManager.sCache.get().put(name, this);
+            ServiceLocalManager.addService(name, this);
         }
     }
 

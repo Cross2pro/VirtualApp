@@ -16,7 +16,6 @@ import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
-import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
@@ -32,7 +31,7 @@ public class VPackageManager {
     private IPackageManager mService;
 
     public IPackageManager getService() {
-        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+        if (!IInterfaceUtils.isAlive(mService)) {
             synchronized (VPackageManager.class) {
                 Object remote = getRemoteInterface();
                 mService = LocalProxyUtils.genProxy(IPackageManager.class, remote);
@@ -282,6 +281,14 @@ public class VPackageManager {
     public String[] getDangrousPermissions(String packageName){
         try {
             return getService().getDangrousPermissions(packageName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public String[] getAllAuthorities(){
+        try {
+            return getService().getAllAuthorities();
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

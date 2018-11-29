@@ -13,7 +13,6 @@ public class AppInfo {
     public Drawable icon;
     public CharSequence name;
     public int cloneCount;
-    public boolean only64Bit;
     public int targetSdkVersion;
     public String[] requestedPermissions;
 }

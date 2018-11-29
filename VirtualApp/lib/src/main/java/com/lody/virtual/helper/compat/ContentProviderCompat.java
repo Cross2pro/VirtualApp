@@ -14,20 +14,21 @@ import android.os.SystemClock;
  */
 public class ContentProviderCompat {
 
-    public static Bundle call(Context context, Uri uri, String method, String arg, Bundle extras) {
+    public static Bundle call(Context context, Uri uri, String method, String arg, Bundle extras) throws IllegalAccessException {
         if (VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             return context.getContentResolver().call(uri, method, arg, extras);
         }
-        ContentProviderClient client = crazyAcquireContentProvider(context, uri);
-        Bundle res = null;
+        ContentProviderClient client = acquireContentProvider(context, uri);
         try {
-            res = client.call(method, arg, extras);
+            if (client == null) {
+                throw new IllegalAccessException();
+            }
+            return client.call(method, arg, extras);
         } catch (RemoteException e) {
-            e.printStackTrace();
+            throw new IllegalAccessException(e.getMessage());
         } finally {
             releaseQuietly(client);
         }
-        return res;
     }
 
 
@@ -38,7 +39,7 @@ public class ContentProviderCompat {
         return context.getContentResolver().acquireContentProviderClient(uri);
     }
 
-    public static ContentProviderClient crazyAcquireContentProvider(Context context, Uri uri) {
+    public static ContentProviderClient acquireContentProvider(Context context, Uri uri) {
         ContentProviderClient client = acquireContentProviderClient(context, uri);
         if (client == null) {
             int retry = 0;
@@ -51,7 +52,7 @@ public class ContentProviderCompat {
         return client;
     }
 
-    public static ContentProviderClient crazyAcquireContentProvider(Context context, String name) {
+    public static ContentProviderClient acquireContentProvider(Context context, String name) {
         ContentProviderClient client = acquireContentProviderClient(context, name);
         if (client == null) {
             int retry = 0;

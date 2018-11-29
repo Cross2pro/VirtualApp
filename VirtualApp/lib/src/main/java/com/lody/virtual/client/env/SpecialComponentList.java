@@ -101,11 +101,11 @@ public final class SpecialComponentList {
 
         BROADCAST_START_WHITE_LIST.add("com.facebook.orca");
         BROADCAST_START_WHITE_LIST.add("com.facebook.katana");
-        BROADCAST_START_WHITE_LIST.add("com.tencent.mm");
+//        BROADCAST_START_WHITE_LIST.add("com.tencent.mm");
         BROADCAST_START_WHITE_LIST.add("com.whatsapp");
-        BROADCAST_START_WHITE_LIST.add(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-        BROADCAST_START_WHITE_LIST.add("com.google.android.gms");
-        BROADCAST_START_WHITE_LIST.add("com.google.android.gsf.login");
+//        BROADCAST_START_WHITE_LIST.add(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
+//        BROADCAST_START_WHITE_LIST.add("com.google.android.gms");
+//        BROADCAST_START_WHITE_LIST.add("com.google.android.gsf.login");
 //        BROADCAST_START_WHITE_LIST.add("com.android.vending");
         BROADCAST_START_WHITE_LIST.add("com.google.android.play.games");
         BROADCAST_START_WHITE_LIST.add("com.android.providers.media");

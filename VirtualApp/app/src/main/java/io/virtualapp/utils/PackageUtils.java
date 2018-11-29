@@ -61,12 +61,12 @@ public class PackageUtils {
         }
         PackageInfo insidePackageInfo = installedAppInfo.getPackageInfo(0);
         //update apk
-        if (!new File(installedAppInfo.apkPath).exists()
+        if (!new File(installedAppInfo.getApkPath()).exists()
                 || insidePackageInfo == null
                 || outsidePackageInfo.versionCode != insidePackageInfo.versionCode) {
             VirtualCore.get().killApp(packageName, VUserHandle.USER_ALL);
             VirtualCore.get().installPackage(outsidePackageInfo.applicationInfo.publicSourceDir,
-                    InstallStrategy.UPDATE_IF_EXIST | InstallStrategy.NOT_COPY_APK,
+                    InstallStrategy.FORCE_UPDATE | InstallStrategy.NOT_COPY_APK,
                     result -> {
                         // nothing
                     });

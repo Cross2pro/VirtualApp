@@ -26,7 +26,9 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme">
+        android:largeHeap="true"
+        android:theme="@style/AppTheme"
+        tools:ignore="HardcodedDebugMode">
         <meta-data
             android:name="TencentMapSDK"
             android:value="4HPBZ-2QWC6-H47SR-M6PZY-MTZB5-N2F4F"/>

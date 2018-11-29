@@ -50,6 +50,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -57,12 +58,13 @@ import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
-import com.lody.virtual.client.stub.UnInstallerActivity;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.compat.UriCompat;
+import com.lody.virtual.helper.compat.ParceledListSliceCompat;
+import com.lody.virtual.helper.compat.PermissionCompat;
+import com.lody.virtual.helper.compat.ProxyFCPUriCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -73,6 +75,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
+import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
@@ -94,6 +97,7 @@ import mirror.android.app.IActivityManager;
 import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
+import mirror.android.content.pm.ParceledListSlice;
 import mirror.android.content.pm.UserInfo;
 import mirror.android.widget.Toast;
 
@@ -105,15 +109,65 @@ import static android.content.ContentResolver.SCHEME_FILE;
 @SuppressWarnings("unused")
 class MethodProxies {
 
-    static class GetAppStartMode extends ReplaceLastUidMethodProxy {
-        public GetAppStartMode() {
-            super("getAppStartMode");
+    static class FinishReceiver extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "finishReceiver";
         }
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            MethodParameterUtils.replaceLastAppPkg(args);
+            if (args[0] instanceof IBinder) {
+                IBinder token = (IBinder) args[0];
+                if (VActivityManager.get().broadcastFinish(token)) {
+                    return 0;
+                }
+            }
             return super.call(who, method, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+    static class GetRecentTasks extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getRecentTasks";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            Object _infos = method.invoke(who, args);
+            //noinspection unchecked
+            List<ActivityManager.RecentTaskInfo> infos =
+                    ParceledListSliceCompat.isReturnParceledListSlice(method)
+                            ? ParceledListSlice.getList.call(_infos)
+                            : (List) _infos;
+            for (ActivityManager.RecentTaskInfo info : infos) {
+                AppTaskInfo taskInfo = VActivityManager.get().getTaskInfo(info.id);
+                if (taskInfo == null) {
+                    continue;
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        info.topActivity = taskInfo.topActivity;
+                        info.baseActivity = taskInfo.baseActivity;
+                    } catch (Throwable e) {
+                        // ignore
+                    }
+                }
+                try {
+                    info.origActivity = taskInfo.baseActivity;
+                    info.baseIntent = taskInfo.baseIntent;
+                } catch (Throwable e) {
+                    // ignore
+                }
+            }
+            return _infos;
         }
     }
 
@@ -556,10 +610,13 @@ class MethodProxies {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
                 //TODO: fake file uri
-                args[intentIndex] = UriCompat.fakeFileUri(intent);
-                //check outside is visiable?
+                args[intentIndex] = ProxyFCPUriCompat.get().fakeFileUri(intent);
                 ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
-                if (resolveInfo == null || !isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
+                if (resolveInfo == null || resolveInfo.activityInfo == null) {
+                    return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+                }
+                if (!Intent.ACTION_VIEW.equals(intent.getAction())
+                        && !isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
                 return method.invoke(who, args);
@@ -737,7 +794,7 @@ class MethodProxies {
                     if (u!=null)
                     {
                         if (!SCHEME_FILE.equals(u.getScheme()) || !VActivityManager.get().isAppPid(VBinder.getCallingPid())) {
-                            Uri newurl = UriCompat.fakeFileUri(u);
+                            Uri newurl = ProxyFCPUriCompat.get().fakeFileUri(u);
                             if (newurl != null) {
                                 intent.setDataAndType(newurl, intent.getType());
                             }
@@ -903,7 +960,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VASettings.DISABLE_FOREGROUND_SERVICE) {
+            if (!getConfig().isAllowServiceStartForeground()) {
                 return 0;
             }
             ComponentName component = (ComponentName) args[0];
@@ -1028,39 +1085,37 @@ class MethodProxies {
          */
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (VASettings.NEW_INTENTSENDER) {
-                int intentIndex;
-                int resultToIndex;
-                int resultWhoIndex;
-                int optionsIndex;
-                int requestCodeIndex;
-                if (BuildCompat.isOreo()) {
-                    intentIndex = 3;
-                    resultToIndex = 5;
-                    resultWhoIndex = 6;
-                    requestCodeIndex = 7;
-                    optionsIndex = 10;
-                } else {
-                    optionsIndex = 9;
-                    intentIndex = 2;
-                    resultToIndex = 4;
-                    resultWhoIndex = 5;
-                    requestCodeIndex = 6;
-                }
-                Intent intent = (Intent) args[intentIndex];
-                if (intent != null) {
-                    IBinder resultTo = (IBinder) args[resultToIndex];
-                    String resultWho = (String) args[resultWhoIndex];
-                    int requestCode = (int) args[requestCodeIndex];
-                    Bundle options = (Bundle) args[optionsIndex];
+            int intentIndex;
+            int resultToIndex;
+            int resultWhoIndex;
+            int optionsIndex;
+            int requestCodeIndex;
+            if (BuildCompat.isOreo()) {
+                intentIndex = 3;
+                resultToIndex = 5;
+                resultWhoIndex = 6;
+                requestCodeIndex = 7;
+                optionsIndex = 10;
+            } else {
+                optionsIndex = 9;
+                intentIndex = 2;
+                resultToIndex = 4;
+                resultWhoIndex = 5;
+                requestCodeIndex = 6;
+            }
+            Intent intent = (Intent) args[intentIndex];
+            if (intent != null) {
+                IBinder resultTo = (IBinder) args[resultToIndex];
+                String resultWho = (String) args[resultWhoIndex];
+                int requestCode = (int) args[requestCodeIndex];
+                Bundle options = (Bundle) args[optionsIndex];
 
-                    Bundle extras = new Bundle();
-                    extras.putInt(ShadowPendingActivity.EXTRA_REQUESTCODE, requestCode);
-                    extras.putString(ShadowPendingActivity.EXTRA_RESULTWHO, resultWho);
-                    extras.putBundle(ShadowPendingActivity.EXTRA_OPTIONS, options);
-                    BundleCompat.putBinder(extras, ShadowPendingActivity.EXTRA_RESULTTO, resultTo);
-                    intent.putExtras(extras);
-                }
+                Bundle extras = new Bundle();
+                extras.putInt(ShadowPendingActivity.EXTRA_REQUESTCODE, requestCode);
+                extras.putString(ShadowPendingActivity.EXTRA_RESULTWHO, resultWho);
+                extras.putBundle(ShadowPendingActivity.EXTRA_OPTIONS, options);
+                BundleCompat.putBinder(extras, ShadowPendingActivity.EXTRA_RESULTTO, resultTo);
+                intent.putExtras(extras);
             }
             return super.call(who, method, args);
         }
@@ -1100,7 +1155,7 @@ class MethodProxies {
             }
             //check outside visable
             ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
-            if(resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)){
+            if (resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
                 return 0;
             }
 //            args[4] = ServiceConnectionDelegate.getDelegate(conn);
@@ -1169,7 +1224,7 @@ class MethodProxies {
             }
             //check outside visable
             ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
-            if(resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)){
+            if (resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
                 return null;
             }
             return method.invoke(who, args);
@@ -1371,7 +1426,9 @@ class MethodProxies {
                 return PackageManager.PERMISSION_GRANTED;
             }
             if (GmsSupport.isGoogleAppOrService(getAppPkg())) {
-                return PackageManager.PERMISSION_GRANTED;
+                if (!PermissionCompat.DANGEROUS_PERMISSION.contains(permission)) {
+                    return PackageManager.PERMISSION_GRANTED;
+                }
             }
             args[args.length - 1] = getRealUid();
             return method.invoke(who, args);
@@ -1629,15 +1686,17 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
-            if (isServerProcess() &&
-                    (name.startsWith(VASettings.STUB_CP_AUTHORITY))
-                    || name.startsWith(VASettings.STUB_CP_AUTHORITY_64BIT)) {
-                //is server process
+
+            if ((name.startsWith(StubManifest.STUB_CP_AUTHORITY)
+                    || name.startsWith(StubManifest.STUB_CP_AUTHORITY_64BIT)
+                    || name.equals(getConfig().get64bitHelperAuthority()))
+                    || name.equals(getConfig().getBinderProviderAuthority())
+                    || name.equals(ProxyFCPUriCompat.get().getAuthority())) {
                 return method.invoke(who, args);
             }
-            if(UriCompat.isOutSide(name)){
-                //outside contentprovider
-                args[nameIdx] = UriCompat.unWrapperOutSide(name);
+            if (ProxyFCPUriCompat.get().isOutSide(name)) {
+                //outside ContentProvider
+                args[nameIdx] = ProxyFCPUriCompat.get().unWrapperOutSide(name);
                 return method.invoke(who, args);
             }
 
@@ -1648,7 +1707,7 @@ class MethodProxies {
                 if (config == null) {
                     return null;
                 }
-                args[nameIdx] = VASettings.getStubAuthority(config.vpid, config.is64Bit);
+                args[nameIdx] = StubManifest.getStubAuthority(config.vpid, config.is64Bit);
                 Object holder = method.invoke(who, args);
                 if (holder == null) {
                     return null;
@@ -1817,14 +1876,6 @@ class MethodProxies {
 
 
     static class BroadcastIntent extends MethodProxy {
-        private static final HashSet<String> ACTION_BLACK_LIST = new HashSet<>();
-
-        static {
-            ACTION_BLACK_LIST.add("com.google.android.gms.walletp2p.phenotype.ACTION_PHENOTYPE_REGISTER");
-            ACTION_BLACK_LIST.add("com.facebook.zero.ACTION_ZERO_REFRESH_TOKEN");
-            ACTION_BLACK_LIST.add("com.google.android.gms.magictether.SCANNED_DEVICE");
-            ACTION_BLACK_LIST.add("com.google.android.vending.verifier.intent.action.VERIFY_INSTALLED_PACKAGES");
-        }
 
         @Override
         public String getMethodName() {
@@ -1838,9 +1889,6 @@ class MethodProxies {
             intent.setDataAndType(intent.getData(), type);
             if (VirtualCore.get().getAppCallback() != null) {
                 VirtualCore.get().getAppCallback().onSendBroadcast(intent);
-            }
-            if (ACTION_BLACK_LIST.contains(intent.getAction())) {
-                return 0;
             }
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
@@ -1860,11 +1908,13 @@ class MethodProxies {
         private Intent handleIntent(final Intent intent) {
             final String action = intent.getAction();
             if ("android.intent.action.CREATE_SHORTCUT".equals(action)
-                    || "com.android.launcher.action.INSTALL_SHORTCUT".equals(action)) {
+                    || "com.android.launcher.action.INSTALL_SHORTCUT".equals(action)
+                    || "com.aliyun.homeshell.action.INSTALL_SHORTCUT".equals(action)) {
 
-                return VASettings.ENABLE_INNER_SHORTCUT ? handleInstallShortcutIntent(intent) : null;
+                return getConfig().isAllowCreateShortcut() ? handleInstallShortcutIntent(intent) : null;
 
-            } else if ("com.android.launcher.action.UNINSTALL_SHORTCUT".equals(action)) {
+            } else if ("com.android.launcher.action.UNINSTALL_SHORTCUT".equals(action)
+                    || "com.aliyun.homeshell.action.UNINSTALL_SHORTCUT".equals(action)) {
 
                 handleUninstallShortcutIntent(intent);
 
@@ -1911,7 +1961,7 @@ class MethodProxies {
                     String pkg = component.getPackageName();
                     Intent newShortcutIntent = new Intent();
                     newShortcutIntent.addCategory(Intent.CATEGORY_DEFAULT);
-                    newShortcutIntent.setAction(Constants.SHORTCUT_ACTION);
+                    newShortcutIntent.setAction(Constants.ACTION_SHORTCUT);
                     newShortcutIntent.setPackage(getHostPkg());
                     newShortcutIntent.putExtra("_VA_|_intent_", shortcut);
                     newShortcutIntent.putExtra("_VA_|_uri_", shortcut.toUri(0));
@@ -1995,7 +2045,7 @@ class MethodProxies {
             for (int i = 0; i < args.length; i++) {
                 Object obj = args[i];
                 if (obj instanceof Uri) {
-                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+                    Uri uri = ProxyFCPUriCompat.get().fakeFileUri((Uri) obj);
                     if (uri != null) {
                         args[i] = uri;
                     }
@@ -2020,15 +2070,6 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
-//            for (int i = 0; i < args.length; i++) {
-//                Object obj = args[i];
-//                if (obj instanceof Uri) {
-//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
-//                    if (uri != null) {
-//                        args[i] = uri;
-//                    }
-//                }
-//            }
             return method.invoke(who, args);
         }
 
@@ -2091,7 +2132,17 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) {
             int userId = (int) args[0];
-            return userId == 0;
+            for (VUserInfo userInfo : VUserManager.get().getUsers()) {
+                if (userInfo.id == userId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
         }
     }
 }

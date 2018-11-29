@@ -1,7 +1,7 @@
 #include <elf.h>//
 // VirtualApp Native Project
 //
-#include <Foundation/IOUniformer.h>
+#include <Foundation/IORelocator.h>
 #include <fb/include/fb/Build.h>
 #include <fb/include/fb/ALog.h>
 #include <fb/include/fb/fbjni.h>
@@ -22,9 +22,9 @@ static void jni_nativeLaunchEngine(alias_ref<jclass> clazz,JArrayClass<jobject> 
 
 
 static void jni_nativeEnableIORedirect(alias_ref<jclass>, jstring selfSoPath, jint apiLevel,
-                                       jint preview_api_level, jboolean need_dlopen) {
+                                       jint preview_api_level) {
     ScopeUtfString so_path(selfSoPath);
-    IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level, need_dlopen ? 1 : 0);
+    IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level);
 }
 
 static void jni_nativeIOWhitelist(alias_ref<jclass> jclazz, jstring _path) {
@@ -37,11 +37,16 @@ static void jni_nativeIOForbid(alias_ref<jclass> jclazz, jstring _path) {
     IOUniformer::forbid(path.c_str());
 }
 
+static void jni_nativeIOReadOnly(alias_ref<jclass> jclazz, jstring _path) {
+    ScopeUtfString path(_path);
+    IOUniformer::readOnly(path.c_str());
+}
+
 
 static void jni_nativeIORedirect(alias_ref<jclass> jclazz, jstring origPath, jstring newPath) {
     ScopeUtfString orig_path(origPath);
     ScopeUtfString new_path(newPath);
-    IOUniformer::redirect(orig_path.c_str(), new_path.c_str());
+    IOUniformer::relocate(orig_path.c_str(), new_path.c_str());
 
 }
 
@@ -94,6 +99,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
                                          jni_nativeIOWhitelist),
                         makeNativeMethod("nativeIOForbid",
                                          jni_nativeIOForbid),
+                        makeNativeMethod("nativeIOReadOnly",
+                                         jni_nativeIOReadOnly),
                         makeNativeMethod("nativeIORedirect",
                                          jni_nativeIORedirect),
                         makeNativeMethod("nativeGetRedirectedPath",

@@ -16,7 +16,7 @@ import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.Reflect;
@@ -88,7 +88,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (!VASettings.ENABLE_INNER_SHORTCUT) {
+            if (!getConfig().isAllowCreateShortcut()) {
                 return defValue;
             }
             Object paramValue = args[infoIndex];
@@ -99,7 +99,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
                             VClient.get().getCurrentApplication(), shortcutInfo, getAppPkg(), getAppUserId());
                 } else {
                     List<ShortcutInfo> result = new ArrayList<>();
-                    List list = null;
+                    List list;
                     try {
                         list = ParceledListSlice.getList.call(paramValue);
                     } catch (Throwable e) {
@@ -108,7 +108,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
                     if (list != null) {
                         for (int i = list.size() - 1; i >= 0; i--) {
                             Object obj = list.get(i);
-                            if (obj != null && (obj instanceof ShortcutInfo)) {
+                            if ((obj instanceof ShortcutInfo)) {
                                 ShortcutInfo info = (ShortcutInfo) obj;
                                 ShortcutInfo target = unWrapper(
                                         VClient.get().getCurrentApplication(), info, getAppPkg(), getAppUserId());
@@ -138,14 +138,14 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
             if (parceledListSlice != null) {
                 //ParceledListSlice<ShortcutInfo>
                 List<ShortcutInfo> result = new ArrayList<>();
-                if (!VASettings.ENABLE_INNER_SHORTCUT) {
+                if (!getConfig().isAllowCreateShortcut()) {
                     return ParceledListSliceCompat.create(result);
                 }
                 List list = ParceledListSlice.getList.call(parceledListSlice);
                 if (list != null) {
                     for (int i = list.size() - 1; i >= 0; i--) {
                         Object obj = list.get(i);
-                        if (obj != null && (obj instanceof ShortcutInfo)) {
+                        if ((obj instanceof ShortcutInfo)) {
                             ShortcutInfo info = (ShortcutInfo) obj;
                             ShortcutInfo target = unWrapper(
                                     VClient.get().getCurrentApplication(), info, getAppPkg(), getAppUserId());

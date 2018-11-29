@@ -25,9 +25,9 @@ public class RequestPermissionsActivity extends Activity {
         BundleCompat.putBinder(extras, "callback", callback.asBinder());
         Intent intent = new Intent();
         if (is64bit) {
-            intent.setClassName(VASettings.PACKAGE_NAME_64BIT, RequestPermissionsActivity.class.getName());
+            intent.setClassName(StubManifest.PACKAGE_NAME_64BIT, RequestPermissionsActivity.class.getName());
         } else {
-            intent.setClassName(VASettings.PACKAGE_NAME, RequestPermissionsActivity.class.getName());
+            intent.setClassName(StubManifest.PACKAGE_NAME, RequestPermissionsActivity.class.getName());
         }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtras(extras);

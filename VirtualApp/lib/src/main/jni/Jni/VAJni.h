@@ -11,7 +11,7 @@
 
 #include "Helper.h"
 #include "Foundation/VMHook.h"
-#include "Foundation/IOUniformer.h"
+#include "../Foundation/IORelocator.h"
 
 extern alias_ref<jclass> nativeEngineClass;
 

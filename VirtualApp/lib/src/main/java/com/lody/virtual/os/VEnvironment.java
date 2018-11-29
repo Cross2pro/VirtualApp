@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.utils.EncodeUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -56,7 +56,7 @@ public class VEnvironment {
     };
 
     static {
-        File host = new File(getContext().getApplicationInfo().dataDir);
+        File host = new File("/data/data/" + StubManifest.PACKAGE_NAME);
         // Point to: /
         ROOT = ensureCreated(new File(host, "virtual"));
         // Point to: /data/
@@ -70,8 +70,7 @@ public class VEnvironment {
         // Point to: /storage/emulated
         EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
 
-
-        File host64 = new File("/data/data/" + VASettings.PACKAGE_NAME_64BIT);
+        File host64 = new File("/data/data/" + StubManifest.PACKAGE_NAME_64BIT);
         // Point to: /
         ROOT64 = ensureCreated(new File(host64, "virtual"));
         // Point to: /data/
@@ -184,6 +183,10 @@ public class VEnvironment {
         return new File(getSystemSecureDirectory(), "account-list.ini");
     }
 
+    public static File getSyncDirectory() {
+        return ensureCreated(new File(getSystemSecureDirectory(), "sync") );
+    }
+
     public static File getAccountVisibilityConfigFile() {
         return new File(getSystemSecureDirectory(), "account-visibility-list.ini");
     }
@@ -286,19 +289,19 @@ public class VEnvironment {
     }
 
     public static File getUserDataDirectory(int userId) {
-        return new File(USER_DIRECTORY, String.valueOf(userId));
+        return ensureCreated(new File(USER_DIRECTORY, String.valueOf(userId)));
     }
 
     public static File getUserDataDirectory64(int userId) {
-        return new File(USER_DIRECTORY64, String.valueOf(userId));
+        return ensureCreated(new File(USER_DIRECTORY64, String.valueOf(userId)));
     }
 
     public static File getSystemDirectory(int userId) {
-        return new File(getUserDataDirectory(userId), "system");
+        return ensureCreated(new File(getUserDataDirectory(userId), "system"));
     }
 
 	public static File getSystemDirectory64(int userId) {
-        return new File(getUserDataDirectory64(userId), "system");
+        return ensureCreated(new File(getUserDataDirectory64(userId), "system"));
     }
 
     /**

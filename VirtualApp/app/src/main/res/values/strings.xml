@@ -65,6 +65,7 @@
     <string name="permission_denied_ok">Launch failed.</string>
     <string name="start_app_failed">can\'t start %1$s </string>
     <string name="any_apps">Apps</string>
+    <string name="tip_add_apps">Please wait for add app</string>
     <string-array name="weeks">
         <item>Sun</item>
         <item>Mon</item>
