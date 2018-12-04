@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
-def version = '3.0.8'
-def version_code = 18061315
+def version = '3.1.1'
+def version_code = 180071009
 android {
     compileSdkVersion 26
     defaultConfig {
@@ -13,11 +13,16 @@ android {
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + version + '"'
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi", "armeabi-v7a", "x86"
+                cFlags "-O2"
+                cppFlags "-O2"
+                abiFilters "armeabi", "armeabi-v7a"
             }
         }
     }
     buildTypes {
+        debug{
+            jniDebuggable false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -31,10 +36,37 @@ android {
     lintOptions {
         //IJobService need NewApi
         abortOnError false
-        warning 'NewApi','OnClick', 'EllipsizeMaxLines'
+        warning 'NewApi', 'OnClick', 'EllipsizeMaxLines'
     }
 }
-
+gradle.taskGraph.afterTask { task ->
+    def TASK_NAME = "transformNativeLibsWithStripDebugSymbolFor"
+    def COPY_ABI_LIST = [
+            "lib/armeabi/",
+            "lib/armeabi-v7a/"
+    ]
+    if (task.name.startsWith(TASK_NAME)) {
+        String buildType = task.name.substring(TASK_NAME.length()).toLowerCase(Locale.US)
+        File root = new File(buildDir, "intermediates/transforms/stripDebugSymbol/${buildType}")
+        // 0\lib\arm64-v8a
+        for (File numberDir : root.listFiles()) {
+            if (!numberDir.isDirectory()) {
+                continue
+            }
+            File soDir = new File(numberDir, "lib/arm64-v8a")
+            for (File soFile : soDir.listFiles()) {
+                if (soFile.name.endsWith("_64.so")) {
+                    for (String abi : COPY_ABI_LIST) {
+                        def toFile = new File(numberDir, abi + soFile.name)
+                        GFileUtils.copyFile(soFile, toFile)
+                    }
+                    soFile.delete()
+                }
+            }
+            soDir.delete()
+        }
+    }
+}
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')

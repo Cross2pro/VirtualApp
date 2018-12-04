@@ -2,8 +2,8 @@
 // VirtualApp Native Project
 //
 
-#ifndef FOUNDATION_PATH
-#define FOUNDATION_PATH
+#ifndef FOUNDATION_VM_HOOK
+#define FOUNDATION_VM_HOOK
 
 
 #include <jni.h>

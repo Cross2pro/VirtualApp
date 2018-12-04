@@ -642,6 +642,7 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
+        NativeEngine.enableIORedirect();
     }
 
     @SuppressLint("SdCardPath")

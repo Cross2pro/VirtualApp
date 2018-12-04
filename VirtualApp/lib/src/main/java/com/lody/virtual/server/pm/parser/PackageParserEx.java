@@ -304,7 +304,7 @@ public class PackageParserEx {
             ApplicationInfoN.deviceProtectedDataDir.set(ai, ai.dataDir);
             ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
         }
-        if (!isOut && !is64bit) {
+        if (!isOut) {
             if (VirtualCore.getConfig().isUseRealDataDir(ai.packageName) &&
                     VirtualCore.getConfig().isEnableIORedirect()) {
                 if (outside != null) {
@@ -460,6 +460,7 @@ public class PackageParserEx {
 
     public static ApplicationInfo generateApplicationInfoOut(VPackage p, int flags,
                                                              PackageUserState state, int userId) {
+        //other app use createPackageContext
         boolean isOut = (flags & PackageManager.GET_SHARED_LIBRARY_FILES) != 0;
         return generateApplicationInfoInternal(p, flags, state, userId, isOut);
     }

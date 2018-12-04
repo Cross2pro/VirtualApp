@@ -106,9 +106,9 @@ int get_replace_item_count() {
 
 
 inline bool
-match_path(bool is_folder, size_t size, const char *item_path, const char *path, size_t pathLen) {
+match_path(bool is_folder, size_t size, const char *item_path, const char *path, size_t path_len) {
     if (is_folder) {
-        if (pathLen < size) {
+        if (path_len < size) {
             // ignore the last '/'
             return strncmp(item_path, path, size - 1) == 0;
         } else {

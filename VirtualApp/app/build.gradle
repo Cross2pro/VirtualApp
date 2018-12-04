@@ -8,8 +8,8 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180070613
-        versionName "2.2.0"
+        versionCode 180071009
+        versionName "2.2.1"
         multiDexEnabled false
         vectorDrawables.useSupportLibrary = true
         buildConfigField 'String','ARM64_PACKAGE_NAME','"io.virtualapp.addon.arm64"'

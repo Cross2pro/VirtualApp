@@ -5,11 +5,17 @@
 #ifndef FOUNDATION_PATH
 #define FOUNDATION_PATH
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <limits.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <syscall.h>
+#include <fb/include/fb/ALog.h>
 
-int get_last_slash_pos(char *s);
+char *canonicalize_filename(const char *filename);
 
-char* canonicalize_filename(const char *str);
-
+char *canonicalize_filename(const char *filename,
+                            const char *relative_to);
 
 #endif //FOUNDATION_PATH

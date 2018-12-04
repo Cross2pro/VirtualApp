@@ -43,7 +43,7 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
-import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
@@ -2143,6 +2143,13 @@ class MethodProxies {
         @Override
         public boolean isEnable() {
             return isAppProcess();
+        }
+    }
+
+
+    static class GetPackageProcessState extends ReplaceLastPkgMethodProxy {
+        public GetPackageProcessState() {
+            super("getPackageProcessState");
         }
     }
 }

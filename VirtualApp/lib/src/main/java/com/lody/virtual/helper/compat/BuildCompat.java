@@ -20,13 +20,11 @@ public class BuildCompat {
     }
 
     public static boolean isOreo() {
-        return (Build.VERSION.SDK_INT == 25 && getPreviewSDKInt() > 0)
-                || Build.VERSION.SDK_INT > 25;
+        return Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && getPreviewSDKInt() > 0);
     }
 
     public static boolean isP() {
-        return (Build.VERSION.SDK_INT == 27 && getPreviewSDKInt() > 0)
-                || Build.VERSION.SDK_INT > 27;
+        return Build.VERSION.SDK_INT > 27 || (Build.VERSION.SDK_INT == 27 && getPreviewSDKInt() > 0);
     }
 
     public static boolean isSamsung() {
