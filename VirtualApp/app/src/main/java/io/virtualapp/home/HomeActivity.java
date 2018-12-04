@@ -1,19 +1,27 @@
 package io.virtualapp.home;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.PopupMenu;
@@ -102,9 +110,44 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         bindViews();
         initLaunchpad();
         initMenu();
-        new HomePresenterImpl(this).start();
-//        IBinderTool.printAllService();
-//        IBinderTool.printIBinder("android.content.IFlymePermissionService");
+        new HomePresenterImpl(this);
+        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M
+                && VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, 0);
+            } else {
+                load();
+            }
+        } else {
+            load();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        for (int result : grantResults) {
+            if (result == PackageManager.PERMISSION_GRANTED) {
+                load();
+                break;
+            }
+        }
+    }
+
+    /***
+     * 检测悬浮窗权限
+     */
+    @TargetApi(Build.VERSION_CODES.M)
+    private void checkOverlays(){
+        if(!Settings.canDrawOverlays(this.getApplicationContext())){
+            //
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        }
+    }
+
+    private void load() {
+        mPresenter.start();
     }
 
     @Override

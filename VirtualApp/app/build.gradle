@@ -8,13 +8,13 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180071009
-        versionName "2.2.1"
+        versionCode 180080611
+        versionName "2.2.2"
         multiDexEnabled false
         vectorDrawables.useSupportLibrary = true
         buildConfigField 'String','ARM64_PACKAGE_NAME','"io.virtualapp.addon.arm64"'
         manifestPlaceholders = [
-            ARM_PACKAGE_NAME:'io.virtualapp',
+            PACKAGE_NAME_32BIT:'io.virtualapp',
             ARM64_PACKAGE_NAME:'io.virtualapp.addon.arm64'
         ]
         ndk {
@@ -29,9 +29,9 @@ android {
 
     buildTypes {
         debug {
-            debuggable false
+            debuggable true
             jniDebuggable false
-//            minifyEnabled true
+            minifyEnabled false
 //            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'proguard-rules-debug.pro'
         }
         release {
@@ -53,16 +53,7 @@ android {
     }
     //排除arm64的so
 }
-//gradle.taskGraph.beforeTask {task ->
-//    if(task.name.startsWith("package")){
-//        android.packagingOptions.exclude('lib/arm64-v8a/*.so')
-//    }
-//}
-//gradle.taskGraph.afterTask {task ->
-//    if(task.name.startsWith("package")){
-//        android.packagingOptions.excludes.remove('lib/arm64-v8a/*.so')
-//    }
-//}
+
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')

@@ -38,15 +38,25 @@ public class App extends Application {
         @Override
         public boolean isUseRealDataDir(String packageName) {
             //使用真实data目录
-            return "com.tencent.tmgp.pubgmhd".equals(packageName);
+            if("tx's game".equals(packageName)){
+                return true;
+            }
+            return false;
         }
 
         @Override
         public AppLibConfig getAppLibConfig(String packageName) {
-            if("com.bilibili.fgo.qihoo".equals(packageName)){
+            //使用真实lib目录
+            if("wy's game".equals(packageName)){
                 return AppLibConfig.UseRealLib;
             }
-            return super.getAppLibConfig(packageName);
+            return AppLibConfig.UseOwnLib;
+        }
+
+        @Override
+        public boolean isDisableDrawOverlays(String packageName) {
+            //禁止悬浮窗
+            return super.isDisableDrawOverlays(packageName);
         }
 
         @Override
@@ -106,14 +116,14 @@ public class App extends Application {
                 //外部安装了下面应用，但是内部没有安装（双开），内部应用在调用下面应用的时候，会调用外面的应用，如果没用addVisibleOutsidePackage，则会相当于没有安装
                 // 比如：内部微信调用QQ分享，但是内部没有QQ，如果没用addVisibleOutsidePackage，那么提示没有安装QQ，如果用了addVisibleOutsidePackage，则启动外部的QQ
                 // 注：应用调用的校验越来越严，与外部的调用可能会失败，这时候就需要都安装在va内部。
-                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");
-                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqqi");
-                virtualCore.addVisibleOutsidePackage("com.tencent.minihd.qq");
-                virtualCore.addVisibleOutsidePackage("com.tencent.qqlite");
-                virtualCore.addVisibleOutsidePackage("com.facebook.katana");
-                virtualCore.addVisibleOutsidePackage("com.whatsapp");
-                virtualCore.addVisibleOutsidePackage("com.tencent.mm");
-                virtualCore.addVisibleOutsidePackage("com.immomo.momo");
+//                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");
+//                virtualCore.addVisibleOutsidePackage("com.tencent.mobileqqi");
+//                virtualCore.addVisibleOutsidePackage("com.tencent.minihd.qq");
+//                virtualCore.addVisibleOutsidePackage("com.tencent.qqlite");
+//                virtualCore.addVisibleOutsidePackage("com.facebook.katana");
+//                virtualCore.addVisibleOutsidePackage("com.whatsapp");
+//                virtualCore.addVisibleOutsidePackage("com.tencent.mm");
+//                virtualCore.addVisibleOutsidePackage("com.immomo.momo");
             }
         });
     }

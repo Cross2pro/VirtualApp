@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
-def version = '3.1.1'
-def version_code = 180071009
+def version = '3.1.2'
+def version_code = 180080611
 android {
     compileSdkVersion 26
     defaultConfig {
@@ -11,6 +11,9 @@ android {
         versionName version
 
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + version + '"'
+        manifestPlaceholders = [
+                VA_VERSION:''+version_code,
+        ]
         externalNativeBuild {
             ndkBuild {
                 cFlags "-O2"

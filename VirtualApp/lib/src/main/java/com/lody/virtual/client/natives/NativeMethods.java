@@ -25,6 +25,13 @@ public class NativeMethods {
 
     public static Method gAudioRecordNativeCheckPermission;
 
+    //ActivityThread.currentOpPackageName
+    public static Method gMediaRecorderNativeSetup;
+
+    public static Method gAudioRecordNativeSetup;
+
+    public static int gAudioRecordMethodType;
+
     public static Method gCameraStartPreview;
     public static Method gCameraNativeTakePicture;
     public static Method gAudioRecordStart;
@@ -32,6 +39,17 @@ public class NativeMethods {
 
     @SuppressLint("PrivateApi")
     public static void init() {
+
+        gMediaRecorderNativeSetup = getMediaRecorderNativeSetup();
+
+        gAudioRecordNativeSetup = getAudioRecordNativeSetup();
+
+        if (gAudioRecordNativeSetup != null && gAudioRecordNativeSetup.getParameterTypes().length == 10) {
+            gAudioRecordMethodType = 2;
+        } else {
+            gAudioRecordMethodType = 1;
+        }
+
         String methodName =
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
         for (Method method : DexFile.class.getDeclaredMethods()) {
@@ -103,4 +121,58 @@ public class NativeMethods {
         return null;
     }
 
+    @SuppressLint("PrivateApi")
+    private static Method getMediaRecorderNativeSetup(){
+        Method native_setup = null;
+        try {
+            native_setup = MediaRecorder.class.getDeclaredMethod("native_setup",
+                    Object.class, String.class, String.class);
+        } catch (NoSuchMethodException e) {
+            //ignore
+        }
+        if (native_setup == null) {
+            try {
+                native_setup = MediaRecorder.class.getDeclaredMethod("native_setup",
+                        Object.class, String.class);
+            } catch (NoSuchMethodException e) {
+                //ignore
+            }
+        }
+        return native_setup;
+    }
+
+    @SuppressLint("PrivateApi")
+    private static Method getAudioRecordNativeSetup() {
+        Method native_setup = null;
+        /**
+         * Object audiorecord_this,
+         Object  attributes,
+        int[] sampleRate, int channelMask, int channelIndexMask, int audioFormat,
+        int buffSizeInBytes, int[] sessionId, String opPackageName,
+        long nativeRecordInJavaObj
+         */
+        try {
+            native_setup = AudioRecord.class.getDeclaredMethod("native_setup",
+                    Object.class, Object.class, int[].class, int.class, int.class, int.class,
+                    int.class, int[].class, String.class, long.class);
+        } catch (NoSuchMethodException e) {
+            //ignore
+        }
+        /**
+         * Object audiorecord_this,
+         Object attributes,
+        int sampleRate, int channelMask, int channelIndexMask, int audioFormat,
+        int buffSizeInBytes, int[] sessionId, String opPackageName
+         */
+        if (native_setup == null) {
+            try {
+                native_setup = AudioRecord.class.getDeclaredMethod("native_setup",
+                        Object.class, Object.class, int.class, int.class, int.class, int.class,
+                        int.class, int[].class, String.class);
+            } catch (NoSuchMethodException e) {
+                //ignore
+            }
+        }
+        return native_setup;
+    }
 }

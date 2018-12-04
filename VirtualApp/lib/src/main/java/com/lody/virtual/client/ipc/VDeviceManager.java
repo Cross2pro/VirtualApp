@@ -76,10 +76,9 @@ public class VDeviceManager {
 
     @SuppressLint("HardwareIds")
     public static VDeviceInfo defaultDevice(Context context) {
-        TelephonyManager telephonyManager= (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         VDeviceInfo info = new VDeviceInfo();
         try {
-            info.setDeviceId(telephonyManager.getDeviceId());
+            info.setDeviceId(null);
         } catch (Exception e) {
             //ignore
         }

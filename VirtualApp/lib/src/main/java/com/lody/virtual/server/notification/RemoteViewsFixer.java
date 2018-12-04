@@ -38,10 +38,10 @@ import java.util.HashMap;
         mNotificationCompat = notificationCompat;
     }
 
-    View toView(final Context context, RemoteViews remoteViews, boolean isBig, boolean systemId) {
+    View toView(final Context context, RemoteViews remoteViews, boolean isBig) {
         View mCache = null;
         try {
-            mCache = createView(context, remoteViews, isBig, systemId);
+            mCache = createView(context, remoteViews, isBig);
         } catch (Throwable throwable) {
             if(DEBUG){
                 VLog.w(TAG, "toView 1", throwable);
@@ -96,13 +96,13 @@ import java.util.HashMap;
         return view;
     }
 
-    private View createView(final Context context, RemoteViews remoteViews, boolean isBig, boolean systemId) {
+    private View createView(final Context context, RemoteViews remoteViews, boolean isBig) {
         if (remoteViews == null)
             return null;
         Context base = mNotificationCompat.getHostContext();
         init(base);
         if(DEBUG){
-            VLog.v(TAG, "createView:big=" + isBig + ",system=" + systemId);
+            VLog.v(TAG, "createView:big=" + isBig);
         }
 
         int height = isBig ? notification_max_height : notification_min_height;
@@ -126,17 +126,13 @@ import java.util.HashMap;
             VLog.v(TAG, "createView:fixTextView");
             fixTextView((ViewGroup) view1);
         }
-        int mode;
+        int mode = View.MeasureSpec.AT_MOST;
         //TODO need adaptation
-        if (systemId) {
-            mode = View.MeasureSpec.EXACTLY;
-        } else {
-            if (isBig) {
-                mode = View.MeasureSpec.AT_MOST;
-            } else {
-                mode = View.MeasureSpec.EXACTLY;
-            }
-        }
+//            if (isBig) {
+//                mode = View.MeasureSpec.AT_MOST;
+//            } else {
+//                mode = View.MeasureSpec.EXACTLY;
+//            }
         if(DEBUG){
             VLog.v(TAG, "createView:layout");
         }
@@ -146,7 +142,7 @@ import java.util.HashMap;
                 View.MeasureSpec.makeMeasureSpec(height, mode));
         mCache.layout(0, 0, width, mCache.getMeasuredHeight());
         if(DEBUG){
-            VLog.v(TAG, "notification:systemId=" + systemId + ",max=%d/%d, szie=%d/%d", width, height,
+            VLog.v(TAG, "notification:max=%d/%d, szie=%d/%d", width, height,
                     mCache.getMeasuredWidth(), mCache.getMeasuredHeight());
         }
         return mCache;
@@ -182,7 +178,6 @@ import java.util.HashMap;
         if (contentView == null) {
             return null;
         }
-        final boolean systemId = false;
         final PendIntentCompat pendIntentCompat = new PendIntentCompat(contentView);
         final int layoutId;
         if (!click || pendIntentCompat.findPendIntents() <= 0) {
@@ -198,7 +193,7 @@ import java.util.HashMap;
         if(DEBUG){
             VLog.v(TAG, "remoteViews to view");
         }
-        View cache = toView(pluginContext, contentView, isBig, systemId);
+        View cache = toView(pluginContext, contentView, isBig);
         // remoteViews to bitmap
         if(DEBUG){
             VLog.v(TAG, "start createBitmap");
@@ -237,7 +232,7 @@ import java.util.HashMap;
                 }
                 try {
                     pendIntentCompat.setPendIntent(remoteViews,
-                            toView(mNotificationCompat.getHostContext(), remoteViews, isBig, systemId),
+                            toView(mNotificationCompat.getHostContext(), remoteViews, isBig),
                             cache);
                 } catch (Exception e) {
                     VLog.e(TAG, "setPendIntent error", e);

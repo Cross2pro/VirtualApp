@@ -24,12 +24,6 @@
 #define LINKER_PATH "/system/bin/linker"
 #endif
 
-#if defined(__LP64__)
-#define CORE_SO_NAME "libv++_64.so"
-#else
-#define CORE_SO_NAME "libv++.so"
-#endif
-
 #include "transparentED/originalInterface.h"
 #include "transparentED/ff_Recognizer.h"
 
@@ -246,8 +240,7 @@ HOOK_DEF(int, rmdir, const char *pathname) {
         long ret = syscall(__NR_rmdir, relocated_path);
         FREE(relocated_path, pathname);
         return ret;
-    }
-    {
+    } else {
         errno = 13;
         return -1;
     }

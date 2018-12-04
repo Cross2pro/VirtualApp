@@ -59,6 +59,10 @@ public final class BinderProvider extends ContentProvider {
         }
         Context context = getContext();
         if (context != null) {
+            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+                NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
+                NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
+            }
             try {
                 context.startService(new Intent(context, KeepAliveService.class));
             } catch (Exception e) {
@@ -68,10 +72,6 @@ public final class BinderProvider extends ContentProvider {
 
         if (!VirtualCore.get().isStartup()) {
             return false;
-        }
-        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
-            NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
-            NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
         }
         VPackageManagerService.systemReady();
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());

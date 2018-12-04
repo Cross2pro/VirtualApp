@@ -116,6 +116,9 @@ final class ProviderIntentResolver extends IntentResolver<VPackage.ProviderInten
     @Override
     protected ResolveInfo newResult(VPackage.ProviderIntentInfo filter, int match, int userId) {
         final VPackage.ProviderComponent provider = filter.provider;
+        if (!VPackageManagerService.get().isEnabledLPr(provider.info, mFlags, userId)) {
+            return null;
+        }
         PackageSetting ps = (PackageSetting) provider.owner.mExtras;
         ProviderInfo pi = PackageParserEx.generateProviderInfo(provider, mFlags, ps.readUserState(userId), userId);
         if (pi == null) {

@@ -4,11 +4,13 @@ include $(CLEAR_VARS)
 
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
 LOCAL_MODULE := v++_64
+LOCAL_CFLAGS := -DCORE_SO_NAME=\"libv++_64.so\"
 else
 LOCAL_MODULE := v++
+LOCAL_CFLAGS := -DCORE_SO_NAME=\"libv++.so\"
 endif
 
-LOCAL_CFLAGS := -Wno-error=format-security -fpermissive -O2
+LOCAL_CFLAGS += -Wno-error=format-security -fpermissive -O2
 LOCAL_CFLAGS += -DLOG_TAG=\"VA++\"
 LOCAL_CFLAGS += -fno-rtti -fno-exceptions
 

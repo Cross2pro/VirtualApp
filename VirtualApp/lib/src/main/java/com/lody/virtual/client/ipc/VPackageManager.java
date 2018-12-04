@@ -286,9 +286,9 @@ public class VPackageManager {
         }
     }
 
-    public String[] getAllAuthorities(){
+    public boolean isVirtualAuthority(String authority){
         try {
-            return getService().getAllAuthorities();
+            return getService().isVirtualAuthority(authority);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

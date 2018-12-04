@@ -16,6 +16,7 @@ import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
 import com.lody.virtual.client.hook.proxies.backup.BackupManagerStub;
+import com.lody.virtual.client.hook.proxies.battery_stats.BatteryStatsHub;
 import com.lody.virtual.client.hook.proxies.bluetooth.BluetoothStub;
 import com.lody.virtual.client.hook.proxies.clipboard.ClipBoardStub;
 import com.lody.virtual.client.hook.proxies.connectivity.ConnectivityStub;
@@ -198,6 +199,7 @@ public final class InvocationStubManager {
                 addInjector(new WifiScannerStub());
                 addInjector(new ShortcutServiceStub());
                 addInjector(new DevicePolicyManagerStub());
+                addInjector(new BatteryStatsHub());
             }
             if (BuildCompat.isOreo()) {
                 addInjector(new AutoFillManagerStub());

@@ -9,7 +9,6 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.PersistableBundle;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.VClient;
@@ -38,7 +37,6 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     private static final String TAG = AppInstrumentation.class.getSimpleName();
 
     private static AppInstrumentation gDefault;
-    private final Activity mUtilActivity = new Activity();
 
     private AppInstrumentation(Instrumentation base) {
         super(base);
@@ -65,7 +63,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 
 
     @Override
-    public void inject() throws Throwable {
+    public void inject() {
         base = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
         ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
     }
@@ -89,13 +87,13 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                 for (Field field : fields) {
                     if (Instrumentation.class.isAssignableFrom(field.getType())) {
                         field.setAccessible(true);
-                        Object obj = null;
+                        Object obj;
                         try {
                             obj = field.get(instrumentation);
                         } catch (IllegalAccessException e) {
                             return false;
                         }
-                        if(obj != null && (obj instanceof AppInstrumentation)){
+                        if((obj instanceof AppInstrumentation)){
                             return true;
                         }
                     }
@@ -169,13 +167,6 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
         }
     }
 
-    @Override
-    public void callActivityOnCreate(Activity activity, Bundle icicle, PersistableBundle persistentState) {
-        if (icicle != null) {
-            BundleCompat.clearParcelledData(icicle);
-        }
-        super.callActivityOnCreate(activity, icicle, persistentState);
-    }
 
     @Override
     public void callActivityOnResume(Activity activity) {

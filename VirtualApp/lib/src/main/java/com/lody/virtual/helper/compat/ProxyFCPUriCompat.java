@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -17,6 +18,7 @@ import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.io.File;
 import java.util.HashMap;
@@ -39,48 +41,8 @@ public class ProxyFCPUriCompat {
         return sInstance;
     }
 
-    private final Set<String> INSIDE_AUTH_LIST = new HashSet<>();
-
-    private void updateInsideAuthorities() {
-        synchronized (INSIDE_AUTH_LIST) {
-            INSIDE_AUTH_LIST.clear();
-            String[] names = VPackageManager.get().getAllAuthorities();
-            INSIDE_AUTH_LIST.addAll(Arrays.asList(names));
-        }
-        if (DEBUG) {
-            VLog.i(TAG, "INSIDE_AUTH_LIST=" + INSIDE_AUTH_LIST);
-        }
-    }
-
     private boolean isInsideuthority(String name){
-        synchronized (INSIDE_AUTH_LIST) {
-            return INSIDE_AUTH_LIST.contains(name);
-        }
-    }
-
-    public void register() {
-        VirtualCore.get().registerObserver(new IPackageObserver.Stub() {
-            @Override
-            public void onPackageInstalled(String packageName){
-                updateInsideAuthorities();
-            }
-
-            @Override
-            public void onPackageUninstalled(String packageName) {
-                updateInsideAuthorities();
-            }
-
-            @Override
-            public void onPackageInstalledAsUser(int userId, String packageName){
-
-            }
-
-            @Override
-            public void onPackageUninstalledAsUser(int userId, String packageName){
-
-            }
-        });
-        updateInsideAuthorities();
+        return VPackageManager.get().isVirtualAuthority(name);
     }
 
     /**
@@ -139,18 +101,37 @@ public class ProxyFCPUriCompat {
         return VirtualCore.getConfig().getProxyFileContentProviderAuthority();
     }
 
-    public Uri fakeFileUri(Uri uri) {
-        if (uri == null) return null;
+    private String encode(String uri) throws UnsupportedEncodingException {
+        byte[] data = Base64.encode(uri.getBytes("utf-8"),
+                Base64.URL_SAFE | Base64.NO_WRAP);
+        return new String(data, "US-ASCII");
+    }
+
+    private String decode(String uri) throws UnsupportedEncodingException {
+        byte[] data = Base64.decode(uri.getBytes("US-ASCII"),
+                Base64.URL_SAFE | Base64.NO_WRAP);
+        return new String(data, "utf-8");
+    }
+
+    public Uri wrapperUri(Uri uri) {
+        if (uri == null){
+            return null;
+        }
         String auth = uri.getAuthority();
         if(getAuthority().equals(auth) || !isInsideuthority(auth)){
-            return null;
+            return uri;
         }
         if ("content".equals(uri.getScheme())) {
             //fake auth
-            if(AUTH.equals(auth)){
-                return uri;
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme(uri.getScheme());
+            builder.authority(getAuthority()).appendPath("out");
+            try {
+                builder.appendQueryParameter("uri", encode(uri.toString()));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
             }
-            Uri u = uri.buildUpon().authority(getAuthority()).appendQueryParameter("__va_auth", auth).build();
+            Uri u = builder.build();
             if (DEBUG) {
                 Log.i(TAG, "fake uri:" + uri + "->" + u);
             }
@@ -172,9 +153,25 @@ public class ProxyFCPUriCompat {
         }
     }
 
-    public Uri wrapperUri(Uri uri) {
+    public Uri unWrapperUri(Uri uri) {
         if (uri == null) {
             return null;
+        }
+        if(!TextUtils.equals(uri.getAuthority(), getAuthority())){
+            return uri;
+        }
+        String uriStr = uri.getQueryParameter("uri");
+        if(!TextUtils.isEmpty(uriStr)) {
+            Uri u = null;
+            try {
+                u = Uri.parse(decode(uriStr));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            if (DEBUG) {
+                Log.i(TAG, "wrapperUri uri:" + uri + "->" + u);
+            }
+            return u;
         }
         String auth = uri.getQueryParameter("__va_auth");
         if (!TextUtils.isEmpty(auth)) {
@@ -195,7 +192,7 @@ public class ProxyFCPUriCompat {
             }
             Uri u = builder.build();
             if (DEBUG) {
-                Log.i(TAG, "wrapperUri uri:" + uri + "->" + u);
+                Log.i(TAG, "unWrapperUri uri:" + uri + "->" + u);
             }
             return u;
         } else if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
@@ -213,7 +210,7 @@ public class ProxyFCPUriCompat {
                 return u;
             }
         }
-        return uri;
+        return null;
     }
 
     public Intent fakeFileUri(Intent intent) {
@@ -225,7 +222,7 @@ public class ProxyFCPUriCompat {
         }
         Uri uri = intent.getData();
         if (uri != null) {
-            Uri u = fakeFileUri(uri);
+            Uri u = wrapperUri(uri);
             if (u != null) {
                 if (DEBUG) {
                     Log.i(TAG, "fake data uri:" + uri + "->" + u);
@@ -239,7 +236,7 @@ public class ProxyFCPUriCompat {
                 int count = data.getItemCount();
                 for (int i = 0; i < count; i++) {
                     ClipData.Item item = data.getItemAt(i);
-                    Uri u = fakeFileUri(item.getUri());
+                    Uri u = wrapperUri(item.getUri());
                     if (u != null) {
                         Reflect.on(item).set("mUri", u);
                     }
@@ -259,7 +256,7 @@ public class ProxyFCPUriCompat {
                         extras.putParcelable(key, i);
                     }
                 } else if (val instanceof Uri) {
-                    Uri u = fakeFileUri((Uri) val);
+                    Uri u = wrapperUri((Uri) val);
                     if (u != null) {
                         changed2 = true;
                         extras.putParcelable(key, u);

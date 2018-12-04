@@ -51,6 +51,7 @@ import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.ReflectException;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -107,11 +108,11 @@ public final class VClient extends IVClient.Stub {
 
     private static final int NEW_INTENT = 11;
     private static final int RECEIVER = 12;
-    public static final int CREATE_SERVICE = 13;
-    public static final int SERVICE_ARGS = 14;
-    public static final int STOP_SERVICE = 15;
-    public static final int BIND_SERVICE = 16;
-    public static final int UNBIND_SERVICE = 17;
+    private static final int CREATE_SERVICE = 13;
+    private static final int SERVICE_ARGS = 14;
+    private static final int STOP_SERVICE = 15;
+    private static final int BIND_SERVICE = 16;
+    private static final int UNBIND_SERVICE = 17;
 
     private static final String TAG = VClient.class.getSimpleName();
 
@@ -119,18 +120,22 @@ public final class VClient extends IVClient.Stub {
     private static final VClient gClient = new VClient();
     private final H mH = new H();
     private Instrumentation mInstrumentation = AppInstrumentation.getDefault();
-    final ArrayMap<IBinder, Service> mServices = new ArrayMap<>();
+    private final ArrayMap<IBinder, Service> mServices = new ArrayMap<>();
     private IBinder token;
     private int vuid;
     private int vpid;
-    static final boolean needCheckProvider = false;
     private ConditionVariable mTempLock;
-    private VDeviceInfo deviceInfo;
     private AppBindData mBoundApplication;
     private Application mInitialApplication;
     private CrashHandler crashHandler;
     private InstalledAppInfo mAppInfo;
     private int mTargetSdkVersion;
+    private Singleton<VDeviceInfo> deviceInfo = new Singleton<VDeviceInfo>() {
+        @Override
+        protected VDeviceInfo create() {
+            return VDeviceManager.get().getDeviceInfo(getUserId(vuid));
+        }
+    };
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -150,14 +155,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     public VDeviceInfo getDeviceInfo() {
-        if (deviceInfo == null) {
-            synchronized (this) {
-                if (deviceInfo == null) {
-                    deviceInfo = VDeviceManager.get().getDeviceInfo(getUserId(vuid));
-                }
-            }
-        }
-        return deviceInfo;
+        return deviceInfo.get();
     }
 
     public Application getCurrentApplication() {
@@ -257,12 +255,11 @@ public final class VClient extends IVClient.Stub {
         }
     }
 
-    public boolean bindApplication(final String packageName, final String processName) {
+    public void bindApplication(final String packageName, final String processName) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             if (!VClient.get().isBound()) {
                 bindApplicationNoCheck(packageName, processName, new ConditionVariable());
             }
-            return true;
         } else {
             final ConditionVariable lock = new ConditionVariable();
             VirtualRuntime.getUIHandler().post(new Runnable() {
@@ -276,7 +273,6 @@ public final class VClient extends IVClient.Stub {
             });
             lock.block();
         }
-        return false;
     }
 
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
@@ -292,7 +288,7 @@ public final class VClient extends IVClient.Stub {
         }
         final int userId = getUserId(vuid);
         try {
-            fixInstalledProviders(packageName, userId);
+            fixInstalledProviders();
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -377,18 +373,29 @@ public final class VClient extends IVClient.Stub {
         }
         Object boundApp = fixBoundApp(mBoundApplication);
         mBoundApplication.info = ContextImpl.mPackageInfo.get(context);
+        fixLoadedApk(mBoundApplication.info);
+
         mirror.android.app.ActivityThread.AppBindData.info.set(boundApp, data.info);
         VMRuntime.setTargetSdkVersion.call(VMRuntime.getRuntime.call(), data.appInfo.targetSdkVersion);
-
         Configuration configuration = context.getResources().getConfiguration();
-        Object compatInfo = CompatibilityInfo.ctor.newInstance(data.appInfo, configuration.screenLayout, configuration.smallestScreenWidthDp, false);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                DisplayAdjustments.setCompatibilityInfo.call(ContextImplKitkat.mDisplayAdjustments.get(context), compatInfo);
+
+        Object compatInfo = null;
+        if (CompatibilityInfo.ctor != null) {
+            compatInfo = CompatibilityInfo.ctor.newInstance(data.appInfo, configuration.screenLayout, configuration.smallestScreenWidthDp, false);
+        }
+        if (CompatibilityInfo.ctorLG != null) {
+            compatInfo = CompatibilityInfo.ctorLG.newInstance(data.appInfo, configuration.screenLayout, configuration.smallestScreenWidthDp, false, 0);
+        }
+
+        if (compatInfo != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                    DisplayAdjustments.setCompatibilityInfo.call(ContextImplKitkat.mDisplayAdjustments.get(context), compatInfo);
+                }
+                DisplayAdjustments.setCompatibilityInfo.call(LoadedApkKitkat.mDisplayAdjustments.get(mBoundApplication.info), compatInfo);
+            } else {
+                CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
             }
-            DisplayAdjustments.setCompatibilityInfo.call(LoadedApkKitkat.mDisplayAdjustments.get(mBoundApplication.info), compatInfo);
-        } else {
-            CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
         }
 
         if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
@@ -402,10 +409,6 @@ public final class VClient extends IVClient.Stub {
         } catch (Throwable e) {
             unlock(lock);
             throw new RuntimeException("Unable to makeApplication", e);
-        }
-        if (mInitialApplication == null) {
-            unlock(lock);
-            throw new RuntimeException("Unable to makeApplication");
         }
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
@@ -584,7 +587,7 @@ public final class VClient extends IVClient.Stub {
             NativeEngine.redirectDirectory(info.nativeLibraryDir, libPath);
             NativeEngine.readOnly(libPath);
         }
-        if(isNotCopyApk()){
+        if (isNotCopyApk()) {
             ApplicationInfo outside = null;
             try {
                 outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
@@ -592,7 +595,7 @@ public final class VClient extends IVClient.Stub {
                 //ignore
             }
             if (outside != null) {
-                if(appLibConfig != SettingConfig.AppLibConfig.UseRealLib){
+                if (appLibConfig != SettingConfig.AppLibConfig.UseRealLib) {
                     if (is64Bit) {
                         NativeEngine.redirectDirectory(outside.nativeLibraryDir, libPath);
                     } else {
@@ -609,6 +612,7 @@ public final class VClient extends IVClient.Stub {
         NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
         NativeEngine.redirectDirectory("/data/app/" + packageName + "/lib/", libPath);
+        NativeEngine.redirectDirectory("/data/app/" + packageName + "-1" + "aWFtbG9keQ==" + "/lib/arm", libPath);
 
         //safekey adapter
         String subPathData = "/Android/data/"+info.packageName;
@@ -667,6 +671,14 @@ public final class VClient extends IVClient.Stub {
             VirtualRuntime.crash(new RemoteException());
         }
         throw new RuntimeException();
+    }
+
+    private void fixLoadedApk(Object packageInfo) {
+        try {
+            LoadedApk.mSecurityViolation.set(packageInfo, false);
+        } catch (Throwable e) {
+            //ignore
+        }
     }
 
     private Object fixBoundApp(AppBindData data) {
@@ -735,9 +747,9 @@ public final class VClient extends IVClient.Stub {
         return provider != null ? provider.asBinder() : null;
     }
 
-    private void fixInstalledProviders(String packageName, int userId) {
+    private void fixInstalledProviders() {
         clearSettingProvider();
-        List<Object> removes = new ArrayList<>();
+        //noinspection unchecked
         Map<Object, Object> clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
         for (Map.Entry<Object, Object> e : clientMap.entrySet()) {
             Object clientRecord = e.getValue();
@@ -749,12 +761,6 @@ public final class VClient extends IVClient.Stub {
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
                 if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
-                    if (needCheckProvider) {
-                        if (!VActivityManager.get().checkProviderPermission(info, packageName, userId)) {
-                            removes.add(e.getKey());
-                            continue;
-                        }
-                    }
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -767,12 +773,6 @@ public final class VClient extends IVClient.Stub {
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
                 if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
-                    if (needCheckProvider) {
-                        if (!VActivityManager.get().checkProviderPermission(info, packageName, userId)) {
-                            removes.add(e.getKey());
-                            continue;
-                        }
-                    }
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -783,14 +783,6 @@ public final class VClient extends IVClient.Stub {
                 if (provider != null && !authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, authority, provider);
                     ActivityThread.ProviderClientRecord.mProvider.set(clientRecord, provider);
-                }
-            }
-        }
-        if (needCheckProvider) {
-            if (removes.size() > 0) {
-                for (Object obj : removes) {
-                    clientMap.remove(obj);
-                    VLog.w(TAG, "remove provider:" + obj);
                 }
             }
         }
@@ -845,7 +837,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     @Override
-    public void scheduleCreateService(IBinder token, ServiceInfo info) throws RemoteException {
+    public void scheduleCreateService(IBinder token, ServiceInfo info) {
         CreateServiceData data = new CreateServiceData();
         data.token = token;
         data.info = info;
@@ -853,7 +845,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     @Override
-    public void scheduleBindService(IBinder token, Intent intent, boolean rebind) throws RemoteException {
+    public void scheduleBindService(IBinder token, Intent intent, boolean rebind) {
         BindServiceData data = new BindServiceData();
         data.token = token;
         data.intent = intent;
@@ -862,7 +854,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     @Override
-    public void scheduleUnbindService(IBinder token, Intent intent) throws RemoteException {
+    public void scheduleUnbindService(IBinder token, Intent intent) {
         BindServiceData data = new BindServiceData();
         data.token = token;
         data.intent = intent;
@@ -870,7 +862,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     @Override
-    public void scheduleServiceArgs(IBinder token, int startId, Intent args) throws RemoteException {
+    public void scheduleServiceArgs(IBinder token, int startId, Intent args) {
         ServiceArgsData data = new ServiceArgsData();
         data.token = token;
         data.startId = startId;
@@ -879,7 +871,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     @Override
-    public void scheduleStopService(IBinder token) throws RemoteException {
+    public void scheduleStopService(IBinder token) {
         sendMessage(STOP_SERVICE, token);
     }
 
@@ -1116,6 +1108,7 @@ public final class VClient extends IVClient.Stub {
         Intent args;
     }
 
+    @SuppressLint("HandlerLeak")
     private class H extends Handler {
 
         private H() {

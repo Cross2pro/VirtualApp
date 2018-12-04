@@ -92,6 +92,11 @@ public abstract class MethodProxy {
                 || VirtualCore.get().isOutsidePackageVisible(info.packageName);
     }
 
+    public static boolean isVisiblePackage(String packageName) {
+        return getHostPkg().equals(packageName)
+                || VirtualCore.get().isOutsidePackageVisible(packageName);
+    }
+
     public abstract String getMethodName();
 
     public boolean beforeCall(Object who, Method method, Object... args) {

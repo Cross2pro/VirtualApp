@@ -90,6 +90,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -794,7 +795,7 @@ class MethodProxies {
                     if (u!=null)
                     {
                         if (!SCHEME_FILE.equals(u.getScheme()) || !VActivityManager.get().isAppPid(VBinder.getCallingPid())) {
-                            Uri newurl = ProxyFCPUriCompat.get().fakeFileUri(u);
+                            Uri newurl = ProxyFCPUriCompat.get().wrapperUri(u);
                             if (newurl != null) {
                                 intent.setDataAndType(newurl, intent.getType());
                             }
@@ -936,7 +937,7 @@ class MethodProxies {
 //            for (int i = 0; i < args.length; i++) {
 //                Object obj = args[i];
 //                if (obj instanceof Uri) {
-//                    Uri uri = UriCompat.fakeFileUri((Uri) obj);
+//                    Uri uri = UriCompat.wrapperUri((Uri) obj);
 //                    if (uri != null) {
 //                        args[i] = uri;
 //                    }
@@ -1291,7 +1292,9 @@ class MethodProxies {
                 return null;
             }
             List<ActivityManager.RunningAppProcessInfo> infoList = new ArrayList<>(_infoList);
-            for (ActivityManager.RunningAppProcessInfo info : infoList) {
+            Iterator<ActivityManager.RunningAppProcessInfo> it = infoList.iterator();
+            while (it.hasNext()) {
+                ActivityManager.RunningAppProcessInfo info = it.next();
                 if (info.uid == getRealUid()) {
                     if (VActivityManager.get().isAppPid(info.pid)) {
                         List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
@@ -1299,8 +1302,13 @@ class MethodProxies {
                         if (processName != null) {
                             info.processName = processName;
                         }
-                        info.pkgList = pkgList.toArray(new String[pkgList.size()]);
+                        info.pkgList = pkgList.toArray(new String[0]);
                         info.uid = VUserHandle.getAppId(VActivityManager.get().getUidByPid(info.pid));
+                    } else {
+                        if (info.processName.startsWith(getConfig().getHostPackageName())
+                                || info.processName.startsWith(getConfig().get64bitEnginePackageName())) {
+                            it.remove();
+                        }
                     }
                 }
             }
@@ -1388,12 +1396,29 @@ class MethodProxies {
                 VActivityManager.get().killApplicationProcess(processName, uid);
                 return 0;
             }
-            return method.invoke(who, args);
+            return 0;//method.invoke(who, args);
         }
 
         @Override
         public boolean isEnable() {
             return isAppProcess();
+        }
+    }
+
+    static class KillBackgroundProcesses extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "killBackgroundProcesses";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (args[0] instanceof String) {
+                String pkg = (String) args[0];
+                VActivityManager.get().killAppByPkg(pkg, getAppUserId());
+                return 0;
+            }
+            return super.call(who, method, args);
         }
     }
 
@@ -1421,16 +1446,18 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String permission = (String) args[0];
-            if (SpecialComponentList.isWhitePermission(permission)) {
-                return PackageManager.PERMISSION_GRANTED;
-            }
-            if (GmsSupport.isGoogleAppOrService(getAppPkg())) {
-                if (!PermissionCompat.DANGEROUS_PERMISSION.contains(permission)) {
+            if (args[0] instanceof String) {
+                String permission = (String) args[0];
+                if (SpecialComponentList.isWhitePermission(permission)) {
                     return PackageManager.PERMISSION_GRANTED;
                 }
+                if (GmsSupport.isGoogleAppOrService(getAppPkg())) {
+                    if (!PermissionCompat.DANGEROUS_PERMISSION.contains(permission)) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                }
+                args[args.length - 1] = getRealUid();
             }
-            args[args.length - 1] = getRealUid();
             return method.invoke(who, args);
         }
 
@@ -1592,7 +1619,7 @@ class MethodProxies {
             }
 
             public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered,
-                                       boolean sticky, int sendingUser) throws RemoteException {
+                                       boolean sticky, int sendingUser) {
                 //解决税信灭屏幕启动Activity
                 if(intent.getAction().equals(Intent.ACTION_SCREEN_OFF)){
                     controllerManager.setActivitySwitch(false);
@@ -1633,7 +1660,7 @@ class MethodProxies {
 
             @SuppressWarnings("unused")
             public void performReceive(Intent intent, int resultCode, String data, Bundle extras, boolean ordered,
-                                       boolean sticky) throws RemoteException {
+                                       boolean sticky) {
                 this.performReceive(intent, resultCode, data, extras, ordered, sticky, 0);
             }
 
@@ -1739,9 +1766,6 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     info = ContentProviderHolderOreo.info.get(holder);
-                    if (!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())) {
-                        return null;
-                    }
                     if (provider != null) {
                         provider = ProviderHook.createProxy(true, info.authority, provider);
                     }
@@ -1749,9 +1773,6 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     info = IActivityManager.ContentProviderHolder.info.get(holder);
-                    if (!VActivityManager.get().checkProviderPermission(info, getAppPkg(), getAppUserId())) {
-                        return null;
-                    }
                     if (provider != null) {
                         provider = ProviderHook.createProxy(true, info.authority, provider);
                     }
@@ -2045,7 +2066,7 @@ class MethodProxies {
             for (int i = 0; i < args.length; i++) {
                 Object obj = args[i];
                 if (obj instanceof Uri) {
-                    Uri uri = ProxyFCPUriCompat.get().fakeFileUri((Uri) obj);
+                    Uri uri = ProxyFCPUriCompat.get().wrapperUri((Uri) obj);
                     if (uri != null) {
                         args[i] = uri;
                     }

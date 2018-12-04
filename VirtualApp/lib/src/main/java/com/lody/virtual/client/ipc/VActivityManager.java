@@ -8,14 +8,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
-import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -29,7 +27,6 @@ import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.PendingIntentData;
-import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.am.ServiceRecord;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -540,27 +537,6 @@ public class VActivityManager {
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
-    }
-
-    public boolean checkProviderPermission(ProviderInfo info, String pkg, int userId) {
-        if (info == null || info.grantUriPermissions
-                || (TextUtils.isEmpty(info.readPermission) && TextUtils.isEmpty(info.writePermission))
-                || info.packageName.equals(pkg))
-        {
-            return true;
-        }
-
-        if(!TextUtils.isEmpty(info.readPermission)) {
-            if (PackageManager.PERMISSION_GRANTED != VPackageManager.get().checkPermission(info.readPermission, pkg, userId)) {
-                return false;
-            }
-        }
-        if (!TextUtils.isEmpty(info.writePermission)) {
-            if (PackageManager.PERMISSION_GRANTED != VPackageManager.get().checkPermission(info.writePermission, pkg, userId)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public void setAppInactive(String packageName, boolean idle, int userId){

@@ -1,9 +1,7 @@
 package com.lody.virtual.client.hook.proxies.am;
 
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.IInterface;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -16,18 +14,13 @@ import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
-import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BuildCompat;
-import com.lody.virtual.helper.compat.ParceledListSliceCompat;
-import com.lody.virtual.remote.AppTaskInfo;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityManagerOreo;
 import mirror.android.app.IActivityManager;
-import mirror.android.content.pm.ParceledListSlice;
 import mirror.android.os.ServiceManager;
 import mirror.android.util.Singleton;
 

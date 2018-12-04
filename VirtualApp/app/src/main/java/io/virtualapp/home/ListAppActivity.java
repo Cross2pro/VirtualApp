@@ -51,10 +51,16 @@ public class ListAppActivity extends VActivity {
                 && VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.M) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+            } else {
+                load();
             }
         } else {
-            mViewPager.setAdapter(new AppPagerAdapter(getSupportFragmentManager()));
+            load();
         }
+    }
+
+    private void load() {
+        mViewPager.setAdapter(new AppPagerAdapter(getSupportFragmentManager()));
     }
 
     private void setupToolBar() {
@@ -79,7 +85,7 @@ public class ListAppActivity extends VActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         for (int result : grantResults) {
             if (result == PackageManager.PERMISSION_GRANTED) {
-                mViewPager.setAdapter(new AppPagerAdapter(getSupportFragmentManager()));
+                load();
                 break;
             }
         }

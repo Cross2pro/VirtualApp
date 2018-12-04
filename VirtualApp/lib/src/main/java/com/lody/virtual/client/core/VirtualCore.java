@@ -40,7 +40,6 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.compat.ProxyFCPUriCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -228,7 +227,7 @@ public final class VirtualCore {
             this.context = context;
             mainThread = ActivityThread.currentActivityThread.call();
             unHookPackageManager = context.getPackageManager();
-            mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_PROVIDERS);
+            mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
             if (isVAppProcess()) {
                 if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
@@ -347,9 +346,6 @@ public final class VirtualCore {
             case CHILD:
                 initializer.onChildProcess();
                 break;
-        }
-        if(isVAppProcess()){
-            ProxyFCPUriCompat.get().register();
         }
     }
 

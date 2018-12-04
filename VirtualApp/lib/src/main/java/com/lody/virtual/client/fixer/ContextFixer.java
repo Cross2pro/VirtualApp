@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.DropBoxManager;
 import android.os.IInterface;
+import android.os.health.SystemHealthManager;
 import android.util.Log;
 
 import com.lody.virtual.client.VClient;
@@ -17,6 +18,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
+import com.lody.virtual.client.hook.proxies.battery_stats.BatteryStatsHub;
 import com.lody.virtual.client.hook.proxies.dropbox.DropBoxManagerStub;
 import com.lody.virtual.client.hook.proxies.graphics.GraphicsStatsStub;
 import com.lody.virtual.client.hook.proxies.wifi.WifiManagerStub;
@@ -182,6 +184,20 @@ public class ContextFixer {
 //                    VLog.i(TAG, "WifiManager:sService:ok");
                 } catch (Exception e) {
                     VLog.w(TAG, "WifiManager:sService:%s", Log.getStackTraceString(e));
+                }
+            }
+        }
+        //BatteryStats
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            if (mirror.android.os.health.SystemHealthManager.mBatteryStats != null) {
+                binder = getIInterface(BatteryStatsHub.class);
+                if (binder != null) {
+                    SystemHealthManager manager = (SystemHealthManager) context.getSystemService(Context.SYSTEM_HEALTH_SERVICE);
+                    try {
+                        mirror.android.os.health.SystemHealthManager.mBatteryStats.set(manager, binder);
+                    } catch (Throwable e) {
+                        VLog.w(TAG, "SystemHealthManager:mBatteryStats:%s", Log.getStackTraceString(e));
+                    }
                 }
             }
         }

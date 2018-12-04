@@ -22,6 +22,7 @@ import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.helper.collection.ArrayMap;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -231,11 +232,7 @@ public class PackageParserEx {
         }
     }
 
-    /**
-     *
-     * @param isOut this applicationInfo use in outside
-     */
-    private static void initApplicationAsUser(ApplicationInfo ai, boolean isOut, int userId) {
+    private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
         PackageSetting ps = PackageCacheManager.getSetting(ai.packageName);
         if (ps == null) {
             throw new IllegalStateException();
@@ -251,7 +248,7 @@ public class PackageParserEx {
         try {
             outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(ai.packageName, 0);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            // ignore
         }
         SettingConfig.AppLibConfig appLibConfig = VirtualCore.getConfig().getAppLibConfig(ai.packageName);
         if (appLibConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
@@ -262,29 +259,29 @@ public class PackageParserEx {
                 appLibConfig = SettingConfig.AppLibConfig.UseOwnLib;
             }
         }
-        switch (appLibConfig) {
-            case UseOwnLib: {
-                if (is64bit) {
-                    ApplicationInfoL.primaryCpuAbi.set(ai, "arm64-v8a");
-                    ai.nativeLibraryDir = VEnvironment.getAppLibDirectory64(ai.packageName).getPath();
-                } else {
-                    ai.nativeLibraryDir = VEnvironment.getAppLibDirectory(ai.packageName).getPath();
-                }
-                break;
-            }
-            case UseRealLib: {
-                ai.nativeLibraryDir = outside.nativeLibraryDir;
-                if (is64bit) {
-                    String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(outside);
-                    ApplicationInfoL.primaryCpuAbi.set(ai, primaryCpuAbi);
-                }
-                break;
-            }
-            case UseFakePathLib: {
-                ai.nativeLibraryDir = "/data/app/" + ai.packageName + "-1" + "aWFtbG9keQ==" + "/lib/arm";
-            }
-
+        //default
+        if (is64bit) {
+            ApplicationInfoL.primaryCpuAbi.set(ai, "arm64-v8a");
+            ai.nativeLibraryDir = VEnvironment.getAppLibDirectory64(ai.packageName).getPath();
+        } else {
+            ai.nativeLibraryDir = VEnvironment.getAppLibDirectory(ai.packageName).getPath();
         }
+        //fake or real
+        if (appLibConfig == SettingConfig.AppLibConfig.UseRealLib) {
+            if (is64bit) {
+                ai.nativeLibraryDir = outside.nativeLibraryDir;
+                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(outside);
+                ApplicationInfoL.primaryCpuAbi.set(ai, primaryCpuAbi);
+            } else {
+                String path = NativeLibraryHelperCompat.getNativeLibraryDir32(outside);
+                if (!TextUtils.isEmpty(path)) {
+                    ai.nativeLibraryDir = path;
+                }
+            }
+        } else if (appLibConfig == SettingConfig.AppLibConfig.UseFakePathLib) {
+            ai.nativeLibraryDir = "/data/app/" + ai.packageName + "-1" + "aWFtbG9keQ==" + "/lib/arm";
+        }
+
         if (is64bit) {
             ai.dataDir = VEnvironment.getDataUserPackageDirectory64(userId, ai.packageName).getPath();
         } else {
@@ -304,14 +301,12 @@ public class PackageParserEx {
             ApplicationInfoN.deviceProtectedDataDir.set(ai, ai.dataDir);
             ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
         }
-        if (!isOut) {
-            if (VirtualCore.getConfig().isUseRealDataDir(ai.packageName) &&
-                    VirtualCore.getConfig().isEnableIORedirect()) {
-                if (outside != null) {
-                    ai.dataDir = outside.dataDir;
-                } else {
-                    ai.dataDir = "/data/data/" + ai.packageName + "/";
-                }
+        if (VirtualCore.getConfig().isUseRealDataDir(ai.packageName) &&
+                VirtualCore.getConfig().isEnableIORedirect()) {
+            if (outside != null) {
+                ai.dataDir = outside.dataDir;
+            } else {
+                ai.dataDir = "/data/data/" + ai.packageName + "/";
             }
         }
     }
@@ -482,7 +477,7 @@ public class PackageParserEx {
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }
-        initApplicationAsUser(ai, isOut, userId);
+        initApplicationAsUser(ai, userId);
         return ai;
     }
 

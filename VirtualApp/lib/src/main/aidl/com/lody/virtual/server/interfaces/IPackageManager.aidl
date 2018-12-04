@@ -82,5 +82,5 @@ interface IPackageManager{
 
     String[] getDangrousPermissions(String packageName);
 
-    String[] getAllAuthorities();
+    boolean isVirtualAuthority(String authority);
 }

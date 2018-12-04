@@ -36,10 +36,29 @@ public class AppOpsManagerStub extends BinderInvocationProxy {
         addMethodProxy(new BaseMethodProxy("startWatchingMode", -1, 1));
         addMethodProxy(new BaseMethodProxy("checkPackage", 0, 1));
         addMethodProxy(new BaseMethodProxy("getOpsForPackage", 0, 1));
-        addMethodProxy(new BaseMethodProxy("setMode", 1, 2));
+        //android.Manifest.permission.UPDATE_APP_OPS_STATS
+        addMethodProxy(new BaseMethodProxy("setMode", 1, 2){
+            @Override
+            public Object call(Object who, Method method, Object... args){
+                return 0;
+            }
+        });
+        //setUidMode
+        addMethodProxy(new BaseMethodProxy("setUidMode", 1, -1){
+            @Override
+            public Object call(Object who, Method method, Object... args){
+                return 0;
+            }
+        });
         addMethodProxy(new BaseMethodProxy("checkAudioOperation", 2, 3));
         addMethodProxy(new BaseMethodProxy("setAudioRestriction", 2, -1));
-        addMethodProxy(new ReplaceLastPkgMethodProxy("resetAllModes"));
+        //android.Manifest.permission.UPDATE_APP_OPS_STATS
+        addMethodProxy(new ReplaceLastPkgMethodProxy("resetAllModes"){
+            @Override
+            public Object call(Object who, Method method, Object... args){
+                return 0;
+            }
+        });
         addMethodProxy(new MethodProxy() {
             @Override
             public String getMethodName() {
@@ -65,6 +84,14 @@ public class AppOpsManagerStub extends BinderInvocationProxy {
 
         @Override
         public boolean beforeCall(Object who, Method method, Object... args) {
+            if(pkgIndex != -1 && uidIndex != -1){
+                //uid的位置变成pkg
+                if (pkgIndex == (uidIndex + 1) && args[uidIndex] instanceof String) {
+                    args[uidIndex] = getHostPkg();
+                    return true;
+                }
+            }
+
             if (pkgIndex != -1 && args.length > pkgIndex && args[pkgIndex] instanceof String) {
                 args[pkgIndex] = getHostPkg();
             }

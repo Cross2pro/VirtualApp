@@ -33,7 +33,6 @@ public class MethodInvocationStub<T> {
     private Map<String, MethodProxy> mInternalMethodProxies = new HashMap<>();
     private T mBaseInterface;
     private T mProxyInterface;
-    private String mIdentityName;
     private MethodProxy mDefaultProxy;
     private LogInvocation.Condition mInvocationLoggingCondition = LogInvocation.Condition.NEVER;
 
@@ -50,8 +49,6 @@ public class MethodInvocationStub<T> {
                 proxyInterfaces = MethodParameterUtils.getAllInterface(baseInterface.getClass());
             }
             mProxyInterface = (T) Proxy.newProxyInstance(baseInterface.getClass().getClassLoader(), proxyInterfaces, new HookInvocationHandler());
-        } else {
-            VLog.d(TAG, "Unable to build HookDelegate: %s.", getIdentityName());
         }
     }
 
@@ -61,17 +58,6 @@ public class MethodInvocationStub<T> {
 
     public void setInvocationLoggingCondition(LogInvocation.Condition invocationLoggingCondition) {
         mInvocationLoggingCondition = invocationLoggingCondition;
-    }
-
-    public void setIdentityName(String identityName) {
-        this.mIdentityName = identityName;
-    }
-
-    public String getIdentityName() {
-        if (mIdentityName != null) {
-            return mIdentityName;
-        }
-        return getClass().getSimpleName();
     }
 
     public MethodInvocationStub(T baseInterface) {
@@ -186,8 +172,12 @@ public class MethodInvocationStub<T> {
             Throwable exception = null;
             if (mightLog) {
                 // Arguments to string is done before the method is called because the method might actually change it
-                argStr = Arrays.toString(args);
-                argStr = argStr.substring(1, argStr.length()-1);
+                try {
+                    argStr = Arrays.toString(args);
+                    argStr = argStr.substring(1, argStr.length() - 1);
+                } catch (Throwable e) {
+                    argStr = "" + e.getMessage();
+                }
             }
 
 

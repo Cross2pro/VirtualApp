@@ -41,6 +41,14 @@ class NotificationCompatCompatV14 extends NotificationCompat {
             }
             return true;
         }
+        remakeRemoteViews(id, notification, appContext);
+        if(notification.icon != 0) {
+            notification.icon = getHostContext().getApplicationInfo().icon;
+        }
+        return true;
+    }
+
+    protected void remakeRemoteViews(int id, Notification notification, Context appContext) {
         if (notification.tickerView != null) {
 
             if (isSystemLayout(notification.tickerView)) {
@@ -80,10 +88,6 @@ class NotificationCompatCompatV14 extends NotificationCompat {
                 }
             }
         }
-        if(notification.icon != 0) {
-            notification.icon = getHostContext().getApplicationInfo().icon;
-        }
-        return true;
     }
 
     Context getAppContext(final String packageName) {

@@ -285,11 +285,6 @@ public class VAppManagerService extends IAppManager.Stub {
         }
 
         ps.notCopyApk = notCopyApk;
-        /*
-         * Deprecated
-         */
-        ps.apkPath = null;
-        ps.libPath = null;
         ps.packageName = pkg.packageName;
         ps.appId = VUserHandle.getAppId(mUidSystem.getOrCreateUid(pkg));
         if (res.isUpdate) {
@@ -391,7 +386,6 @@ public class VAppManagerService extends IAppManager.Stub {
                 ps.setInstalled(userId, false);
                 mPersistenceLayer.save();
                 deletePackageDataAsUser(userId, ps);
-                VNotificationManagerService.get().cancelAllNotification(packageName, userId);
                 notifyAppUninstalled(ps, userId);
             }
             return true;
@@ -416,6 +410,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (isPackageSupport64Bit(ps)) {
             V64BitHelper.uninstallPackageData64(userId, ps.packageName);
         }
+        VNotificationManagerService.get().cancelAllNotification(ps.packageName, userId);
     }
 
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
@@ -429,7 +424,6 @@ public class VAppManagerService extends IAppManager.Stub {
                 VEnvironment.getOdexFile(packageName).delete();
                 for (int id : VUserManagerService.get().getUserIds()) {
                     deletePackageDataAsUser(id, ps);
-                    VNotificationManagerService.get().cancelAllNotification(packageName, id);
                 }
             }
             if (isPackageSupport64Bit(ps)) {

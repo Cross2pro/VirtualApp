@@ -186,7 +186,7 @@ public class InstallerActivity extends Activity {
             tv_source.setText("应用来源："+source_lable);
         }else {
             InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(source_apk_packagename, 0);
-            sourceapkinfo = parseInstallApk(info.apkPath);
+            sourceapkinfo = parseInstallApk(info.getApkPath());
             tv_source.setText("应用来源："+sourceapkinfo.name);
         }
         apkinfo = parseInstallApk(path);

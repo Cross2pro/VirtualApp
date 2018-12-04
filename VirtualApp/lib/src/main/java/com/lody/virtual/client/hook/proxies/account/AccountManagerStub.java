@@ -1,16 +1,18 @@
 package com.lody.virtual.client.hook.proxies.account;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.accounts.IAccountManagerResponse;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 
-import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
+import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.ipc.VAccountManager;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.utils.Reflect;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -28,7 +30,19 @@ public class AccountManagerStub extends BinderInvocationProxy {
 		super(IAccountManager.Stub.asInterface, Context.ACCOUNT_SERVICE);
 	}
 
-	@Override
+    @Override
+    public void inject() throws Throwable {
+        super.inject();
+        //mService
+        try{
+            AccountManager accountManager = (AccountManager) getContext().getSystemService(Context.ACCOUNT_SERVICE);
+            Reflect.on(accountManager).set("mService", this.getInvocationStub().getProxyInterface());
+        }catch (Throwable e){
+           e.printStackTrace();
+        }
+    }
+
+    @Override
 	protected void onBindMethods() {
 		super.onBindMethods();
 		addMethodProxy(new getPassword());
@@ -159,6 +173,20 @@ public class AccountManagerStub extends BinderInvocationProxy {
 			return Mgr.getAccounts(type);
 		}
 	}
+
+	private static class getAccountByTypeAndFeatures extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "getAccountByTypeAndFeatures";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String type = (String) args[0];
+            String packageName = (String) args[1];
+            return Mgr.getAccounts(type);
+        }
+    }
 
 	private static class getAccountsAsUser extends MethodProxy {
 		@Override

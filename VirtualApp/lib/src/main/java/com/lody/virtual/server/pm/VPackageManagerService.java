@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.ComponentInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionGroupInfo;
@@ -377,7 +378,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ActivityComponent a = mActivities.mActivities.get(component);
-                if (a != null) {
+                if (a != null && isEnabledLPr(a.info, flags, userId)) {
                     ActivityInfo activityInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, activityInfo, userId);
                     return activityInfo;
@@ -413,7 +414,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ActivityComponent a = mReceivers.mActivities.get(component);
-                if (a != null) {
+                if (a != null && isEnabledLPr(a.info, flags, userId)) {
                     ActivityInfo receiverInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, receiverInfo, userId);
                     return receiverInfo;
@@ -432,7 +433,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ServiceComponent s = mServices.mServices.get(component);
-                if (s != null) {
+                if (s != null && isEnabledLPr(s.info, flags, userId)) {
                     ServiceInfo serviceInfo = PackageParserEx.generateServiceInfo(s, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, serviceInfo, userId);
                     return serviceInfo;
@@ -451,7 +452,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ProviderComponent provider = mProvidersByComponent.get(component);
-                if (provider != null) {
+                if (provider != null && isEnabledLPr(provider.info, flags, userId)) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, providerInfo, userId);
                     return providerInfo;
@@ -680,10 +681,10 @@ public class VPackageManagerService extends IPackageManager.Stub {
         // reader
         synchronized (mPackages) {
             for (VPackage.ProviderComponent p : mProvidersByComponent.values()) {
-                PackageSetting ps = (PackageSetting) p.owner.mExtras;
-                if (p.info.multiprocess) {
+                if (!isEnabledLPr(p.info, flags, userId)) {
                     continue;
                 }
+                PackageSetting ps = (PackageSetting) p.owner.mExtras;
                 if (processName == null || ps.appId == VUserHandle.getAppId(vuid) && p.info.processName.equals(processName)) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(p, flags, ps.readUserState(userId), userId);
                     finalList.add(providerInfo);
@@ -695,6 +696,11 @@ public class VPackageManagerService extends IPackageManager.Stub {
         }
         return new VParceledListSlice<>(finalList);
     }
+
+    boolean isEnabledLPr(ComponentInfo componentInfo, int flags, int userId) {
+        return componentInfo.enabled;
+    }
+
 
     @Override
     public VParceledListSlice<PackageInfo> getInstalledPackages(int flags, int userId) {
@@ -779,7 +785,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
         synchronized (mProvidersByAuthority) {
             provider = mProvidersByAuthority.get(name);
         }
-        if (provider != null) {
+        if (provider != null && isEnabledLPr(provider.info, flags, userId)) {
             PackageSetting ps = (PackageSetting) provider.owner.mExtras;
             ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
             if (providerInfo != null) {
@@ -799,7 +805,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             VPackage p = mPackages.get(packageName);
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
-                return  PackageParserEx.generateApplicationInfoOut(p, flags, ps.readUserState(userId),
+                return PackageParserEx.generateApplicationInfoOut(p, flags, ps.readUserState(userId),
                         userId);
             }
         }
@@ -874,13 +880,10 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
     @Override
-    public String[] getAllAuthorities() {
-        String[] results;
+    public boolean isVirtualAuthority(String authority) {
         synchronized (mProvidersByAuthority) {
-            results = new String[mProvidersByAuthority.keySet().size()];
-            mProvidersByAuthority.keySet().toArray(results);
+            return mProvidersByAuthority.containsKey(authority);
         }
-        return results;
     }
 
     void createNewUser(int userId, File userPath) {
@@ -1055,6 +1058,9 @@ public class VPackageManagerService extends IPackageManager.Stub {
         @Override
         protected ResolveInfo newResult(VPackage.ActivityIntentInfo info, int match, int userId) {
             final VPackage.ActivityComponent activity = info.activity;
+            if (!isEnabledLPr(activity.info, mFlags, userId)) {
+                return null;
+            }
             PackageSetting ps = (PackageSetting) activity.owner.mExtras;
             ActivityInfo ai = PackageParserEx.generateActivityInfo(activity, mFlags, ps.readUserState(userId), userId);
             if (ai == null) {
@@ -1183,6 +1189,9 @@ public class VPackageManagerService extends IPackageManager.Stub {
         @Override
         protected ResolveInfo newResult(VPackage.ServiceIntentInfo filter, int match, int userId) {
             final VPackage.ServiceComponent service = filter.service;
+            if (!isEnabledLPr(service.info, mFlags, userId)) {
+                return null;
+            }
             PackageSetting ps = (PackageSetting) service.owner.mExtras;
             ServiceInfo si = PackageParserEx.generateServiceInfo(service, mFlags, ps.readUserState(userId), userId);
             if (si == null) {

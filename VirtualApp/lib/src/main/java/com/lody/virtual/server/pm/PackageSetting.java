@@ -19,7 +19,7 @@ public class PackageSetting implements Parcelable {
     public static final Parcelable.Creator<PackageSetting> CREATOR = new Parcelable.Creator<PackageSetting>() {
         @Override
         public PackageSetting createFromParcel(Parcel source) {
-            return new PackageSetting(source);
+            return new PackageSetting(source, VERSION);
         }
 
         @Override
@@ -29,16 +29,8 @@ public class PackageSetting implements Parcelable {
     };
     private static final PackageUserState DEFAULT_USER_STATE = new PackageUserState();
     public String packageName;
-    /**
-     * @see #getApkPath(boolean)
-     */
-    @Deprecated
-    public String apkPath;
-    @Deprecated
-    public String libPath;
+    public static final int VERSION = 4;
     public boolean notCopyApk;
-    @Deprecated
-    public boolean skipDexOpt;
     public int appId;
     public long firstInstallTime;
     public long lastUpdateTime;
@@ -52,19 +44,21 @@ public class PackageSetting implements Parcelable {
     public PackageSetting() {
     }
 
-    protected PackageSetting(Parcel in) {
+    protected PackageSetting(Parcel in, int version) {
         this.packageName = in.readString();
-        this.apkPath = in.readString();
-        this.libPath = in.readString();
+        in.readString(); // Historical legacy
+        in.readString(); // Historical legacy
         this.notCopyApk = in.readByte() != 0;
         this.appId = in.readInt();
         //noinspection unchecked
         this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
-        this.skipDexOpt = in.readByte() != 0;
-        this.flag = in.readInt();
+        in.readByte(); // Historical legacy
+        if (version > 3) {
+            this.flag = in.readInt();
+        }
     }
 
-    public String getApkPath(boolean is64bit)  {
+    public String getApkPath(boolean is64bit) {
         if (notCopyApk) {
             try {
                 ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
@@ -81,7 +75,7 @@ public class PackageSetting implements Parcelable {
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, apkPath, libPath, notCopyApk, appId);
+        return new InstalledAppInfo(packageName, notCopyApk, appId);
     }
 
     PackageUserState modifyUserState(int userId) {
@@ -120,13 +114,13 @@ public class PackageSetting implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
-        dest.writeString(this.apkPath);
-        dest.writeString(this.libPath);
+        dest.writeString(null); // Historical legacy
+        dest.writeString(null); // Historical legacy
         dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
         dest.writeInt(this.appId);
         //noinspection unchecked
         dest.writeSparseArray((SparseArray) this.userState);
-        dest.writeByte(this.skipDexOpt ? (byte) 1 : (byte) 0);
+        dest.writeByte((byte) 0); // Historical legacy
         dest.writeInt(this.flag);
     }
 

@@ -15,7 +15,7 @@ import java.util.Arrays;
 class PackagePersistenceLayer extends PersistenceLayer {
 
     private static final char[] MAGIC = {'v', 'p', 'k', 'g'};
-    private static final int CURRENT_VERSION = 3;
+    private static final int CURRENT_VERSION = PackageSetting.VERSION;
 
     private VAppManagerService mService;
 
@@ -56,7 +56,7 @@ class PackagePersistenceLayer extends PersistenceLayer {
     public void readPersistenceData(Parcel p, int version) {
         int count = p.readInt();
         while (count-- > 0) {
-            PackageSetting setting = new PackageSetting(p);
+            PackageSetting setting = new PackageSetting(p, version);
             if (!"android".equals(setting.packageName)){
                 this.mService.loadPackage(setting);
             }
@@ -66,7 +66,7 @@ class PackagePersistenceLayer extends PersistenceLayer {
     @Override
     public boolean onVersionConflict(int fileVersion, int currentVersion) {
         // I am so lazy to process it...
-        return false;
+        return true;
     }
 
     @Override

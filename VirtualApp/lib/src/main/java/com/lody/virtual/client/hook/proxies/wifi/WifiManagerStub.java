@@ -159,6 +159,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            MethodParameterUtils.replaceFirstAppPkg(args);
             SettingConfig.FakeWifiStatus status = getConfig().getFakeWifiStatus();
             boolean appPermissionEnable = VAppPermissionManager.get().getLocationEnable(getAppPkg());
             if (appPermissionEnable) {

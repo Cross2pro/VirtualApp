@@ -28,6 +28,17 @@ namespace FunctionDef {
     typedef jint (*JNI_audioRecordNativeCheckPermission)(JNIEnv *, jobject, jstring);
 
     typedef jstring (*JNI_nativeLoad)(JNIEnv *env, jclass, jstring, jobject, jstring);
+
+    typedef void (*JNI_mediaRecorderNativeSetupFunc)(JNIEnv *, jobject,
+                                                     jobject, jstring, jstring);
+
+    typedef jint (*JNI_audioRecordNativeSetupFunc_M)(JNIEnv *, jobject,
+                                                     jobject, jobject, jint, jint, jint,
+                                                     jint, jint, jintArray , jstring);
+
+    typedef jint (*JNI_audioRecordNativeSetupFunc_N)(JNIEnv *, jobject,
+                                                     jobject, jobject, jintArray, jint, jint,
+                                                     jint, jint, jintArray , jstring, jlong);
 }
 
 using namespace FunctionDef;
@@ -70,6 +81,12 @@ static struct {
     Function_DalvikBridgeFunc orig_openDexFile_dvm;
     JNI_audioRecordNativeCheckPermission orig_audioRecordNativeCheckPermission;
     JNI_nativeLoad orig_nativeLoad;
+
+    Function_DalvikBridgeFunc org_mediaRecorderNativeSetup_dvm;
+    JNI_mediaRecorderNativeSetupFunc orig_mediaRecorderNativeSetupFunc;
+
+    JNI_audioRecordNativeSetupFunc_M orig_audioRecordNativeSetupFunc_M;
+    JNI_audioRecordNativeSetupFunc_N orig_audioRecordNativeSetupFunc_N;
 
 } patchEnv;
 
@@ -261,6 +278,32 @@ new_native_audioRecordNativeCheckPermission(JNIEnv *env, jobject thiz, jstring _
     return patchEnv.orig_audioRecordNativeCheckPermission(env, thiz, host);
 }
 
+static void new_native_mediaRecorderNativeSetupFunc(JNIEnv *env, jobject thiz,
+                                                    jobject o1, jstring o2, jstring o3){
+    jstring host = env->NewStringUTF(patchEnv.host_packageName);
+    patchEnv.orig_mediaRecorderNativeSetupFunc(env, thiz, o1, host, host);
+}
+static void
+new_bridge_mediaRecorderNativeSetupFunc(const void **args, void *pResult, const void *method, void *self) {
+    jint index = 1 + 1;
+    args[index] = patchEnv.GetStringFromCstr(patchEnv.host_packageName);
+    patchEnv.org_mediaRecorderNativeSetup_dvm(args, pResult, method, self);
+}
+
+//hookAudioRecordNativeSetup
+static jint new_native_audioRecordNativeSetupFunc_M(JNIEnv *env, jobject thiz,
+                                                    jobject o1, jobject o2, jint o3, jint o4, jint o5,
+                                                    jint o6, jint o7, jintArray o8, jobject o9) {
+    jstring host = env->NewStringUTF(patchEnv.host_packageName);
+    return patchEnv.orig_audioRecordNativeSetupFunc_M(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8, host);
+}
+
+static jint new_native_audioRecordNativeSetupFunc_N(JNIEnv *env, jobject thiz,
+                                                    jobject o1, jobject o2, jintArray o3, jint o4, jint o5,
+                                                    jint o6, jint o7, jintArray o8, jobject o9, jlong o10) {
+    jstring host = env->NewStringUTF(patchEnv.host_packageName);
+    return patchEnv.orig_audioRecordNativeSetupFunc_N(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8, host, o10);
+}
 
 void mark() {
     // Do nothing
@@ -476,7 +519,47 @@ hookAudioRecordNativeCheckPermission(jobject javaMethod, jboolean isArt, int api
     );
 }
 
-void *getDvmOrArtSOHandle() {
+inline void
+hookMediaRecorderNativeSetup(jobject javaMethod, jboolean isArt, int apiLevel) {
+    if (!javaMethod) {
+        return;
+    }
+    if(!isArt){
+        size_t mtd_NativeSetup = (size_t) Environment::current()->FromReflectedMethod(javaMethod);
+        int nativeFuncOffset = patchEnv.native_offset;
+        void **jniFuncPtr = (void **) (mtd_NativeSetup + nativeFuncOffset);
+
+        patchEnv.org_mediaRecorderNativeSetup_dvm = (Function_DalvikBridgeFunc) (*jniFuncPtr);
+        *jniFuncPtr = (void *) new_bridge_mediaRecorderNativeSetupFunc;
+    }else{
+        jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
+        hookJNIMethod(method,
+                      (void *) new_native_mediaRecorderNativeSetupFunc,
+                      (void **) &patchEnv.orig_mediaRecorderNativeSetupFunc
+        );
+    }
+}
+
+inline void
+hookAudioRecordNativeSetup(jobject javaMethod, jboolean isArt, jint apiLevel, jint audioRecordMethodType) {
+    if (!javaMethod || !isArt) {
+        return;
+    }
+    jmethodID method = Environment::current()->FromReflectedMethod(javaMethod);
+    if (audioRecordMethodType == 2) {
+        hookJNIMethod(method,
+                      (void *) new_native_audioRecordNativeSetupFunc_N,
+                      (void **) &patchEnv.orig_audioRecordNativeSetupFunc_N
+        );
+    } else {
+        hookJNIMethod(method,
+                      (void *) new_native_audioRecordNativeSetupFunc_M,
+                      (void **) &patchEnv.orig_audioRecordNativeSetupFunc_M
+        );
+    }
+}
+
+void *getDalvikSOHandle() {
     char so_name[25] = {0};
     __system_property_get("persist.sys.dalvik.vm.lib.2", so_name);
     if (strlen(so_name) == 0) {
@@ -497,7 +580,7 @@ void *getDvmOrArtSOHandle() {
  */
 void hookAndroidVM(JArrayClass<jobject> javaMethods,
                    jstring packageName, jboolean isArt, jint apiLevel,
-                   jint cameraMethodType) {
+                   jint cameraMethodType, jint audioRecordMethodType) {
 
     void (*libdl_set_sdk_version)(uint32_t) = (void (*)(uint32_t)) (dlsym(RTLD_DEFAULT,
                                                                           "android_set_application_target_sdk_version"));
@@ -550,7 +633,7 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
         if (h != NULL) {
             dlclose(h);
         }
-        void *soInfo = getDvmOrArtSOHandle();
+        void *soInfo = getDalvikSOHandle();
         patchEnv.GetCstrFromString = (char *(*)(void *)) dlsym(soInfo,
                                                                "_Z23dvmCreateCstrFromStringPK12StringObject");
         if (!patchEnv.GetCstrFromString) {
@@ -576,5 +659,7 @@ void hookAndroidVM(JArrayClass<jobject> javaMethods,
     hookMediaRecorderPrepareMethod(javaMethods.getElement(MEDIA_RECORDER_PREPARE).get(),isArt, apiLevel);
     hookAudioRecordNativeCheckPermission(
             javaMethods.getElement(AUDIO_NATIVE_CHECK_PERMISSION).get(), isArt, apiLevel);
+    hookMediaRecorderNativeSetup(javaMethods.getElement(MEDIA_RECORDER_SETUP).get(), isArt, apiLevel);
+    hookAudioRecordNativeSetup(javaMethods.getElement(AUDIO_RECORD_SETUP).get(), isArt, apiLevel, audioRecordMethodType);
     hookRuntimeNativeLoad();
 }

@@ -585,7 +585,11 @@ public class VAccountManagerService extends IAccountManager.Stub {
         AuthenticatorInfo info = getAuthenticatorInfo(accountType);
         if (info == null) {
             try {
-                response.onError(ERROR_CODE_BAD_ARGUMENTS, "account.type does not exist");
+                Bundle result = new Bundle();
+                result.putString(AccountManager.KEY_AUTHTOKEN, authTokenType);
+                result.putString(AccountManager.KEY_ACCOUNT_TYPE, accountType);
+                result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, false);
+                response.onResult(result);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

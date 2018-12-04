@@ -3,6 +3,7 @@ package com.lody.virtual.server.device;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.telephony.TelephonyManager;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VDeviceManager;
@@ -25,6 +26,7 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
     private DeviceInfoPersistenceLayer mPersistenceLayer = new DeviceInfoPersistenceLayer(this);
     private UsedDeviceInfoPool mPool = new UsedDeviceInfoPool();
     private Context mContext;
+    private String defDeviceId;
 
     public static VDeviceManagerService get() {
         return sInstance;
@@ -44,6 +46,12 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
     private void init(Context context){
         mContext = context;
+        try {
+            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            defDeviceId = telephonyManager.getDeviceId();
+        }catch (Throwable e){
+            //ignore
+        }
     }
 
     private VDeviceManagerService() {
@@ -92,11 +100,10 @@ public class VDeviceManagerService extends IDeviceInfoManager.Stub {
 
     @SuppressLint("HardwareIds")
     private VDeviceInfo generateRandomDeviceInfo(int userId) {
-        VDeviceInfo defInfo = VDeviceManager.get().getDefaultDeviceInfo(mContext);
         VDeviceInfo info = new VDeviceInfo();
         String value;
         do {
-            value = VDeviceInfo.genDeviceId(defInfo.getDeviceId(), userId);
+            value = VDeviceInfo.genDeviceId(defDeviceId, userId);
             info.setDeviceId(value);
         } while (mPool.deviceIds.contains(value));
         do {

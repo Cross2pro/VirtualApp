@@ -203,6 +203,7 @@ public class ComponentUtils {
     public static Intent redirectIntentSender(int type, String creator, Intent intent, IBinder iBinder) {
         Intent newIntent = intent.cloneFilter();
         switch (type) {
+            case ActivityManagerCompat.INTENT_SENDER_ACTIVITY_RESULT:
             case ActivityManagerCompat.INTENT_SENDER_ACTIVITY: {
                 if(Intent.ACTION_VIEW.equalsIgnoreCase(intent.getAction())
                         && "application/vnd.android.package-archive".equalsIgnoreCase(intent.getType())){

@@ -5,18 +5,18 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Reflect;
 
 import mirror.android.app.NotificationO;
-
-import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
 
 /**
  * @author 247321543
@@ -33,47 +33,55 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
     @Override
     public boolean dealNotification(int id, Notification notification, String packageName) {
         Context appContext = getAppContext(packageName);
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if(VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
                 if (TextUtils.isEmpty(notification.getChannelId())) {
                     NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
                 }
             }
         }
-        return resolveRemoteViews(appContext, packageName, notification)
-                || resolveRemoteViews(appContext, packageName, notification.publicVersion);
+        return resolveRemoteViews(appContext, id, packageName, notification)
+                || resolveRemoteViews(appContext, id, packageName, notification.publicVersion);
     }
 
-    private boolean resolveRemoteViews(Context appContext, String packageName, Notification notification) {
+    private PackageInfo getOutSidePackageInfo(String packageName){
+        try {
+            return  VirtualCore.get().getUnHookPackageManager().getPackageInfo(packageName, PackageManager.GET_SHARED_LIBRARY_FILES);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    private boolean resolveRemoteViews(Context appContext,int id, String packageName, Notification notification) {
         if (notification == null) {
             return false;
         }
-        String sourcePath = null;
-        PackageInfo packageInfo = getPackageInfo(packageName);
         ApplicationInfo host = getHostContext().getApplicationInfo();
-        if (packageInfo != null) {
-            sourcePath = packageInfo.applicationInfo.sourceDir;
-        }
-        if (TextUtils.isEmpty(sourcePath)) {
-            sourcePath = getPackageResourcePath(packageName).getAbsolutePath();
-        }
+        PackageInfo outside = getOutSidePackageInfo(packageName);
+        PackageInfo inside = VPackageManager.get().getPackageInfo(packageName,
+                PackageManager.GET_SHARED_LIBRARY_FILES, 0);
+
+        //check outside and inside's version
+        boolean isInstalled = outside != null && outside.versionCode == inside.versionCode;
 
         //Fix RemoteViews
         getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, packageInfo != null);
-            getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, packageInfo != null);
+            getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, isInstalled);
+            getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, isInstalled);
         } else {
             getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
         }
         notification.icon = host.icon;
 
-        ApplicationInfo proxyApplicationInfo = new ApplicationInfo(host);
-
-        proxyApplicationInfo.packageName = packageName;
-        proxyApplicationInfo.publicSourceDir = sourcePath;
-        proxyApplicationInfo.sourceDir = sourcePath;
-
+        //fix apk path
+        ApplicationInfo proxyApplicationInfo;
+        if(isInstalled){
+            proxyApplicationInfo = outside.applicationInfo;
+        }else{
+            proxyApplicationInfo = inside.applicationInfo;
+        }
+        proxyApplicationInfo.targetSdkVersion = 22;
         fixApplicationInfo(notification.tickerView, proxyApplicationInfo);
         fixApplicationInfo(notification.contentView, proxyApplicationInfo);
         fixApplicationInfo(notification.bigContentView, proxyApplicationInfo);
@@ -81,6 +89,10 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
         Bundle bundle = Reflect.on(notification).get("extras");
         if (bundle != null) {
             bundle.putParcelable(EXTRA_BUILDER_APPLICATION_INFO, proxyApplicationInfo);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isInstalled) {
+            remakeRemoteViews(id, notification, appContext);
         }
         return true;
     }

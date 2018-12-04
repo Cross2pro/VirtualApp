@@ -2,7 +2,7 @@
 <manifest package="io.virtualapp"
           xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="${ARM_PACKAGE_NAME}.permission.SAFE_ACCESS"/>
+    <uses-permission android:name="${PACKAGE_NAME_32BIT}.permission.SAFE_ACCESS"/>
     <!-- 通话记录 -->
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"/>
     <!-- call phone -->
@@ -56,7 +56,6 @@
         <activity
             android:name=".home.LoadingActivity"
             android:excludeFromRecents="true"
-            android:noHistory="true"
             android:screenOrientation="portrait"
             android:taskAffinity="va.task.loading"
             android:theme="@style/TransparentTheme"/>

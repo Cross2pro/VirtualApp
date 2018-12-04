@@ -586,11 +586,7 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ResolveInfo resolveInfo = VPackageManager.get().resolveService(intent, resolvedType, flags, userId);
             if (resolveInfo == null) {
-                resolveInfo = (ResolveInfo) method.invoke(who, args);
-                //check outside is visable
-                if (resolveInfo != null && isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
-                    return resolveInfo;
-                }
+                return method.invoke(who, args);
             }
             return resolveInfo;
         }
@@ -718,8 +714,31 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            int pkgIndex = MethodParameterUtils.getIndex(args, String.class);
+            if(pkgIndex >= 0){
+                String pkg = (String) args[pkgIndex];
+                if (isAppPkg(pkg)) {
+                    return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+                }
+                if(isVisiblePackage(pkg)){
+                    return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+                }
+                return PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            }
+            return false;//method.invoke(who, args);
+        }
+    }
+
+    static class CanRequestPackageInstalls extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "canRequestPackageInstalls";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
-            return method.invoke(who, args);
+            return super.call(who, method, args);
         }
     }
 
@@ -964,11 +983,7 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ResolveInfo resolveInfo = VPackageManager.get().resolveIntent(intent, resolvedType, flags, userId);
             if (resolveInfo == null) {
-                resolveInfo = (ResolveInfo) method.invoke(who, args);
-                //check outside is visible
-                if (resolveInfo != null && isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
-                    return resolveInfo;
-                }
+                return method.invoke(who, args);
             }
             return resolveInfo;
         }

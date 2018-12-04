@@ -18,17 +18,11 @@ import java.io.File;
 public final class InstalledAppInfo implements Parcelable {
 
     public String packageName;
-    @Deprecated
-    public String apkPath;
-    @Deprecated
-    public String libPath;
     public boolean notCopyApk;
     public int appId;
 
-    public InstalledAppInfo(String packageName, String apkPath, String libPath, boolean notCopyApk, int appId) {
+    public InstalledAppInfo(String packageName, boolean notCopyApk, int appId) {
         this.packageName = packageName;
-        this.apkPath = apkPath;
-        this.libPath = libPath;
         this.notCopyApk = notCopyApk;
         this.appId = appId;
     }
@@ -88,16 +82,12 @@ public final class InstalledAppInfo implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
-        dest.writeString(this.apkPath);
-        dest.writeString(this.libPath);
         dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
         dest.writeInt(this.appId);
     }
 
     protected InstalledAppInfo(Parcel in) {
         this.packageName = in.readString();
-        this.apkPath = in.readString();
-        this.libPath = in.readString();
         this.notCopyApk = in.readByte() != 0;
         this.appId = in.readInt();
     }

@@ -3,6 +3,8 @@ package com.lody.virtual.client.hook.base;
 import android.os.IBinder;
 import android.os.IInterface;
 
+import com.lody.virtual.helper.utils.VLog;
+
 import mirror.RefStaticMethod;
 import mirror.android.os.ServiceManager;
 
@@ -20,15 +22,24 @@ public abstract class BinderInvocationProxy extends MethodInvocationProxy<Binder
 	}
 
 	public BinderInvocationProxy(RefStaticMethod<IInterface> asInterfaceMethod, String serviceName) {
-		this(new BinderInvocationStub(asInterfaceMethod, ServiceManager.getService.call(serviceName)), serviceName);
+		this(new BinderInvocationStub(asInterfaceMethod, getService(serviceName)),
+                serviceName);
 	}
 
 	public BinderInvocationProxy(Class<?> stubClass, String serviceName) {
-		this(new BinderInvocationStub(stubClass, ServiceManager.getService.call(serviceName)), serviceName);
+		this(new BinderInvocationStub(stubClass, getService(serviceName)),
+                serviceName);
 	}
+
+	private static IBinder getService(String serviceName){
+	    return ServiceManager.getService.call(serviceName);
+    }
 
 	public BinderInvocationProxy(BinderInvocationStub hookDelegate, String serviceName) {
 		super(hookDelegate);
+		if(hookDelegate.getBaseInterface() == null){
+            VLog.d("BinderInvocationProxy", "Unable to build HookDelegate: %s.", serviceName);
+        }
 		this.mServiceName = serviceName;
 	}
 
