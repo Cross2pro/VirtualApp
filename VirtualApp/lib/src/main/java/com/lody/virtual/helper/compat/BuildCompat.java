@@ -23,7 +23,7 @@ public class BuildCompat {
         return Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && getPreviewSDKInt() > 0);
     }
 
-    public static boolean isP() {
+    public static boolean isPie() {
         return Build.VERSION.SDK_INT > 27 || (Build.VERSION.SDK_INT == 27 && getPreviewSDKInt() > 0);
     }
 

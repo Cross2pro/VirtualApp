@@ -63,7 +63,7 @@ interface IAppManager{
 
     IAppRequestListener getAppRequestListener();
 
-    boolean isShouldRun64BitProcess(String packageName);
+    boolean isRun64BitProcess(String packageName);
 
     boolean isIORelocateWork();
 }

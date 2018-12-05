@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.text.TextUtils;
 
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -42,208 +43,61 @@ public class NativeLibraryHelperCompat {
         return -1;
     }
 
-    /**
-     * @see #isSupportNative32(ApplicationInfo)
-     * @deprecated
-     */
-    public static boolean isSupportNative32(String apkPath) {
-        //system is 32bit
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
-                return true;
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private static int copyNativeBinariesAfterL(File apkFile, File sharedLibraryDir) {
+        try {
+            Object handle = NativeLibraryHelper.Handle.create.call(apkFile);
+            if (handle == null) {
+                return -1;
             }
+
+            String abi = null;
+            Set<String> abiSet = getSupportAbiList(apkFile.getAbsolutePath());
+            if (abiSet == null || abiSet.isEmpty()) {
+                return 0;
+            }
+            boolean is64Bit = VirtualRuntime.is64bit();
+            if (is64Bit && contain64bitAbi(abiSet)) {
+                if (Build.SUPPORTED_64_BIT_ABIS.length > 0) {
+                    int abiIndex = NativeLibraryHelper.findSupportedAbi.call(handle, Build.SUPPORTED_64_BIT_ABIS);
+                    if (abiIndex >= 0) {
+                        abi = Build.SUPPORTED_64_BIT_ABIS[abiIndex];
+                    }
+                }
+            } else {
+                if (Build.SUPPORTED_32_BIT_ABIS.length > 0) {
+                    int abiIndex = NativeLibraryHelper.findSupportedAbi.call(handle, Build.SUPPORTED_32_BIT_ABIS);
+                    if (abiIndex >= 0) {
+                        abi = Build.SUPPORTED_32_BIT_ABIS[abiIndex];
+                    }
+                }
+            }
+            if (abi == null) {
+                VLog.e(TAG, "Not match any abi [%s].", apkFile.getAbsolutePath());
+                return -1;
+            }
+            return NativeLibraryHelper.copyNativeBinaries.call(handle, sharedLibraryDir, abi);
+        } catch (Throwable e) {
+            VLog.d(TAG, "copyNativeBinaries with error : %s", e.getLocalizedMessage());
+            e.printStackTrace();
         }
-        Set<String> supportedABIs = getABIsFromApk(apkPath);
-        if (supportedABIs == null || supportedABIs.isEmpty()) {
-            //no has so
-            return true;
-        }
-        //find 32 so
+
+        return -1;
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static boolean contain64bitAbi(Set<String> supportedABIs) {
         for (String supportedAbi : supportedABIs) {
-            if ("armeabi".endsWith(supportedAbi)
-                    || "armeabi-v7a".equals(supportedAbi)
-                    || "x86".equals(supportedAbi)
-                    || "mips".equals(supportedAbi)) {
+            if ("arm64-v8a".endsWith(supportedAbi)
+                    || "x86_64".equals(supportedAbi)
+                    || "mips64".equals(supportedAbi)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean isSupportNative32(ApplicationInfo ai) {
-        //system is 32bit
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
-                return true;
-            }
-            try {
-                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
-                if (primaryCpuAbi == null) {
-                    return true;
-                }
-                String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
-                boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
-                if (!TextUtils.isEmpty(secondaryCpuAbi)) {
-                    return true;
-                } else if (primaryArchIs64bit) {
-                    return false;
-                } else {
-                    return true;
-                }
-            } catch (Throwable e) {
-                //ignore
-            }
-        }
-        return true;
-    }
-
-    public static String getNativeLibraryDir32(ApplicationInfo ai) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
-                String secondaryCpuAbi = ApplicationInfoL.secondaryCpuAbi.get(ai);
-                if (primaryCpuAbi == null) {
-                    return null;
-                }
-                boolean primaryArchIs64bit = VMRuntime.is64BitAbi.call(primaryCpuAbi);
-                if (!TextUtils.isEmpty(secondaryCpuAbi)) {
-                    // Multi-arch case.
-                    if (primaryArchIs64bit) {
-                        // Primary arch: 64-bit, secondary: 32-bit.
-                        return ApplicationInfoL.secondaryNativeLibraryDir.get(ai);
-                    } else {
-                        return ai.nativeLibraryDir;
-                    }
-                } else if (primaryArchIs64bit) {
-                    // Single-arch 64-bit.
-                    return null;
-                } else {
-                    // Single-arch 32-bit.
-                    return ai.nativeLibraryDir;
-                }
-            } catch (Throwable e) {
-                return ai.nativeLibraryDir;
-            }
-        }
-        return ai.nativeLibraryDir;
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private static int copyNativeBinariesAfterL(File apkFile, File sharedLibraryDir) {
-		try {
-			Object handle = NativeLibraryHelper.Handle.create.call(apkFile);
-			if (handle == null) {
-				return -1;
-			}
-
-			String abi = null;
-			Set<String> abiSet = getABIsFromApk(apkFile.getAbsolutePath());
-			if (abiSet == null || abiSet.isEmpty()) {
-				return 0;
-			}
-			boolean is64Bit = VMRuntime.is64Bit.call(VMRuntime.getRuntime.call());
-			if (is64Bit && isVM64(abiSet)) {
-				if (Build.SUPPORTED_64_BIT_ABIS.length > 0) {
-					int abiIndex = NativeLibraryHelper.findSupportedAbi.call(handle, Build.SUPPORTED_64_BIT_ABIS);
-					if (abiIndex >= 0) {
-						abi = Build.SUPPORTED_64_BIT_ABIS[abiIndex];
-					}
-				}
-			} else {
-				if (Build.SUPPORTED_32_BIT_ABIS.length > 0) {
-					int abiIndex = NativeLibraryHelper.findSupportedAbi.call(handle, Build.SUPPORTED_32_BIT_ABIS);
-					if (abiIndex >= 0) {
-						abi = Build.SUPPORTED_32_BIT_ABIS[abiIndex];
-					}
-				}
-			}
-
-			if (abi == null) {
-                VLog.e(TAG, "Not match any abi [%s].", apkFile.getAbsolutePath());
-				return -1;
-			}
-			return NativeLibraryHelper.copyNativeBinaries.call(handle, sharedLibraryDir, abi);
-		} catch (Throwable e) {
-			VLog.d(TAG, "copyNativeBinaries with error : %s", e.getLocalizedMessage());
-			e.printStackTrace();
-		}
-
-		return -1;
-	}
-
-	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
-	private static boolean isVM64(Set<String> supportedABIs) {
-		if (Build.SUPPORTED_64_BIT_ABIS.length == 0) {
-			return false;
-		}
-
-		if (supportedABIs == null || supportedABIs.isEmpty()) {
-			return true;
-		}
-
-		for (String supportedAbi : supportedABIs) {
-			if ("arm64-v8a".endsWith(supportedAbi)
-                    || "x86_64".equals(supportedAbi)
-                    || "mips64".equals(supportedAbi)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-    private static Set<String> getABIsFromApk(String apk) {
-        try {
-            ZipFile apkFile = new ZipFile(apk);
-            Enumeration<? extends ZipEntry> entries = apkFile.entries();
-            Set<String> supportedABIs = new HashSet<String>();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                String name = entry.getName();
-                if (name.contains("../")) {
-                    continue;
-                }
-                if (name.startsWith("lib/") && !entry.isDirectory() && name.endsWith(".so")) {
-                    String supportedAbi = name.substring(name.indexOf("/") + 1, name.lastIndexOf("/"));
-                    supportedABIs.add(supportedAbi);
-                }
-            }
-            return supportedABIs;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-
-    public static Set<String> getSoListFromApk(File apk) {
-		try {
-			ZipFile apkFile = new ZipFile(apk);
-			Enumeration<? extends ZipEntry> entries = apkFile.entries();
-            Set<String> solist = new HashSet<String>();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = entries.nextElement();
-				String name = entry.getName();
-				if (name.contains("../")) {
-					continue;
-				}
-				if (name.startsWith("lib/") && !entry.isDirectory() && name.endsWith(".so")) {
-                    String so = name.substring(name.lastIndexOf("/") + 1);
-                    if (!solist.contains(so)) {
-                        solist.add(so);
-				}
-			}
-            }
-            return solist;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return null;
-	}
-
-    public static boolean contain32BitABI(Set<String> abiList) {
+    public static boolean contain32BitAbi(Set<String> abiList) {
         for (String supportedAbi : abiList) {
             if ("armeabi".equals(supportedAbi)
                     || "armeabi-v7a".equals(supportedAbi)
@@ -256,7 +110,7 @@ public class NativeLibraryHelperCompat {
     }
 
 
-    public static Set<String> getABIList(String apk) {
+    public static Set<String> getSupportAbiList(String apk) {
         try {
             ZipFile apkFile = new ZipFile(apk);
             Enumeration<? extends ZipEntry> entries = apkFile.entries();

@@ -13,7 +13,7 @@ import com.lody.virtual.remote.ClientConfig;
 
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
-import com.lody.virtual.remote.PendingIntentData;
+import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 
@@ -22,9 +22,13 @@ import com.lody.virtual.remote.VParceledListSlice;
  */
 interface IActivityManager{
 
-    ClientConfig initProcess(String packageName, String processName, int userId, int callingUid);
+    ClientConfig initProcess(String packageName, String processName, int userId);
+
+    void appDoneExecuting(in String packageName, int userId);
 
     int getFreeStubCount();
+
+    int checkPermission(String permission, int pid, int uid);
 
     int getSystemPid();
 
@@ -34,7 +38,7 @@ interface IActivityManager{
 
     boolean isAppProcess(String processName);
 
-    boolean isAppRunning(String packageName, int userId);
+    boolean isAppRunning(String packageName, int userId, boolean foreground);
 
     boolean isAppPid(int pid);
 
@@ -52,19 +56,17 @@ interface IActivityManager{
 
     String getInitialPackage(int pid);
 
-    void handleApplicationCrash();
+    int startActivities(in Intent[] intents,in  String[] resolvedTypes,in  IBinder token,in  Bundle options, int userId);
 
-    void appDoneExecuting();
+    int startActivity(in Intent intent,in  ActivityInfo info,in  IBinder resultTo,in  Bundle options, String resultWho, int requestCode, int userId);
 
-    int startActivities(in Intent[] intents,in  String[] resolvedTypes,in  IBinder token,in  Bundle options, int userId, int callingUid);
-
-    int startActivity(in Intent intent,in  ActivityInfo info,in  IBinder resultTo,in  Bundle options, String resultWho, int requestCode, int userId, int callingUid);
-
-    void onActivityCreated(in ComponentName component,in  ComponentName caller,in  IBinder token,in  Intent intent, String affinity, int taskId, int launchMode, int flags);
+    void onActivityCreated(in IBinder record, in IBinder token, int taskId);
 
     void onActivityResumed(int userId,in  IBinder token);
 
     boolean onActivityDestroyed(int userId,in  IBinder token);
+
+    void onActivityFinish(int userId, in IBinder token);
 
     ComponentName getActivityClassForToken(int userId,in  IBinder token);
 
@@ -80,7 +82,7 @@ interface IActivityManager{
 
     boolean isVAServiceToken(in IBinder token);
 
-    ComponentName startService(in IBinder caller,in  Intent service, String resolvedType, int userId, int callingUid);
+    ComponentName startService(in Intent service, String resolvedType, int userId);
 
     int stopService(in IBinder caller,in  Intent service, String resolvedType, int userId);
 
@@ -88,7 +90,7 @@ interface IActivityManager{
 
     void setServiceForeground(in ComponentName className,in  IBinder token, int id,in  Notification notification, boolean removeNotification, int userId);
 
-    int bindService(in IBinder caller,in  IBinder token,in  Intent service, String resolvedType, IServiceConnection connection, int flags, int userId, int callingUid);
+    int bindService(in IBinder caller,in  IBinder token,in  Intent service, String resolvedType, IServiceConnection connection, int flags, int userId);
 
     boolean unbindService(in IServiceConnection connection, int userId);
 
@@ -102,17 +104,15 @@ interface IActivityManager{
 
     VParceledListSlice getServices(int maxNum, int flags, int userId);
 
-    IBinder acquireProviderClient(int userId,in  ProviderInfo info, int callingUid);
+    IBinder acquireProviderClient(int userId,in  ProviderInfo info);
 
-    PendingIntentData getPendingIntent(in IBinder binder);
+    void addOrUpdateIntentSender(in IntentSenderData sender, int userId);
 
-    void addPendingIntent(in IBinder binder, String packageName);
+    void removeIntentSender(in IBinder token);
 
-    void removePendingIntent(in IBinder binder);
+    IntentSenderData getIntentSender(in IBinder token);
 
-    String getPackageForIntentSender(in IBinder binder);
-
-    void processRestarted(String packageName, String processName, int userId, int callingUid);
+    void processRestarted(String packageName, String processName, int userId);
 
     boolean broadcastFinish(in IBinder token);
 

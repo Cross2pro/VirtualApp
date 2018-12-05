@@ -72,7 +72,7 @@ public class DeviceFragment extends Fragment {
         mAppLocationAdapter.set(list);
         mListView.setAdapter(mAppLocationAdapter);
         mListView.setOnItemClickListener((parent, view1, position, id) -> {
-            DeviceDetailAcitivty.open(this, mAppLocationAdapter.getDataItem(position), position);
+            DeviceDetailActiivty.open(this, mAppLocationAdapter.getDataItem(position), position);
         });
     }
 

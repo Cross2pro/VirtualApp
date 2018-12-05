@@ -26,13 +26,14 @@ public class SplashActivity extends VActivity {
             long time = System.currentTimeMillis();
             doActionInThread();
             time = System.currentTimeMillis() - time;
-            long delta = 3000L - time;
+            long delta = 500L - time;
             if (delta > 0) {
                 VUiKit.sleep(delta);
             }
         }).done((res) -> {
             HomeActivity.goHome(this);
             finish();
+            overridePendingTransition(0, 0);
         });
     }
 
@@ -40,5 +41,10 @@ public class SplashActivity extends VActivity {
         if (!VirtualCore.get().isEngineLaunched()) {
             VirtualCore.get().waitForEngine();
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+
     }
 }

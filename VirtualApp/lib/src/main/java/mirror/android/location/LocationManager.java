@@ -3,6 +3,7 @@ package mirror.android.location;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
+import android.os.IInterface;
 
 import java.util.HashMap;
 
@@ -13,6 +14,7 @@ import mirror.RefObject;
 
 public class LocationManager {
     public static Class<?> TYPE = RefClass.load(LocationManager.class, "android.location.LocationManager");
+    public static RefObject<IInterface> mService;
     public static RefObject<HashMap> mGnssNmeaListeners;
     public static RefObject<HashMap> mGnssStatusListeners;
     public static RefObject<HashMap> mGpsNmeaListeners;

@@ -27,8 +27,9 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 
-import com.lody.virtual.GmsSupport;
+import com.lody.virtual.BuildConfig;
 import com.lody.virtual.R;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.VirtualRuntime;
@@ -39,7 +40,6 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
-import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -56,7 +56,6 @@ import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.IVSCallback;
-import com.xdja.zs.IUiCallback;
 import com.xdja.zs.INotificationCallback;
 
 import java.io.File;
@@ -105,8 +104,7 @@ public final class VirtualCore {
     private IAppManager mService;
     private boolean isStartUp;
     private PackageInfo mHostPkgInfo;
-    private int systemPid, systemUid;
-    private ConditionVariable mInitLock = new ConditionVariable();
+    private ConditionVariable mInitLock;
     private AppCallback mAppCallback;
     private TaskDescriptionDelegate mTaskDescriptionDelegate;
     private SettingConfig mConfig;
@@ -127,6 +125,11 @@ public final class VirtualCore {
     }
 
     public static Object mainThread() {
+        if (BuildConfig.DEBUG) {
+            if (get().isMainProcess()) {
+                throw new RuntimeException("get ActivityThread on Main Process.");
+            }
+        }
         return get().mainThread;
     }
 
@@ -207,12 +210,19 @@ public final class VirtualCore {
         }
     }
 
+    public void waitStartup() {
+        if (mInitLock != null) {
+            mInitLock.block();
+        }
+    }
+
 
     public void startup(Context context, SettingConfig config) throws Throwable {
         if (!isStartUp) {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
+            mInitLock = new ConditionVariable();
             mConfig = config;
             String packageName = config.getHostPackageName();
             String packageName64 = config.get64bitEnginePackageName();
@@ -225,15 +235,15 @@ public final class VirtualCore {
             StubManifest.STUB_CP_AUTHORITY_64BIT = packageName64 + ".virtual_stub_64bit_";
 
             this.context = context;
-            mainThread = ActivityThread.currentActivityThread.call();
             unHookPackageManager = context.getPackageManager();
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
-            if (isVAppProcess()) {
-                if (!isAppInstalled(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE)) {
-                    GmsSupport.remove(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-                    addVisibleOutsidePackage(GmsSupport.GOOGLE_FRAMEWORK_PACKAGE);
-                }
+            if (isServerProcess() || isVAppProcess()) {
+                NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();
+                //////////////////////////////
+                // Now we can use hidden API//
+                //////////////////////////////
+                mainThread = ActivityThread.currentActivityThread.call();
             }
             if (is64BitEngine()) {
                 VLog.e(TAG, "===========  64Bit Engine(%s) ===========", processType.name());
@@ -252,10 +262,7 @@ public final class VirtualCore {
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
             isStartUp = true;
-            if (mInitLock != null) {
-                mInitLock.open();
-                mInitLock = null;
-            }
+            mInitLock.open();
         }
     }
 
@@ -349,13 +356,29 @@ public final class VirtualCore {
         }
     }
 
+    private static String getProcessName(Context context) {
+        int pid = Process.myPid();
+        String processName = null;
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningAppProcessInfo info : am.getRunningAppProcesses()) {
+            if (info.pid == pid) {
+                processName = info.processName;
+                break;
+            }
+        }
+        if (processName == null) {
+            throw new RuntimeException("processName = null");
+        }
+        return processName;
+    }
+
     private void detectProcessType() {
         // Host package name
         hostPkgName = context.getApplicationInfo().packageName;
         // Main process name
         mainProcessName = context.getApplicationInfo().processName;
         // Current process name
-        processName = ActivityThread.getProcessName.call(mainThread);
+        processName = getProcessName(context);
         is64Bit = hostPkgName.equals(StubManifest.PACKAGE_NAME_64BIT);
         if (processName.equals(mainProcessName)) {
             processType = ProcessType.Main;
@@ -365,10 +388,6 @@ public final class VirtualCore {
             processType = ProcessType.VAppClient;
         } else {
             processType = ProcessType.CHILD;
-        }
-        if (isVAppProcess()) {
-            systemPid = VActivityManager.get().getSystemPid();
-            systemUid = VActivityManager.get().getSystemUid();
         }
     }
 
@@ -451,8 +470,8 @@ public final class VirtualCore {
      * @param userId      user id
      * @return if the specified app running in foreground / background.
      */
-    public boolean isAppRunning(String packageName, int userId) {
-        return VActivityManager.get().isAppRunning(packageName, userId);
+    public boolean isAppRunning(String packageName, int userId, boolean foreground) {
+        return VActivityManager.get().isAppRunning(packageName, userId, foreground);
     }
 
     public InstallResult installPackageSync(String apkPath, int flags) {
@@ -592,6 +611,7 @@ public final class VirtualCore {
         return intent;
     }
 
+
     public boolean createShortcut(int userId, String packageName, OnEmitShortcutListener listener) {
         return createShortcut(userId, packageName, null, listener);
     }
@@ -629,7 +649,7 @@ public final class VirtualCore {
         Intent shortcutIntent = wrapperShortcutIntent(targetIntent, splash, packageName, userId);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ShortcutInfo likeShortcut = null;
+            ShortcutInfo likeShortcut;
             likeShortcut = new ShortcutInfo.Builder(getContext(), packageName + "@" + userId)
                     .setLongLabel(name)
                     .setShortLabel(name)
@@ -712,13 +732,9 @@ public final class VirtualCore {
             shortcutIntent.putExtra("_VA_|_splash_", splash.toUri(0));
         }
         shortcutIntent.putExtra("_VA_|_pkg_", packageName);
-//        shortcutIntent.putExtra("_VA_|_intent_", (String)null);//targetIntent);
         shortcutIntent.putExtra("_VA_|_uri_", intent.toUri(0));
         shortcutIntent.putExtra("_VA_|_user_id_", userId);
         return shortcutIntent;
-    }
-
-    public abstract static class UiCallback extends IUiCallback.Stub {
     }
 
     public abstract static class VSCallback extends IVSCallback.Stub {
@@ -731,15 +747,6 @@ public final class VirtualCore {
 
     public abstract static class ControllerServiceCallback extends IControllerServiceCallback.Stub{
 
-    }
-
-
-    public void setUiCallback(Intent intent, IUiCallback callback) {
-        if (callback != null) {
-            Bundle bundle = new Bundle();
-            BundleCompat.putBinder(bundle, "_VA_|_ui_callback_", callback.asBinder());
-            intent.putExtra("_VA_|_sender_", bundle);
-        }
     }
 
     public InstalledAppInfo getInstalledAppInfo(String pkg, int flags) {
@@ -801,13 +808,6 @@ public final class VirtualCore {
             }
         } else {
             activityInfo = resolveActivityInfo(intent.getComponent(), userId);
-        }
-        if (activityInfo != null) {
-            if (activityInfo.targetActivity != null) {
-                ComponentName componentName = new ComponentName(activityInfo.packageName, activityInfo.targetActivity);
-                activityInfo = VPackageManager.get().getActivityInfo(componentName, 0, userId);
-                intent.setComponent(componentName);
-            }
         }
         return activityInfo;
     }
@@ -974,23 +974,15 @@ public final class VirtualCore {
         return isOutsideInstalled(StubManifest.PACKAGE_NAME_64BIT);
     }
 
-    public boolean shouldRun64BitProcess(String packageName) {
+    public boolean isRun64BitProcess(String packageName) {
         if (!is64BitEngineInstalled()) {
             return false;
         }
         try {
-            return getService().isShouldRun64BitProcess(packageName);
+            return getService().isRun64BitProcess(packageName);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
-    }
-
-    public int getSystemPid() {
-        return systemPid;
-    }
-
-    public int getSystemUid() {
-        return systemUid;
     }
 
     /**

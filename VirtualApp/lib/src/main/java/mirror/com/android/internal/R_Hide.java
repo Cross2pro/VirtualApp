@@ -74,19 +74,14 @@ public final class R_Hide {
         public static RefStaticInt SyncAdapter_supportsUploading;
         public static RefStaticInt SyncAdapter_userVisible;
         public static RefStaticObject<int[]> Window;
+        public static RefStaticObject<int[]> View;
+        public static RefStaticInt Window_background;
+        public static RefStaticInt View_background;
+        public static RefStaticInt Window_windowDisablePreview;
         public static RefStaticInt Window_windowBackground;
         public static RefStaticInt Window_windowFullscreen;
         public static RefStaticInt Window_windowIsFloating;
         public static RefStaticInt Window_windowIsTranslucent;
         public static RefStaticInt Window_windowShowWallpaper;
-        public static RefStaticInt AlertDialog_fullDark;
-        public static RefStaticInt AlertDialog_topDark;
-        public static RefStaticInt AlertDialog_centerDark;
-        public static RefStaticInt AlertDialog_bottomDark;
-        public static RefStaticInt AlertDialog_fullBright;
-        public static RefStaticInt AlertDialog_topBright;
-        public static RefStaticInt AlertDialog_centerBright;
-        public static RefStaticInt AlertDialog_bottomBright;
-        public static RefStaticInt AlertDialog_bottomMedium;
     }
 }

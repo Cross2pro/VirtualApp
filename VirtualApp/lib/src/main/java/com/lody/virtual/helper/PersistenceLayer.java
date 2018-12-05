@@ -36,10 +36,6 @@ public abstract class PersistenceLayer {
 
     public abstract void readPersistenceData(Parcel p, int version);
 
-    public boolean onVersionConflict(int fileVersion, int currentVersion) {
-        return false;
-    }
-
     public void onPersistenceFileDamage() {
     }
 
@@ -77,12 +73,6 @@ public abstract class PersistenceLayer {
                 throw new IOException("Invalid persistence file.");
             }
             int fileVersion = p.readInt();
-            int currentVersion = getCurrentVersion();
-            if (fileVersion != getCurrentVersion()) {
-                if (!onVersionConflict(fileVersion, currentVersion)) {
-                    throw new IOException("Unable to process the bad version persistence file.");
-                }
-            }
             readPersistenceData(p, fileVersion);
         } catch (Exception e) {
             if (!(e instanceof FileNotFoundException)) {

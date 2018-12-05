@@ -1,5 +1,6 @@
 package com.lody.virtual.client.hook.proxies.wifi;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
@@ -14,6 +15,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.SettingConfig;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
@@ -25,6 +27,7 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;
+import com.lody.virtual.remote.VDeviceConfig;
 
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -43,6 +46,26 @@ import mirror.android.net.wifi.WifiSsid;
  * @see android.net.wifi.WifiManager
  */
 public class WifiManagerStub extends BinderInvocationProxy {
+
+    @Override
+    public void inject() throws Throwable {
+        super.inject();
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wifiManager = (WifiManager) VirtualCore.get().getContext().getSystemService(Context.WIFI_SERVICE);
+        if (mirror.android.net.wifi.WifiManager.mService != null) {
+            try {
+                mirror.android.net.wifi.WifiManager.mService.set(wifiManager, getInvocationStub().getProxyInterface());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else if (mirror.android.net.wifi.WifiManager.sService != null) {
+            try {
+                mirror.android.net.wifi.WifiManager.sService.set(getInvocationStub().getProxyInterface());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     private class RemoveWorkSourceMethodProxy extends StaticMethodProxy {
 
@@ -176,10 +199,14 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 if (isFakeLocationEnable()) {
                     mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
                     mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "00:00:00:00:00:00");
-                }
-                String mac = getDeviceInfo().getWifiMac();
-                if (!TextUtils.isEmpty(mac)) {
-                    mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, mac);
+                } else {
+                    VDeviceConfig config = getDeviceConfig();
+                    if (config.enable) {
+                        String mac = getDeviceConfig().wifiMac;
+                        if (!TextUtils.isEmpty(mac)) {
+                            mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, mac);
+                        }
+                    }
                 }
             }
             return wifiInfo;

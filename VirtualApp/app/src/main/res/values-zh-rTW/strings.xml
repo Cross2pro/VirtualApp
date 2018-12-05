@@ -75,4 +75,5 @@
         <item>周五</item>
         <item>周六</item>
     </string-array>
+    <string name="kill_all_app">杀死全部App</string>
 </resources>

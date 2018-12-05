@@ -54,12 +54,6 @@
             android:theme="@style/UITheme"/>
 
         <activity
-            android:name=".home.LoadingActivity"
-            android:excludeFromRecents="true"
-            android:screenOrientation="portrait"
-            android:taskAffinity="va.task.loading"
-            android:theme="@style/TransparentTheme"/>
-        <activity
             android:name=".home.location.LocationSettingsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/UITheme"
@@ -70,7 +64,7 @@
             android:theme="@style/UITheme"/>
 
         <activity
-            android:name=".home.device.DeviceDetailAcitivty"
+            android:name=".home.device.DeviceDetailActiivty"
             android:screenOrientation="portrait"
             android:theme="@style/UITheme"
             />
@@ -78,6 +72,9 @@
             android:name=".home.device.DeviceSettingsActivity"
             android:screenOrientation="portrait"
             android:theme="@style/UITheme"/>
+
+        <activity android:name=".home.PermissionRequestActivity" android:launchMode="singleInstance" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+        <activity android:name=".home.BackHomeActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
 
 
         <!-- va的x进程处理 -->

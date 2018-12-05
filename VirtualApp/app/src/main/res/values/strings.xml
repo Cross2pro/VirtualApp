@@ -51,6 +51,7 @@
     <string name="tip_delete">Delete app</string>
     <string name="text_delete_app" formatted="false">Do you want to delete %s?</string>
     <string name="menu_gms">Google Framework</string>
+    <string name="kill_all_app">Kill all App</string>
     <string name="title_app_device">App Settings</string>
     <string name="title_user_device">Global Settings</string>
     <string name="menu_mock_phone">Mock phone</string>

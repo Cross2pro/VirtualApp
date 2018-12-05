@@ -19,6 +19,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
@@ -152,14 +153,14 @@ public class BroadcastSystem {
                 receivers = new ArrayList<>();
                 mReceivers.put(p.packageName, receivers);
             }
-            String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
+            String componentAction = ComponentUtils.getComponentAction(info);
             IntentFilter componentFilter = new IntentFilter(componentAction);
             BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
             receivers.add(r);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
-                SpecialComponentList.protectIntentFilter(cloneFilter, p.packageName);
+                SpecialComponentList.protectIntentFilter(cloneFilter);
                 r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter);
                 mContext.registerReceiver(r, cloneFilter, null, mScheduler);
                 receivers.add(r);
@@ -197,7 +198,6 @@ public class BroadcastSystem {
             record = mBroadcastRecords.remove(token);
         }
         if (record == null) {
-            VLog.e(TAG, "Unable to find the BroadcastRecord by token: " + token);
             return false;
         }
         mTimeoutHandler.removeMessages(0, token);
@@ -205,8 +205,8 @@ public class BroadcastSystem {
         return true;
     }
 
-    void broadcastSent(int vuid, ActivityInfo receiverInfo, PendingResultData res) {
-        BroadcastRecord record = new BroadcastRecord(vuid, receiverInfo, res);
+    void broadcastSent(ActivityInfo receiverInfo, PendingResultData res) {
+        BroadcastRecord record = new BroadcastRecord(receiverInfo, res);
         synchronized (mBroadcastRecords) {
             mBroadcastRecords.put(res.mToken, record);
         }
@@ -223,12 +223,10 @@ public class BroadcastSystem {
     }
 
     private static final class BroadcastRecord {
-        int vuid;
         ActivityInfo receiverInfo;
         PendingResultData pendingResult;
 
-        BroadcastRecord(int vuid, ActivityInfo receiverInfo, PendingResultData pendingResult) {
-            this.vuid = vuid;
+        BroadcastRecord(ActivityInfo receiverInfo, PendingResultData pendingResult) {
             this.receiverInfo = receiverInfo;
             this.pendingResult = pendingResult;
         }
@@ -269,19 +267,19 @@ public class BroadcastSystem {
             if (mApp.isBooting()) {
                 return;
             }
+            /*
+             * Static Receiver not received the sticky broadcast
+             */
             if ((intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY) != 0 || isInitialStickyBroadcast()) {
                 return;
             }
-            String privilegePkg = intent.getStringExtra("_VA_|_privilege_pkg_");
-            if (privilegePkg != null && !info.packageName.equals(privilegePkg)) {
-                return;
-            }
-            PendingResult result = goAsync();
-            if (!intent.hasExtra("_VA_|_intent_")) {
-                intent = ComponentUtils.redirectBroadcastIntent(intent, 0);
-            }
-            if (!mAMS.handleStaticBroadcast(appId, info, intent, new PendingResultData(result))) {
-                result.finish();
+            intent.setExtrasClassLoader(BroadcastIntentData.class.getClassLoader());
+            BroadcastIntentData data = intent.getParcelableExtra("_VA_|_data_");
+            if (data != null) {
+                PendingResult result = goAsync();
+                if (!mAMS.handleStaticBroadcast(data, info, appId, new PendingResultData(result))) {
+                    result.finish();
+                }
             }
         }
     }

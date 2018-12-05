@@ -10,6 +10,7 @@ import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ResultBinderMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
+import com.lody.virtual.remote.VDeviceConfig;
 
 import java.lang.reflect.InvocationHandler;
 import com.xdja.zs.VAppPermissionManager;
@@ -45,9 +46,12 @@ public class BluetoothStub extends BinderInvocationProxy {
                         @Override
                         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                             if ("getAddress".equals(method.getName())) {
-                                String mac = getDeviceInfo().getBluetoothMac();
-                                if (!TextUtils.isEmpty(mac)) {
-                                    return mac;
+                                VDeviceConfig config = getDeviceConfig();
+                                if (config.enable) {
+                                    String mac = getDeviceConfig().bluetoothMac;
+                                    if (!TextUtils.isEmpty(mac)) {
+                                        return mac;
+                                    }
                                 }
                             }
                             return method.invoke(base, args);
@@ -77,9 +81,12 @@ public class BluetoothStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String mac = getDeviceInfo().getBluetoothMac();
-            if(!TextUtils.isEmpty(mac)){
-                return mac;
+            VDeviceConfig config = getDeviceConfig();
+            if (config.enable) {
+                String mac = getDeviceConfig().bluetoothMac;
+                if (!TextUtils.isEmpty(mac)) {
+                    return mac;
+                }
             }
             return super.call(who, method, args);
         }

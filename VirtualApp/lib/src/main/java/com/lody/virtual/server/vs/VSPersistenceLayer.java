@@ -69,12 +69,6 @@ class VSPersistenceLayer extends PersistenceLayer {
     }
 
     @Override
-    public boolean onVersionConflict(int fileVersion, int currentVersion) {
-        return false;
-    }
-
-
-    @Override
     public void onPersistenceFileDamage() {
 
     }

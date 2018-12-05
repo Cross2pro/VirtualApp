@@ -3,27 +3,18 @@ package com.lody.virtual.client.hook.delegate;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 
-import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.interfaces.IInjector;
-import com.lody.virtual.client.ipc.ActivityClientRecord;
-import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
-import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.os.VUserHandle;
-import com.xdja.zs.IUiCallback;
 
 import java.lang.reflect.Field;
 
@@ -78,7 +69,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             return true;
         }
         Class<?> clazz = instrumentation.getClass();
-        if(Instrumentation.class.equals(clazz)){
+        if (Instrumentation.class.equals(clazz)) {
             return false;
         }
         do {
@@ -93,14 +84,14 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                         } catch (IllegalAccessException e) {
                             return false;
                         }
-                        if((obj instanceof AppInstrumentation)){
+                        if ((obj instanceof AppInstrumentation)) {
                             return true;
                         }
                     }
                 }
             }
             clazz = clazz.getSuperclass();
-        }while (!Instrumentation.class.equals(clazz));
+        } while (!Instrumentation.class.equals(clazz));
         return false;
     }
 
@@ -112,24 +103,16 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     @Override
     public void callActivityOnCreate(Activity activity, Bundle icicle) {
         checkActivityCallback();
-        IBinder token = mirror.android.app.Activity.mToken.get(activity);
-        ActivityClientRecord r = VActivityManager.get().getActivityRecord(token);
-        if (r != null) {
-            r.activity = activity;
-        }
         ContextFixer.fixContext(activity);
         ActivityFixer.fixActivity(activity);
-        ActivityInfo info = null;
-        if (r != null) {
-            info = r.info;
-        }
+        ActivityInfo info = mirror.android.app.Activity.mActivityInfo.get(activity);
         if (info != null) {
             if (info.theme != 0) {
                 activity.setTheme(info.theme);
             }
             if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                if(activity.getRequestedOrientation() != info.screenOrientation) {
+                if (activity.getRequestedOrientation() != info.screenOrientation) {
                     ActivityManagerCompat.setActivityOrientation(activity, info.screenOrientation);
                     boolean needWait;
                     //set orientation
@@ -160,32 +143,10 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                     || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
                     || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
                     || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
-        }else{
+        } else {
             return (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
                     || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
                     || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
-        }
-    }
-
-
-    @Override
-    public void callActivityOnResume(Activity activity) {
-        VActivityManager.get().onActivityResumed(activity);
-        super.callActivityOnResume(activity);
-        Intent intent = activity.getIntent();
-        if (intent != null) {
-            Bundle bundle = intent.getBundleExtra("_VA_|_sender_");
-            if (bundle != null) {
-                IBinder callbackToken = BundleCompat.getBinder(bundle, "_VA_|_ui_callback_");
-                IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
-                if (callback != null) {
-                    try {
-                        callback.onAppOpened(VClient.get().getCurrentPackage(), VUserHandle.myUserId());
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
         }
     }
 

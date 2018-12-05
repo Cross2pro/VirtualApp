@@ -3,11 +3,10 @@
 //
 #include <unistd.h>
 #include <stdlib.h>
-#include <fb/include/fb/ALog.h>
 #include <Substrate/CydiaSubstrate.h>
-#include <Foundation/Elf/elf_file.h>
 #include <Jni/VAJni.h>
 #include <sys/stat.h>
+#include <syscall.h>
 #include <asm/mman.h>
 #include <sys/mman.h>
 #include <utils/zMd5.h>
@@ -17,6 +16,7 @@
 #include "SandboxFs.h"
 #include "Path.h"
 #include "Symbol.h"
+#include "Log.h"
 
 #if defined(__LP64__)
 #define LINKER_PATH "/system/bin/linker64"
@@ -41,6 +41,8 @@ bool execve_process = false;
 
 std::map<uint32_t, MmapFileInfo *> MmapInfoMap;
 using namespace xdja;
+
+void startIOHook(int api_level);
 
 void IOUniformer::init_env_before_all() {
     if (!need_load_env) {
@@ -141,22 +143,6 @@ __BEGIN_DECLS
 
 #define FREE(ptr, org_ptr) { if ((void*) ptr != NULL && (void*) ptr != (void*) org_ptr) { free((void*) ptr); } }
 
-const char *get_msg(const char *pathname, int len) {
-    if (pathname == nullptr) {
-        return "null";
-    }
-    const char *p = pathname;
-    int c = 0;
-    while (len > 0 && *p++) {
-        len--;
-        c++;
-    }
-    if (c == 0) {
-        return "to short";
-    }
-    std::string result(pathname, 0, c);
-    return strdup(result.c_str());
-}
 
 // int faccessat(int dirfd, const char *pathname, int mode, int flags);
 HOOK_DEF(int, faccessat, int dirfd, const char *pathname, int mode, int flags) {
@@ -185,7 +171,27 @@ HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags)
     }
 }
 
+// int kill(pid_t pid, int sig);
+HOOK_DEF(int, kill, pid_t pid, int sig) {
+    ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
+    return syscall(__NR_kill, pid, sig);
+}
+
+
 #ifndef __LP64__
+
+// int __statfs64(const char *path, size_t size, struct statfs *stat);
+HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat) {
+    const char *relocated_path = relocate_path(pathname, true);
+    if (relocated_path) {
+        long ret = syscall(__NR_statfs64, relocated_path, size, stat);
+        FREE(relocated_path, pathname);
+        return ret;
+    } else {
+        errno = 13;
+        return -1;
+    }
+}
 
 // int __open(const char *pathname, int flags, int mode);
 HOOK_DEF(int, __open, const char *pathname, int flags, int mode) {
@@ -238,20 +244,6 @@ HOOK_DEF(int, rmdir, const char *pathname) {
     const char *relocated_path = relocate_path(pathname, true);
     if (relocated_path) {
         long ret = syscall(__NR_rmdir, relocated_path);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
-    }
-}
-
-
-// int __statfs64(const char *path, size_t size, struct statfs *stat);
-HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_statfs64, relocated_path, size, stat);
         FREE(relocated_path, pathname);
         return ret;
     } else {
@@ -971,13 +963,6 @@ HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
     return orig_dlsym(handle, symbol);
 }
 
-// int kill(pid_t pid, int sig);
-HOOK_DEF(int, kill, pid_t pid, int sig) {
-    ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
-    return syscall(__NR_kill, pid, sig);
-}
-
-
 HOOK_DEF(pid_t, vfork) {
     return fork();
 }
@@ -1689,54 +1674,12 @@ __END_DECLS
 
 
 void onSoLoaded(const char *name, void *handle) {
-    /*if(strcmp(name, "/data/user/0/io.virtualapp/virtual/data/app/com.tencent.mm/lib/libwechatxlog.so") == 0) {
-
-            slog("fuck, hook libwechatxlog");
-            HOOK_SYMBOL(handle, xlogger_Write);
-    }*/
-}
-
-
-static intptr_t get_linker_addr(pid_t pid) {
-    char buf[BUFSIZ], *tok[6];
-    int i;
-    FILE *fp;
-
-    intptr_t r = NULL;
-
-    snprintf(buf, sizeof(buf), "/proc/%d/maps", pid);
-
-    if ((fp = fopen(buf, "r")) == NULL) {
-        perror("get_linker_addr: fopen");
-        goto ret;
-    }
-
-    while (fgets(buf, sizeof(buf), fp)) {
-        i = strlen(buf);
-        if (i > 0 && buf[i - 1] == '\n')
-            buf[i - 1] = 0;
-
-        tok[0] = strtok(buf, " ");
-        for (i = 1; i < 6; i++)
-            tok[i] = strtok(NULL, " ");
-
-        if (tok[5] && strcmp(tok[5], LINKER_PATH) == 0) {
-            r = (intptr_t) strtoul(tok[0], NULL, 16);
-            goto close;
-        }
-    }
-
-    close:
-    fclose(fp);
-
-    ret:
-    return r;
 }
 
 
 void relocate_linker() {
     intptr_t linker_addr, dlopen_off, symbol;
-    if ((linker_addr = get_linker_addr(getpid())) == 0) {
+    if ((linker_addr = get_addr(LINKER_PATH)) == 0) {
         ALOGE("Cannot found linker addr.");
         return;
     }
@@ -1813,6 +1756,7 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
         HOOK_SYMBOL(handle, statfs64);
+        HOOK_SYMBOL(handle, kill);
 //        HOOK_SYMBOL(handle, __getdents64);
 #else
         HOOK_SYMBOL(handle, faccessat);

@@ -46,6 +46,7 @@ import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
+import com.lody.virtual.client.hook.proxies.storage_stats.StorageStatsStub;
 import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
@@ -95,8 +96,10 @@ public final class InvocationStubManager {
         for (IInjector injector : mInjectors.values()) {
             injector.inject();
         }
-        // XXX: Lazy inject the Instrumentation,
-        addInjector(AppInstrumentation.getDefault());
+        if (VirtualCore.get().isVAppProcess()) {
+            // XXX: Lazy inject the Instrumentation,
+            addInjector(AppInstrumentation.getDefault());
+        }
     }
 
     /**
@@ -203,16 +206,11 @@ public final class InvocationStubManager {
             }
             if (BuildCompat.isOreo()) {
                 addInjector(new AutoFillManagerStub());
+                addInjector(new StorageStatsStub());
             }
-            //new
             if (mirror.oem.IFlymePermissionService.TYPE != null) {
                 addInjector(new FlymePermissionServiceStub());
             }
-//            try {
-//                addInjector(new ServiceManagerStub());
-//            } catch (Throwable e) {
-//                e.printStackTrace();
-//            }
         }
     }
 

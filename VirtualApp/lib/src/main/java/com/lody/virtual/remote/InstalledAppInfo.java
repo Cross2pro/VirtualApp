@@ -17,22 +17,25 @@ import java.io.File;
  */
 public final class InstalledAppInfo implements Parcelable {
 
+    public static final int MODE_APP_COPY_APK = 0;
+    public static final int MODE_APP_USE_OUTSIDE_APK = 1;
+
     public String packageName;
-    public boolean notCopyApk;
+    public int appMode;
     public int appId;
 
-    public InstalledAppInfo(String packageName, boolean notCopyApk, int appId) {
+    public InstalledAppInfo(String packageName, int appMode, int appId) {
         this.packageName = packageName;
-        this.notCopyApk = notCopyApk;
+        this.appMode = appMode;
         this.appId = appId;
     }
 
-    public String getApkPath()  {
+    public String getApkPath() {
         return getApkPath(VirtualCore.get().is64BitEngine());
     }
 
-    public String getApkPath(boolean is64bit)  {
-        if (notCopyApk) {
+    public String getApkPath(boolean is64bit) {
+        if (appMode == MODE_APP_USE_OUTSIDE_APK) {
             try {
                 ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
                 return info.publicSourceDir;
@@ -47,12 +50,20 @@ public final class InstalledAppInfo implements Parcelable {
         }
     }
 
-    public File getOdexFile(){
+    public String getOdexPath() {
+        return getOdexFile().getPath();
+    }
+
+    public String getOdexPath(boolean is64Bit) {
+        return getOdexFile(is64Bit).getPath();
+    }
+
+    public File getOdexFile() {
         return getOdexFile(VirtualCore.get().is64BitEngine());
     }
 
     public File getOdexFile(boolean is64Bit) {
-        if(is64Bit){
+        if (is64Bit) {
             return VEnvironment.getOdexFile64(packageName);
         }
         return VEnvironment.getOdexFile(packageName);
@@ -82,13 +93,13 @@ public final class InstalledAppInfo implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
-        dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.appMode);
         dest.writeInt(this.appId);
     }
 
     protected InstalledAppInfo(Parcel in) {
         this.packageName = in.readString();
-        this.notCopyApk = in.readByte() != 0;
+        this.appMode = in.readInt();
         this.appId = in.readInt();
     }
 

@@ -25,7 +25,7 @@ public class StubManifest {
 
     public static int STUB_COUNT = 100;
     public static String[] PRIVILEGE_APPS = new String[]{
-            "com.google.android.gms"
+            // EMPTY NOW
     };
 
 
@@ -57,5 +57,9 @@ public class StubManifest {
         return PACKAGE_NAME.equals(packageName)
                 || PACKAGE_NAME_64BIT.equals(packageName);
     }
+
+    public static final String[] REQUIRED_FRAMEWORK = {
+            "com.android.location.provider"
+    };
 
 }

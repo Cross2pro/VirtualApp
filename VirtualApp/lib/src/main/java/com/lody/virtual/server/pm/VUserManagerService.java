@@ -20,13 +20,11 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.AtomicFile;
 import com.lody.virtual.helper.utils.FastXmlSerializer;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.server.am.VActivityManagerService;
-import com.lody.virtual.server.device.VDeviceManagerService;
 import com.lody.virtual.server.interfaces.IUserManager;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -164,23 +162,6 @@ public class VUserManagerService extends IUserManager.Stub {
         }
     }
 
-    /**
-     * Enforces that only the system UID or root's UID or apps that have the
-     * {android.Manifest.permission.MANAGE_USERS MANAGE_USERS}
-     * permission can make certain calls to the VUserManager.
-     *
-     * @param message used as message if SecurityException is thrown
-     * @throws SecurityException if the caller is not system or root
-     */
-    private void checkManageUsersPermission(String packageName, String message) {
-        if(VirtualCore.get().getHostPkg().equals(packageName)
-                || GmsSupport.isGoogleService(packageName)
-                || GmsSupport.GOOGLE_FRAMEWORK_PACKAGE.equals(packageName)){
-            return;
-        }
-        throw new SecurityException(packageName + " need MANAGE_USERS permission to: " + message);
-    }
-
     @Override
     public List<VUserInfo> getUsers(boolean excludeDying) {
         //checkManageUsersPermission("query users");
@@ -228,7 +209,6 @@ public class VUserManagerService extends IUserManager.Stub {
 
     @Override
     public void setUserName(int userId, String name, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "rename users");
         boolean changed = false;
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
@@ -249,7 +229,6 @@ public class VUserManagerService extends IUserManager.Stub {
 
     @Override
     public void setUserIcon(int userId, Bitmap bitmap, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "update users");
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -294,7 +273,6 @@ public class VUserManagerService extends IUserManager.Stub {
 
     @Override
     public void setGuestEnabled(boolean enable, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "enable guest users");
         synchronized (mPackagesLock) {
             if (mGuestEnabled != enable) {
                 mGuestEnabled = enable;
@@ -318,12 +296,10 @@ public class VUserManagerService extends IUserManager.Stub {
 
     @Override
     public void wipeUser(int userHandle, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "wipe user");
-        // TODO:
+        // TODO: implementation it
     }
 
     public void makeInitialized(int userId, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "makeInitialized");
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -684,8 +660,6 @@ public class VUserManagerService extends IUserManager.Stub {
 
     @Override
     public VUserInfo createUser(String name, int flags, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "Only the system can create users");
-
         final long ident = Binder.clearCallingIdentity();
         final VUserInfo userInfo;
         try {
@@ -726,7 +700,6 @@ public class VUserManagerService extends IUserManager.Stub {
      * @param userHandle the user's id
      */
     public boolean removeUser(int userHandle, String callingPackage) {
-        checkManageUsersPermission(callingPackage, "Only the system can remove users");
         final VUserInfo user;
         synchronized (mPackagesLock) {
             user = mUsers.get(userHandle);

@@ -10,6 +10,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.proxies.location.MockLocationHelper;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.Reflect;
@@ -31,27 +32,20 @@ import java.util.Map;
  * 实现代码少：GpsStatusListenerTransport、ListenerTransport这2个对象，hook里面的方法，修改参数，都是binder
  */
 public class VLocationManager {
-    private static final boolean DEBUG = false;
     private Handler mWorkHandler;
     private HandlerThread mHandlerThread;
     private final List<Object> mGpsListeners = new ArrayList<>();
     private static VLocationManager sVLocationManager = new VLocationManager();
-    private boolean mInit;
 
     private VLocationManager() {
+        LocationManager locationManager = (LocationManager) VirtualCore.get().getContext().getSystemService(Context.LOCATION_SERVICE);
+        MockLocationHelper.fakeGpsStatus(locationManager);
     }
 
     public static VLocationManager get() {
         return sVLocationManager;
     }
 
-    public void setLocationManager(Context context) {
-        if(!mInit) {
-            mInit = true;
-            final LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            MockLocationHelper.fakeGpsStatus(locationManager);
-        }
-    }
 
     private void checkWork() {
         if (mHandlerThread == null) {
@@ -187,9 +181,6 @@ public class VLocationManager {
     }
 
     public void requestLocationUpdates(Object[] args) {
-        if (DEBUG) {
-            Log.i("tmap", "requestLocationUpdates:start");
-        }
         //15-16 last
         final int index;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -199,9 +190,7 @@ public class VLocationManager {
         }
         final Object listenerTransport = args[index];
         if (listenerTransport == null) {
-            if (DEBUG) {
-                Log.e("tmap", "ListenerTransport:null");
-            }
+            Log.e("VLoc", "ListenerTransport:null");
         } else {
             //mInterval
             long mInterval;
@@ -237,9 +226,7 @@ public class VLocationManager {
                 mirror.android.location.LocationManager.ListenerTransport.onLocationChanged.call(ListenerTransport, location);
                 return true;
             } catch (Throwable e) {
-                if (DEBUG) {
-                    Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
-                }
+                e.printStackTrace();
             }
             return false;
         }
@@ -249,9 +236,7 @@ public class VLocationManager {
                 try {
                     mirror.android.location.LocationManager.ListenerTransport.onLocationChanged.call(ListenerTransport, location);
                 } catch (Throwable e) {
-                    if (DEBUG) {
-                        Log.e("location_vmap", "notify loc " + ListenerTransport.getClass().getName(), e);
-                    }
+                    e.printStackTrace();
                 }
             }
         });

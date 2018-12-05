@@ -27,4 +27,6 @@ typedef Elf64_Sym elf_sym;
 
 int resolve_symbol(const char *, const char *, intptr_t *);
 
+intptr_t get_addr(const char *name);
+
 #endif /* _SYMBOL_H_ */

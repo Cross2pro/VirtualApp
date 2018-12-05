@@ -400,7 +400,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
                 int res = VActivityManager.get().startActivity(intent, info, mResultTo, mOptions, mResultWho, mRequestCode, mLaunchedFromUid);
                 if (res != 0 && mResultTo != null && mRequestCode > 0) {
-                    VActivityManager.get().sendActivityResult(mResultTo, mResultWho, mRequestCode);
+                    VActivityManager.get().sendCancelActivityResult(mResultTo, mResultWho, mRequestCode);
                 }
             }
         }

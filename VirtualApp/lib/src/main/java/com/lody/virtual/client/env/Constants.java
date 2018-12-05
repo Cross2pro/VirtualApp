@@ -11,6 +11,8 @@ import com.lody.virtual.client.stub.ShortcutHandleActivity;
 public class Constants {
 
 	public static final String EXTRA_USER_HANDLE = "android.intent.extra.user_handle";
+    public static final String EXTRA_PACKAGE_NAME = "android.intent.extra.package_name";
+
 	/**
 	 * If an apk declared the "fake-signature" attribute on its Application TAG,
 	 * we will use its signature instead of the real signature.
@@ -20,10 +22,10 @@ public class Constants {
 	 * patches/android_frameworks_base-M.patch.
 	 */
 	public static final String FEATURE_FAKE_SIGNATURE = "fake-signature";
-    /**
-     * wait Constants.ACTION_PACKAGE_ADDED
-     */
-    public static final String ACTION_PACKAGE_WILL_ADDED = "_VA_pre." + Intent.ACTION_PACKAGE_ADDED;
+
+
+    public static final String ACTION_NEW_TASK_CREATED = "virtual.intent.action.APP_LAUNCHED";
+    public static final String ACTION_PACKAGE_WILL_ADDED = "virtual.intent.action.PACKAGE_WILL_ADDED";
 	public static final String ACTION_PACKAGE_ADDED = "virtual." + Intent.ACTION_PACKAGE_ADDED;
 	public static final String ACTION_PACKAGE_REMOVED = "virtual." + Intent.ACTION_PACKAGE_REMOVED;
 	public static final String ACTION_PACKAGE_CHANGED = "virtual." + Intent.ACTION_PACKAGE_CHANGED;
@@ -31,28 +33,9 @@ public class Constants {
 	public static final String ACTION_USER_REMOVED = "virtual." + "android.intent.action.USER_REMOVED";
 	public static final String ACTION_USER_INFO_CHANGED = "virtual." + "android.intent.action.USER_CHANGED";
 	public static final String ACTION_USER_STARTED = "Virtual." + "android.intent.action.USER_STARTED";
-    public static final String ACTION_NEED_PERMISSION = "_VA_.server.action.NEED_PERMISSION";
-    public static final String ACTION_PROCESS_ERROR = "_VA_.server.action.PROCESS_ERROR";
+
+
     /**
-     * season:
-     * startActivityForBg vivo start background activity.
-     */
-    public static final String EXTRA_SEASON = "virtual.extras.season";
-    /**
-     * @see #EXTRA_SEASON
-     * @deprecated
-     */
-    public static final String EXTRA_PERMISSION_SEASON = EXTRA_SEASON;
-    /**
-     * Throwable
-     */
-    public static final String EXTRA_ERROR = "virtual.extras.ex";
-    /**
-     * @see #EXTRA_ERROR
-     * @deprecated
-     */
-    public static final String EXTRA_PERMISSION_EX = EXTRA_ERROR;
-	/**
 	 * Server process name of VA
 	 */
 	public static String SERVER_PROCESS_NAME = ":x";

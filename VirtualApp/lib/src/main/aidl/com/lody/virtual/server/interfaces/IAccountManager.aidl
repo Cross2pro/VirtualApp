@@ -20,7 +20,7 @@ interface IAccountManager{
 
     Account[] getAccounts(int userId, String type);
 
-    void getAuthToken(int userId,in  IAccountManagerResponse response,in  Account account, String authTokenType, boolean notifyOnAuthFailure, boolean expectActivityLaunch,in  Bundle loginOptions, int callingUid);
+    void getAuthToken(int userId,in  IAccountManagerResponse response,in  Account account, String authTokenType, boolean notifyOnAuthFailure, boolean expectActivityLaunch,in  Bundle loginOptions);
 
     void setPassword(int userId,in  Account account, String password);
 

@@ -9,6 +9,7 @@ public class VCommends {
 	public static final String TAG_SHOW_ADD_APP_GUIDE = "Should show add app guide";
 
 	public static final int REQUEST_SELECT_APP = 5;
+	public static final int REQUEST_PERMISSION = 6;
 
 	public static final String EXTRA_APP_INFO_LIST = "va.extra.APP_INFO_LIST";
 
@@ -19,4 +20,5 @@ public class VCommends {
 	public static final String EXTRA_LOCATION_ADDRESS = "virtual.extras.address";
 	public static final String EXTRA_PACKAGE = "virtual.extras.package";
 	public static final String EXTRA_USERID = "virtual.extras.userid";
+
 }

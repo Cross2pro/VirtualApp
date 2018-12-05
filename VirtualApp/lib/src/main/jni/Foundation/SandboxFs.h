@@ -3,7 +3,6 @@
 
 #include <string>
 #include <errno.h>
-#include <fb/include/fb/ALog.h>
 
 #define KEY_MAX 256
 

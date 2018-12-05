@@ -13,6 +13,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionGroupInfo;
+import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
@@ -30,9 +31,8 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.helper.collection.ArraySet;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
-import com.lody.virtual.helper.utils.ArrayUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.pm.installer.SessionInfo;
@@ -42,10 +42,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import mirror.android.content.pm.ParceledListSlice;
 
@@ -146,9 +144,9 @@ class MethodProxies {
 
     /**
      * @author Lody
-     *         <p>
-     *         public ActivityInfo getServiceInfo(ComponentName className, int
-     *         flags, int userId)
+     * <p>
+     * public ActivityInfo getServiceInfo(ComponentName className, int
+     * flags, int userId)
      */
     static class GetServiceInfo extends MethodProxy {
 
@@ -206,10 +204,10 @@ class MethodProxies {
 
     /**
      * @author Lody
-     *         <p>
-     *         <p>
-     *         public ActivityInfo getActivityInfo(ComponentName className, int
-     *         flags, int userId)
+     * <p>
+     * <p>
+     * public ActivityInfo getActivityInfo(ComponentName className, int
+     * flags, int userId)
      */
     static class GetActivityInfo extends MethodProxy {
 
@@ -272,7 +270,7 @@ class MethodProxies {
                         private Object createSession(Object proxy, Method method, Object[] args) throws RemoteException {
                             SessionParams params = SessionParams.create((PackageInstaller.SessionParams) args[0]);
                             String installerPackageName = (String) args[1];
-                            return vInstaller.createSession(params, installerPackageName, VUserHandle.myUserId(), VClient.get().getVUid());
+                            return vInstaller.createSession(params, installerPackageName, VUserHandle.myUserId());
                         }
 
                         @Override
@@ -631,12 +629,37 @@ class MethodProxies {
         }
     }
 
+    static class GetPermissionInfo extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getPermissionInfo";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String name = (String) args[0];
+            int flags = (int) args[args.length - 1];
+            PermissionInfo info = VPackageManager.get().getPermissionInfo(name, flags);
+            if (info != null) {
+                return info;
+            }
+            return super.call(who, method, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
 
     static final class GetPackageInfo extends MethodProxy {
         /**
          * @see android.content.pm.PackageManager #MATCH_FACTORY_ONLY
          */
         private static final int MATCH_FACTORY_ONLY = 0x00200000;
+
         @Override
         public String getMethodName() {
             return "getPackageInfo";
@@ -652,7 +675,7 @@ class MethodProxies {
             String pkg = (String) args[0];
             int flags = (int) args[1];
             int userId = VUserHandle.myUserId();
-            if((flags & MATCH_FACTORY_ONLY) != 0){
+            if ((flags & MATCH_FACTORY_ONLY) != 0) {
                 return method.invoke(who, args);
             }
             PackageInfo packageInfo = VPackageManager.get().getPackageInfo(pkg, flags, userId);
@@ -715,12 +738,12 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int pkgIndex = MethodParameterUtils.getIndex(args, String.class);
-            if(pkgIndex >= 0){
+            if (pkgIndex >= 0) {
                 String pkg = (String) args[pkgIndex];
                 if (isAppPkg(pkg)) {
                     return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
                 }
-                if(isVisiblePackage(pkg)){
+                if (isVisiblePackage(pkg)) {
                     return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
                 }
                 return PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -729,7 +752,7 @@ class MethodProxies {
         }
     }
 
-    static class CanRequestPackageInstalls extends MethodProxy{
+    static class CanRequestPackageInstalls extends MethodProxy {
         @Override
         public String getMethodName() {
             return "canRequestPackageInstalls";
@@ -792,30 +815,16 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int uid = (int) args[0];
-            if(uid == Process.myUid() || uid == getRealUid()
-                    || uid == VirtualCore.get().getSystemUid()){
-               return VPackageManager.get().getPackagesForUid(VClient.get().getVUid());
-            }else if(uid == getRealUid()){
-                return VPackageManager.get().getPackagesForUid(VClient.get().getVCallingUid());
+            if (uid == getRealUid()) {
+                VLog.e("PackageManager", "getPackageForUid using real uid.");
+                VLog.e("PackageManager", new Exception());
+                return new String[]{VClient.get().getCurrentPackage()};
             }
-
-            String[] insides = VPackageManager.get().getPackagesForUid(uid);
-            String[] outsides = null;
-            try {
-                outsides = VirtualCore.get().getUnHookPackageManager().getPackagesForUid(uid);
-            }catch (Exception e){
-                //ignore
+            String[] pkgs = VPackageManager.get().getPackagesForUid(uid);
+            if (pkgs == null) {
+                return new String[]{VClient.get().getCurrentPackage()};
             }
-            if(outsides == null){
-                return insides;
-            }
-            if(insides == null){
-                return outsides;
-            }
-            List<String> result = new ArrayList<>();
-            result.addAll(Arrays.asList(insides));
-            result.addAll(Arrays.asList(outsides));
-            return result.toArray(new String[0]);
+            return pkgs;
         }
 
         @Override
@@ -877,7 +886,7 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (args.length == 2 && args[0] instanceof String && args[1] instanceof String) {
                 String pkgNameOne = (String) args[0], pkgNameTwo = (String) args[1];
-                if(TextUtils.equals(pkgNameOne, pkgNameTwo)){
+                if (TextUtils.equals(pkgNameOne, pkgNameTwo)) {
                     return PackageManager.SIGNATURE_MATCH;
                 }
                 return VPackageManager.get().checkSignatures(pkgNameOne, pkgNameTwo);
@@ -905,7 +914,7 @@ class MethodProxies {
             if (pkgs1 == null || pkgs1.length == 0) {
                 return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
             }
-            if(pkgs2 == null || pkgs2.length == 0){
+            if (pkgs2 == null || pkgs2.length == 0) {
                 return PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
             }
             return VPackageManager.get().checkSignatures(pkgs1[0], pkgs2[0]);
@@ -1007,10 +1016,6 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, flags, userId);
             if (info != null) {
-                //fix createPckageContext  :p999
-                if(VClient.get().getVUid() <= 0){
-                    info.uid = getRealUid();
-                }
                 return info;
             }
             info = (ApplicationInfo) method.invoke(who, args);
@@ -1195,7 +1200,15 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            // TODO
+            String name = (String) args[0];
+            String packageName = (String) args[1];
+            int userId = (int) args[2];
+            PermissionInfo info = VPackageManager.get().getPermissionInfo(name, 0);
+            if (info != null) {
+                return 0;
+            }
+            // force userId to 0
+            args[2] = 0;
             return method.invoke(who, args);
         }
 

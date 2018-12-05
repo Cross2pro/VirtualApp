@@ -27,6 +27,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Lody
  */
 public class FileUtils {
+
+    public static String getFilenameExt(String filename) {
+        int dotPos = filename.lastIndexOf('.');
+        if (dotPos == -1) {
+            return "";
+        }
+        return filename.substring(dotPos + 1);
+    }
+
+    public static File changeExt(File f, String targetExt) {
+        String outPath = f.getAbsolutePath();
+        if (!getFilenameExt(outPath).equals(targetExt)) {
+            int dotPos = outPath.lastIndexOf(".");
+            if (dotPos > 0) {
+                outPath = outPath.substring(0, dotPos + 1) + targetExt;
+            } else {
+                outPath = outPath + "." + targetExt;
+            }
+            return new File(outPath);
+        }
+        return f;
+    }
+
     /**
      * @param path
      * @param mode {@link FileMode}
@@ -88,19 +111,19 @@ public class FileUtils {
         int count = 0;
         if (dir.isDirectory()) {
             boolean link = false;
-            try{
+            try {
                 link = isSymlink(dir);
-            }catch (Exception e){
+            } catch (Exception e) {
                 //ignore
             }
-            if(!link) {
+            if (!link) {
                 String[] children = dir.list();
                 for (String file : children) {
                     count += deleteDir(new File(dir, file));
                 }
             }
         }
-        if(dir.delete()){
+        if (dir.delete()) {
             count++;
         }
         return count;
@@ -233,6 +256,10 @@ public class FileUtils {
 
     public static boolean isExist(String path) {
         return new File(path).exists();
+    }
+
+    public static boolean canRead(String path) {
+        return new File(path).canRead();
     }
 
     public interface FileMode {

@@ -31,8 +31,4 @@ namespace xdja {
 #endif
 }
 
-#ifndef my_min
-#define my_min(X,Y) (__extension__ ({ typeof(X) __x=(X), __y=(Y); (__x<__y)?__x:__y; }))
-#endif
-
 #endif //VIRTUALAPP_MYLOG_H_H

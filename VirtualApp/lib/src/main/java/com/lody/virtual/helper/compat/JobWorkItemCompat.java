@@ -13,11 +13,12 @@ public class JobWorkItemCompat {
     public static JobWorkItem redirect(JobWorkItem item, String pkg) {
         if (item != null) {
             Intent target = mirror.android.app.job.JobWorkItem.getIntent.call(item);
-            if(target.hasExtra("_VA_|_intent_")){
+            if (target.hasExtra("_VA_|_intent_")) {
                 return item;
             }
+            // TODO: is it work?
             Intent intent = ComponentUtils.redirectIntentSender(
-                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target, null);
+                    ActivityManagerCompat.INTENT_SENDER_SERVICE, pkg, target);
 
             JobWorkItem workItem = (JobWorkItem) mirror.android.app.job.JobWorkItem.ctor.newInstance(intent);
             int wordId = mirror.android.app.job.JobWorkItem.mWorkId.get(item);

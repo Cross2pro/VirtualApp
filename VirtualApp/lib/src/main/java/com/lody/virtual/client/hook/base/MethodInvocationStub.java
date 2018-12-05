@@ -3,6 +3,7 @@ package com.lody.virtual.client.hook.base;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.annotations.LogInvocation;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -163,7 +164,7 @@ public class MethodInvocationStub<T> {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             MethodProxy methodProxy = getMethodProxy(method.getName());
-            boolean useProxy = (methodProxy != null && methodProxy.isEnable());
+            boolean useProxy = VirtualCore.get().isStartup() && methodProxy != null && methodProxy.isEnable();
             boolean mightLog = (mInvocationLoggingCondition != LogInvocation.Condition.NEVER) ||
                     (methodProxy != null && methodProxy.getInvocationLoggingCondition() != LogInvocation.Condition.NEVER);
 

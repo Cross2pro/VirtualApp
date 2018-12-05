@@ -1,19 +1,17 @@
 package com.lody.virtual.client.ipc;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.os.Build;
 import android.os.RemoteException;
-import android.provider.Settings;
-import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
-import com.lody.virtual.remote.VDeviceInfo;
-import com.lody.virtual.server.interfaces.IDeviceInfoManager;
+import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.ReflectException;
+import com.lody.virtual.remote.VDeviceConfig;
+import com.lody.virtual.server.interfaces.IDeviceManager;
 
-import mirror.RefStaticObject;
+import java.util.Map;
+
+import mirror.android.os.Build;
 
 /**
  * @author Lody
@@ -27,92 +25,63 @@ public class VDeviceManager {
         return sInstance;
     }
 
-    private VDeviceInfo mDefault;
+    private IDeviceManager mService;
 
-    private IDeviceInfoManager mService;
-
-    public IDeviceInfoManager getService() {
+    public IDeviceManager getService() {
         if (!IInterfaceUtils.isAlive(mService)) {
             synchronized (this) {
                 Object binder = getRemoteInterface();
-                mService = LocalProxyUtils.genProxy(IDeviceInfoManager.class, binder);
+                mService = LocalProxyUtils.genProxy(IDeviceManager.class, binder);
             }
         }
         return mService;
     }
 
     private Object getRemoteInterface() {
-        return IDeviceInfoManager.Stub
+        return IDeviceManager.Stub
                 .asInterface(ServiceManagerNative.getService(ServiceManagerNative.DEVICE));
     }
 
 
-    public VDeviceInfo getDeviceInfo(int userId) {
+    public VDeviceConfig getDeviceConfig(int userId) {
         try {
-            return getService().getDeviceInfo(userId);
+            return getService().getDeviceConfig(userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
     }
 
-    public void updateDeviceInfo(int userId, VDeviceInfo deviceInfo) {
+    public void updateDeviceConfig(int userId, VDeviceConfig config) {
         try {
-            getService().updateDeviceInfo(userId, deviceInfo);
+            getService().updateDeviceConfig(userId, config);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
     }
 
-    public VDeviceInfo getDefaultDeviceInfo(Context context) {
-        if (mDefault == null) {
-            synchronized (this) {
-                if (mDefault == null) {
-                    mDefault = defaultDevice(context);
-                }
+    public boolean isEnable(int userId) {
+        try {
+            return getService().isEnable(userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void setEnable(int userId, boolean enable) {
+        try {
+            getService().setEnable(userId, enable);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void applyBuildProp(VDeviceConfig config) {
+        for (Map.Entry<String, String> entry : config.buildProp.entrySet()) {
+            try {
+                Reflect.on(Build.TYPE).set(entry.getKey(), entry.getValue());
+            } catch (ReflectException e) {
+                e.printStackTrace();
             }
-        }
-        return mDefault;
-    }
-
-    @SuppressLint("HardwareIds")
-    public static VDeviceInfo defaultDevice(Context context) {
-        VDeviceInfo info = new VDeviceInfo();
-        try {
-            info.setDeviceId(null);
-        } catch (Exception e) {
-            //ignore
-        }
-        info.setAndroidId(Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID));
-        try {
-            info.setWifiMac(null);
-        } catch (Exception e) {
-            //ignore
-        }
-        info.setBluetoothMac(null);
-        info.setSerial(Build.SERIAL);
-        info.setIccId(null);
-        return info;
-    }
-
-    private void setBuild(RefStaticObject<String> field, String val){
-        if(!TextUtils.isEmpty(val)){
-            field.set(val);
-        }
-    }
-
-    public void attachBuildProp(VDeviceInfo info){
-//      mirror.android.os.Build.DEVICE.set(Build.DEVICE.replace(" ", "_"));
-        if (info != null) {
-            setBuild(mirror.android.os.Build.DEVICE, info.getDevice());
-            setBuild(mirror.android.os.Build.SERIAL, info.getSerial());
-            setBuild(mirror.android.os.Build.MODEL, info.getModel());
-            setBuild(mirror.android.os.Build.BRAND, info.getBrand());
-            setBuild(mirror.android.os.Build.BOARD, info.getBoard());
-            setBuild(mirror.android.os.Build.PRODUCT, info.getProduct());
-            setBuild(mirror.android.os.Build.ID, info.getID());
-            setBuild(mirror.android.os.Build.DISPLAY, info.getDisplay());
-            setBuild(mirror.android.os.Build.MANUFACTURER, info.getManufacturer());
-            setBuild(mirror.android.os.Build.FINGERPRINT, info.getFingerprint());
         }
     }
 }

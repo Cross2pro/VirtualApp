@@ -85,7 +85,7 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
         iconView.setProgress(40, true);
         VUiKit.defer().when(() -> {
             try {
-                Thread.sleep(900L);
+                Thread.sleep(300L);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <elf.h>
 #include <errno.h>
 
@@ -184,5 +183,41 @@ int resolve_symbol(const char *filename, const char *symname, intptr_t *symval) 
     fclose(fp);
 
     _ret:
+    return r;
+}
+
+intptr_t get_addr(const char *name) {
+    char buf[BUFSIZ], *tok[6];
+    int i;
+    FILE *fp;
+
+    intptr_t r = NULL;
+
+    snprintf(buf, sizeof(buf), "/proc/self/maps");
+
+    if ((fp = fopen(buf, "r")) == NULL) {
+        perror("get_linker_addr: fopen");
+        goto ret;
+    }
+
+    while (fgets(buf, sizeof(buf), fp)) {
+        i = strlen(buf);
+        if (i > 0 && buf[i - 1] == '\n')
+            buf[i - 1] = 0;
+
+        tok[0] = strtok(buf, " ");
+        for (i = 1; i < 6; i++)
+            tok[i] = strtok(NULL, " ");
+
+        if (tok[5] && strcmp(tok[5], name) == 0) {
+            r = (intptr_t) strtoul(tok[0], NULL, 16);
+            goto close;
+        }
+    }
+
+    close:
+    fclose(fp);
+
+    ret:
     return r;
 }

@@ -121,28 +121,12 @@ public class VEnvironment {
         }
     }
 
-    public static void linkUserAppLib(int userId, String packageName){
-        linkUserAppLib(userId, packageName, VirtualCore.get().is64BitEngine());
+    public static File getProcDirectory() {
+        return ensureCreated(new File(ROOT, "proc"));
     }
 
-    public static void linkUserAppLib(int userId, String packageName, boolean is64Bit) {
-        String libPath;
-        String userLibPath;
-        if(is64Bit){
-            libPath = VEnvironment.getAppLibDirectory64(packageName).getPath();
-            userLibPath = VEnvironment.getUserAppLibDirectory64(userId, packageName).getPath();
-        }else{
-            libPath = VEnvironment.getAppLibDirectory(packageName).getPath();
-            userLibPath = VEnvironment.getUserAppLibDirectory(userId, packageName).getPath();
-        }
-        try {
-            if (FileUtils.isExist(userLibPath)) {
-                return;
-            }
-            FileUtils.createSymlink(libPath, userLibPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public static File getProcDirectory64() {
+        return ensureCreated(new File(ROOT64, "proc"));
     }
 
     public static File getDataUserPackageDirectory(int userId,
@@ -151,7 +135,7 @@ public class VEnvironment {
     }
 
     public static File getDataUserPackageDirectory64(int userId,
-                                                   String packageName) {
+                                                     String packageName) {
         return ensureCreated(new File(getUserDataDirectory64(userId), packageName));
     }
 
@@ -184,7 +168,7 @@ public class VEnvironment {
     }
 
     public static File getSyncDirectory() {
-        return ensureCreated(new File(getSystemSecureDirectory(), "sync") );
+        return ensureCreated(new File(getSystemSecureDirectory(), "sync"));
     }
 
     public static File getAccountVisibilityConfigFile() {
@@ -196,7 +180,7 @@ public class VEnvironment {
     }
 
     public static File getDeviceInfoFile() {
-        return new File(getSystemSecureDirectory(), "device-info.ini");
+        return new File(getSystemSecureDirectory(), "device-config.ini");
     }
 
     public static File getSettingRuleFile() {
@@ -274,6 +258,23 @@ public class VEnvironment {
         return new File(getDataAppPackageDirectory(packageName), "signature.ini");
     }
 
+    public static File getFrameworkDirectory32() {
+        return ensureCreated(new File(ROOT, "framework"));
+    }
+
+    public static File getFrameworkDirectory32(String name) {
+        return ensureCreated(new File(getFrameworkDirectory32(), name));
+    }
+
+    public static File getOptimizedFrameworkFile32(String name) {
+        return new File(getFrameworkDirectory32(name), /*TODO: base64 encode it*/"classes.dex");
+    }
+
+
+    public static File getFrameworkFile32(String name) {
+        return new File(getFrameworkDirectory32(name), "extracted.jar");
+    }
+
     public static File getUserSystemDirectory() {
         return USER_DIRECTORY;
     }
@@ -300,7 +301,7 @@ public class VEnvironment {
         return ensureCreated(new File(getUserDataDirectory(userId), "system"));
     }
 
-	public static File getSystemDirectory64(int userId) {
+    public static File getSystemDirectory64(int userId) {
         return ensureCreated(new File(getUserDataDirectory64(userId), "system"));
     }
 
@@ -319,7 +320,7 @@ public class VEnvironment {
     }
 
     public static File getWifiMacFile(int userId, boolean is64Bit) {
-        if(is64Bit){
+        if (is64Bit) {
             return new File(getSystemDirectory64(userId), "wifiMacAddress");
         }
         return new File(getSystemDirectory(userId), "wifiMacAddress");

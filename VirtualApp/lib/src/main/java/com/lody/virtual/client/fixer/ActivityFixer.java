@@ -35,7 +35,7 @@ public final class ActivityFixer {
                     activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
                 }
                 boolean fullscreen = typedArray.getBoolean(R_Hide.styleable.Window_windowFullscreen.get(), false);
-                if(fullscreen){
+                if (fullscreen) {
                     activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 }
                 typedArray.recycle();

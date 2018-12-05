@@ -57,16 +57,12 @@
 
 #ipc
 -keepclassmembers class com.lody.virtual.client.ipc.**{public *;}
+#native
 -keepclassmembers class * implements com.lody.virtual.client.badger.IBadger{
     public <methods>;
 }
 
-# jni
--keep class com.lody.virtual.client.NativeEngine {
-    public static boolean onKillProcess(...);
-    public static int onGetCallingUid(...);
-    public static void onOpenDexFileNative(...);
-    public static int onGetUid(...);
+-keepclasseswithmembernames class * {
     native <methods>;
 }
 # android

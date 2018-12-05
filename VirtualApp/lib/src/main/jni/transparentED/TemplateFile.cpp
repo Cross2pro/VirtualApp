@@ -11,6 +11,7 @@
 #include <utils/timeStamp.h>
 #include <android/legacy_stdlib_inlines.h>
 #include <utils/utils.h>
+#include <algorithm>
 
 #include "utils/mylog.h"
 
@@ -190,7 +191,7 @@ ssize_t TemplateFile::pwrite64(int fd, void *buf, size_t len, off64_t offset) {
     if(offset < CHECK_BUF_SIZE)
     {
         off64_t end = offset + len;
-        size_t rlen = my_min(end, CHECK_BUF_SIZE) - offset;
+        size_t rlen = std::min(end, (off64_t )CHECK_BUF_SIZE) - offset;
 
         for(int i = offset; i < offset + rlen; i++)
         {
@@ -212,7 +213,7 @@ ssize_t TemplateFile::write(int fd, char *buf, size_t len) {
     if(pos < CHECK_BUF_SIZE)
     {
         off64_t end = pos + len;
-        size_t rlen = my_min(end, CHECK_BUF_SIZE) - pos;
+        size_t rlen = std::min(end, (off64_t )CHECK_BUF_SIZE) - pos;
 
         for(int i = pos; i < pos + rlen; i++)
         {

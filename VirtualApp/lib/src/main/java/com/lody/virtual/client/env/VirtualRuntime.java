@@ -2,8 +2,10 @@ package com.lody.virtual.client.env;
 
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.os.ConditionVariable;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
@@ -14,9 +16,9 @@ import mirror.dalvik.system.VMRuntime;
 
 /**
  * @author Lody
- *         <p>
- *         <p/>
- *         Runtime Environment for App.
+ * <p>
+ * <p/>
+ * Runtime Environment for App.
  */
 public class VirtualRuntime {
 
@@ -60,16 +62,34 @@ public class VirtualRuntime {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;
         }
-        try {
-            return VMRuntime.is64Bit.call(VMRuntime.getRuntime.call());
-        }catch (Throwable e){
-            return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return Process.is64Bit();
         }
+        return VMRuntime.is64Bit.call(VMRuntime.getRuntime.call());
+
     }
 
     public static void exit() {
         VLog.d(VirtualRuntime.class.getSimpleName(), "Exit process : %s (%s).", getProcessName(), VirtualCore.get().getProcessName());
-        android.os.Process.killProcess(android.os.Process.myPid());
+        Process.killProcess(android.os.Process.myPid());
+    }
+
+    public static ConditionVariable runOnUiAndWait(final Runnable r) {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            r.run();
+            return null;
+        } else {
+            final ConditionVariable lock = new ConditionVariable();
+            getUIHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    r.run();
+                    lock.open();
+                }
+            });
+            lock.block();
+            return lock;
+        }
     }
 
     public static boolean isArt() {

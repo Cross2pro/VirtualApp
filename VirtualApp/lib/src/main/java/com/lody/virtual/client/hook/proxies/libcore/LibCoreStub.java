@@ -1,8 +1,8 @@
 package com.lody.virtual.client.hook.proxies.libcore;
 
-import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
+import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.base.ReplaceUidMethodProxy;
 
 import mirror.libcore.io.ForwardingOs;
@@ -40,7 +40,7 @@ public class LibCoreStub extends MethodInvocationProxy<MethodInvocationStub<Obje
     }
 
     @Override
-    public void inject() throws Throwable {
+    public void inject() {
         Libcore.os.set(getInvocationStub().getProxyInterface());
     }
 

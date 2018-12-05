@@ -30,8 +30,7 @@ class NotificationCompatCompatV14 extends NotificationCompat {
         if (appContext == null) {
             return false;
         }
-        //need check outside version
-        if (VClient.get().isNotCopyApk() && VirtualCore.get().isOutsideInstalled(packageName)) {
+        if (VClient.get().isAppUseOutsideAPK() && VirtualCore.get().isOutsideInstalled(packageName)) {
             if(notification.icon != 0) {
                 getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {

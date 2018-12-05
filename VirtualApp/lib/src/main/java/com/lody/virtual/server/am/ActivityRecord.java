@@ -2,36 +2,43 @@ package com.lody.virtual.server.am;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.os.Binder;
 import android.os.IBinder;
+
+import com.lody.virtual.helper.utils.ComponentUtils;
 
 /**
  * @author Lody
+ *
  */
 
-/* package */ class ActivityRecord {
-	public TaskRecord task;
-	public ComponentName component;
-	public ComponentName caller;
-	public Intent intent;
-	public IBinder token;
-	public int userId;
-	public ProcessRecord process;
-	public int launchMode;
-	public int flags;
-	public boolean marked;
-	public String affinity;
+/* package */ class ActivityRecord extends Binder {
+    public TaskRecord task;
+    public ActivityInfo info;
+    public ComponentName component;
+    public Intent intent;
+    public IBinder token;
+    public IBinder resultTo;
+    public int userId;
+    public ProcessRecord process;
+    public boolean marked;
 
-	public ActivityRecord(TaskRecord task, ComponentName component, ComponentName caller, IBinder token, int userId, ProcessRecord process, int launchMode, int flags, String affinity, Intent intent) {
-		this.task = task;
-		this.component = component;
-		this.caller = caller;
-		this.token = token;
-		this.userId = userId;
-		this.process = process;
-		this.launchMode = launchMode;
-		this.flags = flags;
-		this.affinity = affinity;
-		this.intent = intent;
-	}
+    public ActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
+        this.intent = intent;
+        this.info = info;
+        this.component = ComponentUtils.toComponentName(info);
+        this.resultTo = resultTo;
+    }
+
+    public void init(TaskRecord task, ProcessRecord process, IBinder token) {
+        this.task = task;
+        this.process = process;
+        this.token = token;
+    }
+
+    public boolean isLaunching() {
+        return process == null;
+    }
 
 }

@@ -94,9 +94,9 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public int createSession(SessionParams params, String installerPackageName, int userId,int callingUid) throws RemoteException {
+    public int createSession(SessionParams params, String installerPackageName, int userId) {
         try {
-            return createSessionInternal(params, installerPackageName, userId, callingUid);
+            return createSessionInternal(params, installerPackageName, userId, VBinder.getCallingUid());
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -136,7 +136,7 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public void updateSessionAppLabel(int sessionId, String appLabel) throws RemoteException {
+    public void updateSessionAppLabel(int sessionId, String appLabel) {
         synchronized (mSessions) {
             final PackageInstallerSession session = mSessions.get(sessionId);
             if (session == null || !isCallingUidOwner(session)) {
@@ -148,18 +148,22 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public void abandonSession(int sessionId) throws RemoteException {
+    public void abandonSession(int sessionId) {
         synchronized (mSessions) {
             final PackageInstallerSession session = mSessions.get(sessionId);
             if (session == null || !isCallingUidOwner(session)) {
                 throw new SecurityException("Caller has no access to session " + sessionId);
             }
-            session.abandon();
+            try {
+                session.abandon();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     @Override
-    public IPackageInstallerSession openSession(int sessionId) throws RemoteException {
+    public IPackageInstallerSession openSession(int sessionId) {
         try {
             return openSessionInternal(sessionId);
         } catch (IOException e) {
@@ -179,7 +183,7 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public SessionInfo getSessionInfo(int sessionId) throws RemoteException {
+    public SessionInfo getSessionInfo(int sessionId) {
         synchronized (mSessions) {
             final PackageInstallerSession session = mSessions.get(sessionId);
             return session != null ? session.generateInfo() : null;
@@ -187,7 +191,7 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public VParceledListSlice getAllSessions(int userId) throws RemoteException {
+    public VParceledListSlice getAllSessions(int userId) {
         final List<SessionInfo> result = new ArrayList<>();
         synchronized (mSessions) {
             for (int i = 0; i < mSessions.size(); i++) {
@@ -201,7 +205,7 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public VParceledListSlice getMySessions(String installerPackageName, int userId) throws RemoteException {
+    public VParceledListSlice getMySessions(String installerPackageName, int userId) {
         final List<SessionInfo> result = new ArrayList<>();
         synchronized (mSessions) {
             for (int i = 0; i < mSessions.size(); i++) {
@@ -216,17 +220,17 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public void registerCallback(IPackageInstallerCallback callback, int userId) throws RemoteException {
+    public void registerCallback(IPackageInstallerCallback callback, int userId) {
         mCallbacks.register(callback, userId);
     }
 
     @Override
-    public void unregisterCallback(IPackageInstallerCallback callback) throws RemoteException {
+    public void unregisterCallback(IPackageInstallerCallback callback) {
         mCallbacks.unregister(callback);
     }
 
     @Override
-    public void uninstall(String packageName, String callerPackageName, int flags, IntentSender statusReceiver, int userId) throws RemoteException {
+    public void uninstall(String packageName, String callerPackageName, int flags, IntentSender statusReceiver, int userId) {
         boolean success = VAppManagerService.get().uninstallPackage(packageName);
         if (statusReceiver != null) {
             final Intent fillIn = new Intent();
@@ -243,7 +247,7 @@ public class VPackageInstallerService extends IPackageInstaller.Stub {
     }
 
     @Override
-    public void setPermissionsResult(int sessionId, boolean accepted) throws RemoteException {
+    public void setPermissionsResult(int sessionId, boolean accepted) {
         synchronized (mSessions) {
             PackageInstallerSession session = mSessions.get(sessionId);
             if (session != null) {

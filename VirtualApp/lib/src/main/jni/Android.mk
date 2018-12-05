@@ -13,15 +13,15 @@ endif
 LOCAL_CFLAGS += -Wno-error=format-security -fpermissive -O2
 LOCAL_CFLAGS += -DLOG_TAG=\"VA++\"
 LOCAL_CFLAGS += -fno-rtti -fno-exceptions
+LOCAL_CPPFLAGS += -std=c++11
 
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Foundation
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Jni
 
 LOCAL_SRC_FILES := Jni/VAJni.cpp \
-				   Foundation/Elf/elf_common.cpp \
-				   Foundation/Elf/elf_file.cpp \
-				   Foundation/Elf/elf_mapped.cpp \
+				   Jni/Helper.cpp \
+				   Foundation/fake_dlfcn.cpp \
 				   Foundation/IORelocator.cpp \
 				   Foundation/VMHook.cpp \
 				   Foundation/Symbol.cpp \
@@ -56,7 +56,5 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    utils/controllerManagerNative.cpp \
 
 LOCAL_LDLIBS := -llog -latomic
-LOCAL_STATIC_LIBRARIES := fb
 
 include $(BUILD_SHARED_LIBRARY)
-include $(MAIN_LOCAL_PATH)/fb/Android.mk

@@ -1,5 +1,6 @@
 package com.lody.virtual.helper.compat;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -26,6 +27,20 @@ public class BundleCompat {
         } else {
             mirror.android.os.Bundle.putIBinder.call(bundle, key, value);
         }
+    }
+
+    public static void putBinder(Intent intent, String key, IBinder value) {
+        Bundle bundle = new Bundle();
+        putBinder(bundle, "binder", value);
+        intent.putExtra(key, bundle);
+    }
+
+    public static IBinder getBinder(Intent intent, String key) {
+        Bundle bundle = intent.getBundleExtra(key);
+        if (bundle != null) {
+            return getBinder(bundle, "binder");
+        }
+        return null;
     }
 
     public static void clearParcelledData(Bundle bundle) {

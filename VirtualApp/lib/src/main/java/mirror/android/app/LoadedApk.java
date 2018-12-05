@@ -28,6 +28,7 @@ public class LoadedApk {
     public static RefMethod<IServiceConnection> getServiceDispatcher;
     @MethodParams({Context.class, ServiceConnection.class})
     public static RefMethod<IServiceConnection> forgetServiceDispatcher;
+    public static RefMethod<ClassLoader> getClassLoader;
 
     public static RefBoolean mSecurityViolation;
 

@@ -34,9 +34,7 @@ public class SettingsData {
         PackageManager pm = context.getPackageManager();
         try {
             CharSequence sequence = appInfo.loadLabel(pm);
-            if (sequence != null) {
-                name = sequence.toString();
-            }
+            name = sequence.toString();
             icon = appInfo.loadIcon(pm);
         } catch (Throwable e) {
             e.printStackTrace();

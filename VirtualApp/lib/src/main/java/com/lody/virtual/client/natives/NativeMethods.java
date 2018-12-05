@@ -37,8 +37,16 @@ public class NativeMethods {
     public static Method gAudioRecordStart;
     public static Method gMediaRecordPrepare;
 
+    static {
+        try {
+            init();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
     @SuppressLint("PrivateApi")
-    public static void init() {
+    private static void init() {
 
         gMediaRecorderNativeSetup = getMediaRecorderNativeSetup();
 
@@ -175,4 +183,5 @@ public class NativeMethods {
         }
         return native_setup;
     }
+
 }

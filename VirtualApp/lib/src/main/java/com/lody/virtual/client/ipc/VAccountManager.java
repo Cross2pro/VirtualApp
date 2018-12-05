@@ -68,7 +68,7 @@ public class VAccountManager {
 
     public void getAuthToken(IAccountManagerResponse response, Account account, String authTokenType, boolean notifyOnAuthFailure, boolean expectActivityLaunch, Bundle loginOptions) {
         try {
-            getService().getAuthToken(VUserHandle.myUserId(), response, account, authTokenType, notifyOnAuthFailure, expectActivityLaunch, loginOptions, VClient.get().getVUid());
+            getService().getAuthToken(VUserHandle.myUserId(), response, account, authTokenType, notifyOnAuthFailure, expectActivityLaunch, loginOptions);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -278,7 +278,6 @@ public class VAccountManager {
             optionsIn.putAll(addAccountOptions);
         }
         optionsIn.putString(KEY_ANDROID_PACKAGE_NAME, "android");
-
         return new AmsTask(activity, handler, callback) {
             @Override
             public void doWork() throws RemoteException {

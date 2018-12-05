@@ -6,18 +6,18 @@ import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.natives.NativeMethods;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * VirtualApp Native Project
@@ -26,9 +26,11 @@ public class NativeEngine {
 
     private static final String TAG = NativeEngine.class.getSimpleName();
 
-    private static Map<String, InstalledAppInfo> sDexOverrideMap;
+    private static final List<DexOverride> sDexOverrides = new ArrayList<>();
 
     private static boolean sFlag = false;
+    private static boolean sEnabled = false;
+    private static boolean sBypassedP = false;
 
     private static final String LIB_NAME = "v++";
     private static final String LIB_NAME_64 = "v++_64";
@@ -45,19 +47,22 @@ public class NativeEngine {
         }
     }
 
-    static {
-        NativeMethods.init();
-    }
-
 
     public static void startDexOverride() {
-        List<InstalledAppInfo> installedAppInfos = VirtualCore.get().getInstalledApps(0);
-        sDexOverrideMap = new HashMap<>(installedAppInfos.size());
-        for (InstalledAppInfo info : installedAppInfos) {
-            try {
-                sDexOverrideMap.put(new File(info.getApkPath()).getCanonicalPath(), info);
-            } catch (IOException e) {
-                e.printStackTrace();
+        List<InstalledAppInfo> installedApps = VirtualCore.get().getInstalledApps(0);
+        for (InstalledAppInfo info : installedApps) {
+            if (info.appMode != InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
+                String originDexPath = getCanonicalPath(info.getApkPath());
+                DexOverride override = new DexOverride(originDexPath, null, null, info.getOdexPath());
+                sDexOverrides.add(override);
+            }
+        }
+        for (String framework : StubManifest.REQUIRED_FRAMEWORK) {
+            File zipFile = VEnvironment.getFrameworkFile32(framework);
+            File odexFile = VEnvironment.getOptimizedFrameworkFile32(framework);
+            if (zipFile.exists() && odexFile.exists()) {
+                String systemFilePath = "/system/framework/" + framework + ".jar";
+                sDexOverrides.add(new DexOverride(systemFilePath, zipFile.getPath(), null, odexFile.getPath()));
             }
         }
     }
@@ -160,6 +165,9 @@ public class NativeEngine {
     }
 
     public static void enableIORedirect() {
+        if (sEnabled) {
+            return;
+        }
         try {
             String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().nativeLibraryDir,
                     "lib" + LIB_NAME + ".so").getAbsolutePath();
@@ -167,13 +175,15 @@ public class NativeEngine {
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
+        sEnabled = true;
     }
 
     public static void launchEngine() {
         if (sFlag) {
             return;
         }
-        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission, NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare,
+        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission,
+                NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare,
                 NativeMethods.gMediaRecorderNativeSetup, NativeMethods.gAudioRecordNativeSetup};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType, NativeMethods.gAudioRecordMethodType);
@@ -181,6 +191,20 @@ public class NativeEngine {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
         sFlag = true;
+    }
+
+    public static void bypassHiddenAPIEnforcementPolicyIfNeeded() {
+        if (sBypassedP) {
+            return;
+        }
+        if (BuildCompat.isPie()) {
+            try {
+                nativeBypassHiddenAPIEnforcementPolicy();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        sBypassedP = true;
     }
 
     public static boolean onKillProcess(int pid, int signal) {
@@ -192,32 +216,58 @@ public class NativeEngine {
     }
 
     public static int onGetCallingUid(int originUid) {
+        if (!VClient.get().isAppRunning()) {
+            return originUid;
+        }
         int callingPid = Binder.getCallingPid();
-        if (callingPid == VirtualCore.get().getSystemPid()) {
-            return Process.SYSTEM_UID;
-        }else if(callingPid == Process.myPid()){
+        if (callingPid == Process.myPid()) {
             return VClient.get().getVUid();
         }
-        //fix:getCallingUid
-        return VClient.get().getVCallingUid();
+        return VActivityManager.get().getUidByPid(callingPid);
+    }
+
+    private static DexOverride findDexOverride(String originDexPath) {
+        for (DexOverride dexOverride : sDexOverrides) {
+            if (dexOverride.originDexPath.equals(originDexPath)) {
+                return dexOverride;
+            }
+        }
+        return null;
     }
 
     public static void onOpenDexFileNative(String[] params) {
-        String dexOrJarPath = params[0];
-        String outputPath = params[1];
-        try {
-            String canonical = new File(dexOrJarPath).getCanonicalPath();
-            InstalledAppInfo info = sDexOverrideMap.get(canonical);
-            if (info != null && !info.notCopyApk) {
-                outputPath = info.getOdexFile().getPath();
-                params[1] = outputPath;
+        String dexPath = params[0];
+        String odexPath = params[1];
+        if (dexPath != null) {
+            String dexCanonicalPath = getCanonicalPath(dexPath);
+            DexOverride override = findDexOverride(dexCanonicalPath);
+            if (override != null) {
+                if (override.newDexPath != null) {
+                    params[0] = override.newDexPath;
+                }
+                odexPath = override.newDexPath;
+                if (override.originOdexPath != null) {
+                    String odexCanonicalPath = getCanonicalPath(odexPath);
+                    if (odexCanonicalPath.equals(override.originOdexPath)) {
+                        params[1] = override.newOdexPath;
+                    }
+                } else {
+                    params[1] = override.newOdexPath;
+                }
             }
+        }
+        VLog.i(TAG, "OpenDexFileNative(\"%s\", \"%s\")", dexPath, odexPath);
+    }
+
+    private static final String getCanonicalPath(String path) {
+        File file = new File(path);
+        try {
+            return file.getCanonicalPath();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        VLog.i(TAG, "OpenDexFileNative(\"%s\", \"%s\")", dexOrJarPath, outputPath);
+        return file.getAbsolutePath();
     }
-
 
     private static native void nativeLaunchEngine(Object[] method, String hostPackageName, boolean isArt, int apiLevel, int cameraMethodType, int audioRecordMethodType);
 
@@ -225,7 +275,7 @@ public class NativeEngine {
 
     private static native String nativeReverseRedirectedPath(String redirectedPath);
 
-    private static native String nativeGetRedirectedPath(String orgPath);
+    private static native String nativeGetRedirectedPath(String origPath);
 
     private static native void nativeIORedirect(String origPath, String newPath);
 
@@ -245,7 +295,12 @@ public class NativeEngine {
 
     private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
 
+    private static native void nativeBypassHiddenAPIEnforcementPolicy();
+
     public static int onGetUid(int uid) {
+        if (!VClient.get().isAppRunning()) {
+            return uid;
+        }
         return VClient.get().getBaseVUid();
     }
 }

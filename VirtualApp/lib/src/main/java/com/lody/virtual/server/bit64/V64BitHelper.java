@@ -176,7 +176,6 @@ public class V64BitHelper extends ContentProvider {
                 VEnvironment.chmodPackageDictionary(targetPath);
                 File libDir = VEnvironment.getAppLibDirectory64(packageName);
                 NativeLibraryHelperCompat.copyNativeBinaries(targetPath, libDir);
-                VEnvironment.linkUserAppLib(0, packageName);
                 if (VirtualRuntime.isArt()) {
                     try {
                         ArtDexOptimizer.interpretDex2Oat(targetPath.getPath(), VEnvironment.getOdexFile64(packageName).getPath());
@@ -200,7 +199,7 @@ public class V64BitHelper extends ContentProvider {
         return res;
     }
 
-    public static boolean is64BitProcessStarted() {
+    public static boolean is64BitEngineStarted() {
         try {
             new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName("@").call();
             return true;

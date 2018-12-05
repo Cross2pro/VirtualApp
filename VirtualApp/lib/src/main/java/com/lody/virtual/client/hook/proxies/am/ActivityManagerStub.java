@@ -1,7 +1,7 @@
 package com.lody.virtual.client.hook.proxies.am;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
+import android.os.IBinder;
 import android.os.IInterface;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -11,9 +11,9 @@ import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.lody.virtual.client.hook.base.ReplaceLastUidMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BuildCompat;
 
 import java.lang.reflect.Method;
@@ -29,7 +29,6 @@ import mirror.android.util.Singleton;
  * @see IActivityManager
  * @see android.app.ActivityManager
  */
-
 @Inject(MethodProxies.class)
 public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationStub<IInterface>> {
 
@@ -61,13 +60,36 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
         super.onBindMethods();
         if (VirtualCore.get().isVAppProcess()) {
             addMethodProxy(new ReplaceLastPkgMethodProxy("getAppStartMode"));
-            addMethodProxy(new ReplaceLastUidMethodProxy("checkPermissionWithToken"));
             addMethodProxy(new ResultStaticMethodProxy("updateConfiguration", 0));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("setAppLockedVerifying"));
-            addMethodProxy(new StaticMethodProxy("checkUriPermission") {
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("reportJunkFromApp"));
+            addMethodProxy(new StaticMethodProxy("activityResumed") {
                 @Override
-                public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
-                    return PackageManager.PERMISSION_GRANTED;
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    IBinder token = (IBinder) args[0];
+                    VActivityManager.get().onActivityResumed(token);
+                    return super.call(who, method, args);
+                }
+            });
+            addMethodProxy(new StaticMethodProxy("activityDestroyed") {
+                @Override
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    IBinder token = (IBinder) args[0];
+                    VActivityManager.get().onActivityDestroy(token);
+                    return super.call(who, method, args);
+                }
+            });
+            addMethodProxy(new StaticMethodProxy("finishActivity") {
+                @Override
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    IBinder token = (IBinder) args[0];
+                    VActivityManager.get().onFinishActivity(token);
+                    return super.call(who, method, args);
+                }
+
+                @Override
+                public boolean isEnable() {
+                    return isAppProcess();
                 }
             });
         }

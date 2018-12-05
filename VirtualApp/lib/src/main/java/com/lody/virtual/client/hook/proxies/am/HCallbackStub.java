@@ -1,25 +1,31 @@
 package com.lody.virtual.client.hook.proxies.am;
 
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.RemoteException;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.AvoidRecursive;
-import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
+import java.util.List;
+
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
+import mirror.android.app.ClientTransactionHandler;
 import mirror.android.app.IActivityManager;
+import mirror.android.app.servertransaction.ActivityLifecycleItem;
+import mirror.android.app.servertransaction.ClientTransaction;
+import mirror.android.app.servertransaction.LaunchActivityItem;
 
 /**
  * @author Lody
@@ -28,10 +34,14 @@ import mirror.android.app.IActivityManager;
 public class HCallbackStub implements Handler.Callback, IInjector {
 
 
-    private static final int LAUNCH_ACTIVITY = ActivityThread.H.LAUNCH_ACTIVITY.get();
-    private static final int CREATE_SERVICE = ActivityThread.H.CREATE_SERVICE.get();
-    private static final int SCHEDULE_CRASH =
-            ActivityThread.H.SCHEDULE_CRASH != null ? ActivityThread.H.SCHEDULE_CRASH.get() : -1;
+    private static final int LAUNCH_ACTIVITY;
+    private static final int EXECUTE_TRANSACTION;
+    private static final int SCHEDULE_CRASH = ActivityThread.H.SCHEDULE_CRASH.get();
+
+    static {
+        LAUNCH_ACTIVITY = BuildCompat.isPie() ? -1 : ActivityThread.H.LAUNCH_ACTIVITY.get();
+        EXECUTE_TRANSACTION = BuildCompat.isPie() ? ActivityThread.H.EXECUTE_TRANSACTION.get() : -1;
+    }
 
     private static final String TAG = HCallbackStub.class.getSimpleName();
     private static final HCallbackStub sCallback = new HCallbackStub();
@@ -67,9 +77,17 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         if (mAvoidRecurisve.beginCall()) {
             try {
                 if (LAUNCH_ACTIVITY == msg.what) {
-                    if (!handleLaunchActivity(msg)) {
+                    if (!handleLaunchActivity(msg, msg.obj)) {
                         return true;
                     }
+                } else if (EXECUTE_TRANSACTION == msg.what) {
+                    if (!handleExecuteTransaction(msg)) {
+                        return true;
+                    }
+                } else if (SCHEDULE_CRASH == msg.what) {
+                    String crashReason = (String) msg.obj;
+                    new RemoteException(crashReason).printStackTrace();
+                    return false;
                 }
                 if (otherCallback != null) {
                     return otherCallback.handleMessage(msg);
@@ -81,16 +99,47 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         return false;
     }
 
-    private boolean handleLaunchActivity(Message msg) {
-        Object r = msg.obj;
-        Intent stubIntent = ActivityThread.ActivityClientRecord.intent.get(r);
+    private boolean handleExecuteTransaction(Message msg) {
+        Object transaction = msg.obj;
+        Object lifecycleStateRequest = ClientTransaction.mLifecycleStateRequest.get(transaction);
+        int targetState = ActivityLifecycleItem.UNDEFINED;
+        if (lifecycleStateRequest != null) {
+            targetState = ActivityLifecycleItem.getTargetState.call(lifecycleStateRequest);
+        }
+        IBinder token = ClientTransaction.mActivityToken.get(transaction);
+        Object r = ClientTransactionHandler.getActivityClient.call(VirtualCore.mainThread(), token);
+        if (r == null) {
+            List<Object> activityCallbacks = ClientTransaction.mActivityCallbacks.get(transaction);
+            if (activityCallbacks == null || activityCallbacks.isEmpty()) {
+                return true;
+            }
+            Object item = activityCallbacks.get(0);
+            if (item.getClass() != LaunchActivityItem.TYPE) {
+                return true;
+            }
+            return handleLaunchActivity(msg, item);
+        }
+        return true;
+    }
+
+    private boolean handleLaunchActivity(Message msg, Object r) {
+        Intent stubIntent;
+        if (BuildCompat.isPie()) {
+            stubIntent = LaunchActivityItem.mIntent.get(r);
+        } else {
+            stubIntent = ActivityThread.ActivityClientRecord.intent.get(r);
+        }
         StubActivityRecord saveInstance = new StubActivityRecord(stubIntent);
         if (saveInstance.intent == null) {
             return true;
         }
         Intent intent = saveInstance.intent;
-        ComponentName caller = saveInstance.caller;
-        IBinder token = ActivityThread.ActivityClientRecord.token.get(r);
+        IBinder token;
+        if (BuildCompat.isPie()) {
+            token = ClientTransaction.mActivityToken.get(msg.obj);
+        } else {
+            token = ActivityThread.ActivityClientRecord.token.get(r);
+        }
         ActivityInfo info = saveInstance.info;
         if (info == null) {
             return true;
@@ -104,7 +153,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
             getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
         }
-        if (!VClient.get().isBound()) {
+        if (!VClient.get().isAppRunning()) {
             VClient.get().bindApplication(info.packageName, info.processName);
             getH().sendMessageAtFrontOfQueue(Message.obtain(msg));
             return false;
@@ -114,7 +163,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 token,
                 false
         );
-        if(info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+        if (info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
             try {
                 IActivityManager.setRequestedOrientation.call(ActivityManagerNative.getDefault.call(),
                         token, info.screenOrientation);
@@ -122,16 +171,21 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 e.printStackTrace();
             }
         }
-        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
+        VActivityManager.get().onActivityCreate(saveInstance.virtualToken, token, taskId);
         ClassLoader appClassLoader = VClient.get().getClassLoader(info.applicationInfo);
         intent.setExtrasClassLoader(appClassLoader);
-        ActivityThread.ActivityClientRecord.intent.set(r, intent);
-        ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
+        if (BuildCompat.isPie()) {
+            LaunchActivityItem.mIntent.set(r, intent);
+            LaunchActivityItem.mInfo.set(r, info);
+        } else {
+            ActivityThread.ActivityClientRecord.intent.set(r, intent);
+            ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
+        }
         return true;
     }
 
     @Override
-    public void inject() throws Throwable {
+    public void inject() {
         otherCallback = getHCallback();
         mirror.android.os.Handler.mCallback.set(getH(), this);
     }

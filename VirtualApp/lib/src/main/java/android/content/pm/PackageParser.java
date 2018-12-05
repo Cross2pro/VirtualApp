@@ -1,9 +1,13 @@
 package android.content.pm;
 
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Parcelable;
 
+import java.lang.annotation.Target;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 
 /**
@@ -12,6 +16,40 @@ import java.util.ArrayList;
 public class PackageParser {
 
     public static final int PARSE_IS_SYSTEM = 1;
+
+    // API 28 START
+    public static final int PARSE_IS_SYSTEM_DIR = 1 << 4;
+    public static final int PARSE_COLLECT_CERTIFICATES = 1 << 5;
+    public static final int PARSE_ENFORCE_CODE = 1 << 6;
+    // API 28 END
+
+
+    @TargetApi(28)
+    public static final class SigningDetails {
+        public Signature[] signatures;
+
+        public static final SigningDetails UNKNOWN = null;
+    }
+
+    @TargetApi(28)
+    public static class Builder {
+        private Signature[] mSignatures;
+
+        public Builder() {
+        }
+
+        public Builder setSignatures(Signature[] signatures) {
+            mSignatures = signatures;
+            return this;
+        }
+
+        public SigningDetails build()
+                throws CertificateException {
+            return new SigningDetails();
+        }
+
+
+    }
 
     public static class IntentInfo extends IntentFilter {
         public boolean hasDefault;
@@ -47,6 +85,7 @@ public class PackageParser {
         public final ArrayList<PermissionGroup> permissionGroups = new ArrayList<PermissionGroup>(0);
         public final ArrayList<String> requestedPermissions = new ArrayList<String>();
         public Signature[] mSignatures;
+        public SigningDetails mSigningDetails;
         public Bundle mAppMetaData;
         public Object mExtras;
         public String packageName;

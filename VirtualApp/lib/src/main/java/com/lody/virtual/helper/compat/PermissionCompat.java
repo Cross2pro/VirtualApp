@@ -62,34 +62,33 @@ public class PermissionCompat {
         }
     }};
 
-    public static String[] findDangrousPermissions(List<String> pers) {
-        if (pers == null) {
+    public static String[] findDangerousPermissions(List<String> permissions) {
+        if (permissions == null) {
             return null;
         }
         List<String> list = new ArrayList<>();
-        for (String per : pers) {
+        for (String per : permissions) {
             if (DANGEROUS_PERMISSION.contains(per)) {
                 list.add(per);
             }
         }
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
-    public static String[] findDangrousPermissions(String[] pers) {
-        if (pers == null) {
+    public static String[] findDangrousPermissions(String[] permissions) {
+        if (permissions == null) {
             return null;
         }
         List<String> list = new ArrayList<>();
-        for (String per : pers) {
-            if (DANGEROUS_PERMISSION.contains(per)) {
-                list.add(per);
+        for (String permission : permissions) {
+            if (DANGEROUS_PERMISSION.contains(permission)) {
+                list.add(permission);
             }
         }
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
-    public static boolean needCheckPermission(int targetSdkVersion) {
-        //
+    public static boolean isCheckPermissionRequired(int targetSdkVersion) {
         if (Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M
                 || VirtualCore.get().getTargetSdkVersion() < android.os.Build.VERSION_CODES.M) {
             return false;
@@ -109,7 +108,7 @@ public class PermissionCompat {
         return true;
     }
 
-    public static boolean isRequestGranted(String[] permissions, int[] grantResults) {
+    public static boolean isRequestGranted(int[] grantResults) {
         boolean allGranted = true;
         for (int grantResult : grantResults) {
             if (grantResult == PackageManager.PERMISSION_DENIED) {
@@ -121,22 +120,20 @@ public class PermissionCompat {
     }
 
     public interface CallBack {
-        String onResult(int requestCode, String[] permissions, int[] grantResults);
+        boolean onResult(int requestCode, String[] permissions, int[] grantResults);
     }
 
-    public static void startRequestPermissionsLocked(Context context, String packageName,
-                                                     boolean is64bit, String[] permissions,
-                                                     final CallBack callBack) {
-        RequestPermissionsActivity.request(context,
-                packageName, is64bit, permissions, new IRequestPermissionsResult.Stub() {
-                    @Override
-                    public String onResult(int requestCode, String[] permissions, int[] grantResults) {
-                        if (callBack != null) {
-                            return callBack.onResult(requestCode, permissions, grantResults);
-                        }
-                        return null;
-                    }
-                });
+    public static void startRequestPermissions(Context context, boolean is64bit,
+                                               String[] permissions, final CallBack callBack) {
+        RequestPermissionsActivity.request(context, is64bit, permissions, new IRequestPermissionsResult.Stub() {
+            @Override
+            public boolean onResult(int requestCode, String[] permissions, int[] grantResults) {
+                if (callBack != null) {
+                    return callBack.onResult(requestCode, permissions, grantResults);
+                }
+                return false;
+            }
+        });
 
     }
 }

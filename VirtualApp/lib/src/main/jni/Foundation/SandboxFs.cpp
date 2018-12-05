@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "SandboxFs.h"
 #include "Path.h"
-#include<setjmp.h>
 
 #define FORCE_CLOSE_NORMALIZE_PATH
 

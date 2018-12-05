@@ -22,7 +22,9 @@ public class BinderDelegateService extends IBinderDelegateService.Stub {
     private interface ProxyBinderFactory {
         IBinder create(Binder binder);
     }
+
     private static final Map<String, ProxyBinderFactory> mFactories = new HashMap<>();
+
     static {
         mFactories.put("android.accounts.IAccountAuthenticator", new ProxyBinderFactory() {
             @Override
@@ -45,7 +47,7 @@ public class BinderDelegateService extends IBinderDelegateService.Stub {
     }
 
     @Override
-    public ComponentName getComponent() throws RemoteException {
+    public ComponentName getComponent() {
         return name;
     }
 

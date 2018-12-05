@@ -10,19 +10,20 @@ import com.lody.virtual.client.hook.annotations.SkipInject;
 import com.lody.virtual.client.interfaces.IInjector;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
  * @author Lody
- *         <p>
- *         This class is responsible with:
- *         - Instantiating a {@link MethodInvocationStub.HookInvocationHandler} on {@link #getInvocationStub()} ()}
- *         - Install a bunch of {@link MethodProxy}s, either with a @{@link Inject} annotation or manually
- *         calling {@link #addMethodProxy(MethodProxy)} from {@link #onBindMethods()}
- *         - Install the hooked object on the Runtime via {@link #inject()}
- *         <p>
- *         All {@link MethodInvocationProxy}s (plus a couple of other @{@link IInjector}s are installed by
- *         {@link InvocationStubManager}
+ * <p>
+ * This class is responsible with:
+ * - Instantiating a {@link MethodInvocationStub.HookInvocationHandler} on {@link #getInvocationStub()} ()}
+ * - Install a bunch of {@link MethodProxy}s, either with a @{@link Inject} annotation or manually
+ * calling {@link #addMethodProxy(MethodProxy)} from {@link #onBindMethods()}
+ * - Install the hooked object on the Runtime via {@link #inject()}
+ * <p>
+ * All {@link MethodInvocationProxy}s (plus a couple of other @{@link IInjector}s are installed by
+ * {@link InvocationStubManager}
  * @see Inject
  */
 public abstract class MethodInvocationProxy<T extends MethodInvocationStub> implements IInjector {
@@ -57,7 +58,31 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
                     addMethodProxy(innerClass);
                 }
             }
+            for (Method method : proxiesClass.getMethods()) {
+                if (!Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+                if (method.getAnnotation(SkipInject.class) != null) {
+                    continue;
+                }
+                addMethodProxy(new DirectCallMethodProxy(method));
 
+            }
+        }
+    }
+
+    private static final class DirectCallMethodProxy extends StaticMethodProxy {
+
+        private Method directCallMethod;
+
+        public DirectCallMethodProxy(Method method) {
+            super(method.getName());
+            this.directCallMethod = method;
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            return directCallMethod.invoke(null, who, method, args);
         }
     }
 
@@ -83,7 +108,7 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
         return mInvocationStub.addMethodProxy(methodProxy);
     }
 
-    public void setDefaultMethodProxy(MethodProxy methodProxy){
+    public void setDefaultMethodProxy(MethodProxy methodProxy) {
         mInvocationStub.setDefaultMethodProxy(methodProxy);
     }
 

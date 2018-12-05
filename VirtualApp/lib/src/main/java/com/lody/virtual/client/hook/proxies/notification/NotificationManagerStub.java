@@ -28,6 +28,7 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
     protected void onBindMethods() {
         super.onBindMethods();
         addMethodProxy(new ReplaceCallingPkgMethodProxy("enqueueToast"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("enqueueToastEx"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("cancelToast"));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             addMethodProxy(new ReplaceCallingPkgMethodProxy("removeAutomaticZenRules"));

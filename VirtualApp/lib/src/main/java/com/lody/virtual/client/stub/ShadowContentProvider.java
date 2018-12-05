@@ -12,7 +12,7 @@ import android.os.Process;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.BundleCompat;
-import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.ClientConfig;
 
 /**
  * @author Lody
@@ -34,15 +34,11 @@ public class ShadowContentProvider extends ContentProvider {
 	}
 
 	private Bundle initProcess(Bundle extras) {
-		ConditionVariable lock = VirtualCore.get().getInitLock();
-		if (lock != null) {
-			lock.block();
-		}
-		IBinder token = BundleCompat.getBinder(extras,"_VA_|_binder_");
-		int vuid = extras.getInt("_VA_|_vuid_");
-		int vpid = extras.getInt("_VA_|_vpid_");
+		VirtualCore.get().waitStartup();
+		extras.setClassLoader(ClientConfig.class.getClassLoader());
+        ClientConfig clientConfig = extras.getParcelable("_VA_|_client_config_");
 		VClient client = VClient.get();
-		client.initProcess(token, vuid, vpid);
+		client.initProcess(clientConfig);
 		Bundle res = new Bundle();
 		BundleCompat.putBinder(res, "_VA_|_client_", client.asBinder());
 		res.putInt("_VA_|_pid_", Process.myPid());

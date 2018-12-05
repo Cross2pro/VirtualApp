@@ -9,7 +9,6 @@ import com.lody.virtual.client.core.AppCallback;
 
 
 public class MyComponentDelegate implements AppCallback {
-    Activity mProcessTopActivity;
 
     @Override
     public void beforeApplicationCreate(Application application) {
@@ -17,7 +16,6 @@ public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void afterApplicationCreate(Application application) {
-        //TODO: listen activity lifecycle
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -25,19 +23,14 @@ public class MyComponentDelegate implements AppCallback {
 
             @Override
             public void onActivityStarted(Activity activity) {
-                //fix crash of youtube#sound keys move to ActivityFixer
             }
 
             @Override
             public void onActivityResumed(Activity activity) {
-                mProcessTopActivity = activity;
             }
 
             @Override
             public void onActivityPaused(Activity activity) {
-                if (mProcessTopActivity == activity) {
-                    mProcessTopActivity = null;
-                }
             }
 
             @Override

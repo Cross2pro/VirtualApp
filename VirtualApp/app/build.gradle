@@ -8,17 +8,17 @@ android {
         applicationId "io.virtualapp"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 180080611
-        versionName "2.2.2"
+        versionCode 180080814
+        versionName "2.2.3"
         multiDexEnabled false
         vectorDrawables.useSupportLibrary = true
-        buildConfigField 'String','ARM64_PACKAGE_NAME','"io.virtualapp.addon.arm64"'
+        buildConfigField 'String','PACKAGE_NAME_ARM64','"io.virtualapp.addon.arm64"'
         manifestPlaceholders = [
             PACKAGE_NAME_32BIT:'io.virtualapp',
-            ARM64_PACKAGE_NAME:'io.virtualapp.addon.arm64'
+            PACKAGE_NAME_ARM64:'io.virtualapp.addon.arm64'
         ]
         ndk {
-            abiFilters "armeabi", "armeabi-v7a", "x86", "arm64-v8a"
+            abiFilters "armeabi", "armeabi-v7a"
         }
     }
     sourceSets {

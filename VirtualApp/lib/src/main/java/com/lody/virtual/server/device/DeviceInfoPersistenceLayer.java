@@ -5,7 +5,7 @@ import android.os.Parcel;
 import com.lody.virtual.helper.PersistenceLayer;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.os.VEnvironment;
-import com.lody.virtual.remote.VDeviceInfo;
+import com.lody.virtual.remote.VDeviceConfig;
 
 /**
  * @author Lody
@@ -15,14 +15,14 @@ public class DeviceInfoPersistenceLayer extends PersistenceLayer {
 
     private VDeviceManagerService mService;
 
-    public DeviceInfoPersistenceLayer(VDeviceManagerService service) {
+    DeviceInfoPersistenceLayer(VDeviceManagerService service) {
         super(VEnvironment.getDeviceInfoFile());
         this.mService = service;
     }
 
     @Override
     public int getCurrentVersion() {
-        return VDeviceInfo.VERSION;
+        return VDeviceConfig.VERSION;
     }
 
     @Override
@@ -37,12 +37,12 @@ public class DeviceInfoPersistenceLayer extends PersistenceLayer {
 
     @Override
     public void writePersistenceData(Parcel p) {
-        SparseArray<VDeviceInfo> infos = mService.getDeviceInfos();
+        SparseArray<VDeviceConfig> infos = mService.mDeviceConfigs;
         int size = infos.size();
         p.writeInt(size);
         for (int i = 0; i < size; i++) {
             int userId = infos.keyAt(i);
-            VDeviceInfo info = infos.valueAt(i);
+            VDeviceConfig info = infos.valueAt(i);
             p.writeInt(userId);
             info.writeToParcel(p, 0);
         }
@@ -50,19 +50,14 @@ public class DeviceInfoPersistenceLayer extends PersistenceLayer {
 
     @Override
     public void readPersistenceData(Parcel p, int version) {
-        SparseArray<VDeviceInfo> infos = mService.getDeviceInfos();
+        SparseArray<VDeviceConfig> infos = mService.mDeviceConfigs;
         infos.clear();
         int size = p.readInt();
         while (size-- > 0) {
             int userId = p.readInt();
-            VDeviceInfo info = new VDeviceInfo(p, version);
+            VDeviceConfig info = new VDeviceConfig(p);
             infos.put(userId, info);
         }
-    }
-
-    @Override
-    public boolean onVersionConflict(int fileVersion, int currentVersion) {
-        return true;
     }
 
     @Override

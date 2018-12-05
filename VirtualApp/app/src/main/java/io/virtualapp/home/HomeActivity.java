@@ -38,6 +38,7 @@ import android.widget.Toast;
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -137,8 +138,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
      * 检测悬浮窗权限
      */
     @TargetApi(Build.VERSION_CODES.M)
-    private void checkOverlays(){
-        if(!Settings.canDrawOverlays(this.getApplicationContext())){
+    private void checkOverlays() {
+        if (!Settings.canDrawOverlays(this.getApplicationContext())) {
             //
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:" + getPackageName()));
@@ -222,6 +223,10 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                         startActivity(intent);
                     }).show();
             return false;
+        });
+        menu.add(R.string.kill_all_app).setIcon(R.drawable.ic_speed_up).setOnMenuItemClickListener(item -> {
+            VActivityManager.get().killAllApps();
+            return true;
         });
         menu.add(R.string.menu_gms).setIcon(R.drawable.ic_google).setOnMenuItemClickListener(item -> {
             askInstallGms();
@@ -450,12 +455,20 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK && data != null) {
-            List<AppInfoLite> appList = data.getParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST);
-            if (appList != null) {
-                for (AppInfoLite info : appList) {
-                    mPresenter.addApp(info);
+        if (requestCode == VCommends.REQUEST_SELECT_APP) {
+            if (resultCode == RESULT_OK && data != null) {
+                List<AppInfoLite> appList = data.getParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST);
+                if (appList != null) {
+                    for (AppInfoLite info : appList) {
+                        mPresenter.addApp(info);
+                    }
                 }
+            }
+        } else if (requestCode == VCommends.REQUEST_PERMISSION) {
+            if (resultCode == RESULT_OK) {
+                String packageName = data.getStringExtra("pkg");
+                int userId = data.getIntExtra("user_id", -1);
+                VActivityManager.get().launchApp(userId, packageName);
             }
         }
     }

@@ -1,11 +1,8 @@
 package com.lody.virtual.server.pm;
 
 import android.annotation.TargetApi;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
@@ -16,25 +13,21 @@ import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
-import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.compat.PermissionCompat;
 import com.lody.virtual.helper.utils.SignaturesUtils;
 import com.lody.virtual.helper.utils.Singleton;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.VParceledListSlice;
-import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -107,7 +100,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
     private final HashMap<String, VPackage.ProviderComponent> mProvidersByAuthority = new HashMap<>();
 
     private final Map<String, VPackage> mPackages = PackageCacheManager.PACKAGE_CACHE;
-    private final Map<String, String[]> mDangrousPermissions = new HashMap<>();
+    private final Map<String, String[]> mDangerousPermissions = new HashMap<>();
 
 
     public VPackageManagerService() {
@@ -118,71 +111,12 @@ public class VPackageManagerService extends IPackageManager.Stub {
 
     public static void systemReady() {
         new VUserManagerService(VirtualCore.get().getContext(), get(), new char[0], get().mPackages);
-        get().registerPackageMonitor();
     }
 
     public static VPackageManagerService get() {
         return gService.get();
     }
 
-    private void registerPackageMonitor() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
-        filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
-        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
-        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-        filter.addDataScheme("package");
-        VirtualCore.get().getContext().registerReceiver(mPackageMonitor, filter);
-    }
-
-    private boolean checkUpdateForNotCopyApk() {
-        return VirtualCore.getConfig().autoCheckUpdateForNotCopyApk();
-    }
-
-    private BroadcastReceiver mPackageMonitor = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent != null && intent.getData() != null) {
-                String pkg = intent.getData().getSchemeSpecificPart();
-                InstalledAppInfo installedAppInfo = VAppManagerService.get().getInstalledAppInfo(pkg, 0);
-                if (installedAppInfo == null) {
-                    return;
-                }
-                VActivityManagerService.get().killAppByPkg(pkg, VUserHandle.USER_ALL);
-                if (Intent.ACTION_PACKAGE_REMOVED.equals(intent.getAction())) {
-                    if (checkUpdateForNotCopyApk() && installedAppInfo.notCopyApk) {
-                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg);
-                        if (applicationInfo == null) {
-                            VAppManagerService.get().uninstallPackage(pkg);
-                        }
-                    }
-                } else if (Intent.ACTION_PACKAGE_ADDED.equals(intent.getAction())) {
-                    //ignore
-                } else if (Intent.ACTION_PACKAGE_REPLACED.equals(intent.getAction())) {
-                    if (checkUpdateForNotCopyApk() && installedAppInfo.notCopyApk) {
-                        VirtualCore.get().getContext().sendBroadcast(
-                                new Intent(Constants.ACTION_PACKAGE_WILL_ADDED,
-                                        Uri.parse("package:" + pkg)));
-                        ApplicationInfo applicationInfo = getOutSideApplicationInfo(pkg);
-                        if (applicationInfo != null) {
-                            int flag = InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE;
-                            //发送广播，显示升级对话框
-                            VAppManagerService.get().installPackage(applicationInfo.publicSourceDir, flag, true);
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    public ApplicationInfo getOutSideApplicationInfo(String pkg) {
-        try {
-            return VirtualCore.get().getUnHookPackageManager().getApplicationInfo(pkg, 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            // ignore
-        }
-        return null;
-    }
 
     void analyzePackageLocked(VPackage pkg) {
         int N = pkg.activities.size();
@@ -233,7 +167,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
         N = pkg.permissions.size();
         for (int i = 0; i < N; i++) {
             VPackage.PermissionComponent permission = pkg.permissions.get(i);
-            mPermissions.put(permission.className, permission);
+            mPermissions.put(permission.info.name, permission);
         }
         N = pkg.permissionGroups.size();
         for (int i = 0; i < N; i++) {
@@ -241,15 +175,15 @@ public class VPackageManagerService extends IPackageManager.Stub {
             mPermissionGroups.put(group.className, group);
         }
         //d permissions
-        synchronized (mDangrousPermissions) {
-            mDangrousPermissions.put(pkg.packageName, PermissionCompat.findDangrousPermissions(pkg.requestedPermissions));
+        synchronized (mDangerousPermissions) {
+            mDangerousPermissions.put(pkg.packageName, PermissionCompat.findDangerousPermissions(pkg.requestedPermissions));
         }
     }
 
     @Override
     public String[] getDangrousPermissions(String packageName) {
-        synchronized (mDangrousPermissions) {
-            return mDangrousPermissions.get(packageName);
+        synchronized (mDangerousPermissions) {
+            return mDangerousPermissions.get(packageName);
         }
     }
 
@@ -680,12 +614,13 @@ public class VPackageManagerService extends IPackageManager.Stub {
         ArrayList<ProviderInfo> finalList = new ArrayList<>(3);
         // reader
         synchronized (mPackages) {
-            for (VPackage.ProviderComponent p : mProvidersByComponent.values()) {
+            for (VPackage.ProviderComponent p : mProvidersByAuthority.values()) {
                 if (!isEnabledLPr(p.info, flags, userId)) {
                     continue;
                 }
                 PackageSetting ps = (PackageSetting) p.owner.mExtras;
-                if (processName == null || ps.appId == VUserHandle.getAppId(vuid) && p.info.processName.equals(processName)) {
+                if (processName == null
+                        || (ps.appId == VUserHandle.getAppId(vuid) && p.info.processName.equals(processName))) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(p, flags, ps.readUserState(userId), userId);
                     finalList.add(providerInfo);
                 }
@@ -726,7 +661,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
         synchronized (mPackages) {
             for (VPackage p : mPackages.values()) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
-                ApplicationInfo info = PackageParserEx.generateApplicationInfoOut(p, flags,
+                ApplicationInfo info = PackageParserEx.generateApplicationInfo(p, flags,
                         ps.readUserState(userId), userId);
                 if (info != null) {
                     list.add(info);
@@ -805,7 +740,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             VPackage p = mPackages.get(packageName);
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
-                return PackageParserEx.generateApplicationInfoOut(p, flags, ps.readUserState(userId),
+                return PackageParserEx.generateApplicationInfo(p, flags, ps.readUserState(userId),
                         userId);
             }
         }
@@ -823,6 +758,10 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 if (VUserHandle.getUid(userId, settings.appId) == uid) {
                     pkgList.add(p.packageName);
                 }
+            }
+            if (pkgList.isEmpty()) {
+                VLog.e(TAG, "getPackagesForUid return an empty result.");
+                return null;
             }
             return pkgList.toArray(new String[0]);
         }
@@ -936,7 +875,11 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 || "android.permission.INTERACT_ACROSS_USERS_FULL".equals(permission)) {
             return PackageManager.PERMISSION_DENIED;
         }
-        return VirtualCore.get().getPackageManager().checkPermission(permission, VirtualCore.get().getHostPkg());
+        PermissionInfo permissionInfo = getPermissionInfo(permission, 0);
+        if (permissionInfo != null) {
+            return PackageManager.PERMISSION_GRANTED;
+        }
+        return VirtualCore.getPM().checkPermission(permission, VirtualCore.get().getHostPkg());
     }
 
     @Override
@@ -964,6 +907,17 @@ public class VPackageManagerService extends IPackageManager.Stub {
             }
         }
         return SignaturesUtils.compareSignatures(pkgOne.signatures, pkgTwo.signatures);
+    }
+
+    public int checkUidPermission(String permission, int uid) {
+        if (permission.equals("android.permission.ACCESS_COARSE_LOCATION")) {
+            return PackageManager.PERMISSION_DENIED;
+        }
+        PermissionInfo info = getPermissionInfo(permission, 0);
+        if (info != null) {
+            return PackageManager.PERMISSION_GRANTED;
+        }
+        return VirtualCore.getPM().checkPermission(permission, VirtualCore.get().getHostPkg());
     }
 
     private final class ActivityIntentResolver extends IntentResolver<VPackage.ActivityIntentInfo, ResolveInfo> {

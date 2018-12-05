@@ -20,6 +20,7 @@ import com.lody.virtual.client.hook.annotations.SkipInject;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
 import com.lody.virtual.helper.utils.marks.FakeLocMark;
+import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.remote.vloc.VCell;
 
 import java.lang.reflect.Method;
@@ -42,16 +43,19 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String imei = getDeviceInfo().getDeviceId();
-            if(!TextUtils.isEmpty(imei)){
-                return imei;
+            VDeviceConfig config = getDeviceConfig();
+            if (config.enable) {
+                String imei = config.deviceId;
+                if (!TextUtils.isEmpty(imei)) {
+                    return imei;
+                }
             }
             return super.call(who, method, args);
         }
     }
 
     @FakeDeviceMark("fake device id.")
-    static class GetImeiForSlot extends GetDeviceId{
+    static class GetImeiForSlot extends GetDeviceId {
         @Override
         public String getMethodName() {
             return "getImeiForSlot";
@@ -59,7 +63,7 @@ class MethodProxies {
     }
 
     @FakeDeviceMark("fake device id.")
-    static class GetMeidForSlot extends GetDeviceId{
+    static class GetMeidForSlot extends GetDeviceId {
         @Override
         public String getMethodName() {
             return "getMeidForSlot";

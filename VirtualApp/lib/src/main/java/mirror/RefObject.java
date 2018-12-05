@@ -15,15 +15,19 @@ public class RefObject<T> {
         try {
             return (T) this.field.get(object);
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
 
-    public void set(Object obj, T value) {
+    public boolean set(Object obj, T value) {
         try {
             this.field.set(obj, value);
+            return true;
         } catch (Exception e) {
-            //Ignore
+            e.printStackTrace();
         }
+        return false;
     }
+
 }

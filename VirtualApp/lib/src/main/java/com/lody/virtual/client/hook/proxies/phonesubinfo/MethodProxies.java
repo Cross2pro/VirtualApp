@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.helper.utils.marks.FakeDeviceMark;
+import com.lody.virtual.remote.VDeviceConfig;
 
 import java.lang.reflect.Method;
 
@@ -21,9 +22,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String deviceId = getDeviceInfo().getDeviceId();
-            if (!TextUtils.isEmpty(deviceId)) {
-                return deviceId;
+            VDeviceConfig config = getDeviceConfig();
+            if (config.enable) {
+                String deviceId = config.deviceId;
+                if (!TextUtils.isEmpty(deviceId)) {
+                    return deviceId;
+                }
             }
             return super.call(who, method, args);
         }
@@ -66,9 +70,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            String iccId = getDeviceInfo().getIccId();
-            if (!TextUtils.isEmpty(iccId)) {
-                return iccId;
+            VDeviceConfig config = getDeviceConfig();
+            if (config.enable) {
+                String iccId = getDeviceConfig().iccId;
+                if (!TextUtils.isEmpty(iccId)) {
+                    return iccId;
+                }
             }
             return super.call(who, method, args);
         }

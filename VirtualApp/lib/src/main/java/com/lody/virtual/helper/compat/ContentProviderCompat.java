@@ -18,7 +18,7 @@ public class ContentProviderCompat {
         if (VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             return context.getContentResolver().call(uri, method, arg, extras);
         }
-        ContentProviderClient client = acquireContentProvider(context, uri);
+        ContentProviderClient client = acquireContentProviderClient(context, uri);
         try {
             if (client == null) {
                 throw new IllegalAccessException();

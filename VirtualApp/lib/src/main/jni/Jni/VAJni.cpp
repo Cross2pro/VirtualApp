@@ -2,68 +2,69 @@
 // VirtualApp Native Project
 //
 #include <Foundation/IORelocator.h>
-#include <fb/include/fb/Build.h>
-#include <fb/include/fb/ALog.h>
-#include <fb/include/fb/fbjni.h>
+#include "VAJni.h"
+
 #include <utils/controllerManagerNative.h>
 #include <utils/zJNIEnv.h>
 #include <utils/utils.h>
-#include "VAJni.h"
 
-using namespace facebook::jni;
-
-jclass vskmClass;
-
-static void jni_nativeLaunchEngine(alias_ref<jclass> clazz, JArrayClass<jobject> javaMethods,
+static void jni_nativeLaunchEngine(JNIEnv *env, jclass clazz, jobjectArray javaMethods,
                                    jstring packageName,
-                                   jboolean isArt, jint apiLevel, jint cameraMethodType, jint audioRecordMethodType) {
-    hookAndroidVM(javaMethods, packageName, isArt, apiLevel, cameraMethodType, audioRecordMethodType);
+                                   jboolean isArt, jint apiLevel, jint cameraMethodType,
+                                   jint audioRecordMethodType) {
+    hookAndroidVM(env, javaMethods, packageName, isArt, apiLevel, cameraMethodType,
+                  audioRecordMethodType);
 }
 
 
-static void jni_nativeEnableIORedirect(alias_ref<jclass>, jstring selfSoPath, jint apiLevel,
+static void jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring selfSoPath, jint apiLevel,
                                        jint preview_api_level) {
     ScopeUtfString so_path(selfSoPath);
     IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level);
 }
 
-static void jni_nativeIOWhitelist(alias_ref<jclass> jclazz, jstring _path) {
+static void jni_nativeIOWhitelist(JNIEnv *env, jclass jclazz, jstring _path) {
     ScopeUtfString path(_path);
     IOUniformer::whitelist(path.c_str());
 }
 
-static void jni_nativeIOForbid(alias_ref<jclass> jclazz, jstring _path) {
+static void jni_nativeIOForbid(JNIEnv *env, jclass jclazz, jstring _path) {
     ScopeUtfString path(_path);
     IOUniformer::forbid(path.c_str());
 }
 
-static void jni_nativeIOReadOnly(alias_ref<jclass> jclazz, jstring _path) {
+static void jni_nativeIOReadOnly(JNIEnv *env, jclass jclazz, jstring _path) {
     ScopeUtfString path(_path);
     IOUniformer::readOnly(path.c_str());
 }
 
 
-static void jni_nativeIORedirect(alias_ref<jclass> jclazz, jstring origPath, jstring newPath) {
+static void jni_nativeIORedirect(JNIEnv *env, jclass jclazz, jstring origPath, jstring newPath) {
     ScopeUtfString orig_path(origPath);
     ScopeUtfString new_path(newPath);
     IOUniformer::relocate(orig_path.c_str(), new_path.c_str());
 
 }
 
-static jstring jni_nativeGetRedirectedPath(alias_ref<jclass> jclazz, jstring origPath) {
+static jstring jni_nativeGetRedirectedPath(JNIEnv *env, jclass jclazz, jstring origPath) {
     ScopeUtfString orig_path(origPath);
     const char *redirected_path = IOUniformer::query(orig_path.c_str());
     if (redirected_path != NULL) {
-        return Environment::current()->NewStringUTF(redirected_path);
+        return env->NewStringUTF(redirected_path);
     }
     return NULL;
 }
 
-static jstring jni_nativeReverseRedirectedPath(alias_ref<jclass> jclazz, jstring redirectedPath) {
+static jstring jni_nativeReverseRedirectedPath(JNIEnv *env, jclass jclazz, jstring redirectedPath) {
     ScopeUtfString redirected_path(redirectedPath);
     const char *orig_path = IOUniformer::reverse(redirected_path.c_str());
-    return Environment::current()->NewStringUTF(orig_path);
+    return env->NewStringUTF(orig_path);
 }
+
+static void jni_bypassHiddenAPIEnforcementPolicy(JNIEnv *env, jclass jclazz) {
+    bypassHiddenAPIEnforcementPolicy();
+}
+
 static jboolean jni_nativeCloseAllSocket(JNIEnv *env, jclass jclazz){
     return (jboolean)closeAllSockets();
 }
@@ -74,15 +75,32 @@ static jboolean jni_nativeGetDecryptState(JNIEnv *env,jclass jclazz){
     return getDecryptState();
 }
 
-alias_ref<jclass> nativeEngineClass;
+jclass nativeEngineClass;
+JavaVM *vm;
 
+jclass vskmClass;
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
-
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
+    vm = _vm;
     JNIEnv *env;
-    if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+    _vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    nativeEngineClass = (jclass) env->NewGlobalRef(env->FindClass(JNI_CLASS_NAME));
+    static JNINativeMethod methods[] = {
+            {"nativeLaunchEngine",                     "([Ljava/lang/Object;Ljava/lang/String;ZIII)V", (void *) jni_nativeLaunchEngine},
+            {"nativeReverseRedirectedPath",            "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeReverseRedirectedPath},
+            {"nativeGetRedirectedPath",                "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeReverseRedirectedPath},
+            {"nativeIORedirect",                       "(Ljava/lang/String;Ljava/lang/String;)V",      (void *) jni_nativeIORedirect},
+            {"nativeIOWhitelist",                      "(Ljava/lang/String;)V",                        (void *) jni_nativeIOWhitelist},
+            {"nativeIOForbid",                         "(Ljava/lang/String;)V",                        (void *) jni_nativeIOForbid},
+            {"nativeIOReadOnly",                       "(Ljava/lang/String;)V",                        (void *) jni_nativeIOReadOnly},
+            {"nativeEnableIORedirect",                 "(Ljava/lang/String;II)V",                      (void *) jni_nativeEnableIORedirect},
+            {"nativeBypassHiddenAPIEnforcementPolicy", "()V",                                          (void *) jni_bypassHiddenAPIEnforcementPolicy},
+    };
+
+    if (env->RegisterNatives(nativeEngineClass, methods, 9) < 0) {
         return JNI_ERR;
     }
+
     jclass VSKMClass = env->FindClass("com/lody/virtual/client/ipc/VSafekeyManager");
     vskmClass = (jclass) env->NewGlobalRef(VSKMClass);
     env->DeleteLocalRef(VSKMClass);
@@ -90,35 +108,21 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     zJNIEnv::initial(vm);
     controllerManagerNative::initial();
 
-    return initialize(vm, [] {
-        nativeEngineClass = findClassStatic("com/lody/virtual/client/NativeEngine");
-        nativeEngineClass->registerNatives({
-                        makeNativeMethod("nativeEnableIORedirect",
-                                         jni_nativeEnableIORedirect),
-                        makeNativeMethod("nativeIOWhitelist",
-                                         jni_nativeIOWhitelist),
-                        makeNativeMethod("nativeIOForbid",
-                                         jni_nativeIOForbid),
-                        makeNativeMethod("nativeIOReadOnly",
-                                         jni_nativeIOReadOnly),
-                        makeNativeMethod("nativeIORedirect",
-                                         jni_nativeIORedirect),
-                        makeNativeMethod("nativeGetRedirectedPath",
-                                         jni_nativeGetRedirectedPath),
-                        makeNativeMethod("nativeReverseRedirectedPath",
-                                         jni_nativeReverseRedirectedPath),
-                        makeNativeMethod("nativeLaunchEngine",
-                                         jni_nativeLaunchEngine),
-                        makeNativeMethod("nativeCloseAllSocket",
-                                         jni_nativeCloseAllSocket),
-                        makeNativeMethod("nativeChangeDecryptState",
-                                         jni_nativeChangeDecryptState),
-                        makeNativeMethod("nativeGetDecryptState",
-                                         jni_nativeGetDecryptState),
+    return JNI_VERSION_1_6;
+}
 
-                }
-        );
-    });
+JNIEnv *getEnv() {
+    JNIEnv *env;
+    vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    return env;
+}
+
+JNIEnv *ensureEnvCreated() {
+    JNIEnv *env = getEnv();
+    if (env == NULL) {
+        vm->AttachCurrentThread(&env, NULL);
+    }
+    return env;
 }
 
 extern "C" __attribute__((constructor)) void _init(void) {

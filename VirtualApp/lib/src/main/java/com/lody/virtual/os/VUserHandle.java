@@ -191,7 +191,7 @@ public final class VUserHandle implements Parcelable {
 
     /** @hide */
     public static int getCallingUserId() {
-        return getUserId(VClient.get().getVCallingUid());
+        return getUserId(VClient.get().getCallingVUid());
     }
 
     /**

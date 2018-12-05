@@ -1,9 +1,12 @@
 package com.lody.virtual.client.hook.proxies.location;
 
 import android.content.Context;
+import android.location.LocationManager;
 import android.os.Build;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.annotations.Inject;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
@@ -12,6 +15,7 @@ import com.xdja.zs.VAppPermissionManager;
 import java.lang.reflect.Method;
 
 import mirror.android.location.ILocationManager;
+import mirror.oem.ZTEILocationManager;
 
 /**
  * @author Lody
@@ -21,6 +25,17 @@ import mirror.android.location.ILocationManager;
 public class LocationManagerStub extends BinderInvocationProxy {
     public LocationManagerStub() {
         super(ILocationManager.Stub.asInterface, Context.LOCATION_SERVICE);
+    }
+
+    @Override
+    public void inject() throws Throwable {
+        super.inject();
+        LocationManager locationManager = (LocationManager) VirtualCore.get().getContext().getSystemService(Context.LOCATION_SERVICE);
+        if (mirror.android.location.LocationManager.mService != null) {
+            mirror.android.location.LocationManager.mService.set(locationManager, getInvocationStub().getProxyInterface());
+        } else if (ZTEILocationManager.mILocationManager != null) {
+            ZTEILocationManager.mILocationManager.set(locationManager, getInvocationStub().getProxyInterface());
+        }
     }
 
     @Override

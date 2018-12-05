@@ -2,30 +2,24 @@
 // VirtualApp Native Project
 //
 
-#ifndef NDK_LOG_H
-#define NDK_LOG_H
+#ifndef NDK_HELPER
+#define NDK_HELPER
 
-#include <fb/include/fb/fbjni.h>
-
-#define NATIVE_METHOD(func_ptr, func_name, signature) { func_name, signature, reinterpret_cast<void*>(func_ptr) }
+#include "VAJni.h"
 
 class ScopeUtfString {
 public:
-    ScopeUtfString(jstring j_str) : _j_str(j_str),
-                                    _c_str(facebook::jni::Environment::current()->GetStringUTFChars(j_str, NULL)) {
-    }
+    ScopeUtfString(jstring j_str);
 
     const char *c_str() {
         return _c_str;
     }
 
-    ~ScopeUtfString() {
-        facebook::jni::Environment::current()->ReleaseStringUTFChars(_j_str, _c_str);
-    }
+    ~ScopeUtfString();
 
 private:
     jstring _j_str;
     const char *_c_str;
 };
 
-#endif //NDK_LOG_H
+#endif //NDK_HELPER

@@ -1,5 +1,7 @@
 package com.lody.virtual.client.core;
 
+import android.content.Intent;
+
 /**
  * @author Lody
  */
@@ -32,32 +34,27 @@ public abstract class SettingConfig {
     public boolean isUseRealDataDir(String packageName) {
         return false;
     }
-
-
-    public boolean isDisableNotCopyApk(String pacakgeName){
-        return false;
+    /**
+     *
+     * 当app请求回到桌面时调用此方法
+     *
+     * @return intent or null
+     */
+    public Intent onHandleLauncherIntent(Intent originIntent) {
+        return null;
     }
 
     public enum AppLibConfig {
         UseRealLib,
         UseOwnLib,
-        UseFakePathLib
     }
 
     public AppLibConfig getAppLibConfig(String packageName) {
         return AppLibConfig.UseRealLib;
     }
 
-    public boolean isKeepAdminDeviceInfo() {
-        return false;
-    }
-
     public boolean isAllowServiceStartForeground() {
         return false;
-    }
-
-    public boolean autoCheckUpdateForNotCopyApk() {
-        return true;
     }
 
     public boolean isEnableAppFileSystemIsolation() {
@@ -72,6 +69,10 @@ public abstract class SettingConfig {
         return null;
     }
 
+
+    /**
+     * 是否禁止悬浮窗
+     */
     public boolean isDisableDrawOverlays(String packageName){
         return false;
     }

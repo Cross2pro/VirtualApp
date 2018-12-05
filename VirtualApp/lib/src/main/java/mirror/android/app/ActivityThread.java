@@ -21,15 +21,15 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 
-import mirror.RefClass;
-import mirror.RefConstructor;
-import mirror.RefObject;
-import mirror.RefMethod;
 import mirror.MethodParams;
 import mirror.MethodReflectParams;
-import mirror.RefStaticObject;
+import mirror.RefClass;
+import mirror.RefConstructor;
+import mirror.RefMethod;
+import mirror.RefObject;
 import mirror.RefStaticInt;
 import mirror.RefStaticMethod;
+import mirror.RefStaticObject;
 
 public class ActivityThread {
     public static Class<?> TYPE = RefClass.load(ActivityThread.class, "android.app.ActivityThread");
@@ -42,6 +42,7 @@ public class ActivityThread {
     public static RefObject<Application> mInitialApplication;
     public static RefObject<Instrumentation> mInstrumentation;
     public static RefObject<Map<String, WeakReference<?>>> mPackages;
+    public static RefObject<Map<IBinder, Object>> mActivities;
     public static RefObject<Map> mProviderMap;
     @MethodParams({IBinder.class, List.class})
     public static RefMethod<Void> performNewIntents;
@@ -98,7 +99,7 @@ public class ActivityThread {
     public static class H {
         public static Class<?> TYPE = RefClass.load(H.class, "android.app.ActivityThread$H");
         public static RefStaticInt LAUNCH_ACTIVITY;
-        public static RefStaticInt CREATE_SERVICE;
+        public static RefStaticInt EXECUTE_TRANSACTION;
         public static RefStaticInt SCHEDULE_CRASH;
     }
 

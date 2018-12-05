@@ -11,7 +11,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <syscall.h>
-#include <fb/include/fb/ALog.h>
 
 char *canonicalize_filename(const char *filename);
 

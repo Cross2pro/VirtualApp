@@ -10,62 +10,43 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.remote.InstalledAppInfo;
 
+import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK;
+
 /**
  * @author Lody
  */
 
 public class PackageSetting implements Parcelable {
 
-    public static final Parcelable.Creator<PackageSetting> CREATOR = new Parcelable.Creator<PackageSetting>() {
-        @Override
-        public PackageSetting createFromParcel(Parcel source) {
-            return new PackageSetting(source, VERSION);
-        }
-
-        @Override
-        public PackageSetting[] newArray(int size) {
-            return new PackageSetting[size];
-        }
-    };
-    private static final PackageUserState DEFAULT_USER_STATE = new PackageUserState();
-    public String packageName;
-    public static final int VERSION = 4;
-    public boolean notCopyApk;
-    public int appId;
-    public long firstInstallTime;
-    public long lastUpdateTime;
-    private SparseArray<PackageUserState> userState = new SparseArray<>();
-    public int flag;
-
     public static final int FLAG_RUN_32BIT = 0;
     public static final int FLAG_RUN_BOTH_32BIT_64BIT = 1;
     public static final int FLAG_RUN_64BIT = 2;
 
+    public static final int VERSION = 5;
+
+    private static final PackageUserState DEFAULT_USER_STATE = new PackageUserState();
+
+    public String packageName;
+    public int appId;
+    public int appMode;
+    SparseArray<PackageUserState> userState = new SparseArray<>();
+    public int flag;
+    public long firstInstallTime;
+    public long lastUpdateTime;
+
     public PackageSetting() {
     }
 
-    protected PackageSetting(Parcel in, int version) {
-        this.packageName = in.readString();
-        in.readString(); // Historical legacy
-        in.readString(); // Historical legacy
-        this.notCopyApk = in.readByte() != 0;
-        this.appId = in.readInt();
-        //noinspection unchecked
-        this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
-        in.readByte(); // Historical legacy
-        if (version > 3) {
-            this.flag = in.readInt();
-        }
-    }
 
     public String getApkPath(boolean is64bit) {
-        if (notCopyApk) {
+        if (appMode == MODE_APP_USE_OUTSIDE_APK) {
             try {
                 ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
                 return info.publicSourceDir;
             } catch (PackageManager.NameNotFoundException e) {
-                throw new IllegalStateException(e);
+                e.printStackTrace();
             }
+            return null;
         }
         if (is64bit) {
             return VEnvironment.getPackageResourcePath64(packageName).getPath();
@@ -75,7 +56,11 @@ public class PackageSetting implements Parcelable {
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, notCopyApk, appId);
+        return new InstalledAppInfo(packageName, appMode, appId);
+    }
+
+    void removeUser(int userId) {
+        userState.delete(userId);
     }
 
     PackageUserState modifyUserState(int userId) {
@@ -102,28 +87,6 @@ public class PackageSetting implements Parcelable {
         return DEFAULT_USER_STATE;
     }
 
-    void removeUser(int userId) {
-        userState.delete(userId);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(this.packageName);
-        dest.writeString(null); // Historical legacy
-        dest.writeString(null); // Historical legacy
-        dest.writeByte(this.notCopyApk ? (byte) 1 : (byte) 0);
-        dest.writeInt(this.appId);
-        //noinspection unchecked
-        dest.writeSparseArray((SparseArray) this.userState);
-        dest.writeByte((byte) 0); // Historical legacy
-        dest.writeInt(this.flag);
-    }
-
     public boolean isLaunched(int userId) {
         return readUserState(userId).launched;
     }
@@ -147,4 +110,58 @@ public class PackageSetting implements Parcelable {
     public void setInstalled(int userId, boolean installed) {
         modifyUserState(userId).installed = installed;
     }
+
+    public boolean isRunOn64BitProcess() {
+        if (!VirtualCore.get().is64BitEngineInstalled()) {
+            return false;
+        }
+        switch (flag) {
+            case FLAG_RUN_32BIT:
+                return false;
+            case FLAG_RUN_64BIT:
+                return true;
+            case FLAG_RUN_BOTH_32BIT_64BIT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.packageName);
+        dest.writeInt(this.appId);
+        dest.writeInt(this.appMode);
+        dest.writeSparseArray((SparseArray) this.userState);
+        dest.writeInt(this.flag);
+        dest.writeLong(this.firstInstallTime);
+        dest.writeLong(this.lastUpdateTime);
+    }
+
+    protected PackageSetting(Parcel in) {
+        this.packageName = in.readString();
+        this.appId = in.readInt();
+        this.appMode = in.readInt();
+        this.userState = in.readSparseArray(PackageUserState.class.getClassLoader());
+        this.flag = in.readInt();
+        this.firstInstallTime = in.readLong();
+        this.lastUpdateTime = in.readLong();
+    }
+
+    public static final Parcelable.Creator<PackageSetting> CREATOR = new Parcelable.Creator<PackageSetting>() {
+        @Override
+        public PackageSetting createFromParcel(Parcel source) {
+            return new PackageSetting(source);
+        }
+
+        @Override
+        public PackageSetting[] newArray(int size) {
+            return new PackageSetting[size];
+        }
+    };
 }
