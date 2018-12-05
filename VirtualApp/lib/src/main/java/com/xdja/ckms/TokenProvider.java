@@ -70,16 +70,8 @@ public class TokenProvider extends ContentProvider {
 
                 List<String> pkg_list = VActivityManager.get().getProcessPkgList(pid);
                 if (pkg_list.isEmpty()) {
-                    break;
-                }
-
-                try {
-                    Resources resources = VirtualCore.get().getResources(pkg_list.get(0));
-                    if (resources != null) {
-                        InputStream is = resources.getAssets().open("token.pro");
-                        String filePath = getContext().getCacheDir() + "/" + pkg_list.get(0)+".token.pro";
-                        File ckmsToken = new File(filePath);
-                        //FileOutputStream fileOutputStream = new FileOutputStream(ckmsToken);
+                    try {
+                        InputStream is = getContext().getAssets().open("token.pro");
                         int totalBytes = is.available();
                         byte[] buffer = new byte[totalBytes];
                         int readBytes = 0;
@@ -88,14 +80,38 @@ public class TokenProvider extends ContentProvider {
                             leftBytes = totalBytes - readBytes;
                             readBytes += is.read(buffer, readBytes, leftBytes);
                         }
-
                         result.putByteArray("tokenBytes", buffer);
                         is.close();
-
                         ret = 0;
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                }
+                else {
+                    try {
+                        Resources resources = VirtualCore.get().getResources(pkg_list.get(0));
+                        if (resources != null) {
+                            InputStream is = resources.getAssets().open("token.pro");
+                            String filePath = getContext().getCacheDir() + "/" + pkg_list.get(0)+".token.pro";
+                            File ckmsToken = new File(filePath);
+                            //FileOutputStream fileOutputStream = new FileOutputStream(ckmsToken);
+                            int totalBytes = is.available();
+                            byte[] buffer = new byte[totalBytes];
+                            int readBytes = 0;
+                            int leftBytes = totalBytes - readBytes;
+                            while (readBytes < totalBytes) {
+                                leftBytes = totalBytes - readBytes;
+                                readBytes += is.read(buffer, readBytes, leftBytes);
+                            }
+
+                            result.putByteArray("tokenBytes", buffer);
+                            is.close();
+
+                            ret = 0;
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         } while (false);
