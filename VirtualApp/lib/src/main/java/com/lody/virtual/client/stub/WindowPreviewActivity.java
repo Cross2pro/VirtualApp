@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.view.WindowManager;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.server.am.AttributeCache;
 
 import mirror.com.android.internal.R_Hide;
@@ -99,18 +98,6 @@ public class WindowPreviewActivity extends Activity {
         }
     }
 
-
-    @Override
-    public void finish() {
-        VirtualRuntime.getUIHandler().post(new Runnable() {
-            @Override
-            public void run() {
-                WindowPreviewActivity.super.finish();
-                overridePendingTransition(0, 0);
-            }
-        });
-    }
-
     @Override
     public void onBackPressed() {
         long time = System.currentTimeMillis();
@@ -120,8 +107,8 @@ public class WindowPreviewActivity extends Activity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onStop() {
+        super.onStop();
         finish();
     }
 }

@@ -78,17 +78,29 @@ public class UidSystem {
     }
 
     public int getOrCreateUid(VPackage pkg) {
-        String sharedUserId = pkg.mSharedUserId;
-        if (sharedUserId == null) {
-            sharedUserId = pkg.packageName;
+        synchronized (mSharedUserIdMap) {
+            String sharedUserId = pkg.mSharedUserId;
+            if (sharedUserId == null) {
+                sharedUserId = pkg.packageName;
+            }
+            Integer uid = mSharedUserIdMap.get(sharedUserId);
+            if (uid != null) {
+                return uid;
+            }
+            int newUid = ++mFreeUid;
+            mSharedUserIdMap.put(sharedUserId, newUid);
+            save();
+            return newUid;
         }
-        Integer uid = mSharedUserIdMap.get(sharedUserId);
-        if (uid != null) {
-            return uid;
+    }
+
+    public int getUid(String sharedUserName) {
+        synchronized (mSharedUserIdMap) {
+            Integer uid = mSharedUserIdMap.get(sharedUserName);
+            if (uid != null) {
+                return uid;
+            }
         }
-        int newUid = ++mFreeUid;
-        mSharedUserIdMap.put(sharedUserId, newUid);
-        save();
-        return newUid;
+        return -1;
     }
 }

@@ -74,23 +74,6 @@ public class VirtualRuntime {
         Process.killProcess(android.os.Process.myPid());
     }
 
-    public static ConditionVariable runOnUiAndWait(final Runnable r) {
-        if (Looper.getMainLooper() == Looper.myLooper()) {
-            r.run();
-            return null;
-        } else {
-            final ConditionVariable lock = new ConditionVariable();
-            getUIHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    r.run();
-                    lock.open();
-                }
-            });
-            lock.block();
-            return lock;
-        }
-    }
 
     public static boolean isArt() {
         return System.getProperty("java.vm.version").startsWith("2");

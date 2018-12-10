@@ -11,13 +11,13 @@ import java.util.List;
  * @author Lody
  */
 interface IUserManager{
-    VUserInfo createUser(String name, int flags, String callingPackage);
+    VUserInfo createUser(String name, int flags);
 
-    boolean removeUser(int userHandle, String callingPackage);
+    boolean removeUser(int userHandle);
 
-    void setUserName(int userHandle, String name, String callingPackage);
+    void setUserName(int userHandle, String name);
 
-    void setUserIcon(int userHandle,in  Bitmap icon, String callingPackage);
+    void setUserIcon(int userHandle,in  Bitmap icon);
 
     Bitmap getUserIcon(int userHandle);
 
@@ -25,11 +25,11 @@ interface IUserManager{
 
     VUserInfo getUserInfo(int userHandle);
 
-    void setGuestEnabled(boolean enable, String callingPackage);
+    void setGuestEnabled(boolean enable);
 
     boolean isGuestEnabled();
 
-    void wipeUser(int userHandle, String callingPackage);
+    void wipeUser(int userHandle);
 
     int getUserSerialNumber(int userHandle);
 

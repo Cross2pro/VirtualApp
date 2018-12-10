@@ -153,7 +153,7 @@ public class VUserManager {
         }
     }
 
-   /**
+    /**
      * Used to determine whether the user making this call is subject to
      * teleportations.
      * @return whether the user making this call is a goat
@@ -204,13 +204,6 @@ public class VUserManager {
         return ident >= 0 ? new VUserHandle(ident) : null;
     }
 
-    private String getCallingPackage(){
-        if(VClient.get().getCurrentApplication() == null){
-            return VirtualCore.get().getHostPkg();
-        }
-        return VClient.get().getCurrentApplication().getPackageName();
-    }
-
     /**
      * Creates a user with the specified name and options.
      *
@@ -223,7 +216,7 @@ public class VUserManager {
      */
     public VUserInfo createUser(String name, int flags) {
         try {
-            return mService.createUser(name, flags, getCallingPackage());
+            return mService.createUser(name, flags);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not create a user", re);
             return null;
@@ -274,7 +267,7 @@ public class VUserManager {
      */
     public boolean removeUser(int handle) {
         try {
-            return mService.removeUser(handle, getCallingPackage());
+            return mService.removeUser(handle);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not remove user ", re);
             return false;
@@ -290,7 +283,7 @@ public class VUserManager {
      */
     public void setUserName(int handle, String name) {
         try {
-            mService.setUserName(handle, name, getCallingPackage());
+            mService.setUserName(handle, name);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not set the user name ", re);
         }
@@ -304,7 +297,7 @@ public class VUserManager {
      */
     public void setUserIcon(int handle, Bitmap icon) {
         try {
-            mService.setUserIcon(handle, icon, getCallingPackage());
+            mService.setUserIcon(handle, icon);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not set the user icon ", re);
         }
@@ -333,7 +326,7 @@ public class VUserManager {
      */
     public void setGuestEnabled(boolean enable) {
         try {
-            mService.setGuestEnabled(enable, getCallingPackage());
+            mService.setGuestEnabled(enable);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not change guest account availability to " + enable);
         }
@@ -360,7 +353,7 @@ public class VUserManager {
      */
     public void wipeUser(int handle) {
         try {
-            mService.wipeUser(handle, getCallingPackage());
+            mService.wipeUser(handle);
         } catch (RemoteException re) {
             Log.w(TAG, "Could not wipe user " + handle);
         }

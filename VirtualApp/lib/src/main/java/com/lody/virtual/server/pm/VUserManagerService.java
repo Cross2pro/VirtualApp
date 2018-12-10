@@ -208,7 +208,7 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setUserName(int userId, String name, String callingPackage) {
+    public void setUserName(int userId, String name) {
         boolean changed = false;
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
@@ -228,7 +228,7 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setUserIcon(int userId, Bitmap bitmap, String callingPackage) {
+    public void setUserIcon(int userId, Bitmap bitmap) {
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -272,7 +272,7 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public void setGuestEnabled(boolean enable, String callingPackage) {
+    public void setGuestEnabled(boolean enable) {
         synchronized (mPackagesLock) {
             if (mGuestEnabled != enable) {
                 mGuestEnabled = enable;
@@ -281,25 +281,25 @@ public class VUserManagerService extends IUserManager.Stub {
                     VUserInfo user = mUsers.valueAt(i);
                     if (!user.partial && user.isGuest()) {
                         if (!enable) {
-                            removeUser(user.id, callingPackage);
+                            removeUser(user.id);
                         }
                         return;
                     }
                 }
                 // No guest was found
                 if (enable) {
-                    createUser("Guest", VUserInfo.FLAG_GUEST, callingPackage);
+                    createUser("Guest", VUserInfo.FLAG_GUEST);
                 }
             }
         }
     }
 
     @Override
-    public void wipeUser(int userHandle, String callingPackage) {
+    public void wipeUser(int userHandle) {
         // TODO: implementation it
     }
 
-    public void makeInitialized(int userId, String callingPackage) {
+    public void makeInitialized(int userId) {
         synchronized (mPackagesLock) {
             VUserInfo info = mUsers.get(userId);
             if (info == null || info.partial) {
@@ -659,7 +659,7 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     @Override
-    public VUserInfo createUser(String name, int flags, String callingPackage) {
+    public VUserInfo createUser(String name, int flags) {
         final long ident = Binder.clearCallingIdentity();
         final VUserInfo userInfo;
         try {
@@ -699,7 +699,7 @@ public class VUserManagerService extends IUserManager.Stub {
      *
      * @param userHandle the user's id
      */
-    public boolean removeUser(int userHandle, String callingPackage) {
+    public boolean removeUser(int userHandle) {
         final VUserInfo user;
         synchronized (mPackagesLock) {
             user = mUsers.get(userHandle);

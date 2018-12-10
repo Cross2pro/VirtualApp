@@ -2,10 +2,13 @@ package com.lody.virtual.client.core;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.DownloadManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -32,6 +35,7 @@ import com.lody.virtual.R;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
@@ -45,6 +49,7 @@ import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.ServiceCache;
@@ -216,6 +221,24 @@ public final class VirtualCore {
         }
     }
 
+    public int getUidForSharedUser(String sharedUserName) {
+        try {
+            return getService().getUidForSharedUser(sharedUserName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    private final BroadcastReceiver mDownloadCompleteReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            VLog.d("DownloadManager", "receive download completed brodcast: " + intent);
+            intent.setExtrasClassLoader(BroadcastIntentData.class.getClassLoader());
+            if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
+                VActivityManager.get().handleDownloadCompleteIntent(intent);
+            }
+        }
+    };
 
     public void startup(Context context, SettingConfig config) throws Throwable {
         if (!isStartUp) {
@@ -233,6 +256,8 @@ public final class VirtualCore {
             StubManifest.PACKAGE_NAME_64BIT = packageName64;
             StubManifest.STUB_CP_AUTHORITY = packageName + ".virtual_stub_";
             StubManifest.STUB_CP_AUTHORITY_64BIT = packageName64 + ".virtual_stub_64bit_";
+            StubManifest.PROXY_CP_AUTHORITY = packageName + ".provider_proxy";
+            StubManifest.PROXY_CP_AUTHORITY_64BIT = packageName64 + ".provider_proxy_64bit";
 
             this.context = context;
             unHookPackageManager = context.getPackageManager();
@@ -255,6 +280,15 @@ public final class VirtualCore {
                             Process.killProcess(Process.myPid());
                         }
                     }, 0);
+                }
+            }
+            if (isServerProcess() || is64bitHelperProcess()) {
+                VLog.d("DownloadManager", "Listening DownloadManager action  in process: " + processType);
+                IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+                try {
+                    context.registerReceiver(mDownloadCompleteReceiver, filter);
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
             InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
@@ -384,6 +418,8 @@ public final class VirtualCore {
             processType = ProcessType.Main;
         } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
             processType = ProcessType.Server;
+        } else if (processName.endsWith(Constants.HELPER_PROCESS_NAME)) {
+            processType = ProcessType.Helper;
         } else if (VActivityManager.get().isAppProcess(processName)) {
             processType = ProcessType.VAppClient;
         } else {
@@ -415,6 +451,10 @@ public final class VirtualCore {
      */
     public boolean isVAppProcess() {
         return ProcessType.VAppClient == processType;
+    }
+
+    public boolean is64bitHelperProcess() {
+        return ProcessType.Helper == processType;
     }
 
     /**
@@ -799,6 +839,9 @@ public final class VirtualCore {
     }
 
     public synchronized ActivityInfo resolveActivityInfo(Intent intent, int userId) {
+        if (SpecialComponentList.shouldBlockIntent(intent)) {
+            return null;
+        }
         ActivityInfo activityInfo = null;
         if (intent.getComponent() == null) {
             ResolveInfo resolveInfo = VPackageManager.get().resolveIntent(intent, intent.getType(), 0, userId);
@@ -817,6 +860,9 @@ public final class VirtualCore {
     }
 
     public ServiceInfo resolveServiceInfo(Intent intent, int userId) {
+        if (SpecialComponentList.shouldBlockIntent(intent)) {
+            return null;
+        }
         ServiceInfo serviceInfo = null;
         ResolveInfo resolveInfo = VPackageManager.get().resolveService(intent, intent.getType(), 0, userId);
         if (resolveInfo != null) {
@@ -975,11 +1021,16 @@ public final class VirtualCore {
     }
 
     public boolean isRun64BitProcess(String packageName) {
-        if (!is64BitEngineInstalled()) {
-            return false;
-        }
         try {
             return getService().isRun64BitProcess(packageName);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public boolean cleanPackageData(String pkg, int userId) {
+        try {
+            return getService().cleanPackageData(pkg, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -1001,6 +1052,10 @@ public final class VirtualCore {
          * Main process
          */
         Main,
+        /**
+         * Helper process
+         */
+        Helper,
         /**
          * Child process
          */

@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.proxies.am;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.os.IInterface;
 
@@ -59,6 +60,8 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
     protected void onBindMethods() {
         super.onBindMethods();
         if (VirtualCore.get().isVAppProcess()) {
+            addMethodProxy(new ResultStaticMethodProxy("registerUidObserver", 0));
+            addMethodProxy(new ResultStaticMethodProxy("unregisterUidObserver", 0));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getAppStartMode"));
             addMethodProxy(new ResultStaticMethodProxy("updateConfiguration", 0));
             addMethodProxy(new ReplaceCallingPkgMethodProxy("setAppLockedVerifying"));
@@ -79,12 +82,30 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                     return super.call(who, method, args);
                 }
             });
+            addMethodProxy(new StaticMethodProxy("checkUriPermission") {
+                @Override
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    return PackageManager.PERMISSION_GRANTED;
+                }
+            });
             addMethodProxy(new StaticMethodProxy("finishActivity") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     IBinder token = (IBinder) args[0];
                     VActivityManager.get().onFinishActivity(token);
                     return super.call(who, method, args);
+                }
+
+                @Override
+                public boolean isEnable() {
+                    return isAppProcess();
+                }
+            });
+            addMethodProxy(new StaticMethodProxy("finishActivityAffinity") {
+                @Override
+                public Object call(Object who, Method method, Object... args) {
+                    IBinder token = (IBinder) args[0];
+                    return VActivityManager.get().finishActivityAffinity(getAppUserId(), token);
                 }
 
                 @Override

@@ -2,6 +2,7 @@ package com.lody.virtual.client;
 
 import android.os.Build;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VEnvironment;
 
@@ -17,6 +18,9 @@ public class LinuxCompat {
 
     public static void forgeProcDriver(boolean is64bit) {
         if (Build.VERSION.SDK_INT < 26) {
+            return;
+        }
+        if (VirtualCore.get().is64BitEngine()) {
             return;
         }
         if (FileUtils.canRead("/proc/stat")) {

@@ -80,7 +80,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                     if (!handleLaunchActivity(msg, msg.obj)) {
                         return true;
                     }
-                } else if (EXECUTE_TRANSACTION == msg.what) {
+                } else if (BuildCompat.isPie() && EXECUTE_TRANSACTION == msg.what) {
                     if (!handleExecuteTransaction(msg)) {
                         return true;
                     }
@@ -144,7 +144,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         if (info == null) {
             return true;
         }
-        if (VClient.get().getToken() == null) {
+        if (VClient.get().getClientConfig() == null) {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
             if (installedAppInfo == null) {
                 return true;

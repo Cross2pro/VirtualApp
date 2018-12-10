@@ -75,5 +75,7 @@
         <item>周五</item>
         <item>周六</item>
     </string-array>
-    <string name="kill_all_app">杀死全部App</string>
+    <string name="kill_all_app">加速</string>
+    <string name="app_settings">App设置</string>
+    <string name="clean_data">清除数据</string>
 </resources>

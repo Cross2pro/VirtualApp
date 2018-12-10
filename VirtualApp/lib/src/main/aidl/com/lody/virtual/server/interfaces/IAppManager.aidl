@@ -27,6 +27,8 @@ interface IAppManager{
 
     boolean isOutsidePackageVisible(String pkg);
 
+    int getUidForSharedUser(in String sharedUserName);
+
     InstalledAppInfo getInstalledAppInfo(String pkg, int flags);
 
     oneway void installPackage(String path, int flags, in ResultReceiver receiver);
@@ -66,4 +68,6 @@ interface IAppManager{
     boolean isRun64BitProcess(String packageName);
 
     boolean isIORelocateWork();
+
+    boolean cleanPackageData(in String pkg, int userId);
 }

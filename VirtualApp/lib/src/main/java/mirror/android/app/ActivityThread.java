@@ -51,11 +51,11 @@ public class ActivityThread {
     public static RefMethod<Void> sendActivityResult;
     public static RefMethod<Binder> getApplicationThread;
 
-    public static Object installProvider(Object mainThread, Context context, ProviderInfo providerInfo, Object holder) {
+    public static Object installProvider(Object mainThread, Context context, ProviderInfo providerInfo, Object holder) throws Throwable {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-            return installProvider.call(mainThread, context, holder, providerInfo, false, true);
+            return installProvider.callWithException(mainThread, context, holder, providerInfo, false, true);
         }
-        return installProvider.call(mainThread, context, holder, providerInfo, false, true, true);
+        return installProvider.callWithException(mainThread, context, holder, providerInfo, false, true, true);
     }
 
     public static class ActivityClientRecord {

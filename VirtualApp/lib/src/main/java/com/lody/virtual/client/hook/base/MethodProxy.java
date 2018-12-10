@@ -1,6 +1,8 @@
 package com.lody.virtual.client.hook.base;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
@@ -91,6 +93,16 @@ public abstract class MethodProxy {
     public static boolean isVisiblePackage(String packageName) {
         return getHostPkg().equals(packageName)
                 || VirtualCore.get().isOutsidePackageVisible(packageName);
+    }
+
+    public static boolean isHostIntent(Intent intent) {
+        ComponentName component = intent.getComponent();
+        if (component != null) {
+            String pkg = component.getPackageName();
+            SettingConfig config = VirtualCore.getConfig();
+            return pkg.equals(config.getHostPackageName()) || pkg.equals(config.get64bitEnginePackageName());
+        }
+        return false;
     }
 
     public abstract String getMethodName();

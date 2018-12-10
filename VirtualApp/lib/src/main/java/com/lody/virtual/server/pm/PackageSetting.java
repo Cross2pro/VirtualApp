@@ -22,9 +22,13 @@ public class PackageSetting implements Parcelable {
     public static final int FLAG_RUN_BOTH_32BIT_64BIT = 1;
     public static final int FLAG_RUN_64BIT = 2;
 
-    public static final int VERSION = 5;
+    public static final int FIRST_V2_VERSION = 5;
+
+    public static final int CURRENT_VERSION = 5;
 
     private static final PackageUserState DEFAULT_USER_STATE = new PackageUserState();
+
+    public int version;
 
     public String packageName;
     public int appId;
@@ -35,6 +39,7 @@ public class PackageSetting implements Parcelable {
     public long lastUpdateTime;
 
     public PackageSetting() {
+        version = CURRENT_VERSION;
     }
 
 
@@ -112,9 +117,6 @@ public class PackageSetting implements Parcelable {
     }
 
     public boolean isRunOn64BitProcess() {
-        if (!VirtualCore.get().is64BitEngineInstalled()) {
-            return false;
-        }
         switch (flag) {
             case FLAG_RUN_32BIT:
                 return false;
@@ -143,7 +145,8 @@ public class PackageSetting implements Parcelable {
         dest.writeLong(this.lastUpdateTime);
     }
 
-    protected PackageSetting(Parcel in) {
+    PackageSetting(int version, Parcel in) {
+        this.version = version;
         this.packageName = in.readString();
         this.appId = in.readInt();
         this.appMode = in.readInt();
@@ -153,10 +156,11 @@ public class PackageSetting implements Parcelable {
         this.lastUpdateTime = in.readLong();
     }
 
+
     public static final Parcelable.Creator<PackageSetting> CREATOR = new Parcelable.Creator<PackageSetting>() {
         @Override
         public PackageSetting createFromParcel(Parcel source) {
-            return new PackageSetting(source);
+            return new PackageSetting(CURRENT_VERSION, source);
         }
 
         @Override

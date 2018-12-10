@@ -22,6 +22,9 @@ public class StubManifest {
     public static String STUB_CP_AUTHORITY = null;
     public static String STUB_CP_AUTHORITY_64BIT = null;
 
+    public static String PROXY_CP_AUTHORITY = null;
+    public static String PROXY_CP_AUTHORITY_64BIT = null;
+
 
     public static int STUB_COUNT = 100;
     public static String[] PRIVILEGE_APPS = new String[]{
@@ -47,6 +50,10 @@ public class StubManifest {
 
     public static String getStubAuthority(int index, boolean is64bit) {
         return String.format(Locale.ENGLISH, "%s%d", is64bit ? STUB_CP_AUTHORITY_64BIT : STUB_CP_AUTHORITY, index);
+    }
+
+    public static String getProxyAuthority(boolean is64bit) {
+        return is64bit ? PROXY_CP_AUTHORITY_64BIT : PROXY_CP_AUTHORITY;
     }
 
     public static String getStubPackageName(boolean is64bit) {

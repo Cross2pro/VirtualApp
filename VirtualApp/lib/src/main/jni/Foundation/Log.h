@@ -5,7 +5,6 @@
 #ifndef VIRTUALAPP_LOG_H
 #define VIRTUALAPP_LOG_H
 
-//#include <Android/log.h>
 #include <android/log.h>
 
 #define TAG "V++"

@@ -6,7 +6,7 @@ import android.graphics.drawable.Drawable;
  * @author Lody
  */
 
-public class EmptyAppData implements AppData {
+public class EmptyAppData extends AppData {
 
     @Override
     public boolean isLoading() {
@@ -29,6 +29,11 @@ public class EmptyAppData implements AppData {
     }
 
     @Override
+    public String getPackageName() {
+        return null;
+    }
+
+    @Override
     public boolean canReorder() {
         return false;
     }
@@ -46,5 +51,10 @@ public class EmptyAppData implements AppData {
     @Override
     public boolean canCreateShortcut() {
         return false;
+    }
+
+    @Override
+    public int getUserId() {
+        return -1;
     }
 }

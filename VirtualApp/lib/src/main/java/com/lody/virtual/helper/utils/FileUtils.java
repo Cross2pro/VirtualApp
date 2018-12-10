@@ -50,6 +50,16 @@ public class FileUtils {
         return f;
     }
 
+    public static String readToString(String fileName) throws IOException {
+        InputStream is = new FileInputStream(fileName);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int i;
+        while ((i = is.read()) != -1) {
+            baos.write(i);
+        }
+        return baos.toString();
+    }
+
     /**
      * @param path
      * @param mode {@link FileMode}

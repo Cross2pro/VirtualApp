@@ -10,7 +10,6 @@
 #include "SandboxFs.h"
 #include "Symbol.h"
 #include "fake_dlfcn.h"
-#include <string.h>
 
 namespace FunctionDef {
     typedef void (*Function_DalvikBridgeFunc)(const void **, void *, const void *, void *);

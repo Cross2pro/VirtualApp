@@ -101,7 +101,7 @@
                 android:src="@drawable/ic_shortcut" />
 
             <TextView
-                android:id="@+id/create_shortcut_text"
+                android:id="@+id/enter_app_setting_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
@@ -109,7 +109,7 @@
                 android:background="@color/colorPrimary"
                 android:gravity="center|start"
                 android:padding="5dp"
-                android:text="@string/create_shortcut"
+                android:text="@string/app_settings"
                 android:textColor="@android:color/black" />
 
         </LinearLayout>

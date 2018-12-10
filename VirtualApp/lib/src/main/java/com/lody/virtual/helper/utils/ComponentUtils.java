@@ -1,16 +1,22 @@
 package com.lody.virtual.helper.utils;
 
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
+import android.content.pm.ProviderInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Process;
+import android.text.TextUtils;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.ShadowPendingReceiver;
 import com.lody.virtual.client.stub.ShadowPendingService;
@@ -20,6 +26,7 @@ import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
 
+import java.io.File;
 import java.util.Set;
 
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
@@ -116,12 +123,6 @@ public class ComponentUtils {
         return true;
     }
 
-    public static boolean isStubComponent(Intent intent) {
-        return intent != null
-                && intent.getComponent() != null
-                && VirtualCore.get().getHostPkg().equals(intent.getComponent().getPackageName());
-    }
-
     public static String getComponentAction(ActivityInfo info) {
         return getComponentAction(info.packageName, info.name);
     }
@@ -203,4 +204,51 @@ public class ComponentUtils {
         return newIntent;
     }
 
+    public static Intent processOutsideIntent(int userId, boolean is64bit, Intent intent) {
+        Uri data = intent.getData();
+        if (data != null) {
+            intent.setDataAndType(processOutsideUri(userId, is64bit, data), intent.getType());
+        }
+        if (Build.VERSION.SDK_INT >= 16 && intent.getClipData() != null) {
+            ClipData clipData = intent.getClipData();
+            if (clipData.getItemCount() >= 0) {
+                ClipData.Item item = clipData.getItemAt(0);
+                Uri uri = item.getUri();
+                if (uri != null) {
+                    Uri processedUri = processOutsideUri(userId, is64bit, uri);
+                    if (processedUri != uri) {
+                        ClipData processedClipData = new ClipData(clipData.getDescription(), new ClipData.Item(item.getText(), item.getHtmlText(), item.getIntent(), processedUri));
+                        for (int i = 1; i < clipData.getItemCount(); i++) {
+                            ClipData.Item processedItem = clipData.getItemAt(i);
+                            uri = processedItem.getUri();
+                            if (uri != null) {
+                                uri = processOutsideUri(userId, is64bit, uri);
+                            }
+                            processedClipData.addItem(new ClipData.Item(processedItem.getText(), processedItem.getHtmlText(), processedItem.getIntent(), uri));
+                        }
+                        intent.setClipData(processedClipData);
+                    }
+                }
+            }
+        }
+        return intent;
+    }
+
+    private static Uri processOutsideUri(int userId, boolean is64bit, Uri uri) {
+        if (TextUtils.equals(uri.getScheme(), "file")) {
+            return Uri.fromFile(new File(NativeEngine.resverseRedirectedPath(uri.getPath())));
+        }
+        if (!TextUtils.equals(uri.getScheme(), "content")) {
+            return uri;
+        }
+        String authority = uri.getAuthority();
+        if (authority == null) {
+            return uri;
+        }
+        ProviderInfo info = VirtualCore.get().getUnHookPackageManager().resolveContentProvider(authority, 0);
+        if (info == null) {
+            return uri;
+        }
+        return ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
+    }
 }

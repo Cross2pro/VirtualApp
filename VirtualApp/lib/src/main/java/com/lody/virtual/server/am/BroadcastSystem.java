@@ -19,6 +19,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.server.pm.PackageSetting;
@@ -275,11 +276,13 @@ public class BroadcastSystem {
             }
             intent.setExtrasClassLoader(BroadcastIntentData.class.getClassLoader());
             BroadcastIntentData data = intent.getParcelableExtra("_VA_|_data_");
-            if (data != null) {
-                PendingResult result = goAsync();
-                if (!mAMS.handleStaticBroadcast(data, info, appId, new PendingResultData(result))) {
-                    result.finish();
-                }
+            if (data == null) {
+                intent.setPackage(null);
+                data = new BroadcastIntentData(VUserHandle.USER_ALL, intent, null);
+            }
+            PendingResult result = goAsync();
+            if (!mAMS.handleStaticBroadcast(data, info, appId, new PendingResultData(result))) {
+                result.finish();
             }
         }
     }

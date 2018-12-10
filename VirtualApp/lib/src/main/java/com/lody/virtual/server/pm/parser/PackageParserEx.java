@@ -123,11 +123,20 @@ public class PackageParserEx {
 
     public static void savePackageCache(VPackage pkg) {
         final String packageName = pkg.packageName;
+        File cacheFile = VEnvironment.getPackageCacheFile(packageName);
+        if (cacheFile.exists()) {
+            cacheFile.delete();
+        }
+        File signatureFile = VEnvironment.getSignatureFile(packageName);
+        if (signatureFile.exists()) {
+            signatureFile.delete();
+        }
         Parcel p = Parcel.obtain();
+
         try {
             p.writeInt(4);
             pkg.writeToParcel(p, 0);
-            FileOutputStream fos = new FileOutputStream(VEnvironment.getPackageCacheFile(packageName));
+            FileOutputStream fos = new FileOutputStream(cacheFile);
             fos.write(p.marshall());
             fos.close();
         } catch (Exception e) {
@@ -137,7 +146,6 @@ public class PackageParserEx {
         }
         Signature[] signatures = pkg.mSignatures;
         if (signatures != null) {
-            File signatureFile = VEnvironment.getSignatureFile(packageName);
             if (signatureFile.exists() && !signatureFile.delete()) {
                 VLog.w(TAG, "Unable to delete the signatures of " + packageName);
             }
@@ -258,37 +266,36 @@ public class PackageParserEx {
         String apkPath = ps.getApkPath(is64bit);
         ai.publicSourceDir = apkPath;
         ai.sourceDir = apkPath;
-        ApplicationInfo outside = null;
-        try {
-            outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(ai.packageName, 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            // ignore
-        }
         SettingConfig.AppLibConfig libConfig = VirtualCore.getConfig().getAppLibConfig(ai.packageName);
-        if (libConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
-            libConfig = SettingConfig.AppLibConfig.UseOwnLib;
-        }
-
         if (is64bit) {
             ApplicationInfoL.primaryCpuAbi.set(ai, "arm64-v8a");
             ai.nativeLibraryDir = VEnvironment.getAppLibDirectory64(ai.packageName).getPath();
         } else {
             ai.nativeLibraryDir = VEnvironment.getAppLibDirectory(ai.packageName).getPath();
         }
-
-        if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
-            if (is64bit) {
-                ai.nativeLibraryDir = outside.nativeLibraryDir;
-                String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(outside);
-                ApplicationInfoL.primaryCpuAbi.set(ai, primaryCpuAbi);
-            } else {
-                String libPath = choose32bitLibPath(outside);
-                if (libPath != null) {
-                    ai.nativeLibraryDir = libPath;
+        if (ps.appMode == InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
+            ApplicationInfo outside = null;
+            try {
+                outside = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(ai.packageName, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                // ignore
+            }
+            if (libConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
+                libConfig = SettingConfig.AppLibConfig.UseOwnLib;
+            }
+            if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
+                if (is64bit) {
+                    ai.nativeLibraryDir = outside.nativeLibraryDir;
+                    String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(outside);
+                    ApplicationInfoL.primaryCpuAbi.set(ai, primaryCpuAbi);
+                } else {
+                    String libPath = choose32bitLibPath(outside);
+                    if (libPath != null) {
+                        ai.nativeLibraryDir = libPath;
+                    }
                 }
             }
         }
-
         if (is64bit) {
             ai.dataDir = VEnvironment.getDataUserPackageDirectory64(userId, ai.packageName).getPath();
         } else {
@@ -300,20 +307,28 @@ public class PackageParserEx {
             ApplicationInfoL.scanPublicSourceDir.set(ai, scanSourceDir);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (Build.VERSION.SDK_INT < 26) {
-                ApplicationInfoN.deviceEncryptedDataDir.set(ai, ai.dataDir);
+            String deDataDir;
+            if (is64bit) {
+                deDataDir = VEnvironment.getDeDataUserPackageDirectory64(userId, ai.packageName).getPath();
+            } else {
+                deDataDir = VEnvironment.getDeDataUserPackageDirectory(userId, ai.packageName).getPath();
+            }
+            if (ApplicationInfoN.deviceEncryptedDataDir != null) {
+                ApplicationInfoN.deviceEncryptedDataDir.set(ai, deDataDir);
+            }
+            if (ApplicationInfoN.credentialEncryptedDataDir != null) {
                 ApplicationInfoN.credentialEncryptedDataDir.set(ai, ai.dataDir);
             }
-            ApplicationInfoN.deviceProtectedDataDir.set(ai, ai.dataDir);
-            ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
+            if (ApplicationInfoN.deviceProtectedDataDir != null) {
+                ApplicationInfoN.deviceProtectedDataDir.set(ai, deDataDir);
+            }
+            if (ApplicationInfoN.credentialProtectedDataDir != null) {
+                ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
+            }
         }
         if (VirtualCore.getConfig().isUseRealDataDir(ai.packageName) &&
                 VirtualCore.getConfig().isEnableIORedirect()) {
-            if (outside != null) {
-                ai.dataDir = outside.dataDir;
-            } else {
-                ai.dataDir = "/data/data/" + ai.packageName + "/";
-            }
+            ai.dataDir = "/data/data/" + ai.packageName + "/";
         }
     }
 
@@ -481,6 +496,13 @@ public class PackageParserEx {
             if (N > 0) {
                 pi.signatures = new Signature[N];
                 System.arraycopy(p.mSignatures, 0, pi.signatures, 0, N);
+            } else {
+                try {
+                    PackageInfo outInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(p.packageName, PackageManager.GET_SIGNATURES);
+                    pi.signatures = outInfo.signatures;
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return pi;

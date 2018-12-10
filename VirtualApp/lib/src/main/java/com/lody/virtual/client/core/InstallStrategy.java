@@ -13,12 +13,4 @@ public interface InstallStrategy {
 	int IGNORE_NEW_VERSION = 0x01 << 4;
 	int NOT_COPY_APK = 0x01 << 5;
 
-    /**
-     * @see #NOT_COPY_APK
-     */
-    @Deprecated
-	int DEPEND_SYSTEM_IF_EXIST = NOT_COPY_APK;
-    @Deprecated
-    int UPDATE_IF_EXIST = FORCE_UPDATE;
-
 }

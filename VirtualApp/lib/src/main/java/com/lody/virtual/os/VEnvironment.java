@@ -22,6 +22,7 @@ public class VEnvironment {
     private static final File ROOT;
     private static final File DATA_DIRECTORY;
     private static final File USER_DIRECTORY;
+    private static final File USER_DE_DIRECTORY;
     private static final File DALVIK_CACHE_DIRECTORY;
     private static final File EXTERNAL_STORAGE_DIRECTORY;
     private static final File EMULATED_DIRECTORY;
@@ -29,6 +30,7 @@ public class VEnvironment {
     private static final File ROOT64;
     private static final File DATA_DIRECTORY64;
     private static final File USER_DIRECTORY64;
+    private static final File USER_DE_DIRECTORY64;
     private static final File DALVIK_CACHE_DIRECTORY64;
 
     private static final String DIRECTORY_MUSIC = "Music";
@@ -63,6 +65,8 @@ public class VEnvironment {
         DATA_DIRECTORY = ensureCreated(new File(ROOT, "data"));
         // Point to: /data/user/
         USER_DIRECTORY = ensureCreated(new File(DATA_DIRECTORY, "user"));
+
+        USER_DE_DIRECTORY = ensureCreated(new File(DATA_DIRECTORY, "user_de"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
         // Point to: /storage/
@@ -77,6 +81,7 @@ public class VEnvironment {
         DATA_DIRECTORY64 = ensureCreated(new File(ROOT64, "data"));
         // Point to: /data/user/
         USER_DIRECTORY64 = ensureCreated(new File(DATA_DIRECTORY64, "user"));
+        USER_DE_DIRECTORY64 = ensureCreated(new File(DATA_DIRECTORY64, "user_de"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY64 = ensureCreated(new File(ROOT64, "opt"));
     }
@@ -139,6 +144,16 @@ public class VEnvironment {
         return ensureCreated(new File(getUserDataDirectory64(userId), packageName));
     }
 
+    public static File getDeDataUserPackageDirectory(int userId,
+                                                   String packageName) {
+        return ensureCreated(new File(getUserDeDataDirectory(userId), packageName));
+    }
+
+    public static File getDeDataUserPackageDirectory64(int userId,
+                                                     String packageName) {
+        return ensureCreated(new File(getUserDeDataDirectory64(userId), packageName));
+    }
+
     public static File getPackageResourcePath(String packageName) {
         return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
@@ -165,6 +180,10 @@ public class VEnvironment {
 
     public static File getAccountConfigFile() {
         return new File(getSystemSecureDirectory(), "account-list.ini");
+    }
+
+    public static File getComponentStateFile() {
+        return new File(getSystemSecureDirectory(), "component-state.ini");
     }
 
     public static File getSyncDirectory() {
@@ -279,6 +298,10 @@ public class VEnvironment {
         return USER_DIRECTORY;
     }
 
+    public static File getUserDeSystemDirectory() {
+        return USER_DE_DIRECTORY;
+    }
+
     /**
      * @param userId
      * @return
@@ -293,8 +316,16 @@ public class VEnvironment {
         return ensureCreated(new File(USER_DIRECTORY, String.valueOf(userId)));
     }
 
+    public static File getUserDeDataDirectory(int userId) {
+        return ensureCreated(new File(USER_DE_DIRECTORY, String.valueOf(userId)));
+    }
+
     public static File getUserDataDirectory64(int userId) {
         return ensureCreated(new File(USER_DIRECTORY64, String.valueOf(userId)));
+    }
+
+    public static File getUserDeDataDirectory64(int userId) {
+        return ensureCreated(new File(USER_DE_DIRECTORY64, String.valueOf(userId)));
     }
 
     public static File getSystemDirectory(int userId) {
@@ -339,7 +370,7 @@ public class VEnvironment {
     }
 
     public static File getPackageInstallerStageDir() {
-        return ensureCreated(new File(DATA_DIRECTORY, ".session_dir"));
+        return ensureCreated(new File(getSystemSecureDirectory(), ".session_dir"));
     }
 
     /**

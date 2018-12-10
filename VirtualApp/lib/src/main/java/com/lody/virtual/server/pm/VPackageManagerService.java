@@ -23,9 +23,11 @@ import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.compat.PermissionCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.SignaturesUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.interfaces.IPackageManager;
@@ -86,8 +88,6 @@ public class VPackageManagerService extends IPackageManager.Stub {
         }
     };
 
-    private final ResolveInfo mResolveInfo;
-
     private final ActivityIntentResolver mActivities = new ActivityIntentResolver();
     private final ServiceIntentResolver mServices = new ServiceIntentResolver();
     private final ActivityIntentResolver mReceivers = new ActivityIntentResolver();
@@ -103,10 +103,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
     private final Map<String, String[]> mDangerousPermissions = new HashMap<>();
 
 
-    public VPackageManagerService() {
-        Intent intent = new Intent();
-        intent.setClassName(VirtualCore.get().getHostPkg(), StubManifest.RESOLVER_ACTIVITY);
-        mResolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
+    private VPackageManagerService() {
     }
 
     public static void systemReady() {
@@ -312,7 +309,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ActivityComponent a = mActivities.mActivities.get(component);
-                if (a != null && isEnabledLPr(a.info, flags, userId)) {
+                if (a != null) {
                     ActivityInfo activityInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, activityInfo, userId);
                     return activityInfo;
@@ -367,7 +364,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (p != null) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 VPackage.ServiceComponent s = mServices.mServices.get(component);
-                if (s != null && isEnabledLPr(s.info, flags, userId)) {
+                if (s != null) {
                     ServiceInfo serviceInfo = PackageParserEx.generateServiceInfo(s, flags, ps.readUserState(userId), userId);
                     ComponentFixer.fixComponentInfo(ps, serviceInfo, userId);
                     return serviceInfo;
@@ -633,7 +630,24 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
     boolean isEnabledLPr(ComponentInfo componentInfo, int flags, int userId) {
-        return componentInfo.enabled;
+        ComponentName component = ComponentUtils.toComponentName(componentInfo);
+        int state = ComponentStateManager.get().getComponentState(component, userId);
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+            return componentInfo.enabled;
+        }
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+            return false;
+        }
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED) {
+            return false;
+        }
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER) {
+            return false;
+        }
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            return true;
+        }
+        return true;
     }
 
 
@@ -684,9 +698,17 @@ public class VPackageManagerService extends IPackageManager.Stub {
 
     @Override
     public List<PermissionInfo> queryPermissionsByGroup(String group, int flags) {
-        synchronized (mPackages) {
-            return null;
+        List<PermissionInfo> infos = new ArrayList<>();
+        if (group != null) {
+            synchronized (mPackages) {
+                for (VPackage.PermissionComponent p : mPermissions.values()) {
+                    if (p.info.group.equals(group)) {
+                        infos.add(p.info);
+                    }
+                }
+            }
         }
+        return infos;
     }
 
     @Override
@@ -753,6 +775,13 @@ public class VPackageManagerService extends IPackageManager.Stub {
         checkUserId(userId);
         synchronized (this) {
             List<String> pkgList = new ArrayList<>(2);
+            int callingUid = VBinder.getCallingUid();
+            if (callingUid != uid) {
+                String callingPkg = getNameForUid(callingUid);
+                if (callingPkg != null) {
+                    pkgList.add(callingPkg);
+                }
+            }
             for (VPackage p : mPackages.values()) {
                 PackageSetting settings = (PackageSetting) p.mExtras;
                 if (VUserHandle.getUid(userId, settings.appId) == uid) {
@@ -822,6 +851,26 @@ public class VPackageManagerService extends IPackageManager.Stub {
     public boolean isVirtualAuthority(String authority) {
         synchronized (mProvidersByAuthority) {
             return mProvidersByAuthority.containsKey(authority);
+        }
+    }
+
+    @Override
+    public void setComponentEnabledSetting(ComponentName component, int newState, int flags, int userId) {
+        if (component == null) {
+            return;
+        }
+        checkUserId(userId);
+        ComponentStateManager.get().setComponentState(component, newState, userId);
+    }
+
+    @Override
+    public int getComponentEnabledSetting(ComponentName component, int userId) {
+        if (component == null) {
+            return 0;
+        }
+        checkUserId(userId);
+        synchronized (mPackages) {
+            return ComponentStateManager.get().getComponentState(component, userId);
         }
     }
 
@@ -910,14 +959,17 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
     public int checkUidPermission(String permission, int uid) {
-        if (permission.equals("android.permission.ACCESS_COARSE_LOCATION")) {
-            return PackageManager.PERMISSION_DENIED;
-        }
         PermissionInfo info = getPermissionInfo(permission, 0);
         if (info != null) {
             return PackageManager.PERMISSION_GRANTED;
         }
-        return VirtualCore.getPM().checkPermission(permission, VirtualCore.get().getHostPkg());
+        try {
+            boolean is64bit = VAppManagerService.get().is64BitUid(uid);
+            return VirtualCore.getPM().checkPermission(permission, StubManifest.getStubPackageName(is64bit));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return PackageManager.PERMISSION_DENIED;
     }
 
     private final class ActivityIntentResolver extends IntentResolver<VPackage.ActivityIntentInfo, ResolveInfo> {

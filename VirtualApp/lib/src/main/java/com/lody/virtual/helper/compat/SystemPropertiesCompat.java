@@ -4,13 +4,31 @@ import com.lody.virtual.helper.utils.Reflect;
 
 public class SystemPropertiesCompat {
 
-    public static String get(String key, String defaultValue) {
+    public static String get(String key, String def) {
         try {
-            return (String) Reflect.on("android.os.SystemProperties").call("get", key, defaultValue).get();
+            return (String) Reflect.on("android.os.SystemProperties").call("get", key, def).get();
         } catch (Exception e) {
             e.printStackTrace();
-            return defaultValue;
         }
+        return def;
+    }
+
+    public static String get(String key) {
+        try {
+            return (String) Reflect.on("android.os.SystemProperties").call("get", key).get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static int getInt(String key, int def) {
+        try {
+            return (int) Reflect.on("android.os.SystemProperties").call("getInt", key, def).get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return def;
     }
 
 }

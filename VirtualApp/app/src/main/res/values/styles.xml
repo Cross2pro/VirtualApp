@@ -15,6 +15,12 @@
         <item name="android:textAllCaps">false</item>
     </style>
 
+    <style name="UITheme.HasActionBar" parent="Theme.AppCompat.Light">
+        <item name="colorPrimary">@android:color/white</item>
+        <item name="colorAccent">@android:color/white</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
     <style name="TransparentTheme" parent="AppTheme">
         <item name="android:windowNoTitle">true</item>
         <item name="colorPrimary">@android:color/background_dark</item>

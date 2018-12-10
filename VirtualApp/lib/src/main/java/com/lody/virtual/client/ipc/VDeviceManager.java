@@ -83,5 +83,8 @@ public class VDeviceManager {
                 e.printStackTrace();
             }
         }
+        if (config.serial != null) {
+            Reflect.on(Build.TYPE).set("SERIAL", config.serial);
+        }
     }
 }

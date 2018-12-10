@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageDataObserver;
@@ -32,12 +33,16 @@ import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
+import com.lody.virtual.helper.utils.ArrayUtils;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.pm.installer.SessionInfo;
 import com.lody.virtual.server.pm.installer.SessionParams;
 
+import java.io.File;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -52,6 +57,112 @@ import mirror.android.content.pm.ParceledListSlice;
  */
 @SuppressWarnings("unused")
 class MethodProxies {
+
+    static class FreeStorage extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "freeStorage";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            IntentSender sender = ArrayUtils.getFirst(args, IntentSender.class);
+            if (sender != null) {
+                sender.sendIntent(getHostContext(), 0, null, null, null);
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+
+    static class FreeStorageAndNotify extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "freeStorageAndNotify";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            IPackageDataObserver observer = ArrayUtils.getFirst(args, IPackageDataObserver.class);
+            if (observer != null) {
+                observer.onRemoveCompleted(getAppPkg(), true);
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+    static class CheckPackageStartable extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "checkPackageStartable";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = (String) args[0];
+            if (isAppPkg(pkg)) {
+                return 0;
+            }
+            return method.invoke(who, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+    static class GetUidForSharedUser extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getUidForSharedUser";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String sharedUserName = (String) args[0];
+            return VirtualCore.get().getUidForSharedUser(sharedUserName);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
+
+    static class CanForwardTo extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "canForwardTo";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            int sourceUserId = (int) args[2];
+            int targetUserId = (int) args[3];
+            return sourceUserId == targetUserId;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
+    }
 
     static class IsPackageAvailable extends MethodProxy {
 
@@ -118,12 +229,8 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            // NOTE: 有4个状态: 0默认 1可用 2禁止 3User Disable
             ComponentName component = (ComponentName) args[0];
-            if (component != null) {
-                return 1;
-            }
-            return method.invoke(who, args);
+            return VPackageManager.get().getComponentEnabledSetting(component, getAppUserId());
         }
     }
 
@@ -266,6 +373,7 @@ class MethodProxies {
             final IPackageInstaller vInstaller = VPackageManager.get().getPackageInstaller();
             return Proxy.newProxyInstance(installer.getClass().getClassLoader(), installer.getClass().getInterfaces(),
                     new InvocationHandler() {
+
                         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                         private Object createSession(Object proxy, Method method, Object[] args) throws RemoteException {
                             SessionParams params = SessionParams.create((PackageInstaller.SessionParams) args[0]);
@@ -306,16 +414,23 @@ class MethodProxies {
                                     return null;
                                 }
                                 case "getAllSessions": {
-                                    return ParceledListSliceCompat.create(
-                                            vInstaller.getAllSessions((Integer) args[0]).getList()
-                                    );
+                                    int userId = (int) args[0];
+                                    List<SessionInfo> infos = vInstaller.getAllSessions(userId).getList();
+                                    List<PackageInstaller.SessionInfo> sysInfos = new ArrayList<>(infos.size());
+                                    for (SessionInfo info : infos) {
+                                        sysInfos.add(info.alloc());
+                                    }
+                                    return ParceledListSliceCompat.create(sysInfos);
                                 }
                                 case "getMySessions": {
                                     String installerPackageName = (String) args[0];
                                     int userId = (int) args[1];
-                                    return ParceledListSliceCompat.create(
-                                            vInstaller.getMySessions(installerPackageName, userId).getList()
-                                    );
+                                    List<SessionInfo> infos = vInstaller.getMySessions(installerPackageName, userId).getList();
+                                    List<PackageInstaller.SessionInfo> sysInfos = new ArrayList<>(infos.size());
+                                    for (SessionInfo info : infos) {
+                                        sysInfos.add(info.alloc());
+                                    }
+                                    return ParceledListSliceCompat.create(sysInfos);
                                 }
                                 case "registerCallback": {
                                     IPackageInstallerCallback callback = (IPackageInstallerCallback) args[0];
@@ -339,24 +454,6 @@ class MethodProxies {
                     });
         }
     }
-
-
-    static class FreeStorageAndNotify extends MethodProxy {
-        @Override
-        public String getMethodName() {
-            return "freeStorageAndNotify";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (args[args.length - 1] instanceof IPackageDataObserver) {
-                IPackageDataObserver observer = (IPackageDataObserver) args[args.length - 1];
-                observer.onRemoveCompleted(null, true);
-            }
-            return 0;
-        }
-    }
-
 
     static class GetPackageGids extends MethodProxy {
 
@@ -702,8 +799,31 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            // TODO
+            String pkg = (String) args[0];
+            IPackageDataObserver observer = (IPackageDataObserver) args[1];
+            if (pkg.equals(getAppPkg())) {
+                ApplicationInfo info = VPackageManager.get().getApplicationInfo(pkg, 0, getAppUserId());
+                if (info != null) {
+                    File dir = new File(info.dataDir);
+                    FileUtils.deleteDir(dir);
+                    dir.mkdirs();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        dir = new File(info.deviceProtectedDataDir);
+                        FileUtils.deleteDir(dir);
+                        dir.mkdirs();
+                    }
+                    if (observer != null) {
+                        observer.onRemoveCompleted(pkg, true);
+                    }
+                    return 0;
+                }
+            }
             return method.invoke(who, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
         }
     }
 
@@ -744,7 +864,8 @@ class MethodProxies {
                     return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
                 }
                 if (isVisiblePackage(pkg)) {
-                    return PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+                    args[1] = 0;
+                    return method.invoke(who, args);
                 }
                 return PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
             }
@@ -816,9 +937,8 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int uid = (int) args[0];
             if (uid == getRealUid()) {
-                VLog.e("PackageManager", "getPackageForUid using real uid.");
-                VLog.e("PackageManager", new Exception());
-                return new String[]{VClient.get().getCurrentPackage()};
+                VLog.e("VPackageManager", "uid = real uid");
+                uid = VBinder.getCallingUid();
             }
             String[] pkgs = VPackageManager.get().getPackagesForUid(uid);
             if (pkgs == null) {
@@ -834,6 +954,30 @@ class MethodProxies {
     }
 
 
+    static class QuerySliceContentProviders extends QueryContentProviders {
+        @Override
+        public String getMethodName() {
+            return "querySliceContentProviders";
+        }
+    }
+
+    static class GetPersistentApplications extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getPersistentApplications";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
+                return ParceledListSliceCompat.create(new ArrayList<ApplicationInfo>(0));
+            } else {
+                return new ArrayList<ApplicationInfo>(0);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     static class QueryContentProviders extends MethodProxy {
 
@@ -845,8 +989,9 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String processName = (String) args[0];
+            int vuid = (int) args[1];
             int flags = (int) args[2];
-            List<ProviderInfo> infos = VPackageManager.get().queryContentProviders(processName, flags, 0);
+            List<ProviderInfo> infos = VPackageManager.get().queryContentProviders(processName, vuid, 0);
             if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
                 return ParceledListSliceCompat.create(infos);
             }
@@ -864,7 +1009,6 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
         }
 
@@ -1068,6 +1212,10 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            ComponentName componentName = (ComponentName) args[0];
+            int newState = (int) args[1];
+            int flags = (int) args[2];
+            VPackageManager.get().setComponentEnabledSetting(componentName, newState, flags, getAppUserId());
             return 0;
         }
 

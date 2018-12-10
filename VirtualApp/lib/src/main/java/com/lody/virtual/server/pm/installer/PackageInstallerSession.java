@@ -2,7 +2,6 @@ package com.lody.virtual.server.pm.installer;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.IPackageInstallObserver2;
 import android.content.pm.IPackageInstallerSession;
@@ -18,8 +17,11 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.text.TextUtils;
 
+import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.InstallResult;
+import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -164,21 +166,19 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         validateInstallLocked();
         mInternalProgress = 0.5f;
         computeProgressLocked(true);
+        boolean success = false;
+        for (File file : stageDir.listFiles()) {
+            VLog.e(TAG, "found apk in stage dir: " + file.getPath());
+            InstallResult res = VAppManagerService.get().installPackage(file.getPath(), InstallStrategy.COMPARE_VERSION, true);
+            if (res.isSuccess) {
+                success = true;
+            }
+        }
         // We've reached point of no return; call into PMS to install the stage.
         // Regardless of success or failure we always destroy session.
-        final IPackageInstallObserver2 localObserver = new IPackageInstallObserver2.Stub() {
-            @Override
-            public void onUserActionRequired(Intent intent) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public void onPackageInstalled(String basePackageName, int returnCode, String msg,
-                                           Bundle extras) {
-                destroyInternal();
-                dispatchSessionFinished(returnCode, msg, extras);
-            }
-        };
+        destroyInternal();
+        int returnCode = success ? INSTALL_SUCCEEDED : INSTALL_FAILED_ABORTED;
+        dispatchSessionFinished(returnCode, null, null);
     }
 
     private void validateInstallLocked() throws PackageManagerException {
@@ -378,6 +378,11 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         if (mActiveCount.decrementAndGet() == 0) {
             mCallback.onSessionActiveChanged(this, false);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    public void commit(IntentSender statusReceiver, boolean forTransfer) throws RemoteException {
+        commit(statusReceiver);
     }
 
     @Override

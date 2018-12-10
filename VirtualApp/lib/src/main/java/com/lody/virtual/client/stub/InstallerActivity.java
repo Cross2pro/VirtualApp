@@ -319,7 +319,7 @@ public class InstallerActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            InstallResult res = VirtualCore.get().installPackage(apkinfo.path, InstallStrategy.UPDATE_IF_EXIST);
+                            InstallResult res = VirtualCore.get().installPackage(apkinfo.path, InstallStrategy.COMPARE_VERSION);
                             Message msg1 = new Message();
                             msg1.what = STATE_INSTALLING;
                             msg1.obj = res;

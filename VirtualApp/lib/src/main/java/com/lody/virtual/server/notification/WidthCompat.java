@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import com.lody.virtual.helper.utils.OSUtils;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 /**
  * Created by 247321453 on 2016/7/17.
@@ -25,10 +25,10 @@ import com.lody.virtual.helper.utils.OSUtils;
             return mWidth;
         }
         int w = getDefaultWidth(width, padding);
-        if (OSUtils.getInstance().isEmui()) {
+        if (BuildCompat.isEMUI()) {
             // huawei's emui
             w = getEMUINotificationWidth(context, width, height);
-        } else if (OSUtils.getInstance().isMiui()) {
+        } else if (BuildCompat.isMIUI()) {
             if (Build.VERSION.SDK_INT >= 21) {
                 padding = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f,
                         context.getResources().getDisplayMetrics()));

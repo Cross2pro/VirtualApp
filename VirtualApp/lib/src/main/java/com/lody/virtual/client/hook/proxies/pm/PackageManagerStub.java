@@ -3,10 +3,11 @@ package com.lody.virtual.client.hook.proxies.pm;
 import android.os.Build;
 import android.os.IInterface;
 
-import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.annotations.Inject;
+import com.lody.virtual.client.hook.base.BinderInvocationStub;
 import com.lody.virtual.client.hook.base.MethodInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodInvocationStub;
+import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.helper.compat.BuildCompat;
 
@@ -32,6 +33,7 @@ public final class PackageManagerStub extends MethodInvocationProxy<MethodInvoca
         addMethodProxy(new ResultStaticMethodProxy("performDexOptSecondary", true));
         addMethodProxy(new ResultStaticMethodProxy("addOnPermissionsChangeListener", 0));
         addMethodProxy(new ResultStaticMethodProxy("removeOnPermissionsChangeListener", 0));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("shouldShowRequestPermissionRationale"));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             addMethodProxy(new ResultStaticMethodProxy("checkPackageStartable", 0));
         }

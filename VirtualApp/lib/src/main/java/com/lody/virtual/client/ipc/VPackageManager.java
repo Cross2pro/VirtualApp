@@ -270,7 +270,7 @@ public class VPackageManager {
         }
     }
 
-    public int checkSignatures(String pkg1, String pkg2){
+    public int checkSignatures(String pkg1, String pkg2) {
         try {
             return getService().checkSignatures(pkg1, pkg2);
         } catch (RemoteException e) {
@@ -278,7 +278,7 @@ public class VPackageManager {
         }
     }
 
-    public String[] getDangrousPermissions(String packageName){
+    public String[] getDangrousPermissions(String packageName) {
         try {
             return getService().getDangrousPermissions(packageName);
         } catch (RemoteException e) {
@@ -286,9 +286,26 @@ public class VPackageManager {
         }
     }
 
-    public boolean isVirtualAuthority(String authority){
+    public boolean isVirtualAuthority(String authority) {
         try {
             return getService().isVirtualAuthority(authority);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void setComponentEnabledSetting(ComponentName componentName,
+                                           int newState, int flags, int userId) {
+        try {
+            getService().setComponentEnabledSetting(componentName, newState, flags, userId);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public int getComponentEnabledSetting(ComponentName component, int userId) {
+        try {
+            return getService().getComponentEnabledSetting(component, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -19,6 +20,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.xdja.zs.VAppPermissionManager;
@@ -36,6 +38,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import mirror.android.net.wifi.IWifiManager;
@@ -151,8 +155,24 @@ public class WifiManagerStub extends BinderInvocationProxy {
             addMethodProxy(new RemoveWorkSourceMethodProxy("requestBatchedScan"));
         }
         addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiEnabled"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("getWifiApConfiguration"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("setWifiApConfiguration"));
+        addMethodProxy(new StaticMethodProxy("getWifiApConfiguration") {
+
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                List<WifiConfiguration> configurations = ((WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE)).getConfiguredNetworks();
+                if (!configurations.isEmpty()) {
+                    return configurations.get(0);
+                } else {
+                    WifiConfiguration wifiConfiguration = new WifiConfiguration();
+                    wifiConfiguration.SSID = "AndroidAP_" + new Random().nextInt(9000) + 1000;
+                    wifiConfiguration.allowedKeyManagement.set(4);
+                    String uuid = UUID.randomUUID().toString();
+                    wifiConfiguration.preSharedKey = uuid.substring(0, 8) + uuid.substring(9, 13);
+                    return wifiConfiguration;
+                }
+            }
+        });
+        addMethodProxy(new ResultStaticMethodProxy("setWifiApConfiguration", 0));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("startLocalOnlyHotspot"));
         if (BuildCompat.isOreo()) {
             addMethodProxy(new RemoveWorkSourceMethodProxy("startScan") {

@@ -10,14 +10,11 @@ import com.lody.virtual.remote.InstalledAppInfo;
 /**
  * @author Lody
  */
-public class PackageAppData implements AppData {
+public class PackageAppData extends AppData {
 
     public String packageName;
     public String name;
     public Drawable icon;
-    public boolean fastOpen;
-    public boolean isFirstOpen;
-    public boolean isLoading;
 
     public PackageAppData(Context context, InstalledAppInfo installedAppInfo) {
         this.packageName = installedAppInfo.packageName;
@@ -31,10 +28,7 @@ public class PackageAppData implements AppData {
         }
         PackageManager pm = context.getPackageManager();
         try {
-            CharSequence sequence = appInfo.loadLabel(pm);
-            if (sequence != null) {
-                name = sequence.toString();
-            }
+            name = appInfo.loadLabel(pm).toString();
             icon = appInfo.loadIcon(pm);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -62,6 +56,11 @@ public class PackageAppData implements AppData {
     }
 
     @Override
+    public String getPackageName() {
+        return packageName;
+    }
+
+    @Override
     public boolean canReorder() {
         return true;
     }
@@ -79,5 +78,10 @@ public class PackageAppData implements AppData {
     @Override
     public boolean canCreateShortcut() {
         return true;
+    }
+
+    @Override
+    public int getUserId() {
+        return 0;
     }
 }

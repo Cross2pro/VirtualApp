@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "SandboxFs.h"
 #include "Path.h"
+#include "Log.h"
 
 #define FORCE_CLOSE_NORMALIZE_PATH
 
@@ -56,6 +57,7 @@ int add_readonly_item(const char *path) {
 }
 
 int add_replace_item(const char *orig_path, const char *new_path) {
+    ALOGE("add replace item : %s -> %s", orig_path, new_path);
     char src_env_name[KEY_MAX];
     char dst_env_name[KEY_MAX];
     sprintf(src_env_name, "V_REPLACE_ITEM_SRC_%d", replace_item_count);
@@ -175,6 +177,9 @@ const char *relocate_path(const char *path, bool normalize_path) {
         }
     }
     finally:
+    if (result == NULL) {
+        ALOGE("!!!!");
+    }
     if (normalize_path && result != path) {
         free((void *) path);
     }

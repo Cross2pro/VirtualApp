@@ -83,4 +83,8 @@ interface IPackageManager{
     String[] getDangrousPermissions(String packageName);
 
     boolean isVirtualAuthority(String authority);
+
+    void setComponentEnabledSetting(in ComponentName componentName, int newState, int flags, int userId);
+
+    int getComponentEnabledSetting(in ComponentName component, int userId);
 }

@@ -15,7 +15,7 @@ import mirror.android.net.wifi.WifiScanner;
  * @author Lody
  */
 
-public class GhostWifiScannerImpl extends IWifiScanner.Stub {
+public class EmptyWifiScannerImpl extends IWifiScanner.Stub {
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 

@@ -13,7 +13,6 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -22,18 +21,14 @@ import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
-import com.lody.virtual.server.pm.PackageCacheManager;
-import com.lody.virtual.server.pm.PackageSetting;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
-import mirror.android.app.IActivityManager;
 import mirror.android.app.IApplicationThread;
 import mirror.com.android.internal.R_Hide;
 
@@ -70,19 +65,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     private static boolean containFlags(Intent intent, int flags) {
         return (intent.getFlags() & flags) != 0;
     }
-
-    private static ActivityRecord topActivityInTask(TaskRecord task) {
-        synchronized (task.activities) {
-            for (int size = task.activities.size() - 1; size >= 0; size--) {
-                ActivityRecord r = task.activities.get(size);
-                if (!r.marked) {
-                    return r;
-                }
-            }
-            return null;
-        }
-    }
-
 
     private void deliverNewIntentLocked(int userId, ActivityRecord sourceRecord, ActivityRecord targetRecord, Intent intent) {
         if (targetRecord == null) {
@@ -194,66 +176,12 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
 
     int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder resultTo, Bundle options, int callingUid) {
-        synchronized (mHistory) {
-            optimizeTasksLocked();
-        }
-        Intent intent = intents[0];
-        ActivityInfo info = infos[0];
-        ActivityRecord sourceRecord = findActivityByToken(userId, resultTo);
-        String affinity = ComponentUtils.getTaskAffinity(info);
-        TaskRecord sourceTask = null;
-        if (sourceRecord != null) {
-            sourceTask = sourceRecord.task;
-        }
-        boolean newTask = containFlags(intent, Intent.FLAG_ACTIVITY_NEW_TASK);
-        boolean multipleTask = newTask && containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-        TaskRecord reuseTask = null;
-        if (!multipleTask) {
-            switch (info.launchMode) {
-                case LAUNCH_MULTIPLE: {
-                    if (sourceRecord != null && sourceRecord.info.launchMode != LAUNCH_SINGLE_INSTANCE) {
-                        reuseTask = sourceTask;
-                    }
-                    break;
-                }
-                case LAUNCH_SINGLE_INSTANCE: {
-                    reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    break;
-                }
-                case LAUNCH_SINGLE_TASK: {
-                    if (newTask || sourceTask == null) {
-                        reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    } else {
-                        reuseTask = sourceTask;
-                    }
-                    break;
-                }
-                case LAUNCH_SINGLE_TOP: {
-                    reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    break;
-                }
-
-            }
-        }
-        Intent[] destIntents = startActivitiesProcess(userId, intents, infos, sourceRecord, callingUid);
-        if (reuseTask == null) {
-            realStartActivitiesLocked(null, destIntents, resolvedTypes, options);
-        } else {
-            ActivityRecord top = topActivityInTask(reuseTask);
-            if (top != null) {
-                realStartActivitiesLocked(top.token, destIntents, resolvedTypes, options);
-            }
+        for (int i = 0; i < intents.length; i++) {
+            startActivityLocked(userId, intents[i], infos[i], resultTo, options, null, 0, callingUid);
         }
         return 0;
     }
 
-    private Intent[] startActivitiesProcess(int userId, Intent[] intents, ActivityInfo[] infos, ActivityRecord resultTo, int callingUid) {
-        Intent[] destIntents = new Intent[intents.length];
-        for (int i = 0; i < intents.length; i++) {
-            destIntents[i] = startActivityProcess(userId, resultTo, intents[i], infos[i], callingUid);
-        }
-        return destIntents;
-    }
 
     private boolean isAllowUseSourceTask(ActivityRecord source, ActivityInfo info) {
         if (source == null) {
@@ -285,6 +213,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         boolean reorderToFront = containFlags(intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         boolean singleTop = containFlags(intent, Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
+        if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0) {
+            mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
+        }
         boolean notStartToFront = false;
         if (clearTop || singleTop || clearTask) {
             notStartToFront = true;
@@ -307,28 +238,18 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         TaskRecord reuseTask = null;
         if (!multipleTask) {
             switch (info.launchMode) {
-                case LAUNCH_MULTIPLE: {
-                    if (newTask) {
-                        reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    } else if (isAllowUseSourceTask(sourceRecord, info)) {
-                        reuseTask = sourceTask;
-                    }
-                    break;
-                }
                 case LAUNCH_SINGLE_INSTANCE: {
                     reuseTask = findTaskByAffinityLocked(userId, affinity);
                     break;
                 }
-                case LAUNCH_SINGLE_TASK: {
+                case LAUNCH_MULTIPLE:
+                case LAUNCH_SINGLE_TASK:
+                case LAUNCH_SINGLE_TOP: {
                     if (newTask || sourceTask == null) {
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
                     } else if (isAllowUseSourceTask(sourceRecord, info)) {
                         reuseTask = sourceTask;
                     }
-                    break;
-                }
-                case LAUNCH_SINGLE_TOP: {
-                    reuseTask = findTaskByAffinityLocked(userId, affinity);
                     break;
                 }
 
@@ -353,14 +274,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
         ActivityRecord notifyNewIntentActivityRecord = null;
         boolean marked = false;
-        if (clearTask) {
-            synchronized (reuseTask.activities) {
-                for (ActivityRecord r : reuseTask.activities) {
-                    r.marked = true;
-                }
-            }
-            marked = true;
-        }
         ComponentName component = ComponentUtils.toComponentName(info);
         if (info.launchMode == LAUNCH_SINGLE_INSTANCE) {
             synchronized (reuseTask.activities) {
@@ -398,10 +311,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                      * （2）如果这个Activity是standard模式，这个Activity也出栈，并且重新实例化到达栈顶。
                      */
                     if (clearTop && info.launchMode == LAUNCH_MULTIPLE) {
-                        if (notifyNewIntentActivityRecord != null) {
-                            notifyNewIntentActivityRecord.marked = true;
-                            notifyNewIntentActivityRecord = null;
-                        }
+                        notifyNewIntentActivityRecord.marked = true;
+                        notifyNewIntentActivityRecord = null;
                     }
                 }
             }
@@ -444,15 +355,26 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 }
             }
         }
+        if (clearTask) {
+            synchronized (reuseTask.activities) {
+                for (ActivityRecord r : reuseTask.activities) {
+                    r.marked = true;
+                }
+            }
+            marked = true;
+        }
         if (marked) {
             finishMarkedActivity();
         }
         if (notifyNewIntentActivityRecord != null) {
             deliverNewIntentLocked(userId, sourceRecord, notifyNewIntentActivityRecord, intent);
-            return 0;
+            if (!notifyNewIntentActivityRecord.marked) {
+                return 0;
+            }
         }
         ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo);
         Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
+
         if (destIntent != null) {
             destIntent.addFlags(mLauncherFlags);
             IBinder startFrom = null;
@@ -522,21 +444,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     private void finishMarkedActivity() {
         synchronized (mHistory) {
             int N = mHistory.size();
-            final List<ActivityRecord> removeRecords = new LinkedList<>();
             while (N-- > 0) {
                 final TaskRecord task = mHistory.valueAt(N);
                 synchronized (task.activities) {
                     for (ActivityRecord r : task.activities) {
-                        if (r.marked) {
-                            removeRecords.add(r);
+                        if (!r.marked) {
+                            continue;
                         }
-                    }
-                }
-            }
-            VirtualRuntime.getUIHandler().post(new Runnable() {
-                @Override
-                public void run() {
-                    for (ActivityRecord r : removeRecords) {
                         try {
                             r.process.client.finishActivity(r.token);
                         } catch (RemoteException e) {
@@ -544,8 +458,29 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                         }
                     }
                 }
-            });
+            }
         }
+    }
+
+    public boolean finishActivityAffinity(int userId, IBinder token) {
+        synchronized (mHistory) {
+            ActivityRecord r = findActivityByToken(userId, token);
+            if (r == null) {
+                return false;
+            }
+            String taskAffinity = ComponentUtils.getTaskAffinity(r.info);
+            synchronized (r.task.activities) {
+                for (int index = r.task.activities.indexOf(r); index >= 0; --index) {
+                    ActivityRecord cur = r.task.activities.get(index);
+                    if (!ComponentUtils.getTaskAffinity(cur.info).equals(taskAffinity)) {
+                        break;
+                    }
+                    cur.marked = true;
+                }
+            }
+        }
+        finishMarkedActivity();
+        return false;
     }
 
     private void startActivityFromSourceTask(final IBinder resultTo, final Intent intent, final String resultWho,
@@ -553,29 +488,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         realStartActivityLocked(resultTo, intent, resultWho, requestCode, options);
     }
 
-
-    private void realStartActivitiesLocked(IBinder resultTo, Intent[] intents, String[] resolvedTypes, Bundle options) {
-        Class<?>[] types = IActivityManager.startActivities.paramList();
-        Object[] args = new Object[types.length];
-        if (types[0] == IApplicationThread.TYPE) {
-            args[0] = ActivityThread.getApplicationThread.call(VirtualCore.mainThread());
-        }
-        int pkgIndex = ArrayUtils.protoIndexOf(types, String.class);
-        int intentsIndex = ArrayUtils.protoIndexOf(types, Intent[].class);
-        int resultToIndex = ArrayUtils.protoIndexOf(types, IBinder.class, 2);
-        int optionsIndex = ArrayUtils.protoIndexOf(types, Bundle.class);
-        int resolvedTypesIndex = intentsIndex + 1;
-        if (pkgIndex != -1) {
-            args[pkgIndex] = VirtualCore.get().getHostPkg();
-        }
-        args[intentsIndex] = intents;
-        args[resultToIndex] = resultTo;
-        args[resolvedTypesIndex] = resolvedTypes;
-        args[optionsIndex] = options;
-        ClassUtils.fixArgs(types, args);
-        IActivityManager.startActivities.call(ActivityManagerNative.getDefault.call(),
-                (Object[]) args);
-    }
 
     private void realStartActivityLocked(IBinder resultTo, Intent intent, String resultWho, int requestCode,
                                          Bundle options) {
@@ -662,16 +574,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         StubActivityRecord saveInstance = new StubActivityRecord(intent, info, userId, targetRecord);
         saveInstance.saveToIntent(targetIntent);
         return targetIntent;
-    }
-
-    private Intent getStartStubActivityIntent(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info) {
-        PackageSetting ps = PackageCacheManager.getSetting(info.packageName);
-        if (ps == null) {
-            return null;
-        }
-        boolean is64bit = ps.isRunOn64BitProcess();
-        int vpid = VActivityManagerService.get().queryFreeStubProcess(is64bit);
-        return getStartStubActivityIntentInner(intent, is64bit, vpid, userId, targetRecord, info);
     }
 
 

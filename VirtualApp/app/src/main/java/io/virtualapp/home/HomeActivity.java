@@ -1,16 +1,11 @@
 package io.virtualapp.home;
 
-import android.Manifest;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.net.Uri;
@@ -19,9 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.PopupMenu;
@@ -36,10 +29,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
+import com.lody.virtual.oem.OemPermissionHelper;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 
@@ -85,8 +77,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private View mMenuView;
     private PopupMenu mPopupMenu;
     private View mBottomArea;
-    private View mCreateShortcutBox;
-    private TextView mCreateShortcutTextView;
+    private TextView mEnterSettingTextView;
     private View mDeleteAppBox;
     private TextView mDeleteAppTextView;
     private LaunchpadAdapter mLaunchpadAdapter;
@@ -99,40 +90,21 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         context.startActivity(intent);
     }
 
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         overridePendingTransition(0, 0);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        if (VirtualCore.get().is64BitEngineInstalled()) {
-            Toast.makeText(this, "64Bit Engine installed.", Toast.LENGTH_SHORT).show();
-        }
         mUiHandler = new Handler(Looper.getMainLooper());
         bindViews();
         initLaunchpad();
         initMenu();
         new HomePresenterImpl(this);
-        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M
-                && VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, 0);
-            } else {
-                load();
-            }
-        } else {
-            load();
-        }
+        mPresenter.check64bitEnginePermission();
+        mPresenter.start();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        for (int result : grantResults) {
-            if (result == PackageManager.PERMISSION_GRANTED) {
-                load();
-                break;
-            }
-        }
-    }
 
     /***
      * 检测悬浮窗权限
@@ -147,57 +119,20 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         }
     }
 
-    private void load() {
-        mPresenter.start();
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Constants.ACTION_PACKAGE_ADDED);
-        filter.addAction(Constants.ACTION_PACKAGE_REMOVED);
-        filter.addAction(Constants.ACTION_PACKAGE_WILL_ADDED);
-        filter.addDataScheme("package");
-        registerReceiver(mReceiver, filter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(mReceiver);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mDialog != null && mDialog.isShowing()) {
-            mDialog.dismiss();
-            mDialog = null;
-        }
     }
-
-    ProgressDialog mDialog = null;
-    BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String pkg = intent.getData() == null ? null : intent.getData().getSchemeSpecificPart();
-            if (Constants.ACTION_PACKAGE_WILL_ADDED.equals(intent.getAction())) {
-                String msg = "wait update " + mPresenter.getLabel(pkg);
-                if (mDialog != null) {
-                    mDialog.setMessage(msg);
-                } else {
-                    mDialog = ProgressDialog.show(context, null, msg);
-                }
-            } else {
-                if (mDialog != null && mDialog.isShowing()) {
-                    mDialog.dismiss();
-                    mPresenter.dataChanged();
-                    mDialog = null;
-                }
-            }
-        }
-    };
 
     private void initMenu() {
         mPopupMenu = new PopupMenu(new ContextThemeWrapper(this, R.style.Theme_AppCompat_Light), mMenuView);
@@ -226,6 +161,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         });
         menu.add(R.string.kill_all_app).setIcon(R.drawable.ic_speed_up).setOnMenuItemClickListener(item -> {
             VActivityManager.get().killAllApps();
+            Toast.makeText(this, "Memory release complete!", Toast.LENGTH_SHORT).show();
             return true;
         });
         menu.add(R.string.menu_gms).setIcon(R.drawable.ic_google).setOnMenuItemClickListener(item -> {
@@ -276,8 +212,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         mLauncherView = (RecyclerView) findViewById(R.id.home_launcher);
         mMenuView = findViewById(R.id.home_menu);
         mBottomArea = findViewById(R.id.bottom_area);
-        mCreateShortcutBox = findViewById(R.id.create_shortcut_area);
-        mCreateShortcutTextView = (TextView) findViewById(R.id.create_shortcut_text);
+        mEnterSettingTextView = (TextView) findViewById(R.id.enter_app_setting_text);
         mDeleteAppBox = findViewById(R.id.delete_app_area);
         mDeleteAppTextView = (TextView) findViewById(R.id.delete_app_text);
     }
@@ -322,16 +257,32 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 .show();
     }
 
-    private void createShortcut(int position) {
+    private void enterAppSetting(int position) {
         AppData model = mLaunchpadAdapter.getList().get(position);
         if (model instanceof PackageAppData || model instanceof MultiplePackageAppData) {
-            mPresenter.createShortcut(model);
+            mPresenter.enterAppSetting(model);
         }
     }
 
     @Override
     public void setPresenter(HomeContract.HomePresenter presenter) {
         mPresenter = presenter;
+    }
+
+    @Override
+    public void showPermissionDialog() {
+        Intent intent = OemPermissionHelper.getPermissionActivityIntent(this);
+        new AlertDialog.Builder(this)
+                .setTitle("Notice")
+                .setMessage("You must to grant permission to allowed launch 64bit Engine.")
+                .setCancelable(false)
+                .setNegativeButton("GO", (dialog, which) -> {
+                    try {
+                        startActivity(intent);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }).show();
     }
 
     @Override
@@ -477,7 +428,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
         int[] location = new int[2];
         boolean upAtDeleteAppArea;
-        boolean upAtCreateShortcutArea;
+        boolean upAtEnterSettingArea;
         RecyclerView.ViewHolder dragHolder;
 
         LauncherTouchCallback() {
@@ -539,7 +490,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
         @Override
         public boolean canDropOver(RecyclerView recyclerView, RecyclerView.ViewHolder current, RecyclerView.ViewHolder target) {
-            if (upAtCreateShortcutArea || upAtDeleteAppArea) {
+            if (upAtEnterSettingArea || upAtDeleteAppArea) {
                 return false;
             }
             try {
@@ -561,8 +512,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             if (dragHolder == viewHolder) {
                 if (mBottomArea.getVisibility() == View.VISIBLE) {
                     mUiHandler.postDelayed(HomeActivity.this::hideBottomAction, 200L);
-                    if (upAtCreateShortcutArea) {
-                        createShortcut(viewHolder.getAdapterPosition());
+                    if (upAtEnterSettingArea) {
+                        enterAppSetting(viewHolder.getAdapterPosition());
                     } else if (upAtDeleteAppArea) {
                         deleteApp(viewHolder.getAdapterPosition());
                     }
@@ -593,21 +544,21 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 mDeleteAppBox.getLocationInWindow(location);
                 int deleteAppAreaStartX = location[0];
                 if (x < deleteAppAreaStartX) {
-                    upAtCreateShortcutArea = true;
+                    upAtEnterSettingArea = true;
                     upAtDeleteAppArea = false;
-                    mCreateShortcutTextView.setTextColor(Color.parseColor("#0099cc"));
+                    mEnterSettingTextView.setTextColor(Color.parseColor("#0099cc"));
                     mDeleteAppTextView.setTextColor(Color.BLACK);
                 } else {
                     upAtDeleteAppArea = true;
-                    upAtCreateShortcutArea = false;
+                    upAtEnterSettingArea = false;
                     mDeleteAppTextView.setTextColor(Color.parseColor("#0099cc"));
-                    mCreateShortcutTextView.setTextColor(Color.BLACK);
+                    mEnterSettingTextView.setTextColor(Color.BLACK);
                 }
             } else {
-                upAtCreateShortcutArea = false;
+                upAtEnterSettingArea = false;
                 upAtDeleteAppArea = false;
                 mDeleteAppTextView.setTextColor(Color.BLACK);
-                mCreateShortcutTextView.setTextColor(Color.BLACK);
+                mEnterSettingTextView.setTextColor(Color.BLACK);
             }
         }
     }

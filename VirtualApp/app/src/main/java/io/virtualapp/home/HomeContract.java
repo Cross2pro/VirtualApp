@@ -15,6 +15,8 @@ import io.virtualapp.home.models.AppInfoLite;
 
 	/* package */ interface HomeView extends BaseView<HomePresenter> {
 
+		void showPermissionDialog();
+
         void showBottomAction();
 
         void hideBottomAction();
@@ -40,6 +42,8 @@ import io.virtualapp.home.models.AppInfoLite;
 
 	/* package */ interface HomePresenter extends BasePresenter {
 
+		boolean check64bitEnginePermission();
+
 		void launchApp(AppData data);
 
 		void dataChanged();
@@ -48,7 +52,7 @@ import io.virtualapp.home.models.AppInfoLite;
 
 		void deleteApp(AppData data);
 
-        void createShortcut(AppData data);
+        void enterAppSetting(AppData data);
 
         String getLabel(String packageName);
 

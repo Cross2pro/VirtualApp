@@ -62,8 +62,8 @@
     <string name="permission_tips_content">%1$s 不支持運行時權限，則必須提前提供所需的權限，請允許在下一步中請求的所有權限，否則可能無法正常運行。</string>
     <string name="permission_tips_confirm">我知道了</string>
     <string name="permission_denied_tips_content">%1$s 没有获取到某些运行必须要使用的权限；它不支持动态申请权限. 请去您设备的系统权限管理中赋予本应用必要权限。</string>
-    <string name="permission_denied_ok">启动失败</string>
-    <string name="start_app_failed">启动 %1$s 失败</string>
+    <string name="permission_denied_ok">啟動失敗</string>
+    <string name="start_app_failed">啟動 %1$s 失敗</string>
     <string name="any_apps">部分应用</string>
     <string name="tip_add_apps">正在添加中</string>
     <string-array name="weeks">
@@ -75,5 +75,7 @@
         <item>周五</item>
         <item>周六</item>
     </string-array>
-    <string name="kill_all_app">杀死全部App</string>
+    <string name="kill_all_app">加速</string>
+    <string name="app_settings">App設置</string>
+    <string name="clean_data">清除數據</string>
 </resources>

@@ -7,6 +7,10 @@
 #include <Jni/VAJni.h>
 #include <sys/stat.h>
 #include <syscall.h>
+#include <Foundation/syscall/BinarySyscallFinder.h>
+#include <limits.h>
+#include <sys/socket.h>
+
 #include <asm/mman.h>
 #include <sys/mman.h>
 #include <utils/zMd5.h>
@@ -104,6 +108,7 @@ static inline void
 hook_function(void *handle, const char *symbol, void *new_func, void **old_func) {
     void *addr = dlsym(handle, symbol);
     if (addr == NULL) {
+        ALOGE("Not found symbol : %s", symbol);
         return;
     }
     MSHookFunction(addr, new_func, old_func);
@@ -171,12 +176,42 @@ HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags)
     }
 }
 
+// int fstatat64(int dirfd, const char *pathname, struct stat *buf, int flags);
+HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int flags) {
+    const char *relocated_path = relocate_path(pathname, true);
+    if (relocated_path) {
+        long ret;
+#if defined(__arm__) || defined(__i386__)
+        ret = syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
+#else
+        ret = syscall(__NR_newfstatat, dirfd, relocated_path, buf, flags);
+#endif
+        if (is_TED_Enable()) {
+            int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
+
+            if (fd > 0) {
+                if (EncryptFile::isEncryptFile(fd)) {
+                    EncryptFile ef(relocated_path);
+                    if (ef.create(fd, ENCRYPT_READ)) {
+                        ef.fstat(fd, buf);
+                    }
+                }
+                originalInterface::original_close(fd);
+            }
+        }
+        FREE(relocated_path, pathname);
+        return ret;
+    } else {
+        errno = 13;
+        return -1;
+    }
+}
+
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
     ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
     return syscall(__NR_kill, pid, sig);
 }
-
 
 #ifndef __LP64__
 
@@ -421,32 +456,6 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
     }
 }
 
-// int fstatat64(int dirfd, const char *pathname, struct stat *buf, int flags);
-HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
-        if (is_TED_Enable()) {
-            int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
-
-            if (fd > 0) {
-                if (EncryptFile::isEncryptFile(fd)) {
-                    EncryptFile ef(relocated_path);
-                    if (ef.create(fd, ENCRYPT_READ)) {
-                        ef.fstat(fd, buf);
-                    }
-                }
-                originalInterface::original_close(fd);
-            }
-        }
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
-    }
-}
-
 
 HOOK_DEF(int, fstat, int fd, struct stat *buf)
 {
@@ -503,6 +512,7 @@ HOOK_DEF(int, rename, const char *oldpath, const char *newpath) {
 }
 
 #endif
+
 
 
 // int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
@@ -877,8 +887,20 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
     }
 }
 
-char **relocate_envp(char *const envp[]) {
+char **relocate_envp(const char *pathname, char *const envp[]) {
     char *soPath = getenv("V_SO_PATH");
+    char *soPath64 = getenv("V_SO_PATH_64");
+    FILE *fd = fopen(pathname, "r");
+    if (!fd) {
+        return const_cast<char **>(envp);
+    }
+    for (int i = 0; i < 4; ++i) {
+        fgetc(fd);
+    }
+    if (fgetc(fd) == ELFCLASS64) {
+        soPath = soPath64;
+    }
+    fclose(fd);
     int len = 0;
     int ld_preload_index = -1;
     while (envp[len]) {
@@ -923,8 +945,8 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
         return -1;
     }
     long ret;
-    if (strstr(pathname, "dex2oat")) {
-        char **relocated_envp = relocate_envp(envp);
+    if (1) {
+        char **relocated_envp = relocate_envp(relocated_path, envp);
         ret = syscall(__NR_execve, relocated_path, argv, relocated_envp);
     } else {
         ret = syscall(__NR_execve, relocated_path, argv, envp);
@@ -1677,73 +1699,133 @@ void onSoLoaded(const char *name, void *handle) {
 }
 
 
-void relocate_linker() {
+bool relocate_linker() {
     intptr_t linker_addr, dlopen_off, symbol;
     if ((linker_addr = get_addr(LINKER_PATH)) == 0) {
         ALOGE("Cannot found linker addr.");
-        return;
+        return false;
     }
     if (resolve_symbol(LINKER_PATH, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv",
                        &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIVV,
                        (void **) &orig_do_dlopen_CIVV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPv",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIVV,
                        (void **) &orig_do_dlopen_CIVV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl__ZL10dlopen_extPKciPK17android_dlextinfoPv",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIVV,
                        (void **) &orig_do_dlopen_CIVV);
+        return true;
     } else if (
             resolve_symbol(LINKER_PATH, "__dl__Z20__android_dlopen_extPKciPK17android_dlextinfoPKv",
                            &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIVV,
                        (void **) &orig_do_dlopen_CIVV);
+        return true;
     } else if (
             resolve_symbol(LINKER_PATH, "__dl___loader_android_dlopen_ext",
                            &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIVV,
                        (void **) &orig_do_dlopen_CIVV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl__Z9do_dlopenPKciPK17android_dlextinfo",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIV,
                        (void **) &orig_do_dlopen_CIV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl__Z8__dlopenPKciPKv",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIV,
                        (void **) &orig_do_dlopen_CIV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl___loader_dlopen",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_do_dlopen_CIV,
                        (void **) &orig_do_dlopen_CIV);
+        return true;
     } else if (resolve_symbol(LINKER_PATH, "__dl_dlopen",
                               &dlopen_off) == 0) {
         symbol = linker_addr + dlopen_off;
         MSHookFunction((void *) symbol, (void *) new_dlopen_CI,
                        (void **) &orig_dlopen_CI);
+        return true;
     }
+    return false;
 }
 
+#if defined(__aarch64__)
+bool on_found_syscall_aarch64(const char *path, int num, void *func) {
+    static int pass = 0;
+    switch (num) {
+        case __NR_fchmodat:
+            MSHookFunction(func, (void *) new_fchmodat, (void **) &orig_fchmodat);
+            pass++;
+            break;
+        case __NR_faccessat:
+            MSHookFunction(func, (void *) new_faccessat, (void **) &orig_faccessat);
+            pass++;
+            break;
+        case __NR_statfs:
+            MSHookFunction(func, (void *) new___statfs, (void **) &orig___statfs);
+            pass++;
+            break;
+        case __NR_getcwd:
+            MSHookFunction(func, (void *) new___getcwd, (void **) &orig___getcwd);
+            pass++;
+            break;
+        case __NR_openat:
+            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            pass++;
+            break;
+    }
+    if (pass == 5) {
+        return BREAK_FIND_SYSCALL;
+    }
+    return CONTINUE_FIND_SYSCALL;
+}
+
+bool on_found_linker_syscall_arch64(const char *path, int num, void *func) {
+    switch (num) {
+        case __NR_openat:
+            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            return BREAK_FIND_SYSCALL;
+    }
+    return CONTINUE_FIND_SYSCALL;
+}
+#else
+
+bool on_found_linker_syscall_arm(const char *path, int num, void *func) {
+    switch (num) {
+        case __NR_openat:
+            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            break;
+        case __NR_open:
+            MSHookFunction(func, (void *) new___open, (void **) &orig___open);
+            break;
+    }
+    return CONTINUE_FIND_SYSCALL;
+}
+
+#endif
 
 void startIOHook(int api_level) {
     void *handle = dlopen("libc.so", RTLD_NOW);
     if (handle) {
-#ifdef __LP64__
-        HOOK_SYMBOL(handle, faccessat);
-        HOOK_SYMBOL(handle, __openat);
-        HOOK_SYMBOL(handle, fchmodat);
+#if defined(__aarch64__)
         HOOK_SYMBOL(handle, fchownat);
         HOOK_SYMBOL(handle, renameat);
-        HOOK_SYMBOL(handle, __statfs);
         HOOK_SYMBOL(handle, mkdirat);
         HOOK_SYMBOL(handle, mknodat);
         HOOK_SYMBOL(handle, truncate);
@@ -1752,12 +1834,14 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, unlinkat);
         HOOK_SYMBOL(handle, symlinkat);
         HOOK_SYMBOL(handle, utimensat);
-        HOOK_SYMBOL(handle, __getcwd);
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
         HOOK_SYMBOL(handle, statfs64);
         HOOK_SYMBOL(handle, kill);
-//        HOOK_SYMBOL(handle, __getdents64);
+        HOOK_SYMBOL(handle, vfork);
+        HOOK_SYMBOL(handle, fstatat64);
+        findSyscalls("/system/lib64/libc.so", on_found_syscall_aarch64);
+        findSyscalls("/system/bin/linker64", on_found_linker_syscall_arch64);
 #else
         HOOK_SYMBOL(handle, faccessat);
         HOOK_SYMBOL(handle, __openat);
@@ -1779,6 +1863,7 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
         HOOK_SYMBOL(handle, kill);
+        HOOK_SYMBOL(handle, vfork);
         HOOK_SYMBOL(handle, access);
         HOOK_SYMBOL(handle, stat);
         HOOK_SYMBOL(handle, lstat);
@@ -1804,9 +1889,6 @@ void startIOHook(int api_level) {
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
             HOOK_SYMBOL(handle, __open);
-            HOOK_SYMBOL(handle, stat);
-            HOOK_SYMBOL(handle, lstat);
-            HOOK_SYMBOL(handle, fstatat);
             HOOK_SYMBOL(handle, chmod);
             HOOK_SYMBOL(handle, chown);
             HOOK_SYMBOL(handle, rename);
@@ -1817,9 +1899,12 @@ void startIOHook(int api_level) {
             HOOK_SYMBOL(handle, unlink);
             HOOK_SYMBOL(handle, readlink);
             HOOK_SYMBOL(handle, symlink);
-//            HOOK_SYMBOL(handle, getdents);
-//            HOOK_SYMBOL(handle, execv);
         }
+#ifdef __arm__
+        if (!relocate_linker()) {
+            findSyscalls("/system/bin/linker", on_found_linker_syscall_arm);
+        }
+#endif
 #endif
         dlclose(handle);
     }
@@ -1835,15 +1920,16 @@ void startIOHook(int api_level) {
 }
 
 
-void IOUniformer::startUniformer(const char *so_path, int api_level, int preview_api_level) {
+void IOUniformer::startUniformer(const char *so_path, const char *so_path_64, int api_level,
+                                 int preview_api_level) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
     char api_level_chars[56];
     setenv("V_SO_PATH", so_path, 1);
+    setenv("V_SO_PATH_64", so_path_64, 1);
     sprintf(api_level_chars, "%i", api_level);
     setenv("V_API_LEVEL", api_level_chars, 1);
     sprintf(api_level_chars, "%i", preview_api_level);
     setenv("V_PREVIEW_API_LEVEL", api_level_chars, 1);
     startIOHook(api_level);
-
 }

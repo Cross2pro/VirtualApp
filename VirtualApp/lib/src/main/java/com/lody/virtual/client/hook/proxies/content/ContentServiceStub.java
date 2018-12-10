@@ -1,26 +1,18 @@
 package com.lody.virtual.client.hook.proxies.content;
 
-import android.content.pm.ProviderInfo;
-import android.net.Uri;
-
+import com.lody.virtual.client.hook.annotations.Inject;
+import com.lody.virtual.client.hook.annotations.LogInvocation;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
-import com.lody.virtual.client.hook.base.StaticMethodProxy;
-import com.lody.virtual.client.hook.utils.MethodParameterUtils;
-import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.client.stub.StubManifest;
-import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.remote.ClientConfig;
 
-import java.lang.reflect.Method;
-
+import mirror.android.content.ContentResolver;
 import mirror.android.content.IContentService;
 
 /**
  * @author Lody
  * @see IContentService
  */
-
+@LogInvocation(LogInvocation.Condition.ALWAYS)
+@Inject(MethodProxies.class)
 public class ContentServiceStub extends BinderInvocationProxy {
     private static final String TAG = ContentServiceStub.class.getSimpleName();
 
@@ -31,45 +23,8 @@ public class ContentServiceStub extends BinderInvocationProxy {
     @Override
     public void inject() throws Throwable {
         super.inject();
+        ContentResolver.sContentService.set(getInvocationStub().getProxyInterface());
     }
 
-    @Override
-    protected void onBindMethods() {
-        super.onBindMethods();
-        addMethodProxy(new ReplaceUriMethodProxy("registerContentObserver"));
-        addMethodProxy(new ReplaceUriMethodProxy("notifyChange"));
-    }
 
-    private static class ReplaceUriMethodProxy extends StaticMethodProxy {
-        int index = -1;
-
-        ReplaceUriMethodProxy(String name) {
-            super(name);
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (index < 0) {
-                index = MethodParameterUtils.getIndex(args, Uri.class);
-            }
-            if (index >= 0) {
-                args[index] = fakeUri((Uri) args[index]);
-            }
-            return super.call(who, method, args);
-        }
-
-        private Uri fakeUri(Uri uri) {
-            String name = uri.getAuthority();
-            final int userId = VUserHandle.myUserId();
-            ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
-            if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
-                if (config != null) {
-                    String targetAuthority = StubManifest.getStubAuthority(config.vpid, config.is64Bit);
-                    return uri.buildUpon().authority(targetAuthority).build();
-                }
-            }
-            return uri;
-        }
-    }
 }

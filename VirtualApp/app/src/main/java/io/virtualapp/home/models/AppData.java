@@ -6,21 +6,57 @@ import android.graphics.drawable.Drawable;
  * @author Lody
  */
 
-public interface AppData {
+public abstract class AppData {
 
-    boolean isLoading();
+    public boolean isFirstOpen;
+    public boolean isLoading;
 
-    boolean isFirstOpen();
+    public boolean isLoading() {
+        return isLoading;
+    }
 
-    Drawable getIcon();
 
-    String getName();
+    public boolean isFirstOpen() {
+        return isFirstOpen;
+    }
 
-    boolean canReorder();
 
-    boolean canLaunch();
+    public Drawable getIcon() {
+        return null;
+    }
 
-    boolean canDelete();
 
-    boolean canCreateShortcut();
+    public String getName() {
+        return null;
+    }
+
+
+    public String getPackageName() {
+        return null;
+    }
+
+
+    public boolean canReorder() {
+        return false;
+    }
+
+
+    public boolean canLaunch() {
+        return false;
+    }
+
+
+    public boolean canDelete() {
+        return false;
+    }
+
+
+    public boolean canCreateShortcut() {
+        return false;
+    }
+
+
+    public int getUserId() {
+        return 0;
+    }
 }

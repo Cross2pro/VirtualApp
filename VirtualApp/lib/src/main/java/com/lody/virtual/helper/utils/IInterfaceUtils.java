@@ -9,9 +9,6 @@ public class IInterfaceUtils {
         if (binder == null) {
             return false;
         }
-        if (VirtualCore.get().isMainProcess()) {
-            return binder.asBinder().pingBinder();
-        }
         return binder.asBinder().isBinderAlive();
     }
 }

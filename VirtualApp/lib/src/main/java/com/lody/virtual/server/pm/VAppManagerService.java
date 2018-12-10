@@ -1,6 +1,12 @@
 package com.lody.virtual.server.pm;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -8,8 +14,10 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.ArtDexOptimizer;
@@ -23,6 +31,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
+import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
@@ -68,6 +77,46 @@ public class VAppManagerService extends IAppManager.Stub {
     private boolean mBooting;
     private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<>();
     private IAppRequestListener mAppRequestListener;
+    private BroadcastReceiver appEventReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (mBooting) {
+                return;
+            }
+            PendingResult result = goAsync();
+            String action = intent.getAction();
+            if (action == null) {
+                return;
+            }
+            Uri data = intent.getData();
+            if (data == null) {
+                return;
+            }
+            String pkg = data.getSchemeSpecificPart();
+            if (pkg == null) {
+                return;
+            }
+            PackageSetting ps = PackageCacheManager.getSetting(pkg);
+            if (ps == null || ps.appMode != InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
+                return;
+            }
+            ApplicationInfo outInfo = null;
+            try {
+                outInfo = VirtualCore.getPM().getApplicationInfo(pkg, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            if (outInfo == null) {
+                return;
+            }
+            VActivityManagerService.get().killAppByPkg(pkg, VUserHandle.USER_ALL);
+            if (action.equals(Intent.ACTION_PACKAGE_REPLACED)) {
+                InstallResult res = installPackageImpl(outInfo.publicSourceDir, InstallStrategy.FORCE_UPDATE | InstallStrategy.NOT_COPY_APK, false);
+                VLog.e(TAG, "Update package %s %s", res.packageName, res.isSuccess ? "success" : "failed");
+            }
+            result.finish();
+        }
+    };
 
 
     public static VAppManagerService get() {
@@ -79,7 +128,17 @@ public class VAppManagerService extends IAppManager.Stub {
         if (!BuildCompat.isPie()) {
             get().extractRequiredFrameworks();
         }
-        get().mUidSystem.initUidList();
+        get().startup();
+    }
+
+    private void startup() {
+        mVisibleOutsidePackages.add("com.android.providers.downloads");
+        mUidSystem.initUidList();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addDataScheme("package");
+        VirtualCore.get().getContext().registerReceiver(appEventReciever, filter);
     }
 
     public boolean isBooting() {
@@ -109,6 +168,16 @@ public class VAppManagerService extends IAppManager.Stub {
                 mPersistenceLayer.save();
                 VLog.w(TAG, "Package PersistenceLayer updated.");
             }
+            for (String preInstallPkg : SpecialComponentList.getPreInstallPackages()) {
+                if (!isAppInstalled(preInstallPkg)) {
+                    try {
+                        ApplicationInfo outInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(preInstallPkg, 0);
+                        installPackageImpl(outInfo.publicSourceDir, InstallStrategy.NOT_COPY_APK, false);
+                    } catch (PackageManager.NameNotFoundException e) {
+                        // ignore
+                    }
+                }
+            }
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
             mBooting = false;
         }
@@ -134,11 +203,11 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private boolean loadPackageInnerLocked(PackageSetting ps) {
-        if (ps.appMode == InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
+        boolean modeUseOutsideApk = ps.appMode == InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK;
+        if (modeUseOutsideApk) {
             if (!VirtualCore.get().isOutsideInstalled(ps.packageName)) {
                 return false;
             }
-
         }
         File cacheFile = VEnvironment.getPackageCacheFile(ps.packageName);
         VPackage pkg = null;
@@ -152,6 +221,19 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         VEnvironment.chmodPackageDictionary(cacheFile);
         PackageCacheManager.put(pkg, ps);
+        if (modeUseOutsideApk) {
+            try {
+                PackageInfo outInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(ps.packageName, 0);
+                if (pkg.mVersionCode != outInfo.versionCode) {
+                    VLog.d(TAG, "app (" + ps.packageName + ") has changed version, update it.");
+                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE, false);
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+                return false;
+            }
+
+        }
         BroadcastSystem.get().startApp(pkg);
         return true;
     }
@@ -159,6 +241,14 @@ public class VAppManagerService extends IAppManager.Stub {
     @Override
     public boolean isOutsidePackageVisible(String pkg) {
         return pkg != null && mVisibleOutsidePackages.contains(pkg);
+    }
+
+    @Override
+    public int getUidForSharedUser(String sharedUserName) {
+        if (sharedUserName == null) {
+            return -1;
+        }
+        return mUidSystem.getUid(sharedUserName);
     }
 
     @Override
@@ -236,16 +326,12 @@ public class VAppManagerService extends IAppManager.Stub {
                 res.isUpdate = true;
                 return res;
             }
-            if (!canUpdate(existOne, pkg, flags)) {
+            if (!isAllowedUpdate(existOne, pkg, flags)) {
                 return InstallResult.makeFailure("Not allowed to update the package.");
             }
             res.isUpdate = true;
         }
         boolean notCopyApk = (flags & InstallStrategy.NOT_COPY_APK) != 0;
-
-        if (existSetting != null && existSetting.appMode == MODE_APP_USE_OUTSIDE_APK) {
-            notCopyApk = false;
-        }
         if (existOne != null) {
             PackageCacheManager.remove(pkg.packageName);
         }
@@ -255,27 +341,38 @@ public class VAppManagerService extends IAppManager.Stub {
         } else {
             ps = new PackageSetting();
         }
-
-        Set<String> abiList = NativeLibraryHelperCompat.getSupportAbiList(packageFile.getPath());
         boolean support64bit = false, support32bit = false;
-        if (abiList.isEmpty()) {
-            support32bit = true;
-        } else {
-            if (NativeLibraryHelperCompat.contain64bitAbi(abiList)) {
-                support64bit = true;
-            }
-            if (NativeLibraryHelperCompat.contain32BitAbi(abiList)) {
-                support32bit = true;
+        boolean checkSupportAbi = true;
+        if (!GmsSupport.GMS_PKG.equals(pkg.packageName) && GmsSupport.isGoogleAppOrService(pkg.packageName)) {
+            PackageSetting gmsPs = PackageCacheManager.getSetting(GmsSupport.GMS_PKG);
+            if (gmsPs != null) {
+                ps.flag = gmsPs.flag;
+                support32bit = isPackageSupport32Bit(ps);
+                support64bit = isPackageSupport64Bit(ps);
+                checkSupportAbi = false;
             }
         }
-        if (support32bit) {
-            if (support64bit) {
-                ps.flag = PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT;
+        if (checkSupportAbi) {
+            Set<String> abiList = NativeLibraryHelperCompat.getSupportAbiList(packageFile.getPath());
+            if (abiList.isEmpty()) {
+                support32bit = true;
             } else {
-                ps.flag = PackageSetting.FLAG_RUN_32BIT;
+                if (NativeLibraryHelperCompat.contain64bitAbi(abiList)) {
+                    support64bit = true;
+                }
+                if (NativeLibraryHelperCompat.contain32BitAbi(abiList)) {
+                    support32bit = true;
+                }
             }
-        } else {
-            ps.flag = PackageSetting.FLAG_RUN_64BIT;
+            if (support32bit) {
+                if (support64bit) {
+                    ps.flag = PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT;
+                } else {
+                    ps.flag = PackageSetting.FLAG_RUN_32BIT;
+                }
+            } else {
+                ps.flag = PackageSetting.FLAG_RUN_64BIT;
+            }
         }
         NativeLibraryHelperCompat.copyNativeBinaries(packageFile, VEnvironment.getAppLibDirectory(pkg.packageName));
 
@@ -351,19 +448,17 @@ public class VAppManagerService extends IAppManager.Stub {
         return false;
     }
 
-    private boolean canUpdate(VPackage existOne, VPackage newOne, int flags) {
+    private boolean isAllowedUpdate(VPackage existOne, VPackage newOne, int flags) {
         if ((flags & InstallStrategy.FORCE_UPDATE) != 0) {
             return true;
         }
         if ((flags & InstallStrategy.COMPARE_VERSION) != 0) {
-            if (existOne.mVersionCode < newOne.mVersionCode) {
-                return true;
-            }
+            return existOne.mVersionCode < newOne.mVersionCode;
         }
         if ((flags & InstallStrategy.TERMINATE_IF_EXIST) != 0) {
             return false;
         }
-        return false;
+        return true;
     }
 
 
@@ -415,12 +510,31 @@ public class VAppManagerService extends IAppManager.Stub {
 
     private void deletePackageDataAsUser(int userId, PackageSetting ps) {
         if (isPackageSupport32Bit(ps)) {
-            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+            if (userId == -1) {
+                List<VUserInfo> userInfos = VUserManager.get().getUsers();
+                if (userInfos != null) {
+                    for (VUserInfo info : userInfos) {
+                        FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(info.id, ps.packageName));
+                    }
+                }
+            } else {
+                FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+            }
         }
         if (isPackageSupport64Bit(ps)) {
-            V64BitHelper.uninstallPackageData64(userId, ps.packageName);
+            V64BitHelper.cleanPackageData64(userId, ps.packageName);
         }
         VNotificationManagerService.get().cancelAllNotification(ps.packageName, userId);
+    }
+
+    public boolean cleanPackageData(String pkg, int userId) {
+        PackageSetting ps = PackageCacheManager.getSetting(pkg);
+        if (ps == null) {
+            return false;
+        }
+        VActivityManagerService.get().killAppByPkg(pkg, userId);
+        deletePackageDataAsUser(userId, ps);
+        return true;
     }
 
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
@@ -437,9 +551,13 @@ public class VAppManagerService extends IAppManager.Stub {
                 }
             }
             if (isPackageSupport64Bit(ps)) {
-                V64BitHelper.uninstallPackageData64(-1, packageName);
+                V64BitHelper.uninstallPackage64(-1, packageName);
             }
             PackageCacheManager.remove(packageName);
+            File cacheFile = VEnvironment.getPackageCacheFile(packageName);
+            cacheFile.delete();
+            File signatureFile = VEnvironment.getSignatureFile(packageName);
+            signatureFile.delete();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -643,7 +761,6 @@ public class VAppManagerService extends IAppManager.Stub {
         return true;
     }
 
-
     public boolean isPackageLaunched(int userId, String packageName) {
         PackageSetting ps = PackageCacheManager.getSetting(packageName);
         return ps != null && ps.isLaunched(userId);
@@ -662,11 +779,11 @@ public class VAppManagerService extends IAppManager.Stub {
         return setting != null ? setting.appId : -1;
     }
 
-
     void restoreFactoryState() {
         VLog.w(TAG, "Warning: Restore the factory state...");
         VEnvironment.getDalvikCacheDirectory().delete();
         VEnvironment.getUserSystemDirectory().delete();
+        VEnvironment.getUserDeSystemDirectory().delete();
         VEnvironment.getDataAppDirectory().delete();
     }
 
@@ -674,14 +791,16 @@ public class VAppManagerService extends IAppManager.Stub {
         mPersistenceLayer.save();
     }
 
-
-    public InstallResult upgradePackage(String pkg, String path, int flag) {
-        return installPackageImpl(path, flag, false);
-    }
-
-    public VPackage updatePackageCache(String newPath, String packageName) throws Throwable {
-        VPackage newPackage = PackageParserEx.parsePackage(new File(newPath));
-        PackageParserEx.savePackageCache(newPackage);
-        return newPackage;
+    public boolean is64BitUid(int uid) throws PackageManager.NameNotFoundException {
+        int appId = VUserHandle.getAppId(uid);
+        synchronized (PackageCacheManager.PACKAGE_CACHE) {
+            for (VPackage p : PackageCacheManager.PACKAGE_CACHE.values()) {
+                PackageSetting ps = (PackageSetting) p.mExtras;
+                if (ps.appId == appId) {
+                    return ps.isRunOn64BitProcess();
+                }
+            }
+        }
+        throw new PackageManager.NameNotFoundException();
     }
 }

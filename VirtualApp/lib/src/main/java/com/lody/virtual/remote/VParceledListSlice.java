@@ -1,14 +1,14 @@
 package com.lody.virtual.remote;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Transfer a large list of Parcelable objects across an IPC. Splits into
@@ -57,6 +57,9 @@ public class VParceledListSlice<T extends Parcelable> implements Parcelable {
 	}
 
 	private VParceledListSlice(Parcel p, ClassLoader loader) {
+		if (loader == null) {
+			loader = VParceledListSlice.class.getClassLoader();
+		}
 		final int N = p.readInt();
 		mList = new ArrayList<T>(N);
 		if (DEBUG)

@@ -9,14 +9,13 @@ import com.lody.virtual.remote.InstalledAppInfo;
  * @author Lody
  */
 
-public class MultiplePackageAppData implements AppData {
+public class MultiplePackageAppData extends AppData {
 
     public InstalledAppInfo appInfo;
     public int userId;
-    public boolean isFirstOpen;
-    public boolean isLoading;
     public Drawable icon;
     public String name;
+    public String packageName;
 
     public MultiplePackageAppData(PackageAppData target, int userId) {
         this.userId = userId;
@@ -29,6 +28,7 @@ public class MultiplePackageAppData implements AppData {
             }
         }
         name = target.name;
+        packageName = target.packageName;
     }
 
     @Override
@@ -52,6 +52,11 @@ public class MultiplePackageAppData implements AppData {
     }
 
     @Override
+    public String getPackageName() {
+        return packageName;
+    }
+
+    @Override
     public boolean canReorder() {
         return true;
     }
@@ -69,5 +74,10 @@ public class MultiplePackageAppData implements AppData {
     @Override
     public boolean canCreateShortcut() {
         return true;
+    }
+
+    @Override
+    public int getUserId() {
+        return userId;
     }
 }

@@ -38,7 +38,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
-import com.lody.virtual.helper.compat.ProxyFCPUriCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
@@ -393,8 +392,6 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         if (intent != null) {
             ActivityInfo info = VirtualCore.get().resolveActivityInfo(intent, mLaunchedFromUid);
             if (info == null) {
-                //outside need fake uri
-                intent = ProxyFCPUriCompat.get().fakeFileUri(intent);
                 startActivity(intent);
             } else {
                 intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);

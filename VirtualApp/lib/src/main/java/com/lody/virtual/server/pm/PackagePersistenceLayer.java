@@ -19,7 +19,7 @@ import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK;
 class PackagePersistenceLayer extends PersistenceLayer {
 
     private static final char[] MAGIC = {'v', 'p', 'k', 'g'};
-    private static final int CURRENT_VERSION = PackageSetting.VERSION;
+    private static final int CURRENT_VERSION = PackageSetting.CURRENT_VERSION;
     public boolean changed = false;
 
     private VAppManagerService mService;
@@ -62,7 +62,7 @@ class PackagePersistenceLayer extends PersistenceLayer {
         int count = p.readInt();
         while (count-- > 0) {
             PackageSetting setting;
-            if (version < PackageSetting.VERSION) {
+            if (version < PackageSetting.FIRST_V2_VERSION) {
                 changed = true;
                 PackageSettingV1 v1 = new PackageSettingV1();
                 v1.readFromParcel(p, version);
@@ -76,7 +76,7 @@ class PackagePersistenceLayer extends PersistenceLayer {
                 v2.lastUpdateTime = v2.firstInstallTime;
                 setting = v2;
             } else {
-                setting = new PackageSetting(p);
+                setting = new PackageSetting(version, p);
             }
             if (!mService.loadPackage(setting)) {
                 changed = true;

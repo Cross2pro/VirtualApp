@@ -21,6 +21,7 @@ LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Jni
 
 LOCAL_SRC_FILES := Jni/VAJni.cpp \
 				   Jni/Helper.cpp \
+				   Foundation/syscall/BinarySyscallFinder.cpp \
 				   Foundation/fake_dlfcn.cpp \
 				   Foundation/IORelocator.cpp \
 				   Foundation/VMHook.cpp \

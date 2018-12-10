@@ -30,7 +30,17 @@ public class ISubStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubscriptionInfo"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubscriptionInfoForIccId"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubscriptionInfoForSimSlotIndex"));
-        addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubscriptionInfoList"));
+        addMethodProxy(new StaticMethodProxy("getActiveSubscriptionInfoList") {
+            @Override
+            public Object call(Object who, Method method, Object... args) {
+                try {
+                    return super.call(who, method, args);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        });
         addMethodProxy(new ReplaceLastPkgMethodProxy("getActiveSubInfoCount"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getSubscriptionProperty"));
         addMethodProxy(new StaticMethodProxy(Build.VERSION.SDK_INT >= 24 ?

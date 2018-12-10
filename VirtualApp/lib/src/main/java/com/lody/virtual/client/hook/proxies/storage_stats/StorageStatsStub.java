@@ -31,7 +31,6 @@ public class StorageStatsStub extends BinderInvocationProxy {
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-        addMethodProxy(new ReplaceLastPkgMethodProxy("getCacheBytes"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getTotalBytes"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getCacheBytes"));
         addMethodProxy(new ReplaceLastPkgMethodProxy("getCacheQuotaBytes"));

@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import com.lody.virtual.client.env.VirtualRuntime;
+
 public class ANRWatchDog extends Thread {
     private static final int MESSAGE_WATCHDOG_TIME_TICK = 0;
     private static final int ANR_TIMEOUT = 5000;
@@ -62,9 +64,12 @@ public class ANRWatchDog extends Thread {
 
     public static class ANRException extends RuntimeException {
         public ANRException() {
-            super("========= ANR =========");
+            super("========= ANR =========" + getAnrDesc());
             Thread mainThread = Looper.getMainLooper().getThread();
             setStackTrace(mainThread.getStackTrace());
+        }
+        private static String getAnrDesc() {
+            return VirtualCore.get().isVAppProcess() ? VirtualRuntime.getProcessName() : VirtualCore.get().getProcessName();
         }
     }
 }  

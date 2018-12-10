@@ -1,29 +1,26 @@
 apply plugin: 'com.android.library'
 
-def version = '3.1.2'
-def version_code = 180080611
+
 android {
     compileSdkVersion 26
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 22
-        versionCode version_code
-        versionName version
 
-        buildConfigField 'String', 'VA_VERSION_NAME', '"V' + version + '"'
+        buildConfigField 'String', 'VA_VERSION_NAME', '"V' + rootProject.ext.VERSION + '"'
         manifestPlaceholders = [
-                VA_VERSION:''+version_code,
+                PERMISSION_PREFIX:  rootProject.ext.PACKAGE_NAME_32BIT,
+                AUTHORITY_PREFIX :  rootProject.ext.PACKAGE_NAME_32BIT,
+                VA_VERSION       : '' + rootProject.ext.VERSION_CODE,
         ]
         externalNativeBuild {
             ndkBuild {
-                cFlags "-O2"
-                cppFlags "-O2"
                 abiFilters "armeabi", "armeabi-v7a"
             }
         }
     }
     buildTypes {
-        debug{
+        debug {
             jniDebuggable false
         }
         release {
@@ -46,9 +43,14 @@ gradle.taskGraph.afterTask { task ->
     def TASK_NAME = "transformNativeLibsWithStripDebugSymbolFor"
     def COPY_ABI_LIST = [
             "lib/armeabi/",
-            "lib/armeabi-v7a/"
+            "lib/armeabi-v7a/",
+    ]
+
+    def COPY_FOR_HOUDINI_ABI_LIST = [
+            "lib/x86/"
     ]
     if (task.name.startsWith(TASK_NAME)) {
+        println("performing lib64 transforming...")
         String buildType = task.name.substring(TASK_NAME.length()).toLowerCase(Locale.US)
         File root = new File(buildDir, "intermediates/transforms/stripDebugSymbol/${buildType}")
         // 0\lib\arm64-v8a
@@ -63,7 +65,13 @@ gradle.taskGraph.afterTask { task ->
                         def toFile = new File(numberDir, abi + soFile.name)
                         GFileUtils.copyFile(soFile, toFile)
                     }
+                    for (String abi : COPY_FOR_HOUDINI_ABI_LIST) {
+                        def toFile = new File(numberDir, abi + soFile.name)
+                        toFile.getParentFile().mkdirs()
+                        toFile.createNewFile()
+                    }
                     soFile.delete()
+                    println("delete : " + soFile.path)
                 }
             }
             soDir.delete()

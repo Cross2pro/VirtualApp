@@ -7,7 +7,6 @@ import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.InstallResult;
-import com.lody.virtual.server.pm.OatHelper;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,14 +18,19 @@ public class GmsSupport {
     private static final String TAG = GmsSupport.class.getSimpleName();
     private static final HashSet<String> GOOGLE_APP = new HashSet<>();
     private static final HashSet<String> GOOGLE_SERVICE = new HashSet<>();
+    public static final String GMS_PKG = "com.google.android.gms";
+    public static final String GSF_PKG = "com.google.android.gsf";
+    public static final String VENDING_PKG = "com.android.vending";
 
     static {
-        GOOGLE_APP.add("com.android.vending");
+        GOOGLE_APP.add(VENDING_PKG);
         GOOGLE_APP.add("com.google.android.play.games");
         GOOGLE_APP.add("com.google.android.wearable.app");
         GOOGLE_APP.add("com.google.android.wearable.app.cn");
-        GOOGLE_SERVICE.add("com.google.android.gsf");
-        GOOGLE_SERVICE.add("com.google.android.gms");
+
+        // GMS must install at first
+        GOOGLE_SERVICE.add(GMS_PKG);
+        GOOGLE_SERVICE.add(GSF_PKG);
         GOOGLE_SERVICE.add("com.google.android.gsf.login");
         GOOGLE_SERVICE.add("com.google.android.backuptransport");
         GOOGLE_SERVICE.add("com.google.android.backup");
@@ -40,7 +44,7 @@ public class GmsSupport {
     }
 
     public static boolean isGoogleFrameworkInstalled() {
-        return VirtualCore.get().isAppInstalled("com.google.android.gms");
+        return VirtualCore.get().isAppInstalled(GMS_PKG);
     }
 
     public static boolean isGoogleService(String packageName) {
@@ -52,7 +56,7 @@ public class GmsSupport {
     }
 
     public static boolean isOutsideGoogleFrameworkExist() {
-        return VirtualCore.get().isOutsideInstalled("com.google.android.gms");
+        return VirtualCore.get().isOutsideInstalled(GMS_PKG);
     }
 
     private static void installPackages(Set<String> list, int userId) {
@@ -68,16 +72,12 @@ public class GmsSupport {
                 // Ignore
                 continue;
             }
-            if (!OatHelper.containDex(info.sourceDir)) {
-                VLog.w(TAG, "Package " + packageName + " not contain classes.dex.");
-                continue;
-            }
             if (userId == 0) {
                 InstallResult result = core.installPackageSync(info.sourceDir, InstallStrategy.NOT_COPY_APK);
                 if (result.isSuccess) {
-                    VLog.i(TAG, "installed :" + info.packageName);
+                    VLog.w(TAG, "install gms pkg success:" + info.packageName);
                 } else {
-                    VLog.i(TAG, "install fail:" + info.packageName + ",error : " + result.error);
+                    VLog.w(TAG, "install gms pkg fail:" + info.packageName + ",error : " + result.error);
                 }
             } else {
                 core.installPackageAsUser(userId, packageName);
@@ -96,7 +96,7 @@ public class GmsSupport {
     }
 
     public static boolean isInstalledGoogleService() {
-        return VirtualCore.get().isAppInstalled("com.google.android.gms");
+        return VirtualCore.get().isAppInstalled(GMS_PKG);
     }
 
 }

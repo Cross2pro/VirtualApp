@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.widget.Toast;
 
 import com.lody.virtual.helper.compat.PermissionCompat;
@@ -48,7 +47,6 @@ public class PermissionRequestActivity extends Activity {
         requestPermissions(permissions, appName);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     private void requestPermissions(String[] permissions, String appName) {
         requestPermissions(permissions, REQUEST_PERMISSION_CODE);
     }

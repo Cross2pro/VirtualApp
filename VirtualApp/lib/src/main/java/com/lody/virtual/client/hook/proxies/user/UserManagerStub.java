@@ -35,7 +35,7 @@ public class UserManagerStub extends BinderInvocationProxy {
         addMethodProxy(new ResultStaticMethodProxy("getDefaultGuestRestrictions", null));
         addMethodProxy(new ResultStaticMethodProxy("setDefaultGuestRestrictions", null));
         addMethodProxy(new ResultStaticMethodProxy("removeRestrictions", null));
-        addMethodProxy(new ResultStaticMethodProxy("getUsers", Collections.EMPTY_LIST));
+        addMethodProxy(new ResultStaticMethodProxy("getUsers", Collections.singletonList(UserInfo.ctor.newInstance(0, "Admin", UserInfo.FLAG_PRIMARY.get()))));
         addMethodProxy(new ResultStaticMethodProxy("createUser", null));
         addMethodProxy(new ResultStaticMethodProxy("createProfileForUser", null));
         addMethodProxy(new ResultStaticMethodProxy("getProfiles", Collections.EMPTY_LIST));

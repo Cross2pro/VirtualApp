@@ -17,7 +17,7 @@ public class AppInfoLite implements Parcelable {
     public String[] requestedPermissions;
 
     public AppInfoLite(AppInfo appInfo) {
-        this(appInfo.packageName, appInfo.path, String.valueOf(appInfo.name), appInfo.fastOpen,
+        this(appInfo.packageName, appInfo.path, String.valueOf(appInfo.name), appInfo.cloneMode,
                 appInfo.targetSdkVersion, appInfo.requestedPermissions);
     }
 

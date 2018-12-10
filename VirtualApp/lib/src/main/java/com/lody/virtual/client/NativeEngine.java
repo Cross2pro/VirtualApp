@@ -1,5 +1,7 @@
 package com.lody.virtual.client;
 
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Process;
@@ -168,10 +170,16 @@ public class NativeEngine {
         if (sEnabled) {
             return;
         }
+        ApplicationInfo coreAppInfo;
         try {
-            String soPath = new File(VirtualCore.get().getContext().getApplicationInfo().nativeLibraryDir,
-                    "lib" + LIB_NAME + ".so").getAbsolutePath();
-            nativeEnableIORedirect(soPath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
+            coreAppInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(VirtualCore.getConfig().getHostPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            String soPath = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME + ".so").getAbsolutePath();
+            String soPath64 = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME_64 + ".so").getAbsolutePath();
+            nativeEnableIORedirect(soPath, soPath64, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -220,7 +228,7 @@ public class NativeEngine {
             return originUid;
         }
         int callingPid = Binder.getCallingPid();
-        if (callingPid == Process.myPid()) {
+        if (callingPid == Process.myUid()) {
             return VClient.get().getVUid();
         }
         return VActivityManager.get().getUidByPid(callingPid);
@@ -289,11 +297,9 @@ public class NativeEngine {
 
     public static native boolean nativeGetDecryptState();
 
-    private static native void nativeDlOpenWhitelist(String path);
-
     private static native void nativeIOReadOnly(String path);
 
-    private static native void nativeEnableIORedirect(String selfSoPath, int apiLevel, int previewApiLevel);
+    private static native void nativeEnableIORedirect(String soPath, String soPath64, int apiLevel, int previewApiLevel);
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy();
 

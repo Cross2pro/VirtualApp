@@ -3,7 +3,6 @@ package io.virtualapp.home;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.pm.ApplicationInfo;
-import android.graphics.Bitmap;
 import android.os.Build;
 import android.widget.Toast;
 
@@ -15,6 +14,7 @@ import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.server.bit64.V64BitHelper;
 
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
@@ -65,27 +65,32 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     }
 
     @Override
+    public boolean check64bitEnginePermission() {
+        if (VirtualCore.get().is64BitEngineInstalled()) {
+            if (!V64BitHelper.has64BitEngineStartPermission()) {
+                mView.showPermissionDialog();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void launchApp(AppData data) {
         try {
-            int userId = -1;
-            String packageName = null;
-            if (data instanceof PackageAppData) {
-                PackageAppData appData = (PackageAppData) data;
-                appData.isFirstOpen = false;
-                userId = 0;
-                packageName = appData.packageName;
-            } else if (data instanceof MultiplePackageAppData) {
-                MultiplePackageAppData multipleData = (MultiplePackageAppData) data;
-                multipleData.isFirstOpen = false;
-                packageName = multipleData.appInfo.packageName;
-                userId = ((MultiplePackageAppData) data).userId;
-            }
+            int userId = data.getUserId();
+            String packageName = data.getPackageName();
             if (userId != -1 && packageName != null) {
                 boolean runAppNow = true;
-                if(Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(packageName, userId);
                     ApplicationInfo applicationInfo = info.getApplicationInfo(0);
                     boolean is64bit = VirtualCore.get().isRun64BitProcess(info.packageName);
+                    if (is64bit) {
+                        if (check64bitEnginePermission()) {
+                            return;
+                        }
+                    }
                     if (PermissionCompat.isCheckPermissionRequired(applicationInfo.targetSdkVersion)) {
                         String[] permissions = VPackageManager.get().getDangrousPermissions(info.packageName);
                         if (!PermissionCompat.checkPermissions(permissions, is64bit)) {
@@ -95,7 +100,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                     }
                 }
                 if (runAppNow) {
-                    VActivityManager.get().launchApp(userId, packageName);
+                    data.isFirstOpen = false;
+                    launchApp(userId, packageName);
                 }
             }
         } catch (Throwable e) {
@@ -103,6 +109,19 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         }
     }
 
+    private void launchApp(int userId, String packageName) {
+        if (VirtualCore.get().isRun64BitProcess(packageName)) {
+            if (!VirtualCore.get().is64BitEngineInstalled()) {
+                Toast.makeText(mActivity, "Please install 64bit engine.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!V64BitHelper.has64BitEngineStartPermission()) {
+                Toast.makeText(mActivity, "No Permission to start 64bit engine.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+        VActivityManager.get().launchApp(userId, packageName);
+    }
 
 
     @Override
@@ -209,12 +228,7 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         mView.removeAppToLauncher(data);
         ProgressDialog dialog = ProgressDialog.show(mActivity, mActivity.getString(R.string.tip_delete), data.getName());
         VUiKit.defer().when(() -> {
-            if (data instanceof PackageAppData) {
-                mRepo.removeVirtualApp(((PackageAppData) data).packageName, 0);
-            } else {
-                MultiplePackageAppData appData = (MultiplePackageAppData) data;
-                mRepo.removeVirtualApp(appData.appInfo.packageName, appData.userId);
-            }
+            mRepo.removeVirtualApp(data.getPackageName(), data.getUserId());
         }).fail((e) -> {
             dialog.dismiss();
         }).done((rs) -> {
@@ -223,28 +237,8 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     }
 
     @Override
-    public void createShortcut(AppData data) {
-        VirtualCore.OnEmitShortcutListener listener = new VirtualCore.OnEmitShortcutListener() {
-            @Override
-            public Bitmap getIcon(Bitmap originIcon) {
-                return originIcon;
-            }
-
-            @Override
-            public String getName(String originName) {
-                return originName + "(VA)";
-            }
-        };
-        if (data instanceof PackageAppData) {
-            if (!VirtualCore.get().createShortcut(0, ((PackageAppData) data).packageName, listener)) {
-                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
-            }
-        } else if (data instanceof MultiplePackageAppData) {
-            MultiplePackageAppData appData = (MultiplePackageAppData) data;
-            if (!VirtualCore.get().createShortcut(appData.userId, appData.appInfo.packageName, listener)) {
-                Toast.makeText(mActivity, "create shortcut fail", Toast.LENGTH_SHORT).show();
-            }
-        }
+    public void enterAppSetting(AppData data) {
+        AppSettingActivity.enterAppSetting(mActivity, data.getPackageName(), data.getUserId());
     }
 
     @Override

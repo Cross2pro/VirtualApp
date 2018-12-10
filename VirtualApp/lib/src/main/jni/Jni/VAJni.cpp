@@ -1,4 +1,4 @@
-#include <elf.h>//
+
 // VirtualApp Native Project
 //
 #include <Foundation/IORelocator.h>
@@ -17,10 +17,12 @@ static void jni_nativeLaunchEngine(JNIEnv *env, jclass clazz, jobjectArray javaM
 }
 
 
-static void jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring selfSoPath, jint apiLevel,
-                                       jint preview_api_level) {
-    ScopeUtfString so_path(selfSoPath);
-    IOUniformer::startUniformer(so_path.c_str(), apiLevel, preview_api_level);
+static void
+jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring soPath, jstring soPath64, jint apiLevel,
+                           jint preview_api_level) {
+    ScopeUtfString so_path(soPath);
+    ScopeUtfString so_path_64(soPath64);
+    IOUniformer::startUniformer(so_path.c_str(), so_path_64.c_str(), apiLevel, preview_api_level);
 }
 
 static void jni_nativeIOWhitelist(JNIEnv *env, jclass jclazz, jstring _path) {
@@ -88,13 +90,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
     static JNINativeMethod methods[] = {
             {"nativeLaunchEngine",                     "([Ljava/lang/Object;Ljava/lang/String;ZIII)V", (void *) jni_nativeLaunchEngine},
             {"nativeReverseRedirectedPath",            "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeReverseRedirectedPath},
-            {"nativeGetRedirectedPath",                "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeReverseRedirectedPath},
+            {"nativeGetRedirectedPath",                "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeGetRedirectedPath},
             {"nativeIORedirect",                       "(Ljava/lang/String;Ljava/lang/String;)V",      (void *) jni_nativeIORedirect},
             {"nativeIOWhitelist",                      "(Ljava/lang/String;)V",                        (void *) jni_nativeIOWhitelist},
             {"nativeIOForbid",                         "(Ljava/lang/String;)V",                        (void *) jni_nativeIOForbid},
             {"nativeIOReadOnly",                       "(Ljava/lang/String;)V",                        (void *) jni_nativeIOReadOnly},
-            {"nativeEnableIORedirect",                 "(Ljava/lang/String;II)V",                      (void *) jni_nativeEnableIORedirect},
+            {"nativeEnableIORedirect",                 "(Ljava/lang/String;Ljava/lang/String;II)V",    (void *) jni_nativeEnableIORedirect},
             {"nativeBypassHiddenAPIEnforcementPolicy", "()V",                                          (void *) jni_bypassHiddenAPIEnforcementPolicy},
+            {"nativeGetDecryptState",                  "()Z",                                          (void *) jni_nativeGetDecryptState},
+            {"nativeChangeDecryptState",               "(Z)V",                                          (void *) jni_nativeChangeDecryptState},
+            {"nativeCloseAllSocket",                   "()Z",                                          (void *) jni_nativeCloseAllSocket},
     };
 
     if (env->RegisterNatives(nativeEngineClass, methods, 9) < 0) {

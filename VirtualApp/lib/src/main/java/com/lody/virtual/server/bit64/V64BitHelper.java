@@ -43,8 +43,8 @@ public class V64BitHelper extends ContentProvider {
             "getRecentTasks",
             "forceStop",
             "copyPackage",
+            "uninstallPackage",
             "cleanPackageData"
-
     };
 
     private static String getAuthority() {
@@ -95,12 +95,33 @@ public class V64BitHelper extends ContentProvider {
         } else if (METHODS[4].equals(method)) {
             return copyPackage64(extras);
         } else if (METHODS[5].equals(method)) {
-            return uninstallPackageData64(extras);
+            return uninstallPackage64(extras);
+        } else if (METHODS[5].equals(method)) {
+            return cleanPackageData64(extras);
         }
         return null;
     }
 
-    private Bundle uninstallPackageData64(Bundle extras) {
+    private Bundle cleanPackageData64(Bundle extras) {
+        int userId = extras.getInt("user_id", -1);
+        String packageName = extras.getString("package_name");
+        if (packageName == null) {
+            return null;
+        }
+        if (userId == -1) {
+            List<VUserInfo> userInfos = VUserManager.get().getUsers();
+            if (userInfos != null) {
+                for (VUserInfo info : userInfos) {
+                    FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(info.id, packageName));
+                }
+            }
+        } else {
+            FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(userId, packageName));
+        }
+        return null;
+    }
+
+    private Bundle uninstallPackage64(Bundle extras) {
         int userId = extras.getInt("user_id", -1);
         String packageName = extras.getString("package_name");
         if (packageName == null) {
@@ -111,7 +132,7 @@ public class V64BitHelper extends ContentProvider {
             FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory64(packageName));
             VEnvironment.getOdexFile64(packageName).delete();
             List<VUserInfo> userInfos = VUserManager.get().getUsers();
-            if(userInfos != null) {
+            if (userInfos != null) {
                 for (VUserInfo info : userInfos) {
                     FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(info.id, packageName));
                 }
@@ -199,7 +220,7 @@ public class V64BitHelper extends ContentProvider {
         return res;
     }
 
-    public static boolean is64BitEngineStarted() {
+    public static boolean has64BitEngineStartPermission() {
         try {
             new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName("@").call();
             return true;
@@ -257,9 +278,18 @@ public class V64BitHelper extends ContentProvider {
     }
 
 
-    public static void uninstallPackageData64(int userId, String packageName) {
+    public static void uninstallPackage64(int userId, String packageName) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
             new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[5])
+                    .addArg("user_id", userId)
+                    .addArg("package_name", packageName)
+                    .callSafely();
+        }
+    }
+
+    public static void cleanPackageData64(int userId, String packageName) {
+        if (VirtualCore.get().is64BitEngineInstalled()) {
+            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[6])
                     .addArg("user_id", userId)
                     .addArg("package_name", packageName)
                     .callSafely();

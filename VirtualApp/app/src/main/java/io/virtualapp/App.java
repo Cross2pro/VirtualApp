@@ -59,7 +59,7 @@ public class App extends Application {
 
         @Override
         public AppLibConfig getAppLibConfig(String packageName) {
-            return AppLibConfig.UseRealLib;
+            return AppLibConfig.UseOwnLib;
         }
 
         @Override

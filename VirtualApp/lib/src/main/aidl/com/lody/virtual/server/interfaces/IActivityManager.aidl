@@ -60,6 +60,8 @@ interface IActivityManager{
 
     int startActivity(in Intent intent,in  ActivityInfo info,in  IBinder resultTo,in  Bundle options, String resultWho, int requestCode, int userId);
 
+    boolean finishActivityAffinity(int userId, in IBinder token);
+
     void onActivityCreated(in IBinder record, in IBinder token, int taskId);
 
     void onActivityResumed(int userId,in  IBinder token);
@@ -80,28 +82,6 @@ interface IActivityManager{
 
     String getPackageForToken(int userId,in  IBinder token);
 
-    boolean isVAServiceToken(in IBinder token);
-
-    ComponentName startService(in Intent service, String resolvedType, int userId);
-
-    int stopService(in IBinder caller,in  Intent service, String resolvedType, int userId);
-
-    boolean stopServiceToken(in ComponentName className,in  IBinder token, int startId, int userId);
-
-    void setServiceForeground(in ComponentName className,in  IBinder token, int id,in  Notification notification, boolean removeNotification, int userId);
-
-    int bindService(in IBinder caller,in  IBinder token,in  Intent service, String resolvedType, IServiceConnection connection, int flags, int userId);
-
-    boolean unbindService(in IServiceConnection connection, int userId);
-
-    void unbindFinished(in IBinder token,in  Intent service, boolean doRebind, int userId);
-
-    void serviceDoneExecuting(in IBinder token, int type, int startId, int res, int userId);
-
-    IBinder peekService(in Intent service, String resolvedType, int userId);
-
-    void publishService(in IBinder token,in  Intent intent,in  IBinder service, int userId);
-
     VParceledListSlice getServices(int maxNum, int flags, int userId);
 
     IBinder acquireProviderClient(int userId,in  ProviderInfo info);
@@ -121,6 +101,24 @@ interface IActivityManager{
     void setAppInactive(String packageName, boolean idle, int userId);
 
     boolean isAppInactive(String packageName, int userId);
+
+    ComponentName startService(int userId, in Intent service);
+
+    void stopService(int appUserId, in ServiceInfo serviceInfo);
+
+    void unbindService(int userId, in IBinder token);
+
+    Intent bindService(int userId, in Intent intent, in ServiceInfo serviceInfo, in IBinder binder, in int flags);
+
+    void onServiceStartCommand(int userId, int startId, in ServiceInfo serviceInfo, in Intent intent);
+
+    int onServiceStop(int userId, in ComponentName component, int targetStartId);
+
+    void onServiceDestroyed(int userId, in ComponentName component);
+
+    int onServiceUnBind(int userId, in ComponentName component);
+
+    void handleDownloadCompleteIntent(in Intent intent);
 
     int getRunningAppMemorySize(String packageName, int userId);
 

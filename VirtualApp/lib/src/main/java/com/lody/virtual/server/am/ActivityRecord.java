@@ -6,8 +6,6 @@ import android.content.pm.ActivityInfo;
 import android.os.Binder;
 import android.os.IBinder;
 
-import com.lody.virtual.helper.utils.ComponentUtils;
-
 /**
  * @author Lody
  *
@@ -24,10 +22,15 @@ import com.lody.virtual.helper.utils.ComponentUtils;
     public ProcessRecord process;
     public boolean marked;
 
+
     public ActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
         this.intent = intent;
         this.info = info;
-        this.component = ComponentUtils.toComponentName(info);
+        if (info.targetActivity != null) {
+            this.component = new ComponentName(info.packageName, info.targetActivity);
+        } else {
+            this.component = new ComponentName(info.packageName, info.name);
+        }
         this.resultTo = resultTo;
     }
 
@@ -40,5 +43,4 @@ import com.lody.virtual.helper.utils.ComponentUtils;
     public boolean isLaunching() {
         return process == null;
     }
-
 }

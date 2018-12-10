@@ -9,7 +9,7 @@ import io.virtualapp.R;
  * @author Lody
  */
 
-public class AddAppButton implements AppData {
+public class AddAppButton extends AppData {
 
     private String name;
     private Drawable icon;
@@ -40,6 +40,11 @@ public class AddAppButton implements AppData {
     }
 
     @Override
+    public String getPackageName() {
+        return null;
+    }
+
+    @Override
     public boolean canReorder() {
         return false;
     }
@@ -57,5 +62,10 @@ public class AddAppButton implements AppData {
     @Override
     public boolean canCreateShortcut() {
         return false;
+    }
+
+    @Override
+    public int getUserId() {
+        return -1;
     }
 }

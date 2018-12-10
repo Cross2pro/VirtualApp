@@ -1,13 +1,14 @@
 package com.lody.virtual.client.env;
 
 import android.Manifest;
-import android.app.DownloadManager;
 import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,15 @@ import mirror.android.webkit.WebViewFactory;
  */
 public final class SpecialComponentList {
 
+    private static final List<ComponentName> GMS_BLOCK_COMPONENT = Arrays.asList(
+            new ComponentName("com.google.android.gms", "com.google.android.gms.update.SystemUpdateService"),
+            new ComponentName("com.google.android.gsf", "com.google.android.gsf.update.SystemUpdateService")
+    );
+
+    private static final List<String> GMS_BLOCK_ACTION_LIST = Arrays.asList(
+            "com.google.android.gms.update.START_SERVICE"
+    );
+
     private static final List<String> ACTION_BLACK_LIST = new ArrayList<String>(2);
     private static final Map<String, String> PROTECTED_ACTION_MAP = new HashMap<>(5);
     private static final HashSet<String> WHITE_PERMISSION = new HashSet<>(3);
@@ -30,10 +40,10 @@ public final class SpecialComponentList {
     private static final HashSet<String> INSTRUMENTATION_CONFLICTING = new HashSet<>(2);
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
+    private static final Set<String> PRE_INSTALL_PACKAGES = new HashSet<>(7);
     private static String PROTECT_ACTION_PREFIX = "_VA_protected_";
 
     static {
-        SYSTEM_BROADCAST_ACTION.add(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SCREEN_ON);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SCREEN_OFF);
         //SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_NEW_OUTGOING_CALL);  //适配警信，安装警信后打电话慢
@@ -94,6 +104,11 @@ public final class SpecialComponentList {
                 e.printStackTrace();
             }
         }
+        PRE_INSTALL_PACKAGES.add("com.huawei.hwid");
+    }
+
+    public static Set<String> getPreInstallPackages() {
+        return PRE_INSTALL_PACKAGES;
     }
 
     public static void addStaticBroadCastWhiteList(String pkg) {
@@ -106,6 +121,20 @@ public final class SpecialComponentList {
 
     public static boolean isConflictingInstrumentation(String packageName) {
         return INSTRUMENTATION_CONFLICTING.contains(packageName);
+    }
+
+    public static boolean shouldBlockIntent(Intent intent) {
+        ComponentName component = intent.getComponent();
+        if (component != null && GMS_BLOCK_COMPONENT.contains(component)) {
+            return true;
+        }
+        String action = intent.getAction();
+        if (action != null) {
+            if (GMS_BLOCK_ACTION_LIST.contains(action)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

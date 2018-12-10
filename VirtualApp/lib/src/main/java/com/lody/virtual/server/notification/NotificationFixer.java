@@ -12,8 +12,8 @@ import android.os.Build;
 import android.widget.RemoteViews;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
-import com.lody.virtual.helper.utils.OSUtils;
 import com.lody.virtual.helper.utils.Reflect;
 
 import java.util.ArrayList;
@@ -198,7 +198,7 @@ import mirror.com.android.internal.R_Hide;
                 }
                 remoteViews.setImageViewBitmap(id, bitmap);
                 //emui
-                if(OSUtils.getInstance().isEmui()) {
+                if(BuildCompat.isEMUI()) {
                     if (notification.largeIcon == null) {
                         notification.largeIcon = bitmap;
                     }

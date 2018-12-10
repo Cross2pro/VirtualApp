@@ -6,6 +6,7 @@
     <string name="preparing">Opening the app…</string>
     <string name="delete">Delete</string>
     <string name="create_shortcut">Create shortcut</string>
+    <string name="app_settings">App Settings</string>
     <string name="new_user">New User</string>
     <string name="enable">Enable</string>
     <string name="save">Save</string>
@@ -51,7 +52,7 @@
     <string name="tip_delete">Delete app</string>
     <string name="text_delete_app" formatted="false">Do you want to delete %s?</string>
     <string name="menu_gms">Google Framework</string>
-    <string name="kill_all_app">Kill all App</string>
+    <string name="kill_all_app">Speed up</string>
     <string name="title_app_device">App Settings</string>
     <string name="title_user_device">Global Settings</string>
     <string name="menu_mock_phone">Mock phone</string>
@@ -67,6 +68,7 @@
     <string name="start_app_failed">can\'t start %1$s </string>
     <string name="any_apps">Apps</string>
     <string name="tip_add_apps">Please wait for add app</string>
+    <string name="clean_data">Clean Data</string>
     <string-array name="weeks">
         <item>Sun</item>
         <item>Mon</item>

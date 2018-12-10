@@ -57,15 +57,9 @@ public class AppRepository implements AppDataSource {
     }
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
-        /*
-        if (packageInfo.applicationInfo.uid <= Process.FIRST_APPLICATION_UID) {
-            return true;
-        }
-        */
-        if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
-            return true;
-        }
-        return false;
+        int uid = packageInfo.applicationInfo.uid;
+        return uid < Process.FIRST_APPLICATION_UID || uid > Process.LAST_APPLICATION_UID
+                || (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }
 
     @Override
@@ -131,7 +125,7 @@ public class AppRepository implements AppDataSource {
     }
 
     private List<AppInfo> convertPackageInfoToAppData(Context context, List<PackageInfo> pkgList,
-                                                      boolean notCopyApk, boolean hideGApps) {
+                                                      boolean cloneMode, boolean hideGApps) {
         PackageManager pm = context.getPackageManager();
         List<AppInfo> list = new ArrayList<>(pkgList.size());
         for (PackageInfo pkg : pkgList) {
@@ -142,7 +136,7 @@ public class AppRepository implements AppDataSource {
             if (hideGApps && GmsSupport.isGoogleAppOrService(pkg.packageName)) {
                 continue;
             }
-            if (isSystemApplication(pkg)) {
+            if (cloneMode && isSystemApplication(pkg)) {
                 continue;
             }
             if ((pkg.applicationInfo.flags & ApplicationInfo.FLAG_HAS_CODE) == 0) continue;
@@ -154,7 +148,7 @@ public class AppRepository implements AppDataSource {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             AppInfo info = new AppInfo();
             info.packageName = pkg.packageName;
-            info.fastOpen = notCopyApk;
+            info.cloneMode = cloneMode;
             info.path = path;
             info.icon = ai.loadIcon(pm);
             info.name = ai.loadLabel(pm);
