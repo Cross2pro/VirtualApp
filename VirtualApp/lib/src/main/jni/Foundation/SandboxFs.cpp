@@ -3,7 +3,7 @@
 #include "Path.h"
 #include "Log.h"
 
-#define FORCE_CLOSE_NORMALIZE_PATH
+//#define FORCE_CLOSE_NORMALIZE_PATH
 
 PathItem *keep_items;
 PathItem *forbidden_items;
@@ -120,7 +120,7 @@ match_path(bool is_folder, size_t size, const char *item_path, const char *path,
     }
 }
 
-bool isReadOnly(const char * path) {
+bool isReadOnly(const char *path) {
     for (int i = 0; i < readonly_item_count; ++i) {
         PathItem &item = readonly_items[i];
         if (match_path(item.is_folder, item.size, item.path, path, strlen(path))) {
@@ -177,9 +177,6 @@ const char *relocate_path(const char *path, bool normalize_path) {
         }
     }
     finally:
-    if (result == NULL) {
-        ALOGE("!!!!");
-    }
     if (normalize_path && result != path) {
         free((void *) path);
     }

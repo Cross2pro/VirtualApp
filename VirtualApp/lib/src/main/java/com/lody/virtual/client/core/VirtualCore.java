@@ -253,10 +253,14 @@ public final class VirtualCore {
             Constants.ACTION_BADGER_CHANGE = packageName + Constants.ACTION_BADGER_CHANGE;
 
             StubManifest.PACKAGE_NAME = packageName;
-            StubManifest.PACKAGE_NAME_64BIT = packageName64;
             StubManifest.STUB_CP_AUTHORITY = packageName + ".virtual_stub_";
-            StubManifest.STUB_CP_AUTHORITY_64BIT = packageName64 + ".virtual_stub_64bit_";
             StubManifest.PROXY_CP_AUTHORITY = packageName + ".provider_proxy";
+
+            if (packageName64 == null) {
+                packageName64 = "NO_64BIT";
+            }
+            StubManifest.PACKAGE_NAME_64BIT = packageName64;
+            StubManifest.STUB_CP_AUTHORITY_64BIT = packageName64 + ".virtual_stub_64bit_";
             StubManifest.PROXY_CP_AUTHORITY_64BIT = packageName64 + ".provider_proxy_64bit";
 
             this.context = context;
@@ -306,7 +310,7 @@ public final class VirtualCore {
 
     public boolean isEngineLaunched() {
         if (is64BitEngine()) {
-            throw new UnsupportedOperationException("Not support 64bit engine call this method.");
+            return true;
         }
         ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         String engineProcessName = getEngineProcessName();
@@ -413,7 +417,7 @@ public final class VirtualCore {
         mainProcessName = context.getApplicationInfo().processName;
         // Current process name
         processName = getProcessName(context);
-        is64Bit = hostPkgName.equals(StubManifest.PACKAGE_NAME_64BIT);
+        is64Bit = StubManifest.is64bitPackageName(hostPkgName);
         if (processName.equals(mainProcessName)) {
             processType = ProcessType.Main;
         } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
@@ -1008,6 +1012,9 @@ public final class VirtualCore {
     }
 
     public boolean isOutsideInstalled(String packageName) {
+        if (packageName == null) {
+            return false;
+        }
         try {
             return unHookPackageManager.getApplicationInfo(packageName, 0) != null;
         } catch (PackageManager.NameNotFoundException e) {

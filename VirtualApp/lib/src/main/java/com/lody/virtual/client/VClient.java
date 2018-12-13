@@ -47,6 +47,7 @@ import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.service.ServiceManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.compat.StrictModeCompat;
@@ -278,7 +279,9 @@ public final class VClient extends IVClient.Stub {
                     bindApplicationNoCheck(packageName, processName);
                     ConditionVariable lock = mBindingApplicationLock;
                     mBindingApplicationLock = null;
-                    lock.open();
+                    if (lock != null) {
+                        lock.open();
+                    }
                 }
             });
             mBindingApplicationLock.block();
@@ -319,11 +322,6 @@ public final class VClient extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
-        if (VirtualCore.get().is64BitEngine()) {
-            if (!new File(info.getApkPath()).exists()) {
-                VirtualCore.get().requestCopyPackage64(packageName);
-            }
-        }
         mAppInfo = info;
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, userId);
         data.processName = processName;
@@ -332,6 +330,16 @@ public final class VClient extends IVClient.Stub {
         VLog.i(TAG, "Binding application %s (%s)", data.appInfo.packageName, data.processName);
         mBoundApplication = data;
         VirtualRuntime.setupRuntime(data.processName, data.appInfo);
+        if (VirtualCore.get().is64BitEngine()) {
+            File apkFile = new File(info.getApkPath());
+            File libDir = new File(data.appInfo.nativeLibraryDir);
+            if (!apkFile.exists()) {
+                VirtualCore.get().requestCopyPackage64(packageName);
+            }
+            if (!libDir.exists()) {
+                NativeLibraryHelperCompat.copyNativeBinaries(apkFile, libDir);
+            }
+        }
         int targetSdkVersion = data.appInfo.targetSdkVersion;
         if (targetSdkVersion < Build.VERSION_CODES.GINGERBREAD) {
             StrictMode.ThreadPolicy newPolicy = new StrictMode.ThreadPolicy.Builder(StrictMode.getThreadPolicy()).permitNetwork().build();

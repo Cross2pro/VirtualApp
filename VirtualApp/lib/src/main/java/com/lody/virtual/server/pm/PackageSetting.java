@@ -123,7 +123,7 @@ public class PackageSetting implements Parcelable {
             case FLAG_RUN_64BIT:
                 return true;
             case FLAG_RUN_BOTH_32BIT_64BIT:
-                return true;
+                return VirtualCore.getConfig().get64bitEnginePackageName() != null;
             default:
                 return false;
         }

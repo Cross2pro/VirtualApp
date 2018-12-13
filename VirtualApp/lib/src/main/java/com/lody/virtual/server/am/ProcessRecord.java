@@ -3,6 +3,7 @@ package com.lody.virtual.server.am;
 import android.content.pm.ApplicationInfo;
 import android.os.Binder;
 import android.os.ConditionVariable;
+import android.os.IInterface;
 import android.os.Process;
 
 import com.lody.virtual.client.IVClient;
@@ -21,6 +22,7 @@ final class ProcessRecord extends Binder {
     final public String processName;
     final Set<String> pkgList = Collections.synchronizedSet(new HashSet<String>());
     public IVClient client;
+    public IInterface appThread;
     public int pid;
     public int vuid;
     public int vpid;

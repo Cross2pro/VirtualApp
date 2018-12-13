@@ -25,7 +25,6 @@ android {
         }
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     externalNativeBuild {
@@ -80,7 +79,7 @@ gradle.taskGraph.afterTask { task ->
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     provided 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
     provided 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.26'
 }

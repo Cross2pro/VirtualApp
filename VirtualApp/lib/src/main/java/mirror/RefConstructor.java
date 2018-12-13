@@ -3,6 +3,8 @@ package mirror;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
+import static mirror.RefStaticMethod.getProtoType;
+
 public class RefConstructor<T> {
     private Constructor<?> ctor;
 
@@ -16,7 +18,11 @@ public class RefConstructor<T> {
             int N = 0;
             while (N < values.length) {
                 try {
-                    parameterTypes[N] = Class.forName(values[N]);
+                    Class<?> type = getProtoType(values[N]);
+                    if (type == null) {
+                        type = Class.forName(values[N]);
+                    }
+                    parameterTypes[N] = type;
                     N++;
                 } catch (Exception e) {
                     e.printStackTrace();

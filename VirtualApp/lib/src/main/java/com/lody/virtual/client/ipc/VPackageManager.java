@@ -5,15 +5,14 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.PermissionGroupInfo;
 import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.os.RemoteException;
-import android.text.TextUtils;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.server.IPackageInstaller;
@@ -50,13 +49,11 @@ public class VPackageManager {
     }
 
     public int checkPermission(String permission, String pkgName, int userId) {
-        if (TextUtils.isEmpty(permission)) return PackageManager.PERMISSION_GRANTED;
         try {
-            return getService().checkPermission(permission, pkgName, userId);
+            return getService().checkPermission(VirtualCore.get().is64BitEngine(), permission, pkgName, userId);
         } catch (RemoteException e) {
-            //return VirtualRuntime.crash(e);
+            return VirtualRuntime.crash(e);
         }
-        return PackageManager.PERMISSION_DENIED;
     }
 
     public ResolveInfo resolveService(Intent intent, String resolvedType, int flags, int userId) {

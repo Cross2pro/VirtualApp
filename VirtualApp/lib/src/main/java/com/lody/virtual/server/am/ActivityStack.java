@@ -8,6 +8,7 @@ import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -28,8 +29,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 import mirror.android.app.ActivityManagerNative;
-import mirror.android.app.ActivityThread;
-import mirror.android.app.IApplicationThread;
 import mirror.com.android.internal.R_Hide;
 
 import static android.content.pm.ActivityInfo.LAUNCH_MULTIPLE;
@@ -152,6 +151,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
+    //xdja
     void finishAllActivity(ProcessRecord record) {
         synchronized (mHistory) {
             int N = mHistory.size();
@@ -205,17 +205,17 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         String affinity = ComponentUtils.getTaskAffinity(info);
         int mLauncherFlags = 0;
         boolean newTask = containFlags(intent, Intent.FLAG_ACTIVITY_NEW_TASK);
-        boolean forwardResult = containFlags(intent, Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-        boolean noHistory = containFlags(intent, Intent.FLAG_ACTIVITY_NO_HISTORY);
         boolean clearTop = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
         boolean clearTask = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK);
         boolean multipleTask = newTask && containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
         boolean reorderToFront = containFlags(intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         boolean singleTop = containFlags(intent, Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-        if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0) {
+        if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0
+                || containFlags(intent, Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)) {
             mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
         }
+
         boolean notStartToFront = false;
         if (clearTop || singleTop || clearTask) {
             notStartToFront = true;
@@ -225,13 +225,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
         TaskRecord sourceTask = null;
         if (sourceRecord != null) {
-            if (forwardResult && sourceRecord.resultTo != null) {
-                ActivityRecord forwardRecord = findActivityByToken(userId, sourceRecord.resultTo);
-                if (forwardRecord != null) {
-                    sourceRecord = forwardRecord;
-                    resultTo = forwardRecord.token;
-                }
-            }
             sourceTask = sourceRecord.task;
         }
 
@@ -256,7 +249,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
         }
         if (reuseTask == null || reuseTask.isFinishing()) {
-            return startActivityInNewTaskLocked(userId, intent, info, options, callingUid);
+            return startActivityInNewTaskLocked(mLauncherFlags, userId, intent, info, options, callingUid);
         }
         mAM.moveTaskToFront(reuseTask.taskId, 0);
 
@@ -377,16 +370,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         if (destIntent != null) {
             destIntent.addFlags(mLauncherFlags);
-            IBinder startFrom = null;
+            ActivityRecord startFrom;
             if (sourceTask == reuseTask) {
-                startFrom = resultTo;
+                startFrom = sourceRecord;
             } else {
-                ActivityRecord topRecord = reuseTask.getTopActivityRecord();
-                if (topRecord != null) {
-                    startFrom = topRecord.token;
-                }
+                startFrom = reuseTask.getTopActivityRecord();
             }
-            startActivityFromSourceTask(startFrom, destIntent, resultWho, requestCode, options);
+            startActivityFromSourceTask(startFrom.process, startFrom.token, destIntent, resultWho, requestCode, options);
             return 0;
         } else {
             synchronized (mLaunchingActivities) {
@@ -405,10 +395,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    private int startActivityInNewTaskLocked(final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid) {
+    private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid) {
         ActivityRecord targetRecord = newActivityRecord(intent, info, null);
         final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
         if (destIntent != null) {
+            destIntent.addFlags(launcherFlags);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
@@ -483,19 +474,17 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         return false;
     }
 
-    private void startActivityFromSourceTask(final IBinder resultTo, final Intent intent, final String resultWho,
+    private void startActivityFromSourceTask(ProcessRecord r, final IBinder resultTo, final Intent intent, final String resultWho,
                                              final int requestCode, final Bundle options) {
-        realStartActivityLocked(resultTo, intent, resultWho, requestCode, options);
+        realStartActivityLocked(r.appThread, resultTo, intent, resultWho, requestCode, options);
     }
 
 
-    private void realStartActivityLocked(IBinder resultTo, Intent intent, String resultWho, int requestCode,
+    private void realStartActivityLocked(IInterface appThread, IBinder resultTo, Intent intent, String resultWho, int requestCode,
                                          Bundle options) {
         Class<?>[] types = mirror.android.app.IActivityManager.startActivity.paramList();
         Object[] args = new Object[types.length];
-        if (types[0] == IApplicationThread.TYPE) {
-            args[0] = ActivityThread.getApplicationThread.call(VirtualCore.mainThread());
-        }
+        args[0] = appThread;
         int intentIndex = ArrayUtils.protoIndexOf(types, Intent.class);
         int resultToIndex = ArrayUtils.protoIndexOf(types, IBinder.class, 2);
         int optionsIndex = ArrayUtils.protoIndexOf(types, Bundle.class);

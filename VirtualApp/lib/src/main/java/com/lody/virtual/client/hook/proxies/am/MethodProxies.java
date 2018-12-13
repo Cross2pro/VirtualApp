@@ -608,13 +608,14 @@ class MethodProxies {
             // chooser
             if (ChooserActivity.check(intent)) {
                 intent = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
+                args[intentIndex] = intent;
                 Bundle extras = new Bundle();
                 extras.putInt(Constants.EXTRA_USER_HANDLE, userId);
                 extras.putBundle(ChooserActivity.EXTRA_DATA, options);
                 extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
                 extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
-                intent.setComponent(new ComponentName(getHostContext(), ChooserActivity.class));
+                intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
                 intent.setAction(null);
                 intent.putExtras(extras);
                 return method.invoke(who, args);

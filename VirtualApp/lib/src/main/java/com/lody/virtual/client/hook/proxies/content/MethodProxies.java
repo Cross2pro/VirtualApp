@@ -9,6 +9,7 @@ import android.os.Build;
 
 import com.lody.virtual.client.ipc.VContentManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.Keep;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.content.VContentService;
 
@@ -17,6 +18,7 @@ import java.lang.reflect.Method;
 /**
  * @author Lody
  */
+@Keep
 public class MethodProxies {
 
     private static boolean isAppUri(Uri uri) {

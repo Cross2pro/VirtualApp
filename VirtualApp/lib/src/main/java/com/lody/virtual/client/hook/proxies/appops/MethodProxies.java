@@ -6,6 +6,7 @@ import android.os.Build;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.Keep;
 
 import java.lang.reflect.Method;
 
@@ -13,6 +14,7 @@ import java.lang.reflect.Method;
  * @author Lody
  */
 @TargetApi(Build.VERSION_CODES.KITKAT)
+@Keep
 public class MethodProxies {
 
     private static void replaceUidAndPackage(Object[] args, int pkgIndex) {

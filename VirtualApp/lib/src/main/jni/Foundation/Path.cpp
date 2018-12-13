@@ -141,46 +141,14 @@ path_is_absolute(const char *file_name) {
     return false;
 }
 
-/**
- * get_current_dir:
- *
- * Gets the current directory.
- *
- * The returned string should be freed when no longer needed.
- * The encoding of the returned string is system defined.
- * On Windows, it is always UTF-8.
- *
- * Since GLib 2.40, this function will return the value of the "PWD"
- * environment variable if it is set and it happens to be the same as
- * the current directory.  This can make a difference in the case that
- * the current directory is the target of a symbolic link.
- *
- * Returns: (type filename): the current directory
- */
 char *
-get_current_dir(void) {
-    return strdup("./");
-}
-
-char *
-canonicalize_filename(const char *filename,
-                      const char *relative_to) {
+canonicalize_filename(const char *filename) {
     char *canon, *start, *p, *q;
     unsigned int i;
 
-    if (!path_is_absolute(filename)) {
-        char *cwd_allocated = NULL;
-        const char *cwd;
-
-        if (relative_to != NULL)
-            cwd = relative_to;
-        else
-            cwd = cwd_allocated = get_current_dir();
-
-        canon = build_filename(cwd, filename, NULL);
-        free(cwd_allocated);
-    } else {
-        canon = strdup(filename);
+    canon = strdup(filename);
+    if (!path_is_absolute(canon)) {
+        return canon;
     }
 
     start = (char *) path_skip_root(canon);
@@ -255,9 +223,4 @@ canonicalize_filename(const char *filename,
         *(p - 1) = 0;
 
     return canon;
-}
-
-char *
-canonicalize_filename(const char *filename) {
-    return canonicalize_filename(filename, NULL);
 }

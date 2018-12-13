@@ -27,7 +27,6 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
-import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -942,7 +941,7 @@ class MethodProxies {
             }
             String[] pkgs = VPackageManager.get().getPackagesForUid(uid);
             if (pkgs == null) {
-                return new String[]{VClient.get().getCurrentPackage()};
+                return VirtualCore.get().getUnHookPackageManager().getPackagesForUid(uid);
             }
             return pkgs;
         }
@@ -1048,6 +1047,7 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            new Exception().printStackTrace();
             int uid1 = (int) args[0];
             int uid2 = (int) args[1];
             if (uid1 == uid2) {

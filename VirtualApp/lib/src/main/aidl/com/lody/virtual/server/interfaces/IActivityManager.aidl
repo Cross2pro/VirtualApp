@@ -28,7 +28,7 @@ interface IActivityManager{
 
     int getFreeStubCount();
 
-    int checkPermission(String permission, int pid, int uid);
+    int checkPermission(boolean is64bit, String permission, int pid, int uid);
 
     int getSystemPid();
 

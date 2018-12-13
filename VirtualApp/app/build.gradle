@@ -32,11 +32,11 @@ android {
             debuggable true
             jniDebuggable true
             minifyEnabled false
-//            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'proguard-rules-debug.pro'
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'virtualapp-proguard-rules.pro'
         }
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro', 'virtualapp-proguard-rules.pro'
         }
     }
 
@@ -67,9 +67,7 @@ dependencies {
     //Promise Support
     implementation 'org.jdeferred:jdeferred-android-aar:1.2.4'
     // ThirdParty
-    implementation 'com.melnykov:floatingactionbutton:1.3.0'
     implementation 'com.jonathanfinerty.once:once:1.0.3'
-    implementation 'com.kyleduo.switchbutton:library:1.4.6'
 
     compile 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
     compile 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.26'

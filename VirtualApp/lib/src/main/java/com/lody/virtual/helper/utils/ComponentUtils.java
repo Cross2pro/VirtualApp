@@ -27,6 +27,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Set;
 
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
@@ -231,6 +232,42 @@ public class ComponentUtils {
                 }
             }
         }
+        if (intent.hasExtra("output")) {
+            Object output = intent.getParcelableExtra("output");
+            if (output instanceof Uri) {
+                intent.putExtra("output", processOutsideUri(userId, is64bit, (Uri) output));
+            } else if (output instanceof ArrayList) {
+                ArrayList list = (ArrayList) output;
+                ArrayList<Uri> newList = new ArrayList<>();
+                for (Object o : list) {
+                    if (!(o instanceof Uri)) {
+                        break;
+                    }
+                    newList.add(processOutsideUri(userId, is64bit, (Uri) o));
+                }
+                if (!newList.isEmpty()) {
+                    intent.putExtra("output", newList);
+                }
+            }
+        }
+        if (intent.hasExtra(Intent.EXTRA_STREAM)) {
+            Object output = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (output instanceof Uri) {
+                intent.putExtra(Intent.EXTRA_STREAM, processOutsideUri(userId, is64bit, (Uri) output));
+            } else if (output instanceof ArrayList) {
+                ArrayList list = (ArrayList) output;
+                ArrayList<Uri> newList = new ArrayList<>();
+                for (Object o : list) {
+                    if (!(o instanceof Uri)) {
+                        break;
+                    }
+                    newList.add(processOutsideUri(userId, is64bit, (Uri) o));
+                }
+                if (!newList.isEmpty()) {
+                    intent.putExtra(Intent.EXTRA_STREAM, newList);
+                }
+            }
+        }
         return intent;
     }
 
@@ -249,6 +286,7 @@ public class ComponentUtils {
         if (info == null) {
             return uri;
         }
-        return ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
+        uri = ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
+        return uri;
     }
 }

@@ -23,7 +23,6 @@ import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ClientTransactionHandler;
 import mirror.android.app.IActivityManager;
-import mirror.android.app.servertransaction.ActivityLifecycleItem;
 import mirror.android.app.servertransaction.ClientTransaction;
 import mirror.android.app.servertransaction.LaunchActivityItem;
 
@@ -87,7 +86,7 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 } else if (SCHEDULE_CRASH == msg.what) {
                     String crashReason = (String) msg.obj;
                     new RemoteException(crashReason).printStackTrace();
-                    return false;
+                    return true;
                 }
                 if (otherCallback != null) {
                     return otherCallback.handleMessage(msg);
@@ -101,11 +100,6 @@ public class HCallbackStub implements Handler.Callback, IInjector {
 
     private boolean handleExecuteTransaction(Message msg) {
         Object transaction = msg.obj;
-        Object lifecycleStateRequest = ClientTransaction.mLifecycleStateRequest.get(transaction);
-        int targetState = ActivityLifecycleItem.UNDEFINED;
-        if (lifecycleStateRequest != null) {
-            targetState = ActivityLifecycleItem.getTargetState.call(lifecycleStateRequest);
-        }
         IBinder token = ClientTransaction.mActivityToken.get(transaction);
         Object r = ClientTransactionHandler.getActivityClient.call(VirtualCore.mainThread(), token);
         if (r == null) {

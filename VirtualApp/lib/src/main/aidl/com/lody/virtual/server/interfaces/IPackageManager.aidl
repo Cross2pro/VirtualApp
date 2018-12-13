@@ -28,7 +28,7 @@ interface IPackageManager{
 
     List<String> getSharedLibraries(String pkgName);
 
-    int checkPermission(String permName, String pkgName, int userId);
+    int checkPermission(boolean is64bit, String permName, String pkgName, int userId);
 
     PackageInfo getPackageInfo(String packageName, int flags, int userId);
 

@@ -27,11 +27,14 @@ public class MethodParameterUtils {
 		if (args == null) {
 			return null;
 		}
-		int index = ArrayUtils.indexOfFirst(args, String.class);
-		if (index != -1) {
-			String pkg = (String) args[index];
-			args[index] = VirtualCore.get().getHostPkg();
-			return pkg;
+		for (int i = 0; i < args.length; i++) {
+			if (args[i] instanceof String) {
+				String value = (String) args[i];
+				if (VirtualCore.get().isAppInstalled(value)) {
+				    args[i] = VirtualCore.get().getHostPkg();
+					return value;
+				}
+			}
 		}
 		return null;
 	}

@@ -47,6 +47,9 @@ import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.storage_stats.StorageStatsStub;
+import com.lody.virtual.client.hook.proxies.system.LockSettingsStub;
+import com.lody.virtual.client.hook.proxies.system.SystemUpdateStub;
+import com.lody.virtual.client.hook.proxies.system.WifiScannerStub;
 import com.lody.virtual.client.hook.proxies.telecom.TelecomManagerStub;
 import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
@@ -56,7 +59,6 @@ import com.lody.virtual.client.hook.proxies.user.UserManagerStub;
 import com.lody.virtual.client.hook.proxies.vibrator.VibratorStub;
 import com.lody.virtual.client.hook.proxies.view.AutoFillManagerStub;
 import com.lody.virtual.client.hook.proxies.wifi.WifiManagerStub;
-import com.lody.virtual.client.hook.proxies.wifi_scanner.WifiScannerStub;
 import com.lody.virtual.client.hook.proxies.window.WindowManagerStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -207,6 +209,10 @@ public final class InvocationStubManager {
             if (BuildCompat.isOreo()) {
                 addInjector(new AutoFillManagerStub());
                 addInjector(new StorageStatsStub());
+            }
+            if (BuildCompat.isPie()) {
+                addInjector(new SystemUpdateStub());
+                addInjector(new LockSettingsStub());
             }
             if (mirror.oem.IFlymePermissionService.TYPE != null) {
                 addInjector(new FlymePermissionServiceStub());

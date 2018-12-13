@@ -36,6 +36,7 @@ import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
+import com.lody.virtual.helper.compat.ApplicationThreadCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.PermissionCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -90,6 +91,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
     private boolean mResult;
 
+    //xdja
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
                                  .getSystemService(Context.ACTIVITY_SERVICE);
 
@@ -187,6 +189,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         mActivityStack.processDied(record);
     }
 
+    //xdja
     public void finishAllActivity(ProcessRecord record) {
         mActivityStack.finishAllActivity(record);
     }
@@ -350,9 +353,15 @@ public class VActivityManagerService extends IActivityManager.Stub {
             e.printStackTrace();
         }
         app.client = client;
+        try {
+            app.appThread = ApplicationThreadCompat.asInterface(client.getAppThread());
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         return true;
     }
 
+    //xdja
     private void notifyAppProcessStatus(ProcessRecord app, int uid, boolean status){
         try{
             if(status == true) {
@@ -376,6 +385,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             mProcessNames.remove(record.processName, record.vuid);
             mPidsSelfLocked.remove(record);
         }
+        //xdja
         notifyAppProcessStatus(record, 0, false);
         processDied(record);
     }
@@ -386,7 +396,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     @Override
-    public int checkPermission(String permission, int pid, int uid) {
+    public int checkPermission(boolean is64bit, String permission, int pid, int uid) {
         if (permission == null) {
             return PackageManager.PERMISSION_DENIED;
         }
@@ -399,7 +409,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         if (uid == 0) {
             return PackageManager.PERMISSION_GRANTED;
         }
-        return VPackageManagerService.get().checkUidPermission(permission, uid);
+        return VPackageManagerService.get().checkUidPermission(is64bit, permission, uid);
     }
 
     @Override

@@ -483,7 +483,7 @@ public class VActivityManager {
 
     public int checkPermission(String permission, int pid, int uid) {
         try {
-            return getService().checkPermission(permission, pid, uid);
+            return getService().checkPermission(VirtualCore.get().is64BitEngine(), permission, pid, uid);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

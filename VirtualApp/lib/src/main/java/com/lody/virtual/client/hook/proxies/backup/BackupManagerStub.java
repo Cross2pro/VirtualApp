@@ -4,6 +4,7 @@ import android.app.backup.BackupManager;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import mirror.android.app.backup.IBackupManager;
 
@@ -39,5 +40,11 @@ public class BackupManagerStub extends BinderInvocationProxy {
 		addMethodProxy(new ResultStaticMethodProxy("setBackupPassword", true));
 		addMethodProxy(new ResultStaticMethodProxy("hasBackupPassword", false));
 		addMethodProxy(new ResultStaticMethodProxy("beginRestoreSession", null));
+		if (BuildCompat.isOreo()) {
+            addMethodProxy(new ResultStaticMethodProxy("selectBackupTransportAsync", null));
+        }
+		if (BuildCompat.isPie()) {
+            addMethodProxy(new ResultStaticMethodProxy("updateTransportAttributes", null));
+		}
 	}
 }

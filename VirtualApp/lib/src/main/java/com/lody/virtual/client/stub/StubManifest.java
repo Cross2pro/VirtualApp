@@ -65,6 +65,13 @@ public class StubManifest {
                 || PACKAGE_NAME_64BIT.equals(packageName);
     }
 
+    public static boolean is64bitPackageName(String packageName) {
+        if (PACKAGE_NAME_64BIT == null) {
+            return false;
+        }
+        return PACKAGE_NAME_64BIT.equals(packageName);
+    }
+
     public static final String[] REQUIRED_FRAMEWORK = {
             "com.android.location.provider"
     };
