@@ -3,6 +3,7 @@ package com.lody.virtual.server.pm;
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
@@ -28,6 +29,7 @@ import com.lody.virtual.helper.utils.SignaturesUtils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ReceiverInfo;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
@@ -682,6 +684,30 @@ public class VPackageManagerService extends IPackageManager.Stub {
             }
         }
         return new VParceledListSlice<>(list);
+    }
+
+    @Override
+    public List<ReceiverInfo> getReceiverInfos(String packageName, String processName, int userId) {
+        List<ReceiverInfo> list = new ArrayList<>();
+        synchronized (mPackages) {
+            VPackage p = mPackages.get(packageName);
+            if (p == null) {
+                return Collections.emptyList();
+            }
+            for (VPackage.ActivityComponent receiver : p.receivers) {
+                if (!isEnabledLPr(receiver.info, 0, userId)) {
+                    continue;
+                }
+                List<IntentFilter> filters = new ArrayList<>();
+                if (receiver.info.processName.equals(processName)) {
+                    for (VPackage.ActivityIntentInfo intentInfo : receiver.intents) {
+                        filters.add(intentInfo.filter);
+                    }
+                }
+                list.add(new ReceiverInfo(receiver.info, filters));
+            }
+        }
+        return list;
     }
 
     @Override

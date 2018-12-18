@@ -5,6 +5,7 @@ import android.widget.Toast;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VActivityManager;
 
 /**
  * @author Lody
@@ -20,19 +21,30 @@ public class MyAppRequestListener implements VirtualCore.AppRequestListener {
 
     @Override
     public void onRequestInstall(String path) {
-        Toast.makeText(context, "Installing: " + path, Toast.LENGTH_SHORT).show();
+        Context context = VirtualCore.get().getContext();
+        Toast.makeText(context, "正在安装: " + path, Toast.LENGTH_SHORT).show();
         VirtualCore.get().installPackage(path, InstallStrategy.FORCE_UPDATE, res -> {
             String info;
             if (res.isSuccess) {
                 if (res.isUpdate) {
-                    info = "Update " + res.packageName + " success!";
+                    info = "更新 " + res.packageName + " 成功!";
                 } else {
-                    info = "Install " + res.packageName + " success!";
+                    info = "安装 " + res.packageName + " 成功!";
                 }
             } else {
-                info = "Install " + res.packageName + " failed, reason: " + res.error;
+                info = "安装 " + res.packageName + " 失败, 原因: " + res.error;
             }
             Toast.makeText(context, info, Toast.LENGTH_SHORT).show();
+            if (res.isSuccess) {
+                boolean success = VActivityManager.get().launchApp(0, res.packageName);
+                if (!success) {
+                    Toast.makeText(context, "启动失败", Toast.LENGTH_SHORT).show();
+                }
+            }
+//            Intent intent = new Intent(context, InstallInnerActivity.class);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            intent.putExtra(VCommends.EXTRA_PACKAGE, res.packageName);
+//            new Handler(Looper.getMainLooper()).post(() -> context.startActivity(intent));
         });
     }
 

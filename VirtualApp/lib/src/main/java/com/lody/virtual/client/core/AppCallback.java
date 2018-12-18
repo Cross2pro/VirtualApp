@@ -15,25 +15,25 @@ public interface AppCallback {
 
         @Override
         public void beforeStartApplication(String packageName, String processName, Context context) {
-
-        }
-
-        @Override
-        public void beforeApplicationCreate(Application application) {
             // Empty
         }
 
         @Override
-        public void afterApplicationCreate(Application application) {
+        public void beforeApplicationCreate(String packageName, String processName, Application application) {
+            // Empty
+        }
+
+        @Override
+        public void afterApplicationCreate(String packageName, String processName, Application application) {
             // Empty
         }
     };
 
     void beforeStartApplication(String packageName, String processName, Context context);
 
-    void beforeApplicationCreate(Application application);
+    void beforeApplicationCreate(String packageName, String processName, Application application);
 
-    void afterApplicationCreate(Application application);
+    void afterApplicationCreate(String packageName, String processName, Application application);
 
     void onSendBroadcast(Intent intent);
 }

@@ -18,9 +18,8 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
-import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.StubManifest;
-import com.lody.virtual.helper.ArtDexOptimizer;
+import com.lody.virtual.helper.DexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -35,7 +34,6 @@ import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
-import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
@@ -52,8 +50,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import dalvik.system.DexFile;
 
 import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_COPY_APK;
 import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK;
@@ -239,7 +235,6 @@ public class VAppManagerService extends IAppManager.Stub {
             }
 
         }
-        BroadcastSystem.get().startApp(pkg);
         return true;
     }
 
@@ -312,6 +307,9 @@ public class VAppManagerService extends IAppManager.Stub {
         if (!packageFile.exists() || !packageFile.isFile()) {
             return InstallResult.makeFailure("Package File is not exist.");
         }
+        if ((flags & InstallStrategy.NOT_NOTIFY) != 0) {
+            notify = false;
+        }
         VPackage pkg = null;
         try {
             pkg = PackageParserEx.parsePackage(packageFile);
@@ -335,6 +333,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 return InstallResult.makeFailure("Not allowed to update the package.");
             }
             res.isUpdate = true;
+            VActivityManagerService.get().killAppByPkg(res.packageName, VUserHandle.USER_ALL);
         }
         boolean notCopyApk = (flags & InstallStrategy.NOT_COPY_APK) != 0;
         if (existOne != null) {
@@ -414,21 +413,12 @@ public class VAppManagerService extends IAppManager.Stub {
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
         if (support32bit && !notCopyApk) {
-            if (VirtualRuntime.isArt()) {
-                try {
-                    ArtDexOptimizer.interpretDex2Oat(packageFile.getPath(), VEnvironment.getOdexFile(ps.packageName).getPath());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                try {
-                    DexFile.loadDex(packageFile.getPath(), VEnvironment.getOdexFile(ps.packageName).getPath(), 0).close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                DexOptimizer.optimizeDex(packageFile.getPath(), VEnvironment.getOdexFile(ps.packageName).getPath());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        BroadcastSystem.get().startApp(pkg);
         if (notify) {
             notifyAppInstalled(ps, -1);
         }
@@ -545,7 +535,6 @@ public class VAppManagerService extends IAppManager.Stub {
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
         String packageName = ps.packageName;
         try {
-            BroadcastSystem.get().stopApp(packageName);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
                 VEnvironment.getPackageResourcePath(packageName).delete();

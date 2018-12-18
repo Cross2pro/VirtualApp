@@ -2,7 +2,6 @@ package com.lody.virtual.server.am;
 
 import android.Manifest;
 import android.app.ActivityManager;
-import android.app.IServiceConnection;
 import android.app.IStopUserCallback;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -18,7 +17,6 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.Debug;
@@ -26,7 +24,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.lody.virtual.client.IVClient;
@@ -40,7 +37,6 @@ import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.ApplicationThreadCompat;
-import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.PermissionCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -48,14 +44,10 @@ import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.os.VUserInfo;
-import com.lody.virtual.os.VUserManager;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
-import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
-import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -63,20 +55,13 @@ import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
-import com.lody.virtual.server.secondary.BinderDelegateService;
 import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import mirror.android.app.IServiceConnectionO;
-
-import static com.lody.virtual.os.VUserHandle.getUserId;
 
 /**
  * @author Lody
@@ -93,7 +78,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private final Object mProcessLock = new Object();
     private final List<ProcessRecord> mPidsSelfLocked = new ArrayList<>();
     private final ActivityStack mActivityStack = new ActivityStack(this);
-    private final Set<ServiceRecord> mHistory = new HashSet<>();
     private final ProcessMap<ProcessRecord> mProcessNames = new ProcessMap<>();
     private final Map<IBinder, IntentSenderData> mIntentSenderMap = new HashMap<>();
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
@@ -195,6 +179,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
 
     private void processDied(ProcessRecord record) {
+        mServices.processDied(record);
         mActivityStack.processDied(record);
     }
 
@@ -266,406 +251,11 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return mActivityStack.getCallingPackage(userId, token);
     }
 
-    private void addRecord(ServiceRecord r) {
-        synchronized (mHistory) {
-            mHistory.add(r);
-        }
-    }
-
-    private ServiceRecord findRecordLocked(int userId, ServiceInfo serviceInfo) {
-        for (ServiceRecord r : mHistory) {
-            // If service is not created, and bindService with the flag that is
-            // not BIND_AUTO_CREATE, r.process is null
-            if ((r.process == null || r.process.userId == userId)
-                    && ComponentUtils.isSameComponent(serviceInfo, r.serviceInfo)) {
-                return r;
-            }
-        }
-        return null;
-    }
-
-    private ServiceRecord findRecordLocked(IServiceConnection connection) {
-        for (ServiceRecord r : mHistory) {
-            if (r.containConnection(connection)) {
-                return r;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public ComponentName startService(Intent service, String resolvedType, int userId) {
-        synchronized (this) {
-            return startServiceCommonLocked(service, true, userId);
-        }
-    }
-
-    private ComponentName startServiceCommonLocked(Intent service,
-                                                   boolean scheduleServiceArgs, int userId) {
-        ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
-        if (serviceInfo == null) {
-            return null;
-        }
-        ProcessRecord targetApp = startProcessIfNeedLocked(ComponentUtils.getProcessName(serviceInfo),
-                userId,
-                serviceInfo.packageName, -1, VBinder.getCallingUid());
-
-        if (targetApp == null) {
-            VLog.e(TAG, "Unable to start new process (" + ComponentUtils.toComponentName(serviceInfo) + ").");
-            return null;
-        }
-        ServiceRecord r;
-        synchronized (mHistory) {
-            r = findRecordLocked(userId, serviceInfo);
-        }
-        if (r == null) {
-            r = new ServiceRecord();
-            r.startId = 0;
-            r.activeSince = SystemClock.elapsedRealtime();
-            r.process = targetApp;
-            r.serviceInfo = serviceInfo;
-            try {
-                targetApp.client.scheduleCreateService(r, r.serviceInfo);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            startShadowService(targetApp);
-            addRecord(r);
-        }
-        r.lastActivityTime = SystemClock.uptimeMillis();
-        if (scheduleServiceArgs) {
-            r.startId++;
-            try {
-                targetApp.client.scheduleServiceArgs(r, r.startId, service);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return ComponentUtils.toComponentName(serviceInfo);
-    }
-
-    private void startShadowService(ProcessRecord app) {
-        String serviceName = StubManifest.getStubServiceName(app.vpid);
-        Intent intent = new Intent();
-        intent.setClassName(StubManifest.getStubPackageName(app.is64bit), serviceName);
-        try {
-            VirtualCore.get().getContext().bindService(intent, app.conn, Context.BIND_AUTO_CREATE);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public int stopService(IBinder caller, Intent service, String resolvedType, int userId) {
-        synchronized (this) {
-            ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
-            if (serviceInfo == null) {
-                return 0;
-            }
-            ServiceRecord r;
-            synchronized (mHistory) {
-                r = findRecordLocked(userId, serviceInfo);
-            }
-            if (r == null) {
-                return 0;
-            }
-            stopServiceCommon(r, ComponentUtils.toComponentName(serviceInfo));
-            return 1;
-        }
-    }
-
-    @Override
-    public boolean stopServiceToken(ComponentName className, IBinder token, int startId, int userId) {
-        synchronized (this) {
-            ServiceRecord r = (ServiceRecord) token;
-            if (r != null && (r.startId == startId || startId == -1)) {
-                stopServiceCommon(r, className);
-                return true;
-            }
-
-            return false;
-        }
-    }
-
-    private void stopServiceCommon(ServiceRecord r, ComponentName className) {
-        synchronized (r.bindings) {
-            for (ServiceRecord.IntentBindRecord bindRecord : r.bindings) {
-                synchronized (bindRecord.connections) {
-                    for (IServiceConnection connection : bindRecord.connections) {
-                        // Report to all of the connections that the service is no longer
-                        // available.
-                        try {
-                            if (BuildCompat.isOreo()) {
-                                IServiceConnectionO.connected.call(connection, className, null, true);
-                            } else {
-                                connection.connected(className, null);
-                            }
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    try {
-                        r.process.client.scheduleUnbindService(r, bindRecord.intent);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        try {
-            r.process.client.scheduleStopService(r);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-        synchronized (mHistory) {
-            mHistory.remove(r);
-        }
-    }
-
-    @Override
-    public int bindService(IBinder caller, IBinder token, Intent service, String resolvedType,
-                           IServiceConnection connection, int flags, int userId) {
-        synchronized (this) {
-            ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
-            if (serviceInfo == null) {
-                return 0;
-            }
-            ServiceRecord r;
-            synchronized (mHistory) {
-                r = findRecordLocked(userId, serviceInfo);
-            }
-            boolean firstLaunch = r == null;
-            if (firstLaunch) {
-                if ((flags & Context.BIND_AUTO_CREATE) != 0) {
-                    startServiceCommonLocked(service, false, userId);
-                    synchronized (mHistory) {
-                        r = findRecordLocked(userId, serviceInfo);
-                    }
-                }
-            }
-            if (r == null) {
-                return 0;
-            }
-            synchronized (r.bindings) {
-                ServiceRecord.IntentBindRecord boundRecord = r.peekBindingLocked(service);
-                if (boundRecord != null && boundRecord.binder != null && boundRecord.binder.isBinderAlive()) {
-                    if (boundRecord.doRebind) {
-                        try {
-                            r.process.client.scheduleBindService(r, service, true);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    ComponentName componentName = new ComponentName(r.serviceInfo.packageName, r.serviceInfo.name);
-                    connectServiceLocked(connection, componentName, boundRecord, false);
-                } else {
-                    try {
-                        r.process.client.scheduleBindService(r, service, false);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-                r.lastActivityTime = SystemClock.uptimeMillis();
-                r.addToBoundIntentLocked(service, connection);
-            }
-
-            return 1;
-        }
-    }
-
-
-    @Override
-    public boolean unbindService(IServiceConnection connection, int userId) {
-        synchronized (this) {
-            ServiceRecord r;
-            synchronized (mHistory) {
-                r = findRecordLocked(connection);
-            }
-            if (r == null) {
-                return false;
-            }
-
-            synchronized (r.bindings) {
-                for (ServiceRecord.IntentBindRecord bindRecord : r.bindings) {
-                    if (!bindRecord.containConnectionLocked(connection)) {
-                        continue;
-                    }
-                    bindRecord.removeConnectionLocked(connection);
-                    try {
-                        r.process.client.scheduleUnbindService(r, bindRecord.intent);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            if (r.startId <= 0 && r.getConnectionCountLocked() <= 0) {
-                try {
-                    r.process.client.scheduleStopService(r);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    synchronized (mHistory) {
-                        mHistory.remove(r);
-                    }
-                }
-            }
-            return true;
-        }
-    }
-
-    @Override
-    public void unbindFinished(IBinder token, Intent service, boolean doRebind, int userId) {
-        synchronized (this) {
-            ServiceRecord r = (ServiceRecord) token;
-            if (r != null) {
-                synchronized (r.bindings) {
-                    ServiceRecord.IntentBindRecord boundRecord = r.peekBindingLocked(service);
-                    if (boundRecord != null) {
-                        boundRecord.doRebind = doRebind;
-                    }
-                }
-            }
-        }
-    }
-
-
-    @Override
-    public boolean isVAServiceToken(IBinder token) {
-        return token instanceof ServiceRecord;
-    }
-
-
-    @Override
-    public void serviceDoneExecuting(IBinder token, int type, int startId, int res, int userId) {
-        synchronized (this) {
-            ServiceRecord r = (ServiceRecord) token;
-            if (r == null) {
-                return;
-            }
-            if (ActivityManagerCompat.SERVICE_DONE_EXECUTING_STOP == type) {
-                synchronized (mHistory) {
-                    mHistory.remove(r);
-                }
-            }
-        }
-    }
-
-    @Override
-    public IBinder peekService(Intent service, String resolvedType, int userId) {
-        synchronized (this) {
-            ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
-            if (serviceInfo == null) {
-                return null;
-            }
-            ServiceRecord r;
-            synchronized (mHistory) {
-                r = findRecordLocked(userId, serviceInfo);
-            }
-            if (r != null) {
-                synchronized (r.bindings) {
-                    ServiceRecord.IntentBindRecord boundRecord = r.peekBindingLocked(service);
-                    if (boundRecord != null) {
-                        return boundRecord.binder;
-                    }
-                }
-            }
-
-            return null;
-        }
-    }
-
-    @Override
-    public void publishService(IBinder token, Intent intent, IBinder service, int userId) {
-        synchronized (this) {
-            ServiceRecord r = (ServiceRecord) token;
-            if (r != null) {
-                synchronized (r.bindings) {
-                    ServiceRecord.IntentBindRecord boundRecord = r.peekBindingLocked(intent);
-                    if (boundRecord != null) {
-                        boundRecord.binder = service;
-                        synchronized (boundRecord.connections) {
-                            for (IServiceConnection conn : boundRecord.connections) {
-                                ComponentName component = ComponentUtils.toComponentName(r.serviceInfo);
-                                connectServiceLocked(conn, component, boundRecord, false);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void connectServiceLocked(IServiceConnection conn, ComponentName component, ServiceRecord.IntentBindRecord r, boolean dead) {
-        try {
-            BinderDelegateService delegateService = new BinderDelegateService(component, r.binder);
-            if (BuildCompat.isOreo()) {
-                IServiceConnectionO.connected.call(conn, component, delegateService, dead);
-            } else {
-                conn.connected(component, delegateService);
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public VParceledListSlice<ActivityManager.RunningServiceInfo> getServices(int maxNum, int flags, int userId) {
-        synchronized (mHistory) {
-            List<ActivityManager.RunningServiceInfo> services = new ArrayList<>(mHistory.size());
-            for (ServiceRecord r : mHistory) {
-                if (r.process.userId != userId) {
-                    continue;
-                }
-                ActivityManager.RunningServiceInfo info = new ActivityManager.RunningServiceInfo();
-                info.uid = r.process.vuid;
-                info.pid = r.process.pid;
-                ProcessRecord processRecord;
-                synchronized (mPidsSelfLocked) {
-                    processRecord = findProcessLocked(r.process.pid);
-                }
-                if (processRecord != null) {
-                    info.process = processRecord.processName;
-                    info.clientPackage = processRecord.info.packageName;
-                }
-                info.activeSince = r.activeSince;
-                info.lastActivityTime = r.lastActivityTime;
-                info.clientCount = r.getClientCount();
-                info.service = ComponentUtils.toComponentName(r.serviceInfo);
-                info.started = r.startId > 0;
-                services.add(info);
-            }
-            return new VParceledListSlice<>(services);
-        }
-    }
-
-    @Override
-    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification,
-                                     boolean removeNotification, int userId) {
-        ServiceRecord r = (ServiceRecord) token;
-        if (r != null) {
-            if (id != 0) {
-                if (notification == null) {
-                    throw new IllegalArgumentException("null notification");
-                }
-                if (r.foregroundId != id) {
-                    if (r.foregroundId != 0) {
-                        cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
-                    }
-                    r.foregroundId = id;
-                }
-                r.foregroundNoti = notification;
-                postNotification(userId, id, r.serviceInfo.packageName, notification);
-            } else {
-                if (removeNotification) {
-                    cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
-                    r.foregroundId = 0;
-                    r.foregroundNoti = null;
-                }
-            }
-        }
+        List<ActivityManager.RunningServiceInfo> infos = mServices.getServices(userId);
+        return new VParceledListSlice<>(infos);
     }
 
     private void cancelNotification(int userId, int id, String pkg) {
@@ -1127,7 +717,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
                 try {
                     running = r.client.isAppRunning();
-                } catch (RemoteException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
@@ -1274,62 +864,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
         context.sendBroadcast(intent);
     }
 
-    boolean handleStaticBroadcast(BroadcastIntentData data, ActivityInfo info, int appId, PendingResultData result) {
-        if (data.targetPackage != null && !data.targetPackage.equals(info.packageName)) {
-            return false;
-        }
-        return handleUserBroadcast(data.userId, appId, info, data.intent, result);
-    }
-
-    private boolean handleUserBroadcast(int userId, int appId, ActivityInfo info, Intent targetIntent, PendingResultData result) {
-        if (userId == VUserHandle.USER_ALL) {
-            for (VUserInfo userInfo : VUserManager.get().getUsers()) {
-                int vuid = VUserHandle.getUid(userInfo.id, appId);
-                handleStaticBroadcastAsUser(vuid, info, targetIntent, result);
-            }
-        }
-        int vuid = VUserHandle.getUid(userId, appId);
-        handleStaticBroadcastAsUser(vuid, info, targetIntent, result);
-        return true;
-    }
-
-    private void handleStaticBroadcastAsUser(int vuid, ActivityInfo info, Intent intent,
-                                             PendingResultData result) {
-        synchronized (this) {
-            ProcessRecord r = findProcessLocked(info.processName, vuid);
-            if (r == null) {
-                int userId = getUserId(vuid);
-                if (SpecialComponentList.allowedStartFromBroadcast(info.packageName)) {
-                    r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1);
-                }
-            }
-            if (r != null && r.client != null) {
-                performScheduleReceiver(r.client, info, intent,
-                        result);
-            } else {
-                result.finish();
-            }
-        }
-    }
-
-    private void performScheduleReceiver(IVClient client, ActivityInfo info, Intent intent,
-                                         PendingResultData result) {
-
-        ComponentName componentName = ComponentUtils.toComponentName(info);
-        BroadcastSystem.get().broadcastSent(info, result);
-        try {
-            client.scheduleReceiver(info.processName, componentName, intent, result);
-        } catch (Throwable e) {
-            if (result != null) {
-                result.finish();
-            }
-        }
-    }
-
-    @Override
-    public boolean broadcastFinish(IBinder token) {
-        return BroadcastSystem.get().broadcastFinish(token);
-    }
 
     @Override
     public void notifyBadgerChange(BadgerInfo info) {
@@ -1366,6 +900,72 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
+    private final ActiveServices mServices = new ActiveServices(this);
+
+    @Override
+    public ComponentName startService(int userId, Intent service) {
+        synchronized (mServices) {
+            return mServices.startService(userId, service);
+        }
+    }
+
+    @Override
+    public void stopService(int userId, ServiceInfo serviceInfo) {
+        synchronized (mServices) {
+            int appId = VUserHandle.getAppId(serviceInfo.applicationInfo.uid);
+            int uid = VUserHandle.getUid(userId, appId);
+            ProcessRecord r = findProcessLocked(serviceInfo.processName, uid);
+            if (r != null) {
+                try {
+                    r.client.stopService(ComponentUtils.toComponentName(serviceInfo));
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void unbindService(int userId, IBinder token) {
+        synchronized (mServices) {
+            mServices.unbindService(userId, token);
+        }
+    }
+
+    @Override
+    public Intent bindService(int userId, Intent intent, ServiceInfo serviceInfo, IBinder binder, int flags) {
+        synchronized (mServices) {
+            return mServices.bindService(userId, intent, serviceInfo, binder, flags);
+        }
+    }
+
+    @Override
+    public void onServiceStartCommand(int userId, int startId, ServiceInfo serviceInfo, Intent intent) {
+        synchronized (mServices) {
+            mServices.onStartCommand(userId, startId, serviceInfo, intent);
+        }
+    }
+
+    @Override
+    public int onServiceStop(int userId, ComponentName component, int targetStartId) {
+        synchronized (mServices) {
+            return mServices.stopService(userId, component, targetStartId);
+        }
+    }
+
+    @Override
+    public void onServiceDestroyed(int userId, ComponentName component) {
+        synchronized (mServices) {
+            mServices.onDestroy(userId, component);
+        }
+    }
+
+    @Override
+    public int onServiceUnBind(int userId, ComponentName component) {
+        synchronized (mServices) {
+            return mServices.onUnbind(userId, component);
+        }
+    }
 
     @Override
     public void handleDownloadCompleteIntent(Intent intent) {

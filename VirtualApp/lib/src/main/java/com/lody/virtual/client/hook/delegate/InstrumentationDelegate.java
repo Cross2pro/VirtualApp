@@ -4,6 +4,7 @@ package com.lody.virtual.client.hook.delegate;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
+import android.app.Fragment;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.content.ComponentName;
@@ -15,14 +16,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PersistableBundle;
+import android.os.UserHandle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import com.lody.virtual.helper.Keep;
 import com.lody.virtual.helper.MultiAvoidRecursive;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * @author Lody
  */
+@Keep
 public class InstrumentationDelegate extends Instrumentation {
 
     protected Instrumentation base;
@@ -504,4 +511,74 @@ public class InstrumentationDelegate extends Instrumentation {
         return root.getUiAutomation();
     }
 
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, String.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, str, intent, i, bundle});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i, bundle});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) {
+        try {
+            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class, UserHandle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle, userHandle});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static Method findDeclaredMethod(Object obj, String name, Class<?>... args) throws NoSuchMethodException {
+        Class<?> cls = obj.getClass();
+        while (cls != null) {
+            try {
+                Method method = cls.getDeclaredMethod(name, args);
+                if (!method.isAccessible()) {
+                    method.setAccessible(true);
+                }
+                return method;
+            } catch (NoSuchMethodException e) {
+                cls = cls.getSuperclass();
+            }
+        }
+        throw new NoSuchMethodException("Method " + name + " with parameters " + Arrays.asList(args) + " not found in " + obj.getClass());
+    }
 }

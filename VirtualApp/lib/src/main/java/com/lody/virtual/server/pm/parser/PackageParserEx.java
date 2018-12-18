@@ -292,20 +292,27 @@ public class PackageParserEx {
                     ai.splitSourceDirs = outside.splitSourceDirs;
                 }
                 if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
-                    ai.nativeLibraryDir = chooseOutsideNativeLib(outside, is64bit);
+                    String outsideNativeLib = chooseOutsideNativeLib(outside, is64bit);
+                    if (outsideNativeLib != null) {
+                        ai.nativeLibraryDir = outsideNativeLib;
+                    }
                 }
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (is64bit) {
-                ApplicationInfoL.primaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
+                if (Build.SUPPORTED_64_BIT_ABIS.length > 0) {
+                    ApplicationInfoL.primaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
+                }
                 if (ps.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT) {
                     ApplicationInfoL.secondaryCpuAbi.set(ai, Build.SUPPORTED_32_BIT_ABIS[0]);
                 }
             } else {
                 ApplicationInfoL.primaryCpuAbi.set(ai, Build.SUPPORTED_32_BIT_ABIS[0]);
                 if (ps.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT) {
-                    ApplicationInfoL.secondaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
+                    if (Build.SUPPORTED_64_BIT_ABIS.length > 0) {
+                        ApplicationInfoL.secondaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
+                    }
                 }
             }
         }

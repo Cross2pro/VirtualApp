@@ -73,7 +73,7 @@ public class GmsSupport {
                 continue;
             }
             if (userId == 0) {
-                InstallResult result = core.installPackageSync(info.sourceDir, InstallStrategy.NOT_COPY_APK);
+                InstallResult result = core.installPackageSync(info.sourceDir, InstallStrategy.NOT_COPY_APK | InstallStrategy.NOT_NOTIFY);
                 if (result.isSuccess) {
                     VLog.w(TAG, "install gms pkg success:" + info.packageName);
                 } else {

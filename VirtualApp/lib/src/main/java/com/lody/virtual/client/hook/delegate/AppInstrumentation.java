@@ -2,11 +2,16 @@ package com.lody.virtual.client.hook.delegate;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.Fragment;
 import android.app.Instrumentation;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.UserHandle;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
@@ -168,4 +173,33 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
         super.callApplicationOnCreate(app);
     }
 
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) {
+        return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i, bundle);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) {
+        return super.execStartActivity(context, iBinder, iBinder2, str, intent, i, bundle);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) {
+        return super.execStartActivity(context, iBinder, iBinder2, fragment, intent, i);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) {
+        return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) {
+        return super.execStartActivity(context, iBinder, iBinder2, fragment, intent, i, bundle);
+    }
+
+    @Override
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) {
+        return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i, bundle, userHandle);
+    }
 }

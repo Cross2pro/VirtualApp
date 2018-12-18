@@ -1,15 +1,13 @@
 package com.lody.virtual.client.ipc;
 
 import android.app.Activity;
-import android.app.IServiceConnection;
-import android.app.Notification;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -19,7 +17,6 @@ import android.os.RemoteException;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.stub.WindowPreviewActivity;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -172,112 +169,6 @@ public class VActivityManager {
     }
 
 
-    public ComponentName startService(Intent service, String resolvedType, int userId) {
-        try {
-            return getService().startService(service, resolvedType, userId);
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public int stopService(IInterface caller, Intent service, String resolvedType) {
-        try {
-            return getService().stopService(caller != null ? caller.asBinder() : null, service, resolvedType, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public boolean stopServiceToken(ComponentName className, IBinder token, int startId) {
-        try {
-            return getService().stopServiceToken(className, token, startId, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public boolean isVAServiceToken(IBinder token) {
-        try {
-            return getService().isVAServiceToken(token);
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean removeNotification) {
-        try {
-            getService().setServiceForeground(className, token, id, notification, removeNotification, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean bindService(Context context, Intent service, ServiceConnection connection, int flags) {
-        try {
-            IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
-            return getService().bindService(null, null, service, null, conn, flags, 0) > 0;
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public boolean unbindService(Context context, ServiceConnection connection) {
-        try {
-            IServiceConnection conn = ServiceConnectionDelegate.removeDelegate(context, connection);
-            return getService().unbindService(conn, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public int bindService(IBinder caller, IBinder token, Intent service, String resolvedType, IServiceConnection connection, int flags, int userId) {
-        try {
-            return getService().bindService(caller, token, service, resolvedType, connection, flags, userId);
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public boolean unbindService(IServiceConnection connection) {
-        try {
-            return getService().unbindService(connection, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public void unbindFinished(IBinder token, Intent service, boolean doRebind) {
-        try {
-            getService().unbindFinished(token, service, doRebind, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void serviceDoneExecuting(IBinder token, int type, int startId, int res) {
-        try {
-            getService().serviceDoneExecuting(token, type, startId, res, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            //ignore
-        }
-    }
-
-    public IBinder peekService(Intent service, String resolvedType) {
-        try {
-            return getService().peekService(service, resolvedType, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
-    public void publishService(IBinder token, Intent intent, IBinder service) {
-        try {
-            getService().publishService(token, intent, service, VUserHandle.myUserId());
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
     public VParceledListSlice getServices(int maxNum, int flags) {
         try {
             return getService().getServices(maxNum, flags, VUserHandle.myUserId());
@@ -285,6 +176,7 @@ public class VActivityManager {
             return VirtualRuntime.crash(e);
         }
     }
+
     public void processRestarted(String packageName, String processName, int userId) {
         try {
             getService().processRestarted(packageName, processName, userId);
@@ -390,14 +282,14 @@ public class VActivityManager {
     }
 
     public void sendCancelActivityResult(IBinder resultTo, String resultWho, int requestCode) {
-        sendActivityResult(resultTo, resultWho, requestCode, 0, null);
+        sendActivityResult(resultTo, resultWho, requestCode, null, 0);
     }
 
-    public void sendActivityResult(IBinder resultTo, String resultWho, int requestCode, int resultCode, Intent data) {
+    public void sendActivityResult(IBinder resultTo, String resultWho, int requestCode, Intent data, int resultCode) {
         Activity activity = findActivityByToken(resultTo);
         if (activity != null) {
             Object mainThread = VirtualCore.mainThread();
-            ActivityThread.sendActivityResult.call(mainThread, resultTo, resultWho, requestCode, resultCode, data);
+            ActivityThread.sendActivityResult.call(mainThread, resultTo, resultWho, requestCode, data, resultCode);
         }
     }
 
@@ -482,15 +374,6 @@ public class VActivityManager {
         if (newIntent != null) {
             VirtualCore.get().getContext().sendBroadcast(newIntent);
         }
-    }
-
-    public boolean broadcastFinish(IBinder token) {
-        try {
-            return getService().broadcastFinish(token);
-        } catch (RemoteException e) {
-            VirtualRuntime.crash(e);
-        }
-        return false;
     }
 
     public void notifyBadgerChange(BadgerInfo info) {
@@ -601,6 +484,53 @@ public class VActivityManager {
         }
     }
 
+    public ComponentName startService(int userId, Intent service) {
+        try {
+            return getService().startService(userId, service);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void unbindService(int userId, IBinder token) throws RemoteException {
+        getService().unbindService(userId, token);
+    }
+
+    public Intent bindService(int userId, Intent intent, ServiceInfo serviceInfo, IBinder binder, int flags) throws RemoteException {
+        return getService().bindService(userId, intent, serviceInfo, binder, flags);
+    }
+
+    public void onServiceStartCommand(int userId, int startId, ServiceInfo serviceInfo, Intent intent) {
+        try {
+            getService().onServiceStartCommand(userId, startId, serviceInfo, intent);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void onServiceDestroyed(int userId, ComponentName component) {
+        try {
+            getService().onServiceDestroyed(userId, component);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int onServiceUnBind(int userId, ComponentName component) {
+        try {
+            return getService().onServiceUnBind(userId, component);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void stopService(int userId, ServiceInfo serviceInfo) throws RemoteException {
+        getService().stopService(userId, serviceInfo);
+    }
+
+    public int onServiceStop(int userId, ComponentName component, int targetStartId) throws RemoteException {
+        return getService().onServiceStop(userId, component, targetStartId);
+    }
 
     public void handleDownloadCompleteIntent(Intent intent) {
         try {

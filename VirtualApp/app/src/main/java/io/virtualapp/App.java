@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatDelegate;
 
-import com.lody.virtual.client.core.ANRWatchDog;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
@@ -98,7 +97,7 @@ public class App extends Application {
 
             @Override
             public void onVirtualProcess() {
-                new ANRWatchDog().start();
+//                new ANRWatchDog().start();
                 //listener components
                 virtualCore.setAppCallback(new MyComponentDelegate());
                 //fake task description's icon and title

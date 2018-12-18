@@ -17,7 +17,6 @@ import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.server.accounts.VAccountManagerService;
-import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.content.VContentService;
 import com.lody.virtual.server.device.VDeviceManagerService;
@@ -59,7 +58,7 @@ public final class BinderProvider extends ContentProvider {
         }
         Context context = getContext();
         if (context != null) {
-            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
             }
@@ -79,7 +78,6 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.USER, VUserManagerService.get());
         VAppManagerService.systemReady();
         addService(ServiceManagerNative.APP, VAppManagerService.get());
-        BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             addService(ServiceManagerNative.JOB, VJobSchedulerService.get());
         }

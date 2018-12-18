@@ -1,16 +1,12 @@
 package com.lody.virtual.server.am;
 
-import android.content.ComponentName;
-import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
 import android.os.Binder;
 import android.os.ConditionVariable;
-import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Process;
 
 import com.lody.virtual.client.IVClient;
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
@@ -34,18 +30,6 @@ final class ProcessRecord extends Binder {
     public int callingVUid;
     public int userId;
     public ConditionVariable initLock = new ConditionVariable();
-    public final ServiceConnection conn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
-    };
-
 
     public ProcessRecord(ApplicationInfo info, String processName, int vuid, int vpid, int callingVUid, boolean is64bit) {
         this.info = info;
@@ -87,11 +71,6 @@ final class ProcessRecord extends Binder {
     }
 
     public void kill() {
-        try {
-            VirtualCore.get().getContext().unbindService(conn);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         VActivityManagerService.get().beforeProcessKilled(this);
         if (is64bit) {
             V64BitHelper.forceStop64(pid);

@@ -22,11 +22,13 @@ public final class InstalledAppInfo implements Parcelable {
 
     public String packageName;
     public int appMode;
+    public int flag;
     public int appId;
 
-    public InstalledAppInfo(String packageName, int appMode, int appId) {
+    public InstalledAppInfo(String packageName, int appMode, int flags,int appId) {
         this.packageName = packageName;
         this.appMode = appMode;
+        this.flag = flags;
         this.appId = appId;
     }
 
@@ -94,12 +96,14 @@ public final class InstalledAppInfo implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.packageName);
         dest.writeInt(this.appMode);
+        dest.writeInt(this.flag);
         dest.writeInt(this.appId);
     }
 
     protected InstalledAppInfo(Parcel in) {
         this.packageName = in.readString();
         this.appMode = in.readInt();
+        this.flag = in.readInt();
         this.appId = in.readInt();
     }
 

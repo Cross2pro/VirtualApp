@@ -234,7 +234,7 @@ public final class VirtualCore {
     private final BroadcastReceiver mDownloadCompleteReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            VLog.d("DownloadManager", "receive download completed brodcast: " + intent);
+            VLog.w("DownloadManager", "receive download completed brodcast: " + intent);
             intent.setExtrasClassLoader(BroadcastIntentData.class.getClassLoader());
             if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) {
                 VActivityManager.get().handleDownloadCompleteIntent(intent);
@@ -289,7 +289,7 @@ public final class VirtualCore {
                 }
             }
             if (isServerProcess() || is64bitHelperProcess()) {
-                VLog.d("DownloadManager", "Listening DownloadManager action  in process: " + processType);
+                VLog.w("DownloadManager", "Listening DownloadManager action  in process: " + processType);
                 IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
                 try {
                     context.registerReceiver(mDownloadCompleteReceiver, filter);

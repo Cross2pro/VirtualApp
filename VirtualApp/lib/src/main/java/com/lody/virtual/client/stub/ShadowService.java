@@ -2,18 +2,69 @@ package com.lody.virtual.client.stub;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.IBinder;
+import android.os.Process;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.service.ServiceManager;
 
 /**
  * @author Lody
  */
 public abstract class ShadowService extends Service {
+    private static final ServiceManager sServiceManager = ServiceManager.get();
+
+    private static void checkProcessStatus() {
+        if (VClient.get().getClientConfig() == null) {
+            System.exit(0);
+            Process.killProcess(Process.myPid());
+        }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return VClient.get();
+        checkProcessStatus();
+        return sServiceManager.onBind(intent);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        checkProcessStatus();
+        try {
+            sServiceManager.onStartCommand(intent, flags);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        checkProcessStatus();
+        sServiceManager.onUnbind(intent);
+        return false;
+    }
+
+    @Override
+    public void onLowMemory() {
+        sServiceManager.onLowMemory();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        sServiceManager.onTrimMemory(level);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        sServiceManager.onConfigurationChanged(newConfig);
+    }
+
+
+    @Override
+    public void onDestroy() {
+        sServiceManager.onDestroy();
     }
 
     public static class P0 extends ShadowService {

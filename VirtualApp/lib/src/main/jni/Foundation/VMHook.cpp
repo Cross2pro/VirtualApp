@@ -112,6 +112,12 @@ jint new_getCallingUid(JNIEnv *env, jclass clazz) {
 
 
 jstring new_nativeLoad(JNIEnv *env, jclass clazz, jstring _file, jobject classLoader, jstring _ld) {
+    ScopeUtfString orig_path(_file);
+    char buffer[PATH_MAX];
+    const char *redirected_path = IOUniformer::query(orig_path.c_str(), buffer, sizeof(buffer));
+    if (redirected_path != NULL) {
+        _file = env->NewStringUTF(redirected_path);
+    }
     return patchEnv.orig_nativeLoad(env, clazz, _file, classLoader, _ld);
 }
 
@@ -413,6 +419,11 @@ void hookRuntimeNativeLoad(JNIEnv *env) {
         jmethodID nativeLoad = env->GetStaticMethodID(runtimeClass, "nativeLoad",
                                                       "(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/String;");
         env->ExceptionClear();
+        if (!nativeLoad) {
+            nativeLoad = env->GetStaticMethodID(runtimeClass, "nativeLoad",
+                                                "(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/String;");
+            env->ExceptionClear();
+        }
         if (nativeLoad) {
             hookJNIMethod(nativeLoad, (void *) new_nativeLoad,
                           (void **) &patchEnv.orig_nativeLoad);

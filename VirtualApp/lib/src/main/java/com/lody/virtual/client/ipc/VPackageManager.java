@@ -15,6 +15,7 @@ import android.os.RemoteException;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
+import com.lody.virtual.remote.ReceiverInfo;
 import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 
@@ -308,4 +309,11 @@ public class VPackageManager {
         }
     }
 
+    public List<ReceiverInfo> getReceiverInfos(String packageName, String processName, int userId) {
+        try {
+            return getService().getReceiverInfos(packageName, processName, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
 }

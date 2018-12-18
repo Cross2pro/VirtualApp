@@ -10,6 +10,7 @@ import android.os.RemoteException;
 import android.os.SystemClock;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -140,7 +141,7 @@ public class ActiveServices {
         if (targetApp == null) {
             return null;
         }
-        Intent proxyIntent = new Intent();
+        final Intent proxyIntent = new Intent();
         proxyIntent.setAction(System.currentTimeMillis() + "");
         proxyIntent.setClassName(StubManifest.getStubPackageName(targetApp.is64bit), StubManifest.getStubServiceName(targetApp.vpid));
         RunningServiceData info = userSpace.getOrCreateRunningServiceInfo(serviceInfo);
@@ -148,7 +149,12 @@ public class ActiveServices {
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
         proxyIntent.putExtra("_VA_|_intent_", intent);
-        mContext.startService(proxyIntent);
+        VirtualRuntime.getUIHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                mContext.startService(proxyIntent);
+            }
+        });
         return component;
     }
 

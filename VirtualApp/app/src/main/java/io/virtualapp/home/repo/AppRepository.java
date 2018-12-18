@@ -172,7 +172,7 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public InstallResult addVirtualApp(AppInfoLite info) {
-        int flags = InstallStrategy.COMPARE_VERSION;
+        int flags = InstallStrategy.COMPARE_VERSION | InstallStrategy.NOT_NOTIFY;
         if (info.notCopyApk) {
             flags |= InstallStrategy.NOT_COPY_APK;
         }

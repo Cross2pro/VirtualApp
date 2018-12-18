@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -48,6 +49,8 @@ import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.service.ServiceManager;
+import com.lody.virtual.client.service.ServiceRecord;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.InstallerSetting;
@@ -112,12 +115,9 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (args[0] instanceof IBinder) {
-                IBinder token = (IBinder) args[0];
-                if (VActivityManager.get().broadcastFinish(token)) {
-                    return 0;
-                }
-            }
+//            if (args[0] instanceof IBinder) {
+//                IBinder token = (IBinder) args[0];
+//            }
             return super.call(who, method, args);
         }
 
@@ -252,11 +252,12 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IServiceConnection conn = (IServiceConnection) args[0];
-            ServiceConnectionDelegate delegate = ServiceConnectionDelegate.removeDelegate(conn);
-            if (delegate == null) {
-                return method.invoke(who, args);
+            ServiceConnectionDelegate delegate = ServiceConnectionDelegate.getDelegate(conn);
+            if (delegate != null) {
+                args[0] = delegate;
+                VActivityManager.get().unbindService(getAppUserId(), conn.asBinder());
             }
-            return VActivityManager.get().unbindService(delegate);
+            return method.invoke(who, args);
         }
 
         @Override
@@ -322,9 +323,10 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            Intent service = (Intent) args[0];
-            String resolvedType = (String) args[1];
-            return VActivityManager.get().peekService(service, resolvedType);
+            MethodParameterUtils.replaceLastAppPkg(args);
+//            Intent service = (Intent) args[0];
+//            String resolvedType = (String) args[1];
+            return method.invoke(who, args);
         }
 
         @Override
@@ -468,8 +470,14 @@ class MethodProxies {
                 args[intentIndex + 1] = resolvedType;
             }
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
+            String resultWho = null;
+            int requestCode = 0;
+            Bundle options = ArrayUtils.getFirst(args, Bundle.class);
+            if (resultTo != null) {
+                resultWho = (String) args[resultToIndex + 1];
+                requestCode = (int) args[resultToIndex + 2];
+            }
             int userId = VUserHandle.myUserId();
-
             if ("android.intent.action.MAIN".equals(intent.getAction())
                     && intent.hasCategory("android.intent.category.HOME")) {
                 Intent homeIntent = getConfig().onHandleLauncherIntent(intent);
@@ -554,6 +562,9 @@ class MethodProxies {
                     || (Intent.ACTION_VIEW.equals(intent.getAction())
                     && "application/vnd.android.package-archive".equals(intent.getType()))) {
                 /*if (handleInstallRequest(intent)) {
+                    if (resultTo != null && requestCode > 0) {
+                        VActivityManager.get().sendCancelActivityResult(resultTo, resultWho, requestCode);
+                    }
                     return 0;
                 }*/
                 intent.putExtra("source_apk", VirtualRuntime.getInitialPackageName());
@@ -591,18 +602,6 @@ class MethodProxies {
             String pkg = intent.getPackage();
             if (pkg != null && !isAppPkg(pkg)) {
                 return method.invoke(who, args);
-            }
-
-            String resultWho = null;
-            int requestCode = -1;
-            Bundle options = ArrayUtils.getFirst(args, Bundle.class);
-            if (resultTo != null) {
-                resultWho = (String) args[resultToIndex + 1];
-                requestCode = (int) args[resultToIndex + 2];
-            }
-            if ("android.provider.Telephony.ACTION_CHANGE_DEFAULT".equals(intent.getAction())) {
-                VActivityManager.get().sendCancelActivityResult(resultTo, resultWho, requestCode);
-                return 0;
             }
             // chooser
             if (ChooserActivity.check(intent)) {
@@ -944,7 +943,7 @@ class MethodProxies {
                 Reflect.on(notification).call("setSmallIcon", icon);
             }
 
-            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
+//            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
         }
 
@@ -1010,10 +1009,12 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
-            Intent service = (Intent) args[1];
-            boolean doRebind = (boolean) args[2];
-            VActivityManager.get().unbindFinished(token, service, doRebind);
-            return 0;
+//            Intent service = (Intent) args[1];
+//            boolean doRebind = (boolean) args[2];
+            if (token instanceof ServiceRecord) {
+                return 0;
+            }
+            return method.invoke(who, args);
         }
 
         @Override
@@ -1133,13 +1134,14 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            IInterface caller = (IInterface) args[0];
-            IBinder token = (IBinder) args[1];
             Intent service = (Intent) args[2];
             String resolvedType = (String) args[3];
             IServiceConnection conn = (IServiceConnection) args[4];
             int flags = (int) args[5];
             int userId = VUserHandle.myUserId();
+            if (isHostIntent(service)) {
+                return method.invoke(who, args);
+            }
             if (isServerProcess()) {
                 userId = service.getIntExtra("_VA_|_user_id_", VUserHandle.USER_NULL);
             }
@@ -1148,12 +1150,16 @@ class MethodProxies {
             }
             ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, userId);
             if (serviceInfo != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    service.setComponent(new ComponentName(serviceInfo.packageName, serviceInfo.name));
+                ComponentName component = new ComponentName(serviceInfo.packageName, serviceInfo.name);
+                ServiceConnectionDelegate delegate = ServiceConnectionDelegate.getOrCreateDelegate(conn, component);
+                Intent proxyIntent = VActivityManager.get().bindService(userId, service, serviceInfo, conn.asBinder(), flags);
+                if (proxyIntent == null) {
+                    return 0;
                 }
-                conn = ServiceConnectionDelegate.getDelegate(conn);
-                return VActivityManager.get().bindService(caller.asBinder(), token, service, resolvedType,
-                        conn, flags, userId);
+                args[2] = proxyIntent;
+                args[4] = delegate;
+                args[5] = Context.BIND_AUTO_CREATE;
+                return method.invoke(who, args);
             }
             ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
             if (resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
@@ -1182,8 +1188,7 @@ class MethodProxies {
             if (service == null) {
                 return null;
             }
-            if (service.getComponent() != null
-                    && getHostPkg().equals(service.getComponent().getPackageName())) {
+            if (isHostIntent(service)) {
                 return method.invoke(who, args);
             }
             int userId = VUserHandle.myUserId();
@@ -1193,7 +1198,7 @@ class MethodProxies {
             service.setDataAndType(service.getData(), resolvedType);
             ServiceInfo serviceInfo = VirtualCore.get().resolveServiceInfo(service, VUserHandle.myUserId());
             if (serviceInfo != null) {
-                return VActivityManager.get().startService(service, resolvedType, userId);
+                return VActivityManager.get().startService(userId, service);
             }
             ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveService(service, 0);
             if (resolveInfo == null || !isVisiblePackage(resolveInfo.serviceInfo.applicationInfo)) {
@@ -1231,13 +1236,12 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
-            if (!VActivityManager.get().isVAServiceToken(token)) {
-                return method.invoke(who, args);
+//            Intent intent = (Intent) args[1];
+//            IBinder service = (IBinder) args[2];
+            if (token instanceof ServiceRecord) {
+                return 0;
             }
-            Intent intent = (Intent) args[1];
-            IBinder service = (IBinder) args[2];
-            VActivityManager.get().publishService(token, intent, service);
-            return 0;
+            return method.invoke(who, args);
         }
 
         @Override
@@ -1580,6 +1584,11 @@ class MethodProxies {
                 return method.invoke(who, args);
             }
             filter = new IntentFilter(filter);
+            if (filter.hasCategory("__VA__|_static_receiver_")) {
+                List<String> categories = mirror.android.content.IntentFilter.mCategories.get(filter);
+                categories.remove("__VA__|_static_receiver_");
+                return method.invoke(who, args);
+            }
             SpecialComponentList.protectIntentFilter(filter);
             args[IDX_IntentFilter] = filter;
             if (args.length > IDX_IIntentReceiver && IIntentReceiver.class.isInstance(args[IDX_IIntentReceiver])) {
@@ -1675,20 +1684,27 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            IInterface caller = (IInterface) args[0];
             Intent intent = (Intent) args[1];
             String resolvedType = (String) args[2];
             intent.setDataAndType(intent.getData(), resolvedType);
-            ComponentName componentName = intent.getComponent();
             PackageManager pm = VirtualCore.getPM();
-            if (componentName == null) {
-                ResolveInfo resolveInfo = pm.resolveService(intent, 0);
-                if (resolveInfo != null && resolveInfo.serviceInfo != null) {
-                    componentName = new ComponentName(resolveInfo.serviceInfo.packageName, resolveInfo.serviceInfo.name);
-                }
+            ServiceInfo serviceInfo = null;
+            ResolveInfo resolveInfo = pm.resolveService(intent, 0);
+            if (resolveInfo != null && resolveInfo.serviceInfo != null) {
+                serviceInfo = resolveInfo.serviceInfo;
             }
-            if (componentName != null && !getHostPkg().equals(componentName.getPackageName())) {
-                return VActivityManager.get().stopService(caller, intent, resolvedType);
+            if (serviceInfo != null) {
+                ComponentName component = ComponentUtils.toComponentName(serviceInfo);
+                int res = VActivityManager.get().onServiceStop(getAppUserId(), component, -1);
+                if (res < 0) {
+                    return 1;
+                } else if (res == 0) {
+                    return 0;
+                } else {
+                    VActivityManager.get().stopService(getAppUserId(), serviceInfo);
+                    return 1;
+                }
+
             }
             return method.invoke(who, args);
         }
@@ -1848,14 +1864,19 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            ComponentName componentName = (ComponentName) args[0];
+            ComponentName component = (ComponentName) args[0];
             IBinder token = (IBinder) args[1];
-            if (!VActivityManager.get().isVAServiceToken(token)) {
-                return method.invoke(who, args);
-            }
             int startId = (int) args[2];
-            if (componentName != null) {
-                return VActivityManager.get().stopServiceToken(componentName, token, startId);
+            if (token instanceof ServiceRecord) {
+                int res = VActivityManager.get().onServiceStop(getAppUserId(), component, startId);
+                if (res < 0) {
+                    return true;
+                } else if (res == 0) {
+                    return false;
+                } else {
+                    ServiceManager.get().stopService(component);
+                    return true;
+                }
             }
             return method.invoke(who, args);
         }
@@ -2096,14 +2117,13 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             IBinder token = (IBinder) args[0];
-            if (!VActivityManager.get().isVAServiceToken(token)) {
-                return method.invoke(who, args);
+//            int type = (int) args[1];
+//            int startId = (int) args[2];
+//            int res = (int) args[3];
+            if (token instanceof ServiceRecord) {
+                return 0;
             }
-            int type = (int) args[1];
-            int startId = (int) args[2];
-            int res = (int) args[3];
-            VActivityManager.get().serviceDoneExecuting(token, type, startId, res);
-            return 0;
+            return method.invoke(who, args);
         }
 
         @Override

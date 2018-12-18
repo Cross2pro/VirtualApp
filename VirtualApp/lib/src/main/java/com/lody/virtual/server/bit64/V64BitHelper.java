@@ -12,9 +12,8 @@ import android.os.ParcelFileDescriptor;
 import android.os.Process;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.ProviderCall;
-import com.lody.virtual.helper.ArtDexOptimizer;
+import com.lody.virtual.helper.DexOptimizer;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VEnvironment;
@@ -28,8 +27,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import dalvik.system.DexFile;
 
 /**
  * @author Lody
@@ -192,18 +189,10 @@ public class V64BitHelper extends ContentProvider {
                 VEnvironment.chmodPackageDictionary(targetPath);
                 File libDir = VEnvironment.getAppLibDirectory64(packageName);
                 NativeLibraryHelperCompat.copyNativeBinaries(targetPath, libDir);
-                if (VirtualRuntime.isArt()) {
-                    try {
-                        ArtDexOptimizer.interpretDex2Oat(targetPath.getPath(), VEnvironment.getOdexFile64(packageName).getPath());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        DexFile.loadDex(targetPath.getPath(), VEnvironment.getOdexFile64(packageName).getPath(), 0).close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    DexOptimizer.optimizeDex(targetPath.getPath(), VEnvironment.getOdexFile64(packageName).getPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
                 success = true;
             } catch (IOException e) {

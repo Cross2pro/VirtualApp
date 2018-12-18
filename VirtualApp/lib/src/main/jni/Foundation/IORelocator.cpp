@@ -820,6 +820,9 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
 }
 
 static char **relocate_envp(const char *pathname, char *const envp[]) {
+    if (strstr(pathname, "libweexjsb.so")) {
+        return const_cast<char **>(envp);
+    }
     char *soPath = getenv("V_SO_PATH");
     char *soPath64 = getenv("V_SO_PATH_64");
 

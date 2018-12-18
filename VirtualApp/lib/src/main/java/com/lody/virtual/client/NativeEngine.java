@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Process;
+import android.util.Pair;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
@@ -19,6 +20,9 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -87,6 +91,8 @@ public class NativeEngine {
         return origPath;
     }
 
+    private static final List<Pair<String, String>> REDIRECT_LISTS = new LinkedList<>();
+
 
     public static void redirectDirectory(String origPath, String newPath) {
         if (!origPath.endsWith("/")) {
@@ -95,11 +101,7 @@ public class NativeEngine {
         if (!newPath.endsWith("/")) {
             newPath = newPath + "/";
         }
-        try {
-            nativeIORedirect(origPath, newPath);
-        } catch (Throwable e) {
-            VLog.e(TAG, VLog.getStackTraceString(e));
-        }
+        REDIRECT_LISTS.add(new Pair<>(origPath, newPath));
     }
 
     public static void redirectFile(String origPath, String newPath) {
@@ -109,12 +111,7 @@ public class NativeEngine {
         if (newPath.endsWith("/")) {
             newPath = newPath.substring(0, newPath.length() - 1);
         }
-
-        try {
-            nativeIORedirect(origPath, newPath);
-        } catch (Throwable e) {
-            VLog.e(TAG, VLog.getStackTraceString(e));
-        }
+        REDIRECT_LISTS.add(new Pair<>(origPath, newPath));
     }
 
     public static void readOnlyFile(String path) {
@@ -175,6 +172,28 @@ public class NativeEngine {
             coreAppInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(VirtualCore.getConfig().getHostPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
+        }
+        Collections.sort(REDIRECT_LISTS, new Comparator<Pair<String, String>>() {
+            @Override
+            public int compare(Pair<String, String> o1, Pair<String, String> o2) {
+                String a = o1.first;
+                String b = o2.first;
+                return compare(b.length(), a.length());
+            }
+
+            private int compare(int x, int y) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    return Integer.compare(x, y);
+                }
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+        });
+        for (Pair<String, String> pair : REDIRECT_LISTS) {
+            try {
+                nativeIORedirect(pair.first, pair.second);
+            } catch (Throwable e) {
+                VLog.e(TAG, VLog.getStackTraceString(e));
+            }
         }
         try {
             String soPath = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME + ".so").getAbsolutePath();

@@ -40,13 +40,17 @@ class TaskRecord {
     }
 
     public ActivityRecord getTopActivityRecord() {
+        return getTopActivityRecord(false);
+    }
+
+    public ActivityRecord getTopActivityRecord(boolean containFinishedActivity) {
         synchronized (activities) {
             if (activities.isEmpty()) {
                 return null;
             }
             for (int i = activities.size() - 1; i >= 0; i--) {
                 ActivityRecord r = activities.get(i);
-                if (!r.marked) {
+                if (containFinishedActivity || !r.marked) {
                     return r;
                 }
             }

@@ -374,7 +374,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             if (sourceTask == reuseTask) {
                 startFrom = sourceRecord;
             } else {
-                startFrom = reuseTask.getTopActivityRecord();
+                startFrom = reuseTask.getTopActivityRecord(true);
             }
             startActivityFromSourceTask(startFrom.process, startFrom.token, destIntent, resultWho, requestCode, options);
             return 0;

@@ -61,7 +61,7 @@ public class PackageSetting implements Parcelable {
     }
 
     public InstalledAppInfo getAppInfo() {
-        return new InstalledAppInfo(packageName, appMode, appId);
+        return new InstalledAppInfo(packageName, appMode, flag, appId);
     }
 
     void removeUser(int userId) {

@@ -2,6 +2,8 @@ package com.lody.virtual.helper;
 
 import android.os.Build;
 
+import com.lody.virtual.client.env.VirtualRuntime;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,12 +12,28 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import dalvik.system.DexFile;
 import mirror.dalvik.system.VMRuntime;
 
 /**
  * @author Lody
  */
-public class ArtDexOptimizer {
+public class DexOptimizer {
+
+    public static void optimizeDex(String dexFilePath, String optFilePath) throws IOException {
+
+        if (VirtualRuntime.isArt()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+                try {
+                    DexOptimizer.interpretDex2Oat(dexFilePath, optFilePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        // Ensure odex generated
+        DexFile.loadDex(dexFilePath, optFilePath, 0).close();
+    }
 
     /**
      * Optimize the dex in interpret mode.

@@ -12,5 +12,6 @@ public interface InstallStrategy {
 	int COMPARE_VERSION = 0X01 << 3;
 	int IGNORE_NEW_VERSION = 0x01 << 4;
 	int NOT_COPY_APK = 0x01 << 5;
+	int NOT_NOTIFY = 0x01 << 6;
 
 }

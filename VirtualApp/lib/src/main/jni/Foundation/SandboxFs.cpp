@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <cstring>
 #include "SandboxFs.h"
 #include "canonicalize_md.h"
 #include "Log.h"

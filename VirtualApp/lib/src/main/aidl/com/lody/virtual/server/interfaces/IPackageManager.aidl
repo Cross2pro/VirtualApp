@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.lody.virtual.remote.VParceledListSlice;
+import com.lody.virtual.remote.ReceiverInfo;
 
 import java.util.List;
 
@@ -57,6 +58,8 @@ interface IPackageManager{
     VParceledListSlice getInstalledPackages(int flags, int userId);
 
     VParceledListSlice getInstalledApplications(int flags, int userId);
+
+    List<ReceiverInfo> getReceiverInfos(String packageName, String processName, int userId);
 
     PermissionInfo getPermissionInfo(String name, int flags);
 

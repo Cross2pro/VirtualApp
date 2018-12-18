@@ -1,6 +1,6 @@
 package com.lody.virtual.server.pm;
 
-import com.lody.virtual.helper.ArtDexOptimizer;
+import com.lody.virtual.helper.DexOptimizer;
 import com.lody.virtual.helper.dedex.DataReader;
 import com.lody.virtual.helper.dedex.Dex;
 import com.lody.virtual.helper.dedex.Elf;
@@ -145,7 +145,7 @@ public class OatHelper {
     }
 
     private static void generateOdex(File zipFile, File odexFile) throws IOException {
-        ArtDexOptimizer.interpretDex2Oat(zipFile.getPath(), odexFile.getPath());
+        DexOptimizer.interpretDex2Oat(zipFile.getPath(), odexFile.getPath());
     }
 
 
