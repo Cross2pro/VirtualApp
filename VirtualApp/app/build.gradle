@@ -5,7 +5,7 @@ android {
 
     compileSdkVersion 25
     defaultConfig {
-        applicationId "io.virtualapp"
+        applicationId rootProject.ext.PACKAGE_NAME_32BIT
         minSdkVersion 19
         targetSdkVersion 22
         versionCode 180080814

@@ -52,7 +52,6 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.ServiceCache;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
@@ -69,7 +68,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import dalvik.system.DexFile;
 import mirror.android.app.ActivityThread;
 
 /**
@@ -180,6 +178,10 @@ public final class VirtualCore {
 
     public int[] getGids() {
         return mHostPkgInfo.gids;
+    }
+
+    public ApplicationInfo getHostApplicationInfo() {
+        return mHostPkgInfo.applicationInfo;
     }
 
     public Context getContext() {

@@ -310,7 +310,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 VPackage.ActivityComponent a = mActivities.mActivities.get(component);
                 if (a != null) {
                     ActivityInfo activityInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
-                    ComponentFixer.fixComponentInfo(ps, activityInfo, userId);
+                    ComponentFixer.fixComponentInfo(activityInfo);
                     return activityInfo;
                 }
             }
@@ -346,7 +346,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 VPackage.ActivityComponent a = mReceivers.mActivities.get(component);
                 if (a != null && isEnabledLPr(a.info, flags, userId)) {
                     ActivityInfo receiverInfo = PackageParserEx.generateActivityInfo(a, flags, ps.readUserState(userId), userId);
-                    ComponentFixer.fixComponentInfo(ps, receiverInfo, userId);
+                    ComponentFixer.fixComponentInfo(receiverInfo);
                     return receiverInfo;
                 }
             }
@@ -365,7 +365,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 VPackage.ServiceComponent s = mServices.mServices.get(component);
                 if (s != null) {
                     ServiceInfo serviceInfo = PackageParserEx.generateServiceInfo(s, flags, ps.readUserState(userId), userId);
-                    ComponentFixer.fixComponentInfo(ps, serviceInfo, userId);
+                    ComponentFixer.fixComponentInfo(serviceInfo);
                     return serviceInfo;
                 }
             }
@@ -384,7 +384,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 VPackage.ProviderComponent provider = mProvidersByComponent.get(component);
                 if (provider != null && isEnabledLPr(provider.info, flags, userId)) {
                     ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
-                    ComponentFixer.fixComponentInfo(ps, providerInfo, userId);
+                    ComponentFixer.fixComponentInfo(providerInfo);
                     return providerInfo;
                 }
             }
@@ -745,8 +745,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             PackageSetting ps = (PackageSetting) provider.owner.mExtras;
             ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
             if (providerInfo != null) {
-                PackageSetting settings = getPackageSettingLocked(providerInfo.packageName);
-                ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
+                ComponentFixer.fixComponentInfo(providerInfo);
                 return providerInfo;
             }
         }

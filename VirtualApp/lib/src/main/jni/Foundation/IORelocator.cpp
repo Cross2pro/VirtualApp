@@ -18,7 +18,7 @@
 
 #include "IORelocator.h"
 #include "SandboxFs.h"
-#include "Path.h"
+#include "canonicalize_md.h"
 #include "Symbol.h"
 #include "Log.h"
 
@@ -48,6 +48,25 @@ using namespace xdja;
 
 void startIOHook(int api_level);
 
+char *get_process_name() {
+    char *cmdline = (char *) calloc(0x400u, 1u);
+    if (cmdline) {
+        FILE *file = fopen("/proc/self/cmdline", "r");
+        if (file) {
+            int count = fread(cmdline, 1u, 0x400u, file);
+            if (count) {
+                if (cmdline[count - 1] == '\n') {
+                    cmdline[count - 1] = '\0';
+                }
+            }
+            fclose(file);
+        } else {
+            ALOGE("fail open cmdline.");
+        }
+    }
+    return cmdline;
+}
+
 void IOUniformer::init_env_before_all() {
     if (!need_load_env) {
         return;
@@ -58,7 +77,9 @@ void IOUniformer::init_env_before_all() {
         return;
     }
     execve_process = true;
-    ALOGI("Start init env...");
+    char *process_name = get_process_name();
+    ALOGI("Start init env : %s", process_name);
+    free(process_name);
     char src_key[KEY_MAX];
     char dst_key[KEY_MAX];
     int i = 0;
@@ -114,21 +135,19 @@ hook_function(void *handle, const char *symbol, void *new_func, void **old_func)
     MSHookFunction(addr, new_func, old_func);
 }
 
-
 void onSoLoaded(const char *name, void *handle);
 
 void IOUniformer::relocate(const char *orig_path, const char *new_path) {
     add_replace_item(orig_path, new_path);
 }
 
-const char *IOUniformer::query(const char *orig_path) {
-    return relocate_path(orig_path, true);
+const char *IOUniformer::query(const char *orig_path, char *const buffer, const size_t size) {
+    return relocate_path(orig_path, buffer, size);
 }
 
 void IOUniformer::whitelist(const char *_path) {
     add_keep_item(_path);
 }
-
 
 void IOUniformer::forbid(const char *_path) {
     add_forbidden_item(_path);
@@ -138,48 +157,40 @@ void IOUniformer::readOnly(const char *_path) {
     add_readonly_item(_path);
 }
 
-
-const char *IOUniformer::reverse(const char *_path) {
-    return reverse_relocate_path(_path, true);
+const char *IOUniformer::reverse(const char *_path, char *const buffer, const size_t size) {
+    return reverse_relocate_path(_path, buffer, size);
 }
 
 
 __BEGIN_DECLS
 
-#define FREE(ptr, org_ptr) { if ((void*) ptr != NULL && (void*) ptr != (void*) org_ptr) { free((void*) ptr); } }
-
-
 // int faccessat(int dirfd, const char *pathname, int mode, int flags);
 HOOK_DEF(int, faccessat, int dirfd, const char *pathname, int mode, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !(mode & W_OK && isReadOnly(relocated_path))) {
-        long ret = syscall(__NR_faccessat, dirfd, relocated_path, mode, flags);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_faccessat, dirfd, relocated_path, mode, flags);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags);
 HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_fchmodat, dirfd, relocated_path, mode, flags);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_fchmodat, dirfd, relocated_path, mode, flags);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int fstatat64(int dirfd, const char *pathname, struct stat *buf, int flags);
 HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
         long ret;
 #if defined(__arm__) || defined(__i386__)
         ret = syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
@@ -199,12 +210,10 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
                 originalInterface::original_close(fd);
             }
         }
-        FREE(relocated_path, pathname);
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int kill(pid_t pid, int sig);
@@ -217,243 +226,206 @@ HOOK_DEF(int, kill, pid_t pid, int sig) {
 
 // int __statfs64(const char *path, size_t size, struct statfs *stat);
 HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_statfs64, relocated_path, size, stat);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_statfs64, relocated_path, size, stat);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int __open(const char *pathname, int flags, int mode);
 HOOK_DEF(int, __open, const char *pathname, int flags, int mode) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !((flags & O_WRONLY || flags & O_RDWR) && isReadOnly(relocated_path))) {
-        long ret = syscall(__NR_open, relocated_path, flags, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+//        int fake_fd = redirect_proc_maps(relocated_path, flags, mode);
+//        if (fake_fd != 0) {
+//            return fake_fd;
+//        }
+        return syscall(__NR_open, relocated_path, flags, mode);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 HOOK_DEF(ssize_t, readlink, const char *pathname, char *buf, size_t bufsiz) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
         long ret = syscall(__NR_readlink, relocated_path, buf, bufsiz);
-        FREE(relocated_path, pathname);
         if (ret < 0) {
             return ret;
         } else {
             // relocate link content
-            if (reverse_relocate_path_inplace(buf, bufsiz, true) != -1) {
+            if (reverse_relocate_path_inplace(buf, bufsiz) != -1) {
                 return ret;
             }
         }
     }
-    errno = 13;
+    errno = EACCES;
     return -1;
 }
 
 // int mkdir(const char *pathname, mode_t mode);
 HOOK_DEF(int, mkdir, const char *pathname, mode_t mode) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_mkdir, relocated_path, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_mkdir, relocated_path, mode);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int rmdir(const char *pathname);
 HOOK_DEF(int, rmdir, const char *pathname) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_rmdir, relocated_path);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_rmdir, relocated_path);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int lchown(const char *pathname, uid_t owner, gid_t group);
 HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_lchown, relocated_path, owner, group);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_lchown, relocated_path, owner, group);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int utimes(const char *filename, const struct timeval *tvp);
 HOOK_DEF(int, utimes, const char *pathname, const struct timeval *tvp) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_utimes, relocated_path, tvp);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_utimes, relocated_path, tvp);
     }
+    errno = EACCES;
+    return -1;
 }
-
-
 
 // int link(const char *oldpath, const char *newpath);
 HOOK_DEF(int, link, const char *oldpath, const char *newpath) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
+    char temp[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        long ret = syscall(__NR_link, relocated_path_old, newpath);
-        FREE(relocated_path_old, oldpath);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_link, relocated_path_old, newpath);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int access(const char *pathname, int mode);
 HOOK_DEF(int, access, const char *pathname, int mode) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !(mode & W_OK && isReadOnly(relocated_path))) {
-        long ret = syscall(__NR_access, relocated_path, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_access, relocated_path, mode);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int chmod(const char *path, mode_t mode);
 HOOK_DEF(int, chmod, const char *pathname, mode_t mode) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_chmod, relocated_path, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_chmod, relocated_path, mode);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int chown(const char *path, uid_t owner, gid_t group);
 HOOK_DEF(int, chown, const char *pathname, uid_t owner, gid_t group) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_chown, relocated_path, owner, group);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_chown, relocated_path, owner, group);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int lstat(const char *path, struct stat *buf);
 HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_lstat64, relocated_path, buf);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_lstat64, relocated_path, buf);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int stat(const char *path, struct stat *buf);
 HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
         long ret = syscall(__NR_stat64, relocated_path, buf);
-        FREE(relocated_path, pathname);
         if (isReadOnly(relocated_path)) {
             buf->st_mode &= ~S_IWGRP;
         }
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int symlink(const char *oldpath, const char *newpath);
 HOOK_DEF(int, symlink, const char *oldpath, const char *newpath) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
+    char temp[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        long ret = syscall(__NR_symlink, relocated_path_old, newpath);
-        FREE(relocated_path_old, oldpath);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_symlink, relocated_path_old, newpath);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int unlink(const char *pathname);
 HOOK_DEF(int, unlink, const char *pathname) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !isReadOnly(relocated_path)) {
-        long ret = syscall(__NR_unlink, relocated_path);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_unlink, relocated_path);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int fchmod(const char *pathname, mode_t mode);
 HOOK_DEF(int, fchmod, const char *pathname, mode_t mode) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_fchmod, relocated_path, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_fchmod, relocated_path, mode);
     }
+    errno = EACCES;
+    return -1;
 }
 
 
 // int fstatat(int dirfd, const char *pathname, struct stat *buf, int flags);
 HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
     }
+    errno = EACCES;
+    return -1;
 }
 
 
@@ -485,96 +457,80 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
 
 // int mknod(const char *pathname, mode_t mode, dev_t dev);
 HOOK_DEF(int, mknod, const char *pathname, mode_t mode, dev_t dev) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_mknod, relocated_path, mode, dev);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_mknod, relocated_path, mode, dev);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int rename(const char *oldpath, const char *newpath);
 HOOK_DEF(int, rename, const char *oldpath, const char *newpath) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
-    const char *relocated_path_new = relocate_path(newpath, true);
+    char temp_old[PATH_MAX], temp_new[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp_old, sizeof(temp_old));
+    const char *relocated_path_new = relocate_path(newpath, temp_new, sizeof(temp_new));
     if (relocated_path_old && relocated_path_new) {
-        long ret = syscall(__NR_rename, relocated_path_old, relocated_path_new);
-        FREE(relocated_path_old, oldpath);
-        FREE(relocated_path_new, newpath);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_rename, relocated_path_old, relocated_path_new);
     }
+    errno = EACCES;
+    return -1;
 }
 
 #endif
 
 
-
 // int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 HOOK_DEF(int, mknodat, int dirfd, const char *pathname, mode_t mode, dev_t dev) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_mknodat, dirfd, relocated_path, mode, dev);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_mknodat, dirfd, relocated_path, mode, dev);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
 HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec times[2],
          int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_utimensat, dirfd, relocated_path, times, flags);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_utimensat, dirfd, relocated_path, times, flags);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int fchownat(int dirfd, const char *pathname, uid_t owner, gid_t group, int flags);
 HOOK_DEF(int, fchownat, int dirfd, const char *pathname, uid_t owner, gid_t group, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_fchownat, dirfd, relocated_path, owner, group, flags);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_fchownat, dirfd, relocated_path, owner, group, flags);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int chroot(const char *pathname);
 HOOK_DEF(int, chroot, const char *pathname) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_chroot, relocated_path);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_chroot, relocated_path);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
 HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
-    const char *relocated_path_new = relocate_path(newpath, true);
+    char temp_old[PATH_MAX], temp_new[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp_old, sizeof(temp_old));
+    const char *relocated_path_new = relocate_path(newpath, temp_new, sizeof(temp_new));
     if (relocated_path_old && relocated_path_new) {
         xdja::zs::sp <virtualFile> *vf2 = virtualFileManager::getVFM().queryVF(
                 (char *) relocated_path_old);
@@ -610,31 +566,27 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
         /*zString op("renameat to %s ret %d err %s", redirect_path_new, ret, getErr);
         doFileTrace(redirect_path_old, op.toString());*/
 
-        FREE(relocated_path_old, oldpath);
-        FREE(relocated_path_new, newpath);
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+    errno = EACCES;
+    return -1;
 }
 
+// int statfs64(const char *__path, struct statfs64 *__buf) __INTRODUCED_IN(21);
 HOOK_DEF(int, statfs64, const char *filename, struct statfs64 *buf) {
-    const char *relocated_path = relocate_path(filename, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_statfs, relocated_path, buf);
-        FREE(relocated_path, filename);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(filename, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_statfs, relocated_path, buf);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int unlinkat(int dirfd, const char *pathname, int flags);
 HOOK_DEF(int, unlinkat, int dirfd, const char *pathname, int flags) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !isReadOnly(relocated_path)) {
         int ret = syscall(__NR_unlinkat, dirfd, relocated_path, flags);
 
@@ -643,141 +595,125 @@ HOOK_DEF(int, unlinkat, int dirfd, const char *pathname, int flags) {
             virtualFileManager::getVFM().deleted((char *) relocated_path);
         }
 
-        FREE(relocated_path, pathname);
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int symlinkat(const char *oldpath, int newdirfd, const char *newpath);
 HOOK_DEF(int, symlinkat, const char *oldpath, int newdirfd, const char *newpath) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
+    char temp[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        long ret = syscall(__NR_symlinkat, relocated_path_old, newdirfd, newpath);
-        FREE(relocated_path_old, oldpath);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_symlinkat, relocated_path_old, newdirfd, newpath);
     }
+    errno = EACCES;
+    return -1;
 }
 
 // int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
 HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
          int flags) {
-    const char *relocated_path_old = relocate_path(oldpath, true);
+    char temp[PATH_MAX];
+    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        long ret = syscall(__NR_linkat, olddirfd, relocated_path_old, newdirfd, newpath,
-                           flags);
-        FREE(relocated_path_old, oldpath);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+        return syscall(__NR_linkat, olddirfd, relocated_path_old, newdirfd, newpath,
+                       flags);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int mkdirat(int dirfd, const char *pathname, mode_t mode);
 HOOK_DEF(int, mkdirat, int dirfd, const char *pathname, mode_t mode) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_mkdirat, dirfd, relocated_path, mode);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_mkdirat, dirfd, relocated_path, mode);
     }
+    errno = EACCES;
+    return -1;
 }
-
 
 // int readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
 HOOK_DEF(int, readlinkat, int dirfd, const char *pathname, char *buf, size_t bufsiz) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
         long ret = syscall(__NR_readlinkat, dirfd, relocated_path, buf, bufsiz);
-        FREE(relocated_path, pathname);
         if (ret < 0) {
             return ret;
         } else {
             // relocate link content
-            if (reverse_relocate_path_inplace(buf, bufsiz, true) != -1) {
+            if (reverse_relocate_path_inplace(buf, bufsiz) != -1) {
                 return ret;
             }
         }
     }
-    errno = 13;
+    errno = EACCES;
     return -1;
 }
 
 
 // int truncate(const char *path, off_t length);
 HOOK_DEF(int, truncate, const char *pathname, off_t length) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_truncate, relocated_path, length);
-        FREE(relocated_path, pathname);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_truncate, relocated_path, length);
     }
+    errno = EACCES;
+    return -1;
+}
+
+// int chdir(const char *path);
+HOOK_DEF(int, chdir, const char *pathname) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_chdir, relocated_path);
+    }
+    errno = EACCES;
+    return -1;
 }
 
 #define RETURN_IF_FORBID if(res == FORBID) return -1;
 
 // int truncate64(const char *pathname, off_t length);
 HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
-    int res;
-    const char *relocated_path = relocate_path(pathname, &res);
-    RETURN_IF_FORBID
-    int ret = syscall(__NR_truncate64, relocated_path, length);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        int ret = syscall(__NR_truncate64, relocated_path, length);
 
-    /*zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
-    doFileTrace(relocated_path, op.toString());*/
-
-    FREE(relocated_path, pathname);
-    return ret;
-}
-
-
-// int chdir(const char *path);
-HOOK_DEF(int, chdir, const char *pathname) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_chdir, relocated_path);
-        FREE(relocated_path, pathname);
+        /*zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
+        doFileTrace(relocated_path, op.toString());*/
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+
+    errno = EACCES;
+    return -1;
 }
-
-
 
 
 // int __getcwd(char *buf, size_t size);
 HOOK_DEF(int, __getcwd, char *buf, size_t size) {
     long ret = syscall(__NR_getcwd, buf, size);
     if (!ret) {
-        if (reverse_relocate_path_inplace(buf, size, true) < 0) {
-            errno = 13;
-            ret = -1;
+        if (reverse_relocate_path_inplace(buf, size) < 0) {
+            errno = EACCES;
+            return -1;
         }
     }
     return ret;
 }
 
-
 // int __openat(int fd, const char *pathname, int flags, int mode);
 HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
-    const char *relocated_path = relocate_path(pathname, true);
-    if (relocated_path) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
         if ((flags & O_ACCMODE) == O_WRONLY) {
             flags &= ~O_ACCMODE;
             flags |= O_RDWR;
@@ -837,12 +773,10 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                 }
             }
         }
-        FREE(relocated_path, pathname);
         return ret;
-    } else {
-        errno = 13;
-        return -1;
     }
+    errno = EACCES;
+    return -1;
 }
 
 HOOK_DEF(int, close, int __fd) {
@@ -876,20 +810,20 @@ HOOK_DEF(int, close, int __fd) {
 
 // int __statfs (__const char *__file, struct statfs *__buf);
 HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
-    const char *relocated_path = relocate_path(__file, true);
-    if (relocated_path) {
-        long ret = syscall(__NR_statfs, relocated_path, __buf);
-        FREE(relocated_path, __file);
-        return ret;
-    } else {
-        errno = 13;
-        return -1;
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(__file, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return syscall(__NR_statfs, relocated_path, __buf);
     }
+    errno = EACCES;
+    return -1;
 }
 
-char **relocate_envp(const char *pathname, char *const envp[]) {
+static char **relocate_envp(const char *pathname, char *const envp[]) {
     char *soPath = getenv("V_SO_PATH");
     char *soPath64 = getenv("V_SO_PATH_64");
+
+    char *env_so_path = NULL;
     FILE *fd = fopen(pathname, "r");
     if (!fd) {
         return const_cast<char **>(envp);
@@ -897,25 +831,52 @@ char **relocate_envp(const char *pathname, char *const envp[]) {
     for (int i = 0; i < 4; ++i) {
         fgetc(fd);
     }
-    if (fgetc(fd) == ELFCLASS64) {
-        soPath = soPath64;
+    int type = fgetc(fd);
+    if (type == ELFCLASS32) {
+        env_so_path = soPath;
+    } else if (type == ELFCLASS64) {
+        env_so_path = soPath64;
     }
     fclose(fd);
+    if (env_so_path == NULL) {
+        return const_cast<char **>(envp);
+    }
     int len = 0;
     int ld_preload_index = -1;
+    int self_so_index = -1;
     while (envp[len]) {
         /* find LD_PRELOAD element */
         if (ld_preload_index == -1 && !strncmp(envp[len], "LD_PRELOAD=", 11)) {
             ld_preload_index = len;
         }
-        len++;
+        if (self_so_index == -1 && !strncmp(envp[len], "V_SO_PATH=", 10)) {
+            self_so_index = len;
+        }
+        ++len;
     }
     /* append LD_PRELOAD element */
     if (ld_preload_index == -1) {
-        len++;
+        ++len;
     }
+    /* append V_env element */
+    if (self_so_index == -1) {
+        // V_SO_PATH
+        // V_API_LEVEL
+        // V_PREVIEW_API_LEVEL
+        // V_NATIVE_PATH
+        len += 4;
+        if (soPath64) {
+            // V_SO_PATH_64
+            len++;
+        }
+        len += get_keep_item_count();
+        len += get_forbidden_item_count();
+        len += get_replace_item_count() * 2;
+    }
+
     /* append NULL element */
-    len++;
+    ++len;
+
     char **relocated_envp = (char **) malloc(len * sizeof(char *));
     memset(relocated_envp, 0, len * sizeof(char *));
     for (int i = 0; envp[i]; ++i) {
@@ -924,63 +885,107 @@ char **relocate_envp(const char *pathname, char *const envp[]) {
         }
     }
     char LD_PRELOAD_VARIABLE[PATH_MAX];
-    memset(LD_PRELOAD_VARIABLE, 0, sizeof(LD_PRELOAD_VARIABLE));
     if (ld_preload_index == -1) {
         ld_preload_index = len - 2;
-        sprintf(LD_PRELOAD_VARIABLE, "LD_PRELOAD=%s", soPath);
+        sprintf(LD_PRELOAD_VARIABLE, "LD_PRELOAD=%s", env_so_path);
     } else {
         const char *orig_ld_preload = envp[ld_preload_index] + 11;
-        sprintf(LD_PRELOAD_VARIABLE, "LD_PRELOAD=%s:%s", soPath, orig_ld_preload);
+        sprintf(LD_PRELOAD_VARIABLE, "LD_PRELOAD=%s:%s", env_so_path, orig_ld_preload);
     }
     relocated_envp[ld_preload_index] = strdup(LD_PRELOAD_VARIABLE);
+    int index = 0;
+    while (relocated_envp[index]) index++;
+    if (self_so_index == -1) {
+        char element[PATH_MAX] = {0};
+        sprintf(element, "V_SO_PATH=%s", soPath);
+        relocated_envp[index++] = strdup(element);
+        if (soPath64) {
+            sprintf(element, "V_SO_PATH_64=%s", soPath64);
+            relocated_envp[index++] = strdup(element);
+        }
+        sprintf(element, "V_API_LEVEL=%s", getenv("V_API_LEVEL"));
+        relocated_envp[index++] = strdup(element);
+        sprintf(element, "V_PREVIEW_API_LEVEL=%s", getenv("V_PREVIEW_API_LEVEL"));
+        relocated_envp[index++] = strdup(element);
+        sprintf(element, "V_NATIVE_PATH=%s", getenv("V_NATIVE_PATH"));
+        relocated_envp[index++] = strdup(element);
+
+        for (int i = 0; i < get_keep_item_count(); ++i) {
+            PathItem &item = get_keep_items()[i];
+            char env[PATH_MAX] = {0};
+            sprintf(env, "V_KEEP_ITEM_%d=%s", i, item.path);
+            relocated_envp[index++] = strdup(env);
+        }
+
+        for (int i = 0; i < get_forbidden_item_count(); ++i) {
+            PathItem &item = get_forbidden_items()[i];
+            char env[PATH_MAX] = {0};
+            sprintf(env, "V_FORBID_ITEM_%d=%s", i, item.path);
+            relocated_envp[index++] = strdup(env);
+        }
+
+        for (int i = 0; i < get_replace_item_count(); ++i) {
+            ReplaceItem &item = get_replace_items()[i];
+            char src[PATH_MAX] = {0};
+            char dst[PATH_MAX] = {0};
+            sprintf(src, "V_REPLACE_ITEM_SRC_%d=%s", i, item.orig_path);
+            sprintf(dst, "V_REPLACE_ITEM_DST_%d=%s", i, item.new_path);
+            relocated_envp[index++] = strdup(src);
+            relocated_envp[index++] = strdup(dst);
+        }
+    }
     return relocated_envp;
 }
 
 
 // int (*origin_execve)(const char *pathname, char *const argv[], char *const envp[]);
 HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
-    const char *relocated_path = relocate_path(pathname, true);
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (!relocated_path) {
-        errno = 13;
+        errno = EACCES;
         return -1;
     }
-    long ret;
-    if (1) {
-        char **relocated_envp = relocate_envp(relocated_path, envp);
-        ret = syscall(__NR_execve, relocated_path, argv, relocated_envp);
-    } else {
-        ret = syscall(__NR_execve, relocated_path, argv, envp);
+
+    char **relocated_envp = relocate_envp(relocated_path, envp);
+    long ret = syscall(__NR_execve, relocated_path, argv, relocated_envp);
+    if (relocated_envp != envp) {
+        int i = 0;
+        while (relocated_envp[i] != NULL) {
+            free(relocated_envp[i]);
+            ++i;
+        }
+        free(relocated_envp);
     }
-    FREE(relocated_path, pathname);
     return ret;
 }
 
-HOOK_DEF(void*, dlopen_CI, const char *filename, int flag) {
-    const char *redirect_path = relocate_path(filename, true);
+HOOK_DEF(void *, dlopen_CI, const char *filename, int flag) {
+    char temp[PATH_MAX];
+    const char *redirect_path = relocate_path(filename, temp, sizeof(temp));
     void *ret = orig_dlopen_CI(redirect_path, flag);
     onSoLoaded(filename, ret);
-    FREE(redirect_path, filename);
     return ret;
 }
 
 HOOK_DEF(void*, do_dlopen_CIV, const char *filename, int flag, const void *extinfo) {
-    const char *redirect_path = relocate_path(filename, true);
+    char temp[PATH_MAX];
+    const char *redirect_path = relocate_path(filename, temp, sizeof(temp));
     void *ret = orig_do_dlopen_CIV(redirect_path, flag, extinfo);
     onSoLoaded(filename, ret);
-    FREE(redirect_path, filename);
     return ret;
 }
 
 HOOK_DEF(void*, do_dlopen_CIVV, const char *name, int flags, const void *extinfo,
          void *caller_addr) {
-    const char *redirect_path = relocate_path(name, true);
+    char temp[PATH_MAX];
+    const char *redirect_path = relocate_path(name, temp, sizeof(temp));
     void *ret = orig_do_dlopen_CIVV(redirect_path, flags, extinfo, caller_addr);
     onSoLoaded(name, ret);
-    FREE(redirect_path, name);
     return ret;
 }
 
-//void *dlsym(void *handle,const char *symbol)
+//void *dlsym(void *handle, const char *symbol)
 HOOK_DEF(void*, dlsym, void *handle, char *symbol) {
     return orig_dlsym(handle, symbol);
 }
@@ -1920,8 +1925,10 @@ void startIOHook(int api_level) {
 }
 
 
-void IOUniformer::startUniformer(const char *so_path, const char *so_path_64, int api_level,
-                                 int preview_api_level) {
+void
+IOUniformer::startUniformer(const char *so_path, const char *so_path_64, const char *native_path,
+                            int api_level,
+                            int preview_api_level) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
     char api_level_chars[56];
@@ -1931,5 +1938,6 @@ void IOUniformer::startUniformer(const char *so_path, const char *so_path_64, in
     setenv("V_API_LEVEL", api_level_chars, 1);
     sprintf(api_level_chars, "%i", preview_api_level);
     setenv("V_PREVIEW_API_LEVEL", api_level_chars, 1);
+    setenv("V_NATIVE_PATH", native_path, 1);
     startIOHook(api_level);
 }

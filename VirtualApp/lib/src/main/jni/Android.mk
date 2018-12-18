@@ -23,10 +23,11 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
 				   Jni/Helper.cpp \
 				   Foundation/syscall/BinarySyscallFinder.cpp \
 				   Foundation/fake_dlfcn.cpp \
+				   Foundation/canonicalize_md.c \
+				   Foundation/MapsRedirector.cpp \
 				   Foundation/IORelocator.cpp \
 				   Foundation/VMHook.cpp \
 				   Foundation/Symbol.cpp \
-				   Foundation/Path.cpp \
 				   Foundation/SandboxFs.cpp \
 				   Substrate/hde64.c \
                    Substrate/SubstrateDebug.cpp \

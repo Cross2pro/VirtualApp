@@ -1,6 +1,7 @@
 package com.lody.virtual.client;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Application;
 import android.app.Instrumentation;
@@ -44,8 +45,8 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
-import com.lody.virtual.client.service.ServiceManager;
 import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
@@ -61,18 +62,16 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.util.Log;
 import com.lody.virtual.remote.VDeviceConfig;
+import com.lody.virtual.server.secondary.FakeIdentityBinder;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import mirror.RefStaticObject;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -95,6 +94,10 @@ import mirror.com.android.internal.content.ReferrerIntent;
 import mirror.dalvik.system.VMRuntime;
 import mirror.java.lang.ThreadGroupN;
 
+import static com.lody.virtual.client.core.VirtualCore.getConfig;
+import static com.lody.virtual.helper.compat.ActivityManagerCompat.SERVICE_DONE_EXECUTING_ANON;
+import static com.lody.virtual.helper.compat.ActivityManagerCompat.SERVICE_DONE_EXECUTING_START;
+import static com.lody.virtual.helper.compat.ActivityManagerCompat.SERVICE_DONE_EXECUTING_STOP;
 import static com.lody.virtual.os.VUserHandle.getUserId;
 import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK;
 
@@ -107,6 +110,11 @@ public final class VClient extends IVClient.Stub {
     private static final int NEW_INTENT = 11;
     private static final int RECEIVER = 12;
     private static final int FINISH_ACTIVITY = 13;
+    private static final int CREATE_SERVICE = 14;
+    private static final int SERVICE_ARGS = 15;
+    private static final int STOP_SERVICE = 16;
+    private static final int BIND_SERVICE = 17;
+    private static final int UNBIND_SERVICE = 18;
 
     private static final String TAG = VClient.class.getSimpleName();
 
@@ -114,6 +122,7 @@ public final class VClient extends IVClient.Stub {
     private static final VClient gClient = new VClient();
 
     private final H mH = new H();
+    private final ArrayMap<IBinder, Service> mServices = new ArrayMap<>();
     private Instrumentation mInstrumentation = AppInstrumentation.getDefault();
     private ClientConfig clientConfig;
     private AppBindData mBoundApplication;
@@ -122,6 +131,7 @@ public final class VClient extends IVClient.Stub {
     private InstalledAppInfo mAppInfo;
     private int mTargetSdkVersion;
     private ConditionVariable mBindingApplicationLock;
+    private boolean mEnvironmentPrepared = false;
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -129,6 +139,10 @@ public final class VClient extends IVClient.Stub {
 
     public static VClient get() {
         return gClient;
+    }
+
+    public boolean isEnvironmentPrepared() {
+        return mEnvironmentPrepared;
     }
 
     public boolean isAppUseOutsideAPK() {
@@ -284,11 +298,14 @@ public final class VClient extends IVClient.Stub {
                     }
                 }
             });
-            mBindingApplicationLock.block();
+            if (mBindingApplicationLock != null) {
+                mBindingApplicationLock.block();
+            }
         } else {
             bindApplicationNoCheck(packageName, processName);
         }
     }
+
 
     private void bindApplicationNoCheck(String packageName, String processName) {
         if (isAppRunning()) {
@@ -327,7 +344,7 @@ public final class VClient extends IVClient.Stub {
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
         mTargetSdkVersion = data.appInfo.targetSdkVersion;
-        VLog.i(TAG, "Binding application %s (%s)", data.appInfo.packageName, data.processName);
+        VLog.i(TAG, "Binding application %s (%s [%d])", data.appInfo.packageName, data.processName, Process.myPid());
         mBoundApplication = data;
         VirtualRuntime.setupRuntime(data.processName, data.appInfo);
         if (VirtualCore.get().is64BitEngine()) {
@@ -372,7 +389,7 @@ public final class VClient extends IVClient.Stub {
             System.setProperty("java.io.tmpdir",
                     new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache").getAbsolutePath());
         }
-        if (VirtualCore.getConfig().isEnableIORedirect()) {
+        if (getConfig().isEnableIORedirect()) {
             if (VirtualCore.get().isIORelocateWork()) {
                 startIORelocater(info, is64Bit);
             } else {
@@ -380,6 +397,7 @@ public final class VClient extends IVClient.Stub {
             }
         }
         NativeEngine.launchEngine();
+        mEnvironmentPrepared = true;
         Object mainThread = VirtualCore.mainThread();
         NativeEngine.startDexOverride();
         initDataStorage(is64Bit, userId, packageName);
@@ -444,6 +462,7 @@ public final class VClient extends IVClient.Stub {
                 CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
             }
         }
+        VirtualCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
 
         if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
                 && "com.tencent.mm".equals(data.appInfo.processName)){
@@ -618,49 +637,19 @@ public final class VClient extends IVClient.Stub {
             }
         }
         LinuxCompat.forgeProcDriver(is64bit);
-        if (VirtualCore.getConfig().isEnableAppFileSystemIsolation()) {
-            File odexFile, systemDir, appDir;
-            if (is64bit) {
-                odexFile = VEnvironment.getOdexFile64(packageName);
-                systemDir = VEnvironment.getSystemDirectory64(userId);
-                appDir = VEnvironment.getDataAppPackageDirectory64(packageName);
-            } else {
-                odexFile = VEnvironment.getOdexFile(packageName);
-                systemDir = VEnvironment.getSystemDirectory(userId);
-                appDir = VEnvironment.getDataAppPackageDirectory(packageName);
-            }
-            // odex
-            NativeEngine.whitelistFile(odexFile.getPath());
-            NativeEngine.whitelistFile(odexFile.getAbsolutePath());
-            // /virtual/data/0/system/
-            NativeEngine.whitelist(systemDir.getPath());
-            NativeEngine.whitelist(systemDir.getAbsolutePath());
-            // /virtual/data/app/{pkg}/
-            NativeEngine.whitelist(appDir.getPath());
-            NativeEngine.whitelist(appDir.getAbsolutePath());
-            // user data /virtual/data/0/{pkg}/
-            File dataDirFile = new File(dataDir);
-            NativeEngine.whitelist(dataDirFile.getPath());
-            NativeEngine.whitelist(dataDirFile.getAbsolutePath());
-            //other data dir
-            File vaDataDir = new File(VirtualCore.get().getContext().getApplicationInfo().dataDir);
-            NativeEngine.forbid(vaDataDir.getPath(), false);
-            NativeEngine.forbid(vaDataDir.getAbsolutePath(), false);
-        }
+        forbidHost();
         File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
         NativeEngine.whitelist(userLibDir.getPath());
-
         NativeEngine.whitelist("/dev/");
 
         String cache = new File(dataDir, "cache").getAbsolutePath();
         NativeEngine.redirectDirectory("/tmp/", cache);
-
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
         NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, de_dataDir);
         }
-        SettingConfig.AppLibConfig appLibConfig = VirtualCore.getConfig().getAppLibConfig(packageName);
+        SettingConfig.AppLibConfig appLibConfig = getConfig().getAppLibConfig(packageName);
 
         if (appLibConfig == SettingConfig.AppLibConfig.UseRealLib) {
             if (info.appMode != MODE_APP_USE_OUTSIDE_APK
@@ -673,10 +662,8 @@ public final class VClient extends IVClient.Stub {
         if (appLibConfig == SettingConfig.AppLibConfig.UseOwnLib) {
             NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
             NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
-            File virtualUserLibDir = is64bit ? VEnvironment.getUserAppLibDirectory(userId, packageName) : VEnvironment.getUserAppLibDirectory64(userId, packageName);
-            NativeEngine.redirectDirectory(virtualUserLibDir.getPath(), libPath);
         }
-        //safekey adapter
+        //xdja safekey adapter
         String subPathData = "/Android/data/"+info.packageName;
         File[] efd = VEnvironment.getTFRoots();
         for(File f:efd){
@@ -691,7 +678,9 @@ public final class VClient extends IVClient.Stub {
         }
 
         VirtualStorageManager vsManager = VirtualStorageManager.get();
+        //xdja
         vsManager.setVirtualStorage(info.packageName, userId, VEnvironment.getExternalStorageDirectory(userId).getAbsolutePath());
+
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
         if (enable && vsPath != null) {
@@ -699,16 +688,38 @@ public final class VClient extends IVClient.Stub {
             if (vsDirectory.exists() || vsDirectory.mkdirs()) {
                 HashSet<String> mountPoints = getMountPoints();
                 for (String mountPoint : mountPoints) {
+                    //xdja
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
                             continue;
                         }
                     }
+
                     NativeEngine.redirectDirectory(mountPoint, vsPath);
                 }
             }
         }
         NativeEngine.enableIORedirect();
+    }
+
+    private void forbidHost() {
+        ActivityManager am = (ActivityManager) VirtualCore.get().getContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningAppProcessInfo info : am.getRunningAppProcesses()) {
+            if (info.pid == Process.myPid()) {
+                continue;
+            }
+            if (info.uid != VirtualCore.get().myUid()) {
+                continue;
+            }
+            if (VActivityManager.get().isAppPid(info.pid)) {
+                continue;
+            }
+            if (info.processName.startsWith(getConfig().getHostPackageName())
+                    || info.processName.startsWith(getConfig().get64bitEnginePackageName())) {
+                NativeEngine.forbid("/proc/" + info.pid + "/maps", true);
+                NativeEngine.forbid("/proc/" + info.pid + "/cmdline", true);
+            }
+        }
     }
 
     @SuppressLint("SdCardPath")
@@ -778,7 +789,16 @@ public final class VClient extends IVClient.Stub {
             provider = mirror.android.content.ContentProviderClient.mContentProvider.get(client);
             client.release();
         }
-        return provider != null ? provider.asBinder() : null;
+        IBinder binder = provider != null ? provider.asBinder() : null;
+        if (binder != null) {
+            if (binder instanceof Binder) {
+                return new FakeIdentityBinder((Binder) binder);
+            } else {
+                VLog.e(TAG, "binder not instanceof Binder.");
+                return binder;
+            }
+        }
+        return null;
     }
 
     private void fixInstalledProviders() {
@@ -880,6 +900,45 @@ public final class VClient extends IVClient.Stub {
         sendMessage(RECEIVER, receiverData);
     }
 
+    @Override
+    public void scheduleCreateService(IBinder token, ServiceInfo info) {
+        CreateServiceData data = new CreateServiceData();
+        data.token = token;
+        data.info = info;
+        sendMessage(CREATE_SERVICE, data);
+    }
+
+    @Override
+    public void scheduleBindService(IBinder token, Intent intent, boolean rebind) {
+        BindServiceData data = new BindServiceData();
+        data.token = token;
+        data.intent = intent;
+        data.rebind = rebind;
+        sendMessage(BIND_SERVICE, data);
+    }
+
+    @Override
+    public void scheduleUnbindService(IBinder token, Intent intent) {
+        BindServiceData data = new BindServiceData();
+        data.token = token;
+        data.intent = intent;
+        sendMessage(UNBIND_SERVICE, data);
+    }
+
+    @Override
+    public void scheduleServiceArgs(IBinder token, int startId, Intent args) {
+        ServiceArgsData data = new ServiceArgsData();
+        data.token = token;
+        data.startId = startId;
+        data.args = args;
+        sendMessage(SERVICE_ARGS, data);
+    }
+
+    @Override
+    public void scheduleStopService(IBinder token) {
+        sendMessage(STOP_SERVICE, token);
+    }
+
     private void handleReceiver(ReceiverData data) {
         BroadcastReceiver.PendingResult result = data.resultData.build();
         try {
@@ -909,11 +968,8 @@ public final class VClient extends IVClient.Stub {
         VActivityManager.get().broadcastFinish(data.resultData.mToken);
     }
 
-    public ClassLoader getClassLoader() {
-        return LoadedApk.getClassLoader.call(mBoundApplication.info);
-    }
-
-    public Service createService(ServiceInfo info, IBinder token) {
+    private void handleCreateService(CreateServiceData data) {
+        ServiceInfo info = data.info;
         if (!isAppRunning()) {
             bindApplication(info.packageName, info.processName);
         }
@@ -928,7 +984,7 @@ public final class VClient extends IVClient.Stub {
         }
         try {
             Context context = VirtualCore.get().getContext().createPackageContext(
-                    info.packageName,
+                    data.info.packageName,
                     Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY
             );
             ContextImpl.setOuterContext.call(context, service);
@@ -937,19 +993,109 @@ public final class VClient extends IVClient.Stub {
                     context,
                     VirtualCore.mainThread(),
                     info.name,
-                    token,
+                    clientConfig.token,
                     mInitialApplication,
                     ActivityManagerNative.getDefault.call()
             );
             ContextFixer.fixContext(service);
             service.onCreate();
-            return service;
+            mServices.put(data.token, service);
+            VActivityManager.get().serviceDoneExecuting(data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
         } catch (Exception e) {
             throw new RuntimeException(
-                    "Unable to create service " + info.name
+                    "Unable to create service " + data.info.name
                             + ": " + e.toString(), e);
         }
     }
+
+    private void handleBindService(BindServiceData data) {
+        Service s = mServices.get(data.token);
+        if (s != null) {
+            try {
+                data.intent.setExtrasClassLoader(s.getClassLoader());
+                if (!data.rebind) {
+                    IBinder binder = s.onBind(data.intent);
+                    VActivityManager.get().publishService(data.token, data.intent, binder);
+                } else {
+                    s.onRebind(data.intent);
+                    VActivityManager.get().serviceDoneExecuting(
+                            data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Unable to bind to service " + s
+                                + " with " + data.intent + ": " + e.toString(), e);
+            }
+        }
+    }
+
+    private void handleUnbindService(BindServiceData data) {
+        Service s = mServices.get(data.token);
+        if (s != null) {
+            try {
+                data.intent.setExtrasClassLoader(s.getClassLoader());
+                boolean doRebind = s.onUnbind(data.intent);
+                if (doRebind) {
+                    VActivityManager.get().unbindFinished(
+                            data.token, data.intent, true);
+                } else {
+                    VActivityManager.get().serviceDoneExecuting(
+                            data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Unable to unbind to service " + s
+                                + " with " + data.intent + ": " + e.toString(), e);
+            }
+        }
+    }
+
+    private void handleServiceArgs(ServiceArgsData data) {
+        Service s = mServices.get(data.token);
+        if (s != null) {
+            try {
+                if (data.args != null) {
+                    data.args.setExtrasClassLoader(s.getClassLoader());
+                }
+                int res;
+                if (!data.taskRemoved) {
+                    res = s.onStartCommand(data.args, data.flags, data.startId);
+                } else {
+                    s.onTaskRemoved(data.args);
+                    res = 0;
+                }
+                VActivityManager.get().serviceDoneExecuting(
+                        data.token, SERVICE_DONE_EXECUTING_START, data.startId, res);
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Unable to start service " + s
+                                + " with " + data.args + ": " + e.toString(), e);
+            }
+        }
+    }
+
+    private void handleStopService(IBinder token) {
+        Service s = mServices.remove(token);
+        if (s != null) {
+            try {
+                s.onDestroy();
+                VActivityManager.get().serviceDoneExecuting(
+                        token, SERVICE_DONE_EXECUTING_STOP, 0, 0);
+            } catch (Exception e) {
+                if (!mInstrumentation.onException(s, e)) {
+                    throw new RuntimeException(
+                            "Unable to stop service " + s
+                                    + ": " + e.toString(), e);
+                }
+            }
+        }
+    }
+
+
+    public ClassLoader getClassLoader() {
+        return LoadedApk.getClassLoader.call(mBoundApplication.info);
+    }
+
 
     @Override
     public IBinder createProxyService(ComponentName component, IBinder binder) {
@@ -961,10 +1107,6 @@ public final class VClient extends IVClient.Stub {
         return VirtualRuntime.getProcessName();
     }
 
-    @Override
-    public void stopService(ComponentName component) {
-        ServiceManager.get().stopService(component);
-    }
 
     private static class RootThreadGroup extends ThreadGroup {
 
@@ -1004,6 +1146,24 @@ public final class VClient extends IVClient.Stub {
         String processName;
     }
 
+    static final class CreateServiceData {
+        IBinder token;
+        ServiceInfo info;
+    }
+
+    static final class BindServiceData {
+        IBinder token;
+        Intent intent;
+        boolean rebind;
+    }
+
+    static final class ServiceArgsData {
+        IBinder token;
+        boolean taskRemoved;
+        int startId;
+        int flags;
+        Intent args;
+    }
 
     @SuppressLint("HandlerLeak")
     private class H extends Handler {
@@ -1025,6 +1185,26 @@ public final class VClient extends IVClient.Stub {
                 }
                 case FINISH_ACTIVITY: {
                     VActivityManager.get().finishActivity((IBinder) msg.obj);
+                    break;
+                }
+                case CREATE_SERVICE: {
+                    handleCreateService((CreateServiceData) msg.obj);
+                    break;
+                }
+                case SERVICE_ARGS: {
+                    handleServiceArgs((ServiceArgsData) msg.obj);
+                    break;
+                }
+                case STOP_SERVICE: {
+                    handleStopService((IBinder) msg.obj);
+                    break;
+                }
+                case BIND_SERVICE: {
+                    handleBindService((BindServiceData) msg.obj);
+                    break;
+                }
+                case UNBIND_SERVICE: {
+                    handleUnbindService((BindServiceData) msg.obj);
                     break;
                 }
             }

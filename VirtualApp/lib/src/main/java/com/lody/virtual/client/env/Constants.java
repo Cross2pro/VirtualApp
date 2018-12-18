@@ -10,6 +10,8 @@ import com.lody.virtual.client.stub.ShortcutHandleActivity;
  */
 public class Constants {
 
+	public static final int OUTSIDE_APP_UID = 9999;
+
 	public static final String EXTRA_USER_HANDLE = "android.intent.extra.user_handle";
     public static final String EXTRA_PACKAGE_NAME = "android.intent.extra.package_name";
 

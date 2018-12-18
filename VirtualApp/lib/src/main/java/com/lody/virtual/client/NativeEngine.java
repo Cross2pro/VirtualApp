@@ -179,7 +179,8 @@ public class NativeEngine {
         try {
             String soPath = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME + ".so").getAbsolutePath();
             String soPath64 = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME_64 + ".so").getAbsolutePath();
-            nativeEnableIORedirect(soPath, soPath64, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
+            String nativePath = VEnvironment.getNativeCacheDir(VirtualCore.get().is64BitEngine()).getPath();
+            nativeEnableIORedirect(soPath, soPath64, nativePath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));
         }
@@ -299,7 +300,7 @@ public class NativeEngine {
 
     private static native void nativeIOReadOnly(String path);
 
-    private static native void nativeEnableIORedirect(String soPath, String soPath64, int apiLevel, int previewApiLevel);
+    private static native void nativeEnableIORedirect(String soPath, String soPath64, String cachePath, int apiLevel, int previewApiLevel);
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy();
 

@@ -82,8 +82,6 @@ interface IActivityManager{
 
     String getPackageForToken(int userId,in  IBinder token);
 
-    VParceledListSlice getServices(int maxNum, int flags, int userId);
-
     IBinder acquireProviderClient(int userId,in  ProviderInfo info);
 
     void addOrUpdateIntentSender(in IntentSenderData sender, int userId);
@@ -102,21 +100,29 @@ interface IActivityManager{
 
     boolean isAppInactive(String packageName, int userId);
 
-    ComponentName startService(int userId, in Intent service);
+    boolean isVAServiceToken(in IBinder token);
 
-    void stopService(int appUserId, in ServiceInfo serviceInfo);
+    ComponentName startService(in Intent service, String resolvedType, int userId);
 
-    void unbindService(int userId, in IBinder token);
+    int stopService(in IBinder caller,in  Intent service, String resolvedType, int userId);
 
-    Intent bindService(int userId, in Intent intent, in ServiceInfo serviceInfo, in IBinder binder, in int flags);
+    boolean stopServiceToken(in ComponentName className,in  IBinder token, int startId, int userId);
 
-    void onServiceStartCommand(int userId, int startId, in ServiceInfo serviceInfo, in Intent intent);
+    void setServiceForeground(in ComponentName className,in  IBinder token, int id,in  Notification notification, boolean removeNotification, int userId);
 
-    int onServiceStop(int userId, in ComponentName component, int targetStartId);
+    int bindService(in IBinder caller,in  IBinder token,in  Intent service, String resolvedType, IServiceConnection connection, int flags, int userId);
 
-    void onServiceDestroyed(int userId, in ComponentName component);
+    boolean unbindService(in IServiceConnection connection, int userId);
 
-    int onServiceUnBind(int userId, in ComponentName component);
+    void unbindFinished(in IBinder token,in  Intent service, boolean doRebind, int userId);
+
+    void serviceDoneExecuting(in IBinder token, int type, int startId, int res, int userId);
+
+    IBinder peekService(in Intent service, String resolvedType, int userId);
+
+    void publishService(in IBinder token,in  Intent intent,in  IBinder service, int userId);
+
+    VParceledListSlice getServices(int maxNum, int flags, int userId);
 
     void handleDownloadCompleteIntent(in Intent intent);
 

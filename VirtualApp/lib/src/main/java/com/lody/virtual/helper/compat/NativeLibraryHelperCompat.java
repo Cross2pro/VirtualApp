@@ -1,9 +1,7 @@
 package com.lody.virtual.helper.compat;
 
 import android.annotation.TargetApi;
-import android.content.pm.ApplicationInfo;
 import android.os.Build;
-import android.text.TextUtils;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.Reflect;
@@ -17,9 +15,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import mirror.android.content.pm.ApplicationInfoL;
 import mirror.com.android.internal.content.NativeLibraryHelper;
-import mirror.dalvik.system.VMRuntime;
 
 public class NativeLibraryHelperCompat {
 
@@ -86,23 +82,32 @@ public class NativeLibraryHelperCompat {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static boolean is64bitAbi(String abi) {
+        return "arm64-v8a".equals(abi)
+                || "x86_64".equals(abi)
+                || "x86".equals(abi)
+                || "mips".equals(abi);
+    }
+
+    public static boolean is32bitAbi(String abi) {
+        return "armeabi".equals(abi)
+                || "armeabi-v7a".equals(abi)
+                || "mips64".equals(abi);
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static boolean contain64bitAbi(Set<String> supportedABIs) {
         for (String supportedAbi : supportedABIs) {
-            if ("arm64-v8a".endsWith(supportedAbi)
-                    || "x86_64".equals(supportedAbi)
-                    || "mips64".equals(supportedAbi)) {
+            if (is64bitAbi(supportedAbi)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean contain32BitAbi(Set<String> abiList) {
+    public static boolean contain32bitAbi(Set<String> abiList) {
         for (String supportedAbi : abiList) {
-            if ("armeabi".equals(supportedAbi)
-                    || "armeabi-v7a".equals(supportedAbi)
-                    || "x86".equals(supportedAbi)
-                    || "mips".equals(supportedAbi)) {
+            if (is32bitAbi(supportedAbi)) {
                 return true;
             }
         }

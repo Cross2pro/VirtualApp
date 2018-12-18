@@ -29,17 +29,13 @@ enum RelocateResult {
 
 bool isReadOnly(const char * path);
 
-const char *relocate_path(const char *_path, bool normalize_path);
+const char *relocate_path(const char *path, char *const buffer, const size_t size);
 
-int relocate_path_inplace(char *_path, size_t size, bool normalize_path);
+const char *reverse_relocate_path(const char *path, char *const buffer, const size_t size);
 
-const char *reverse_relocate_path(const char *_path, bool normalize_path);
-
-int reverse_relocate_path_inplace(char *path, size_t size, bool normalize_path);
+int reverse_relocate_path_inplace(char *const path, const size_t size);
 
 int add_keep_item(const char *path);
-
-int add_dlopen_keep_item(const char *path);
 
 int add_forbidden_item(const char *path);
 
@@ -51,15 +47,13 @@ int add_readonly_item(const char *path);
 
 PathItem *get_keep_items();
 
-PathItem *get_forbidden_item();
+PathItem *get_forbidden_items();
 
 ReplaceItem *get_replace_items();
 
 ReplaceItem *get_readonly_items();
 
 int get_keep_item_count();
-
-int get_dlopen_keep_item_count();
 
 int get_forbidden_item_count();
 

@@ -145,12 +145,12 @@ public class VEnvironment {
     }
 
     public static File getDeDataUserPackageDirectory(int userId,
-                                                   String packageName) {
+                                                     String packageName) {
         return ensureCreated(new File(getUserDeDataDirectory(userId), packageName));
     }
 
     public static File getDeDataUserPackageDirectory64(int userId,
-                                                     String packageName) {
+                                                       String packageName) {
         return ensureCreated(new File(getUserDeDataDirectory64(userId), packageName));
     }
 
@@ -371,6 +371,10 @@ public class VEnvironment {
 
     public static File getPackageInstallerStageDir() {
         return ensureCreated(new File(getSystemSecureDirectory(), ".session_dir"));
+    }
+
+    public static File getNativeCacheDir(boolean is64bit) {
+        return ensureCreated(new File(is64bit ? ROOT64 : ROOT, ".native"));
     }
 
     /**

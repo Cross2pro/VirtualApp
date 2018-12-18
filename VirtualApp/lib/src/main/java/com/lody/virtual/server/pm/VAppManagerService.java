@@ -100,19 +100,24 @@ public class VAppManagerService extends IAppManager.Stub {
             if (ps == null || ps.appMode != InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
                 return;
             }
-            ApplicationInfo outInfo = null;
-            try {
-                outInfo = VirtualCore.getPM().getApplicationInfo(pkg, 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            if (outInfo == null) {
-                return;
-            }
             VActivityManagerService.get().killAppByPkg(pkg, VUserHandle.USER_ALL);
             if (action.equals(Intent.ACTION_PACKAGE_REPLACED)) {
+                ApplicationInfo outInfo = null;
+                try {
+                    outInfo = VirtualCore.getPM().getApplicationInfo(pkg, 0);
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+                if (outInfo == null) {
+                    return;
+                }
                 InstallResult res = installPackageImpl(outInfo.publicSourceDir, InstallStrategy.FORCE_UPDATE | InstallStrategy.NOT_COPY_APK, false);
                 VLog.e(TAG, "Update package %s %s", res.packageName, res.isSuccess ? "success" : "failed");
+            } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                if (intent.getBooleanExtra(Intent.EXTRA_DATA_REMOVED, false)) {
+                    VLog.e(TAG, "Removing package %s...", ps.packageName);
+                    uninstallPackageFully(ps, true);
+                }
             }
             result.finish();
         }
@@ -360,7 +365,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (NativeLibraryHelperCompat.contain64bitAbi(abiList)) {
                     support64bit = true;
                 }
-                if (NativeLibraryHelperCompat.contain32BitAbi(abiList)) {
+                if (NativeLibraryHelperCompat.contain32bitAbi(abiList)) {
                     support32bit = true;
                 }
             }

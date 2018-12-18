@@ -23,6 +23,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
@@ -41,7 +42,6 @@ import java.util.List;
 
 import mirror.android.content.pm.ApplicationInfoL;
 import mirror.android.content.pm.ApplicationInfoN;
-import mirror.dalvik.system.VMRuntime;
 
 /**
  * @author Lody
@@ -266,9 +266,9 @@ public class PackageParserEx {
         String apkPath = ps.getApkPath(is64bit);
         ai.publicSourceDir = apkPath;
         ai.sourceDir = apkPath;
-        SettingConfig.AppLibConfig libConfig = VirtualCore.getConfig().getAppLibConfig(ai.packageName);
+        SettingConfig config = VirtualCore.getConfig();
+        SettingConfig.AppLibConfig libConfig = config.getAppLibConfig(ai.packageName);
         if (is64bit) {
-            ApplicationInfoL.primaryCpuAbi.set(ai, "arm64-v8a");
             ai.nativeLibraryDir = VEnvironment.getAppLibDirectory64(ai.packageName).getPath();
         } else {
             ai.nativeLibraryDir = VEnvironment.getAppLibDirectory(ai.packageName).getPath();
@@ -283,16 +283,29 @@ public class PackageParserEx {
             if (libConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
                 libConfig = SettingConfig.AppLibConfig.UseOwnLib;
             }
-            if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
-                if (is64bit) {
-                    ai.nativeLibraryDir = outside.nativeLibraryDir;
-                    String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(outside);
-                    ApplicationInfoL.primaryCpuAbi.set(ai, primaryCpuAbi);
-                } else {
-                    String libPath = choose32bitLibPath(outside);
-                    if (libPath != null) {
-                        ai.nativeLibraryDir = libPath;
-                    }
+            if (outside != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ai.splitNames = outside.splitNames;
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    ai.splitPublicSourceDirs = outside.splitPublicSourceDirs;
+                    ai.splitSourceDirs = outside.splitSourceDirs;
+                }
+                if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
+                    ai.nativeLibraryDir = chooseOutsideNativeLib(outside, is64bit);
+                }
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (is64bit) {
+                ApplicationInfoL.primaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
+                if (ps.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT) {
+                    ApplicationInfoL.secondaryCpuAbi.set(ai, Build.SUPPORTED_32_BIT_ABIS[0]);
+                }
+            } else {
+                ApplicationInfoL.primaryCpuAbi.set(ai, Build.SUPPORTED_32_BIT_ABIS[0]);
+                if (ps.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT) {
+                    ApplicationInfoL.secondaryCpuAbi.set(ai, Build.SUPPORTED_64_BIT_ABIS[0]);
                 }
             }
         }
@@ -326,13 +339,17 @@ public class PackageParserEx {
                 ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
             }
         }
-        if (VirtualCore.getConfig().isUseRealDataDir(ai.packageName) &&
-                VirtualCore.getConfig().isEnableIORedirect()) {
-            ai.dataDir = "/data/data/" + ai.packageName + "/";
+        if (config.isEnableIORedirect()) {
+            if (config.isUseRealDataDir(ai.packageName)) {
+                ai.dataDir = "/data/data/" + ai.packageName + "/";
+            }
+            if (config.isUseRealLibDir(ai.packageName)) {
+                ai.nativeLibraryDir = "/data/data/" + ai.packageName + "/lib/";
+            }
         }
     }
 
-    private static String choose32bitLibPath(ApplicationInfo ai) {
+    private static String chooseOutsideNativeLib(ApplicationInfo ai, boolean is64bit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 String primaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(ai);
@@ -340,8 +357,10 @@ public class PackageParserEx {
                 if (primaryCpuAbi == null) {
                     return null;
                 }
-                boolean primaryArchIs32bit = !VMRuntime.is64BitAbi.call(primaryCpuAbi);
-                if (primaryArchIs32bit) {
+                boolean matchPrimary = is64bit
+                        ? NativeLibraryHelperCompat.is64bitAbi(primaryCpuAbi)
+                        : NativeLibraryHelperCompat.is32bitAbi(primaryCpuAbi);
+                if (matchPrimary) {
                     return ai.nativeLibraryDir;
                 } else {
                     if (secondaryCpuAbi != null) {
@@ -488,6 +507,23 @@ public class PackageParserEx {
                 for (int i = 0; i < N; i++) {
                     pi.instrumentation[i] = generateInstrumentationInfo(
                             p.instrumentation.get(i), flags);
+                }
+            }
+        }
+        if ((flags & PackageManager.GET_PERMISSIONS) != 0) {
+            int N = p.permissions.size();
+            if (N > 0) {
+                pi.permissions = new PermissionInfo[N];
+                for (int i = 0; i < N; i++) {
+                    pi.permissions[i] = generatePermissionInfo(p.permissions.get(i), flags);
+                }
+            }
+            N = p.requestedPermissions == null ? 0 : p.requestedPermissions.size();
+            if (N > 0) {
+                pi.requestedPermissions = new String[N];
+                for (int i = 0; i < N; i++) {
+                    final String perm = p.requestedPermissions.get(i);
+                    pi.requestedPermissions[i] = perm;
                 }
             }
         }

@@ -34,6 +34,11 @@ public abstract class SettingConfig {
     public boolean isUseRealDataDir(String packageName) {
         return false;
     }
+
+    public boolean isUseRealLibDir(String packageName) {
+        return false;
+    }
+
     /**
      *
      * 当app请求回到桌面时调用此方法

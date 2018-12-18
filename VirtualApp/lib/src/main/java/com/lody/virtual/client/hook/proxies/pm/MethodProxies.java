@@ -28,6 +28,8 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -274,6 +276,7 @@ class MethodProxies {
             if (info == null || !isVisiblePackage(info.applicationInfo)) {
                 return null;
             }
+            ComponentFixer.fixOutsideComponentInfo(info);
             return info;
         }
 
@@ -295,10 +298,16 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkgName = (String) args[0];
             if (pkgName.equals(getHostPkg())) {
-                return method.invoke(who, args);
+                return 9999;
             }
-            int uid = VPackageManager.get().getPackageUid(pkgName, 0);
-            return VUserHandle.getAppId(uid);
+            if (isAppPkg(pkgName)) {
+                int uid = VPackageManager.get().getPackageUid(pkgName, 0);
+                return VUserHandle.getAppId(uid);
+            }
+            if (isVisiblePackage(pkgName)) {
+                return 9999;
+            }
+            return -1;
         }
 
         @Override
@@ -336,6 +345,7 @@ class MethodProxies {
                 if (info == null || !isVisiblePackage(info.applicationInfo)) {
                     return null;
                 }
+                ComponentFixer.fixOutsideComponentInfo(info);
             }
             return info;
         }
@@ -631,6 +641,8 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             List<ResolveInfo> appResult = VPackageManager.get().queryIntentActivities((Intent) args[0],
                     (String) args[1], (Integer) args[2], userId);
+
+            //xdja
             Intent intent = (Intent)args[0];
             if((intent != null) && ("android.intent.action.SEND".equals(intent.getAction()) || "android.intent.action.SENDTO".equals(intent.getAction()))){
                 if (slice) {
@@ -638,6 +650,7 @@ class MethodProxies {
                 }
                 return appResult;
             }
+
             Object _hostResult = method.invoke(who, args);
             if (_hostResult != null) {
                 List<ResolveInfo> hostResult = slice ? ParceledListSlice.getList.call(_hostResult)
@@ -648,6 +661,8 @@ class MethodProxies {
                         ResolveInfo info = iterator.next();
                         if (info == null || info.activityInfo == null || !isVisiblePackage(info.activityInfo.applicationInfo)) {
                             iterator.remove();
+                        } else {
+                            ComponentFixer.fixOutsideComponentInfo(info.activityInfo);
                         }
                     }
                     appResult.addAll(hostResult);
@@ -679,10 +694,15 @@ class MethodProxies {
             int flags = (int) args[2];
             int userId = VUserHandle.myUserId();
             ResolveInfo resolveInfo = VPackageManager.get().resolveService(intent, resolvedType, flags, userId);
-            if (resolveInfo == null) {
-                return method.invoke(who, args);
+            if (resolveInfo != null) {
+                return resolveInfo;
             }
-            return resolveInfo;
+            ResolveInfo info = (ResolveInfo) method.invoke(who, args);
+            if (info != null && isVisiblePackage(info.serviceInfo.applicationInfo)) {
+                ComponentFixer.fixOutsideComponentInfo(info.serviceInfo);
+                return info;
+            }
+            return null;
         }
     }
 
@@ -987,11 +1007,27 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             String processName = (String) args[0];
             int vuid = (int) args[1];
             int flags = (int) args[2];
             List<ProviderInfo> infos = VPackageManager.get().queryContentProviders(processName, vuid, 0);
-            if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
+            Object _hostResult = method.invoke(who, args);
+            if (_hostResult != null) {
+                List<ProviderInfo> hostResult = slice ? ParceledListSlice.getList.call(_hostResult)
+                        : (List) _hostResult;
+                Iterator<ProviderInfo> it = hostResult.iterator();
+                while (it.hasNext()) {
+                    ProviderInfo info = it.next();
+                    if (!isVisiblePackage(info.applicationInfo)) {
+                        it.remove();
+                    }
+                    ComponentFixer.fixOutsideComponentInfo(info);
+                }
+                infos.addAll(hostResult);
+            }
+
+            if (slice) {
                 return ParceledListSliceCompat.create(infos);
             }
             return infos;
@@ -1047,10 +1083,12 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            new Exception().printStackTrace();
             int uid1 = (int) args[0];
             int uid2 = (int) args[1];
             if (uid1 == uid2) {
+                return PackageManager.SIGNATURE_MATCH;
+            }
+            if (uid1 == Constants.OUTSIDE_APP_UID || uid2 == Constants.OUTSIDE_APP_UID) {
                 return PackageManager.SIGNATURE_MATCH;
             }
             String[] pkgs1 = VirtualCore.getPM().getPackagesForUid(uid1);
@@ -1075,7 +1113,15 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int uid = (int) args[0];
+            if (uid == Constants.OUTSIDE_APP_UID) {
+                uid = getVUid();
+            }
             return VPackageManager.get().getNameForUid(uid);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
         }
     }
 
@@ -1136,7 +1182,11 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ResolveInfo resolveInfo = VPackageManager.get().resolveIntent(intent, resolvedType, flags, userId);
             if (resolveInfo == null) {
-                return method.invoke(who, args);
+                ResolveInfo info = (ResolveInfo) method.invoke(who, args);
+                if (info != null && isVisiblePackage(info.activityInfo.applicationInfo)) {
+                    ComponentFixer.fixOutsideComponentInfo(info.activityInfo);
+                    return info;
+                }
             }
             return resolveInfo;
         }
@@ -1166,6 +1216,7 @@ class MethodProxies {
             if (info == null || !isVisiblePackage(info)) {
                 return null;
             }
+            ComponentFixer.fixOutsideApplicationInfo(info);
             return info;
         }
 
@@ -1197,6 +1248,7 @@ class MethodProxies {
                 if (info == null || !isVisiblePackage(info.applicationInfo)) {
                     return null;
                 }
+                ComponentFixer.fixOutsideComponentInfo(info);
             }
             return info;
         }
@@ -1225,6 +1277,7 @@ class MethodProxies {
         }
     }
 
+    @SuppressWarnings({"unchecked", "WrongConstant"})
     static class GetInstalledApplications extends MethodProxy {
 
         @Override
@@ -1234,11 +1287,23 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             int flags = (Integer) args[0];
             int userId = VUserHandle.myUserId();
             List<ApplicationInfo> appInfos = VPackageManager.get().getInstalledApplications(flags, userId);
-            if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
+            Object _hostResult = method.invoke(who, args);
+            List<ApplicationInfo> hostResult = slice ? ParceledListSlice.getList.call(_hostResult)
+                    : (List) _hostResult;
+            Iterator<ApplicationInfo> it = hostResult.iterator();
+            while (it.hasNext()) {
+                ApplicationInfo info = it.next();
+                if (VirtualCore.get().isAppInstalled(info.packageName) || !isVisiblePackage(info.packageName)) {
+                    it.remove();
+                }
+                ComponentFixer.fixOutsideApplicationInfo(info);
+            }
+            appInfos.addAll(hostResult);
+            if (slice) {
                 return ParceledListSliceCompat.create(appInfos);
             }
             return appInfos;
@@ -1255,20 +1320,32 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             int flags = (int) args[0];
             int userId = VUserHandle.myUserId();
-            List<PackageInfo> packageInfos;
-            if (isAppProcess()) {
-                packageInfos = new ArrayList<>(VirtualCore.get().getInstalledAppCount());
-            } else {
-                packageInfos = VirtualCore.get().getUnHookPackageManager().getInstalledPackages(flags);
+            List<PackageInfo> packageInfos = VPackageManager.get().getInstalledPackages(flags, userId);
+            Object _hostResult = method.invoke(who, args);
+            List<PackageInfo> hostResult = slice ? ParceledListSlice.getList.call(_hostResult)
+                    : (List) _hostResult;
+            Iterator<PackageInfo> it = hostResult.iterator();
+            while (it.hasNext()) {
+                PackageInfo info = it.next();
+                if (VirtualCore.get().isAppInstalled(info.packageName) || !isVisiblePackage(info.packageName)) {
+                    it.remove();
+                }
+                ComponentFixer.fixOutsideApplicationInfo(info.applicationInfo);
             }
-            packageInfos.addAll(VPackageManager.get().getInstalledPackages(flags, userId));
+            packageInfos.addAll(hostResult);
             if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
                 return ParceledListSliceCompat.create(packageInfos);
             } else {
                 return packageInfos;
             }
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
         }
     }
 
@@ -1295,6 +1372,8 @@ class MethodProxies {
                     ResolveInfo info = iterator.next();
                     if (info == null || info.activityInfo == null || !isVisiblePackage(info.activityInfo.applicationInfo)) {
                         iterator.remove();
+                    } else {
+                        ComponentFixer.fixOutsideComponentInfo(info.activityInfo);
                     }
                 }
                 appResult.addAll(hostResult);
@@ -1327,6 +1406,7 @@ class MethodProxies {
                 if (info == null || !isVisiblePackage(info.applicationInfo)) {
                     return null;
                 }
+                ComponentFixer.fixOutsideComponentInfo(info);
             }
             return info;
         }
@@ -1407,6 +1487,8 @@ class MethodProxies {
                     ResolveInfo info = iterator.next();
                     if (info == null || info.providerInfo == null || !isVisiblePackage(info.providerInfo.applicationInfo)) {
                         iterator.remove();
+                    } else {
+                        ComponentFixer.fixOutsideComponentInfo(info.providerInfo);
                     }
                 }
                 appResult.addAll(hostResult);

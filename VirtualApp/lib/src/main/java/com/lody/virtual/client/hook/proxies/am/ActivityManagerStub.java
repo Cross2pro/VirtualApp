@@ -60,6 +60,17 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
     protected void onBindMethods() {
         super.onBindMethods();
         if (VirtualCore.get().isVAppProcess()) {
+            addMethodProxy(new StaticMethodProxy("setRequestedOrientation") {
+                @Override
+                public Object call(Object who, Method method, Object... args) throws Throwable {
+                    try {
+                        return super.call(who, method, args);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    return 0;
+                }
+            });
             addMethodProxy(new ResultStaticMethodProxy("registerUidObserver", 0));
             addMethodProxy(new ResultStaticMethodProxy("unregisterUidObserver", 0));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getAppStartMode"));

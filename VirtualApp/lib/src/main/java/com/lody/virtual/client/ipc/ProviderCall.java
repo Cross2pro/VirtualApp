@@ -12,7 +12,6 @@ import java.io.Serializable;
 
 /**
  * @author Lody
- *
  */
 public class ProviderCall {
 
@@ -24,74 +23,77 @@ public class ProviderCall {
         }
         return null;
     }
-	public static Bundle call(String authority, String methodName, String arg, Bundle bundle) throws IllegalAccessException {
-		return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
-	}
 
-	public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle) throws IllegalAccessException {
-		Uri uri = Uri.parse("content://" + authority);
-		return ContentProviderCompat.call(context, uri, method, arg, bundle);
-	}
+    public static Bundle call(String authority, String methodName, String arg, Bundle bundle) throws IllegalAccessException {
+        return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
+    }
 
-	public static final class Builder {
+    public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle) throws IllegalAccessException {
+        Uri uri = Uri.parse("content://" + authority);
+        return ContentProviderCompat.call(context, uri, method, arg, bundle);
+    }
 
-		private Context context;
+    public static final class Builder {
 
-		private Bundle bundle = new Bundle();
+        private Context context;
 
-		private String method;
-		private String auth;
-		private String arg;
+        private Bundle bundle = new Bundle();
 
-		public Builder(Context context, String auth) {
-			this.context = context;
-			this.auth = auth;
-		}
+        private String method;
+        private String auth;
+        private String arg;
 
-		public Builder methodName(String name) {
-			this.method = name;
-			return this;
-		}
+        public Builder(Context context, String auth) {
+            this.context = context;
+            this.auth = auth;
+        }
 
-		public Builder arg(String arg) {
-			this.arg = arg;
-			return this;
-		}
+        public Builder methodName(String name) {
+            this.method = name;
+            return this;
+        }
 
-		public Builder addArg(String key, Object value) {
-			if (value != null) {
-				 if (value instanceof Boolean) {
-					bundle.putBoolean(key, (Boolean) value);
-				} else if (value instanceof Integer) {
-					bundle.putInt(key, (Integer) value);
-				} else if (value instanceof String) {
-					bundle.putString(key, (String) value);
-				} else if (value instanceof Serializable) {
-					bundle.putSerializable(key, (Serializable) value);
-				} else if (value instanceof Bundle) {
-					bundle.putBundle(key, (Bundle) value);
-				} else if (value instanceof Parcelable) {
-					bundle.putParcelable(key, (Parcelable) value);
-				} else {
-					throw new IllegalArgumentException("Unknown type " + value.getClass() + " in Bundle.");
-				}
-			}
-			return this;
-		}
+        public Builder arg(String arg) {
+            this.arg = arg;
+            return this;
+        }
 
-		public Bundle call() throws IllegalAccessException {
-			return ProviderCall.call(auth, context, method, arg, bundle);
-		}
+        public Builder addArg(String key, Object value) {
+            if (value != null) {
+                if (value instanceof Boolean) {
+                    bundle.putBoolean(key, (Boolean) value);
+                } else if (value instanceof Integer) {
+                    bundle.putInt(key, (Integer) value);
+                } else if (value instanceof String) {
+                    bundle.putString(key, (String) value);
+                } else if (value instanceof Serializable) {
+                    bundle.putSerializable(key, (Serializable) value);
+                } else if (value instanceof Bundle) {
+                    bundle.putBundle(key, (Bundle) value);
+                } else if (value instanceof Parcelable) {
+                    bundle.putParcelable(key, (Parcelable) value);
+                } else if (value instanceof int[]) {
+                    bundle.putIntArray(key, (int[]) value);
+                } else {
+                    throw new IllegalArgumentException("Unknown type " + value.getClass() + " in Bundle.");
+                }
+            }
+            return this;
+        }
 
-		public Bundle callSafely()  {
-			try {
-				return call();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
+        public Bundle call() throws IllegalAccessException {
+            return ProviderCall.call(auth, context, method, arg, bundle);
+        }
 
-	}
+        public Bundle callSafely() {
+            try {
+                return call();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+    }
 
 }

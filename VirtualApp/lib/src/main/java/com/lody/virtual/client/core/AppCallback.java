@@ -1,6 +1,7 @@
 package com.lody.virtual.client.core;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
 
 public interface AppCallback {
@@ -13,6 +14,11 @@ public interface AppCallback {
         }
 
         @Override
+        public void beforeStartApplication(String packageName, String processName, Context context) {
+
+        }
+
+        @Override
         public void beforeApplicationCreate(Application application) {
             // Empty
         }
@@ -22,6 +28,8 @@ public interface AppCallback {
             // Empty
         }
     };
+
+    void beforeStartApplication(String packageName, String processName, Context context);
 
     void beforeApplicationCreate(Application application);
 

@@ -103,41 +103,36 @@ public class V64BitHelper extends ContentProvider {
     }
 
     private Bundle cleanPackageData64(Bundle extras) {
-        int userId = extras.getInt("user_id", -1);
+        int[] userIds = extras.getIntArray("user_ids");
         String packageName = extras.getString("package_name");
         if (packageName == null) {
             return null;
         }
-        if (userId == -1) {
-            List<VUserInfo> userInfos = VUserManager.get().getUsers();
-            if (userInfos != null) {
-                for (VUserInfo info : userInfos) {
-                    FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(info.id, packageName));
-                }
-            }
-        } else {
+        if (userIds == null) {
+            return null;
+        }
+        for (int userId : userIds) {
             FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(userId, packageName));
         }
         return null;
     }
 
     private Bundle uninstallPackage64(Bundle extras) {
-        int userId = extras.getInt("user_id", -1);
+        int[] userIds = extras.getIntArray("user_ids");
         String packageName = extras.getString("package_name");
+        boolean fullRemove = extras.getBoolean("full_remove", false);
         if (packageName == null) {
             return null;
         }
-        if (userId == -1) {
+        if (userIds == null) {
+            return null;
+        }
+        if (fullRemove) {
             VEnvironment.getPackageResourcePath64(packageName).delete();
             FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory64(packageName));
             VEnvironment.getOdexFile64(packageName).delete();
-            List<VUserInfo> userInfos = VUserManager.get().getUsers();
-            if (userInfos != null) {
-                for (VUserInfo info : userInfos) {
-                    FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(info.id, packageName));
-                }
-            }
-        } else {
+        }
+        for (int userId : userIds) {
             FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory64(userId, packageName));
         }
         return null;
@@ -280,8 +275,21 @@ public class V64BitHelper extends ContentProvider {
 
     public static void uninstallPackage64(int userId, String packageName) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
+            boolean fullRemove = userId == -1;
+            int[] userIds;
+            if (fullRemove) {
+                List<VUserInfo> userInfos = VUserManager.get().getUsers();
+                userIds = new int[userInfos.size()];
+                for (int i = 0; i < userIds.length; i++) {
+                    VUserInfo info = userInfos.get(i);
+                    userIds[i] = info.id;
+                }
+            } else {
+                userIds = new int[]{userId};
+            }
             new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[5])
-                    .addArg("user_id", userId)
+                    .addArg("user_ids", userIds)
+                    .addArg("full_remove", fullRemove)
                     .addArg("package_name", packageName)
                     .callSafely();
         }
@@ -289,8 +297,19 @@ public class V64BitHelper extends ContentProvider {
 
     public static void cleanPackageData64(int userId, String packageName) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
+            int[] userIds;
+            if (userId == -1) {
+                List<VUserInfo> userInfos = VUserManager.get().getUsers();
+                userIds = new int[userInfos.size()];
+                for (int i = 0; i < userIds.length; i++) {
+                    VUserInfo info = userInfos.get(i);
+                    userIds[i] = info.id;
+                }
+            } else {
+                userIds = new int[]{userId};
+            }
             new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[6])
-                    .addArg("user_id", userId)
+                    .addArg("user_ids", userIds)
                     .addArg("package_name", packageName)
                     .callSafely();
         }

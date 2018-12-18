@@ -8,7 +8,6 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#include <Foundation/Log.h>
 #include <unistd.h>
 #include "BinarySyscallFinder.h"
 
@@ -52,7 +51,6 @@ search_memory_syscall(const char *path, addr_t begin, addr_t end,
         }
         start += 1;
     } while (start < limit);
-
 }
 
 #elif defined(__i386__)

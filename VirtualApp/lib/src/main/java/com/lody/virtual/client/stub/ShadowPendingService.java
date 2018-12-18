@@ -52,7 +52,7 @@ public class ShadowPendingService extends Service {
             flagsValues &= flagsMask;
             finalIntent.setFlags((finalIntent.getFlags() & ~flagsMask) | flagsValues);
         }
-        VActivityManager.get().startService(userId, finalIntent);
+        VActivityManager.get().startService(finalIntent, finalIntent.getType(), userId);
         stopSelf();
         return START_NOT_STICKY;
     }

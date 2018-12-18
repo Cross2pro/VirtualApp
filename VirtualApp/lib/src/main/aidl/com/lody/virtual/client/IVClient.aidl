@@ -22,5 +22,9 @@ interface IVClient {
     IBinder getToken();
     boolean isAppRunning();
     String getDebugInfo();
-    void stopService(in ComponentName component);
+    void scheduleCreateService(in IBinder token, in ServiceInfo info);
+    void scheduleBindService(in IBinder token, in Intent intent, in boolean rebind);
+    void scheduleUnbindService(in IBinder token, in Intent intent);
+    void scheduleServiceArgs(in IBinder token, in int startId, in Intent args);
+    void scheduleStopService(in IBinder token);
 }

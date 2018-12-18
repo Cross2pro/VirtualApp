@@ -1,9 +1,10 @@
 package com.lody.virtual.client.fixer;
 
+import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
 import android.text.TextUtils;
 
-import com.lody.virtual.server.pm.PackageSetting;
+import com.lody.virtual.client.env.Constants;
 
 /**
  * @author Lody
@@ -21,7 +22,7 @@ public class ComponentFixer {
         return null;
     }
 
-    public static void fixComponentInfo(PackageSetting setting, ComponentInfo info, int userId) {
+    public static void fixComponentInfo(ComponentInfo info) {
         if (info != null) {
             if (TextUtils.isEmpty(info.processName)) {
                 info.processName = info.packageName;
@@ -30,6 +31,18 @@ public class ComponentFixer {
             if (info.processName == null) {
                 info.processName = info.applicationInfo.processName;
             }
+        }
+    }
+
+    public static void fixOutsideComponentInfo(ComponentInfo info) {
+        if (info != null) {
+            fixOutsideApplicationInfo(info.applicationInfo);
+        }
+    }
+
+    public static void fixOutsideApplicationInfo(ApplicationInfo info) {
+        if (info != null) {
+            info.uid = Constants.OUTSIDE_APP_UID;
         }
     }
 

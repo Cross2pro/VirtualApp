@@ -57,16 +57,16 @@ namespace IOUniformer {
 
     void init_env_before_all();
 
-    void startUniformer(const char *so_path, const char *so_path_64, int api_level,
-                        int preview_api_level);
+    void startUniformer(const char *so_path, const char *so_path_64, const char *native_path,
+                        int api_level, int preview_api_level);
 
     void relocate(const char *orig_path, const char *new_path);
 
     void whitelist(const char *path);
 
-    const char *query(const char *orig_path);
+    const char *query(const char *orig_path, char *const buffer, const size_t size);
 
-    const char *reverse(const char *redirected_path);
+    const char *reverse(const char *redirected_path, char *const buffer, const size_t size);
 
     void forbid(const char *path);
 

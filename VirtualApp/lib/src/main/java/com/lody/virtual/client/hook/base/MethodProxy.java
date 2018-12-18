@@ -91,8 +91,13 @@ public abstract class MethodProxy {
     }
 
     public static boolean isVisiblePackage(String packageName) {
-        return getHostPkg().equals(packageName)
-                || VirtualCore.get().isOutsidePackageVisible(packageName);
+        try {
+            ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+            return isVisiblePackage(info);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public static boolean isHostIntent(Intent intent) {

@@ -48,12 +48,6 @@ public class App extends Application {
 
         @Override
         public boolean isUseRealDataDir(String packageName) {
-            if ("com.tencent.tmgp.cf".equals(packageName)) {
-                return true;
-            }
-            if ("com.tencent.tmgp.pubgmhd".equals(packageName)) {
-                return true;
-            }
             return false;
         }
 

@@ -33,10 +33,15 @@ public class ContentProviderCompat {
 
 
     private static ContentProviderClient acquireContentProviderClient(Context context, Uri uri) {
-        if (VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return context.getContentResolver().acquireUnstableContentProviderClient(uri);
+        try {
+            if (VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                return context.getContentResolver().acquireUnstableContentProviderClient(uri);
+            }
+            return context.getContentResolver().acquireContentProviderClient(uri);
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
-        return context.getContentResolver().acquireContentProviderClient(uri);
+        return null;
     }
 
     public static ContentProviderClient acquireContentProvider(Context context, Uri uri) {

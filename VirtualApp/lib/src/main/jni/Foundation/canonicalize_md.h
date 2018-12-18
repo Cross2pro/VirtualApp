@@ -12,9 +12,7 @@
 #include <sys/stat.h>
 #include <syscall.h>
 
-char *canonicalize_filename(const char *filename);
+extern "C" const char *
+canonicalize_path(const char *original, char *resolved, size_t len);
 
-char *canonicalize_filename(const char *filename,
-                            const char *relative_to);
-
-#endif //FOUNDATION_PATH
+#endif // FOUNDATION_PATH

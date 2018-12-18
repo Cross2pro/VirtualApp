@@ -27,15 +27,12 @@
  SOFTWARE.
  */
 #define  __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <android/log.h>
-#include <string.h>
-#include <errno.h>
 
 #if defined(__aarch64__)
 
+#include <string.h>
+#include <stdlib.h>
+#include <sys/mman.h>
 #include "And64InlineHook.hpp"
 #define   A64_MAX_INSTRUCTIONS 5
 #define   A64_MAX_REFERENCES   (A64_MAX_INSTRUCTIONS * 2)

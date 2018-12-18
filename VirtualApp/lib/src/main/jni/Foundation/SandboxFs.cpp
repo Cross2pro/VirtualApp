@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include "SandboxFs.h"
-#include "Path.h"
+#include "canonicalize_md.h"
 #include "Log.h"
-
-//#define FORCE_CLOSE_NORMALIZE_PATH
 
 PathItem *keep_items;
 PathItem *forbidden_items;
@@ -26,7 +24,6 @@ int add_keep_item(const char *path) {
     item.is_folder = (path[strlen(path) - 1] == '/');
     return ++keep_item_count;
 }
-
 
 int add_forbidden_item(const char *path) {
     char forbidden_env_name[KEY_MAX];
@@ -81,7 +78,7 @@ PathItem *get_keep_items() {
     return keep_items;
 }
 
-PathItem *get_forbidden_item() {
+PathItem *get_forbidden_items() {
     return forbidden_items;
 }
 
@@ -104,7 +101,6 @@ int get_forbidden_item_count() {
 int get_replace_item_count() {
     return replace_item_count;
 }
-
 
 inline bool
 match_path(bool is_folder, size_t size, const char *item_path, const char *path, size_t path_len) {
@@ -130,32 +126,25 @@ bool isReadOnly(const char *path) {
     return false;
 }
 
-const char *relocate_path(const char *path, bool normalize_path) {
-#ifdef FORCE_CLOSE_NORMALIZE_PATH
-    normalize_path = false;
-#endif
+const char *relocate_path_internal(const char *path, char *const buffer, const size_t size) {
     if (NULL == path) {
         return path;
     }
-    if (normalize_path) {
-        path = canonicalize_filename(path);
-    }
-    const char *result = path;
-    size_t len = strlen(result);
+    path = canonicalize_path(path, buffer, size);
+
+    const size_t len = strlen(path);
 
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (match_path(item.is_folder, item.size, item.path, path, len)) {
-            result = path;
-            goto finally;
+            return path;
         }
     }
 
     for (int i = 0; i < forbidden_item_count; ++i) {
         PathItem &item = forbidden_items[i];
         if (match_path(item.is_folder, item.size, item.path, path, len)) {
-            result = NULL;
-            goto finally;
+            return NULL;
         }
     }
 
@@ -163,102 +152,93 @@ const char *relocate_path(const char *path, bool normalize_path) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.orig_size, item.orig_path, path, len)) {
             if (len < item.orig_size) {
-                //remove last /
-                result = strdup(item.new_path);
-                goto finally;
+                // remove last /
+                return item.new_path;
             } else {
-                char *relocated_path = (char *) malloc(PATH_MAX);
-                memset(relocated_path, 0, PATH_MAX);
-                strcat(relocated_path, item.new_path);
-                strcat(relocated_path, path + item.orig_size);
-                result = relocated_path;
-                goto finally;
+                const size_t remain_size = len - item.orig_size + 1u;
+                if (size < item.new_size + remain_size) {
+                    ALOGE("buffer overflow %u", static_cast<unsigned int>(size));
+                    return NULL;
+                }
+
+                const char *const remain = path + item.orig_size;
+                if (path != buffer) {
+                    memcpy(buffer, item.new_path, item.new_size);
+                    memcpy(buffer + item.new_size, remain, remain_size);
+                } else {
+                    void *const remain_temp = alloca(remain_size);
+                    memcpy(remain_temp, remain, remain_size);
+                    memcpy(buffer, item.new_path, item.new_size);
+                    memcpy(buffer + item.new_size, remain_temp, remain_size);
+                }
+                return buffer;
             }
         }
     }
-    finally:
-    if (normalize_path && result != path) {
-        free((void *) path);
-    }
+
+    return path;
+}
+
+const char *relocate_path(const char *path, char *const buffer, const size_t size) {
+    const char *result = relocate_path_internal(path, buffer, size);
     return result;
 }
 
-int relocate_path_inplace(char *_path, size_t size, bool normalize_path) {
-#ifdef FORCE_CLOSE_NORMALIZE_PATH
-    normalize_path = false;
-#endif
-    int ret = -1;
-    const char *redirect_path = relocate_path(_path, normalize_path);
-    if (redirect_path) {
-        ret = 0;
-        if (redirect_path != _path) {
-            if (strlen(redirect_path) <= size) {
-                strcpy(_path, redirect_path);
-            }
-        }
-    }
-    free((void *) redirect_path);
-    return ret;
-}
-
-const char *reverse_relocate_path(const char *path, bool normalize_path) {
-#ifdef FORCE_CLOSE_NORMALIZE_PATH
-    normalize_path = false;
-#endif
+const char *reverse_relocate_path(const char *path, char *const buffer, const size_t size) {
     if (path == NULL) {
         return NULL;
     }
-    if (normalize_path) {
-        path = canonicalize_filename(path);
-    }
-    const char *result = path;
-    size_t len = strlen(path);
+    path = canonicalize_path(path, buffer, size);
+
+    const size_t len = strlen(path);
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (match_path(item.is_folder, item.size, item.path, path, len)) {
-            result = path;
-            goto finally;
+            return path;
         }
     }
+
     for (int i = 0; i < replace_item_count; ++i) {
         ReplaceItem &item = replace_items[i];
         if (match_path(item.is_folder, item.new_size, item.new_path, path, len)) {
-            int len = strlen(path);
             if (len < item.new_size) {
-                result = strdup(item.orig_path);
-                goto finally;
+                return item.orig_path;
             } else {
-                char *reverse_path = (char *) malloc(PATH_MAX);
-                memset(reverse_path, 0, PATH_MAX);
-                strcat(reverse_path, item.orig_path);
-                strcat(reverse_path, path + item.new_size);
-                result = reverse_path;
-                goto finally;
+                const size_t remain_size = len - item.new_size + 1u;
+                if (size < item.orig_size + remain_size) {
+                    ALOGE("reverse buffer overflow %u", static_cast<unsigned int>(size));
+                    return NULL;
+                }
+
+                const char *const remain = path + item.new_size;
+                if (path != buffer) {
+                    memcpy(buffer, item.orig_path, item.orig_size);
+                    memcpy(buffer + item.orig_size, remain, remain_size);
+                } else {
+                    void *const remain_temp = alloca(remain_size);
+                    memcpy(remain_temp, remain, remain_size);
+                    memcpy(buffer, item.orig_path, item.orig_size);
+                    memcpy(buffer + item.orig_size, remain_temp, remain_size);
+                }
+                return buffer;
             }
         }
     }
-    finally:
-    if (normalize_path && result != path) {
-        free((void *) path);
-    }
-    return result;
+
+    return path;
 }
 
-
-int reverse_relocate_path_inplace(char *path, size_t size, bool normalize_path) {
-#ifdef FORCE_CLOSE_NORMALIZE_PATH
-    normalize_path = false;
-#endif
-    int ret = -1;
-    const char *redirect_path = reverse_relocate_path(path, normalize_path);
+int reverse_relocate_path_inplace(char *const path, const size_t size) {
+    char path_temp[PATH_MAX];
+    const char *redirect_path = reverse_relocate_path(path, path_temp, sizeof(path_temp));
     if (redirect_path) {
-        ret = 0;
         if (redirect_path != path) {
-            if (strlen(redirect_path) <= size) {
-                strcpy(path, redirect_path);
+            const size_t len = strlen(redirect_path) + 1u;
+            if (len <= size) {
+                memcpy(path, redirect_path, len);
             }
-            free((void *) redirect_path);
         }
+        return 0;
     }
-    return ret;
+    return -1;
 }

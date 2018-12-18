@@ -18,11 +18,12 @@ static void jni_nativeLaunchEngine(JNIEnv *env, jclass clazz, jobjectArray javaM
 
 
 static void
-jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring soPath, jstring soPath64, jint apiLevel,
+jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring soPath, jstring soPath64, jstring nativePath, jint apiLevel,
                            jint preview_api_level) {
     ScopeUtfString so_path(soPath);
     ScopeUtfString so_path_64(soPath64);
-    IOUniformer::startUniformer(so_path.c_str(), so_path_64.c_str(), apiLevel, preview_api_level);
+    ScopeUtfString native_path(nativePath);
+    IOUniformer::startUniformer(so_path.c_str(), so_path_64.c_str(), native_path.c_str(), apiLevel, preview_api_level);
 }
 
 static void jni_nativeIOWhitelist(JNIEnv *env, jclass jclazz, jstring _path) {
@@ -50,7 +51,8 @@ static void jni_nativeIORedirect(JNIEnv *env, jclass jclazz, jstring origPath, j
 
 static jstring jni_nativeGetRedirectedPath(JNIEnv *env, jclass jclazz, jstring origPath) {
     ScopeUtfString orig_path(origPath);
-    const char *redirected_path = IOUniformer::query(orig_path.c_str());
+    char buffer[PATH_MAX];
+    const char *redirected_path = IOUniformer::query(orig_path.c_str(), buffer, sizeof(buffer));
     if (redirected_path != NULL) {
         return env->NewStringUTF(redirected_path);
     }
@@ -59,7 +61,8 @@ static jstring jni_nativeGetRedirectedPath(JNIEnv *env, jclass jclazz, jstring o
 
 static jstring jni_nativeReverseRedirectedPath(JNIEnv *env, jclass jclazz, jstring redirectedPath) {
     ScopeUtfString redirected_path(redirectedPath);
-    const char *orig_path = IOUniformer::reverse(redirected_path.c_str());
+    char buffer[PATH_MAX];
+    const char *orig_path = IOUniformer::reverse(redirected_path.c_str(), buffer, sizeof(buffer));
     return env->NewStringUTF(orig_path);
 }
 
@@ -88,18 +91,18 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
     _vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     nativeEngineClass = (jclass) env->NewGlobalRef(env->FindClass(JNI_CLASS_NAME));
     static JNINativeMethod methods[] = {
-            {"nativeLaunchEngine",                     "([Ljava/lang/Object;Ljava/lang/String;ZIII)V", (void *) jni_nativeLaunchEngine},
-            {"nativeReverseRedirectedPath",            "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeReverseRedirectedPath},
-            {"nativeGetRedirectedPath",                "(Ljava/lang/String;)Ljava/lang/String;",       (void *) jni_nativeGetRedirectedPath},
-            {"nativeIORedirect",                       "(Ljava/lang/String;Ljava/lang/String;)V",      (void *) jni_nativeIORedirect},
-            {"nativeIOWhitelist",                      "(Ljava/lang/String;)V",                        (void *) jni_nativeIOWhitelist},
-            {"nativeIOForbid",                         "(Ljava/lang/String;)V",                        (void *) jni_nativeIOForbid},
-            {"nativeIOReadOnly",                       "(Ljava/lang/String;)V",                        (void *) jni_nativeIOReadOnly},
-            {"nativeEnableIORedirect",                 "(Ljava/lang/String;Ljava/lang/String;II)V",    (void *) jni_nativeEnableIORedirect},
-            {"nativeBypassHiddenAPIEnforcementPolicy", "()V",                                          (void *) jni_bypassHiddenAPIEnforcementPolicy},
-            {"nativeGetDecryptState",                  "()Z",                                          (void *) jni_nativeGetDecryptState},
-            {"nativeChangeDecryptState",               "(Z)V",                                          (void *) jni_nativeChangeDecryptState},
-            {"nativeCloseAllSocket",                   "()Z",                                          (void *) jni_nativeCloseAllSocket},
+            {"nativeLaunchEngine",                     "([Ljava/lang/Object;Ljava/lang/String;ZIII)V",                (void *) jni_nativeLaunchEngine},
+            {"nativeReverseRedirectedPath",            "(Ljava/lang/String;)Ljava/lang/String;",                      (void *) jni_nativeReverseRedirectedPath},
+            {"nativeGetRedirectedPath",                "(Ljava/lang/String;)Ljava/lang/String;",                      (void *) jni_nativeGetRedirectedPath},
+            {"nativeIORedirect",                       "(Ljava/lang/String;Ljava/lang/String;)V",                     (void *) jni_nativeIORedirect},
+            {"nativeIOWhitelist",                      "(Ljava/lang/String;)V",                                       (void *) jni_nativeIOWhitelist},
+            {"nativeIOForbid",                         "(Ljava/lang/String;)V",                                       (void *) jni_nativeIOForbid},
+            {"nativeIOReadOnly",                       "(Ljava/lang/String;)V",                                       (void *) jni_nativeIOReadOnly},
+            {"nativeEnableIORedirect",                 "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V", (void *) jni_nativeEnableIORedirect},
+            {"nativeBypassHiddenAPIEnforcementPolicy", "()V",                                                         (void *) jni_bypassHiddenAPIEnforcementPolicy},
+            {"nativeGetDecryptState",                  "()Z",                                                         (void *) jni_nativeGetDecryptState},
+            {"nativeChangeDecryptState",               "(Z)V",                                                        (void *) jni_nativeChangeDecryptState},
+            {"nativeCloseAllSocket",                   "()Z",                                                         (void *) jni_nativeCloseAllSocket},
     };
 
     if (env->RegisterNatives(nativeEngineClass, methods, 9) < 0) {
