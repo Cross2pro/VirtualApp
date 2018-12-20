@@ -17,20 +17,16 @@ public class ProviderCall {
 
     public static Bundle callSafely(String authority, String methodName, String arg, Bundle bundle) {
         try {
-            return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
+            return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle, 5);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static Bundle call(String authority, String methodName, String arg, Bundle bundle) throws IllegalAccessException {
-        return call(authority, VirtualCore.get().getContext(), methodName, arg, bundle);
-    }
-
-    public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle) throws IllegalAccessException {
+    public static Bundle call(String authority, Context context, String method, String arg, Bundle bundle, int retryCount) throws IllegalAccessException {
         Uri uri = Uri.parse("content://" + authority);
-        return ContentProviderCompat.call(context, uri, method, arg, bundle);
+        return ContentProviderCompat.call(context, uri, method, arg, bundle, retryCount);
     }
 
     public static final class Builder {
@@ -42,6 +38,7 @@ public class ProviderCall {
         private String method;
         private String auth;
         private String arg;
+        private int retryCount = 5;
 
         public Builder(Context context, String auth) {
             this.context = context;
@@ -81,8 +78,13 @@ public class ProviderCall {
             return this;
         }
 
+        public Builder retry(int retryCount) {
+            this.retryCount = retryCount;
+            return this;
+        }
+
         public Bundle call() throws IllegalAccessException {
-            return ProviderCall.call(auth, context, method, arg, bundle);
+            return ProviderCall.call(auth, context, method, arg, bundle, retryCount);
         }
 
         public Bundle callSafely() {

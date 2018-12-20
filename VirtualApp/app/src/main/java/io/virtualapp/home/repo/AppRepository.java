@@ -7,9 +7,9 @@ import android.content.pm.PackageManager;
 import android.os.Process;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -172,11 +172,8 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public InstallResult addVirtualApp(AppInfoLite info) {
-        int flags = InstallStrategy.COMPARE_VERSION | InstallStrategy.NOT_NOTIFY;
-        if (info.notCopyApk) {
-            flags |= InstallStrategy.NOT_COPY_APK;
-        }
-        return VirtualCore.get().installPackageSync(info.path, flags);
+        InstallOptions options = InstallOptions.makeOptions(info.notCopyApk, false, InstallOptions.UpdateStrategy.COMPARE_VERSION);
+        return VirtualCore.get().installPackageSync(info.path, options);
     }
 
     @Override

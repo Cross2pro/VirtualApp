@@ -38,6 +38,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import mirror.android.content.pm.ApplicationInfoL;
@@ -239,22 +242,30 @@ public class PackageParserEx {
             String hostPrimaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(VirtualCore.get().getContext().getApplicationInfo());
             ApplicationInfoL.primaryCpuAbi.set(ai, hostPrimaryCpuAbi);
         }
-
-        if (ps.appMode == InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
-            String[] sharedLibraryFiles = sSharedLibCache.get(ps.packageName);
-            if (sharedLibraryFiles == null) {
+        String[] sharedLibraryFiles = sSharedLibCache.get(ps.packageName);
+        if (sharedLibraryFiles == null) {
+            List<String> sharedLibraryFileList = new LinkedList<>();
+            if (ps.appMode == InstalledAppInfo.MODE_APP_USE_OUTSIDE_APK) {
                 PackageManager hostPM = VirtualCore.get().getUnHookPackageManager();
                 try {
                     ApplicationInfo hostInfo = hostPM.getApplicationInfo(ps.packageName, PackageManager.GET_SHARED_LIBRARY_FILES);
-                    sharedLibraryFiles = hostInfo.sharedLibraryFiles;
-                    if (sharedLibraryFiles == null) sharedLibraryFiles = new String[0];
-                    sSharedLibCache.put(ps.packageName, sharedLibraryFiles);
+                    if (hostInfo.sharedLibraryFiles != null) {
+                        Collections.addAll(sharedLibraryFileList, hostInfo.sharedLibraryFiles);
+                    }
                 } catch (PackageManager.NameNotFoundException e) {
                     // ignore
                 }
             }
-            ai.sharedLibraryFiles = sharedLibraryFiles;
+            if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion < 28) {
+                String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
+                if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR)) {
+                    sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                }
+            }
+            sharedLibraryFiles = sharedLibraryFileList.toArray(new String[0]);
+            sSharedLibCache.put(ps.packageName, sharedLibraryFiles);
         }
+        ai.sharedLibraryFiles = sharedLibraryFiles;
     }
 
     private static void initApplicationAsUser(ApplicationInfo ai, int userId) {

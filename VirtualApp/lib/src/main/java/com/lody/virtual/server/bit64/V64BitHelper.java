@@ -206,7 +206,7 @@ public class V64BitHelper extends ContentProvider {
 
     public static boolean has64BitEngineStartPermission() {
         try {
-            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName("@").call();
+            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName("@").retry(1).call();
             return true;
         } catch (IllegalAccessException e) {
             // ignore
@@ -214,9 +214,13 @@ public class V64BitHelper extends ContentProvider {
         return false;
     }
 
+    private static ProviderCall.Builder getHelper() {
+        return new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).retry(1);
+    }
+
     public static List<ActivityManager.RunningAppProcessInfo> getRunningAppProcess64() {
         if (VirtualCore.get().is64BitEngineInstalled()) {
-            Bundle res = new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[0]).callSafely();
+            Bundle res = getHelper().methodName(METHODS[0]).callSafely();
             if (res != null) {
                 return res.getParcelableArrayList("running_processes");
             }
@@ -226,7 +230,7 @@ public class V64BitHelper extends ContentProvider {
 
     public static List<ActivityManager.RunningTaskInfo> getRunningTasks64(int maxNum) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
-            Bundle res = new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[1]).addArg("max_num", maxNum).callSafely();
+            Bundle res = getHelper().methodName(METHODS[1]).addArg("max_num", maxNum).retry(1).callSafely();
             if (res != null) {
                 return res.getParcelableArrayList("running_tasks");
             }
@@ -237,7 +241,7 @@ public class V64BitHelper extends ContentProvider {
 
     public static List<ActivityManager.RecentTaskInfo> getRecentTasks64(int maxNum, int flags) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
-            Bundle res = new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority())
+            Bundle res = getHelper()
                     .methodName(METHODS[2])
                     .addArg("max_num", maxNum)
                     .addArg("flags", flags)
@@ -251,13 +255,13 @@ public class V64BitHelper extends ContentProvider {
 
     public static void forceStop64(int pid) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
-            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[3]).addArg("target", pid).callSafely();
+            getHelper().methodName(METHODS[3]).addArg("target", pid).retry(1).callSafely();
         }
     }
 
     public static void forceStop64(int[] pids) {
         if (VirtualCore.get().is64BitEngineInstalled()) {
-            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[3]).addArg("target", pids).callSafely();
+            getHelper().methodName(METHODS[3]).addArg("target", pids).retry(1).callSafely();
         }
     }
 
@@ -276,7 +280,7 @@ public class V64BitHelper extends ContentProvider {
             } else {
                 userIds = new int[]{userId};
             }
-            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[5])
+            getHelper().methodName(METHODS[5])
                     .addArg("user_ids", userIds)
                     .addArg("full_remove", fullRemove)
                     .addArg("package_name", packageName)
@@ -297,7 +301,7 @@ public class V64BitHelper extends ContentProvider {
             } else {
                 userIds = new int[]{userId};
             }
-            new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority()).methodName(METHODS[6])
+            getHelper().methodName(METHODS[6])
                     .addArg("user_ids", userIds)
                     .addArg("package_name", packageName)
                     .callSafely();
@@ -315,7 +319,7 @@ public class V64BitHelper extends ContentProvider {
                 memoryFile.getOutputStream().write(content);
                 FileDescriptor fd = mirror.android.os.MemoryFile.getFileDescriptor.call(memoryFile);
                 ParcelFileDescriptor pfd = ParcelFileDescriptor.dup(fd);
-                Bundle res = new ProviderCall.Builder(VirtualCore.get().getContext(), getAuthority())
+                Bundle res = getHelper()
                         .methodName(METHODS[4])
                         .addArg("fd", pfd)
                         .addArg("package_name", packageName)

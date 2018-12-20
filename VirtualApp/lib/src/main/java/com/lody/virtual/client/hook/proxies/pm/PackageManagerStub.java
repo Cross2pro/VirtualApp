@@ -1,6 +1,5 @@
 package com.lody.virtual.client.hook.proxies.pm;
 
-import android.os.Build;
 import android.os.IInterface;
 
 import com.lody.virtual.client.hook.annotations.Inject;
@@ -34,9 +33,6 @@ public final class PackageManagerStub extends MethodInvocationProxy<MethodInvoca
         addMethodProxy(new ResultStaticMethodProxy("addOnPermissionsChangeListener", 0));
         addMethodProxy(new ResultStaticMethodProxy("removeOnPermissionsChangeListener", 0));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("shouldShowRequestPermissionRationale"));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            addMethodProxy(new ResultStaticMethodProxy("checkPackageStartable", 0));
-        }
         if (BuildCompat.isOreo()) {
             addMethodProxy(new ResultStaticMethodProxy("notifyDexLoad", 0));
             addMethodProxy(new ResultStaticMethodProxy("notifyPackageUse", 0));

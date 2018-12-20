@@ -131,6 +131,7 @@ const char *relocate_path_internal(const char *path, char *const buffer, const s
     if (NULL == path) {
         return path;
     }
+    const char *orig_path = path;
     path = canonicalize_path(path, buffer, size);
 
     const size_t len = strlen(path);
@@ -138,7 +139,7 @@ const char *relocate_path_internal(const char *path, char *const buffer, const s
     for (int i = 0; i < keep_item_count; ++i) {
         PathItem &item = keep_items[i];
         if (match_path(item.is_folder, item.size, item.path, path, len)) {
-            return path;
+            return orig_path;
         }
     }
 
@@ -176,8 +177,7 @@ const char *relocate_path_internal(const char *path, char *const buffer, const s
             }
         }
     }
-
-    return path;
+    return orig_path;
 }
 
 const char *relocate_path(const char *path, char *const buffer, const size_t size) {

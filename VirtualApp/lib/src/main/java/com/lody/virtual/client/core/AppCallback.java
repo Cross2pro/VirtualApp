@@ -2,16 +2,10 @@ package com.lody.virtual.client.core;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 
 public interface AppCallback {
 
     AppCallback EMPTY = new AppCallback() {
-
-        @Override
-        public void onSendBroadcast(Intent intent) {
-            // Empty
-        }
 
         @Override
         public void beforeStartApplication(String packageName, String processName, Context context) {
@@ -35,5 +29,4 @@ public interface AppCallback {
 
     void afterApplicationCreate(String packageName, String processName, Application application);
 
-    void onSendBroadcast(Intent intent);
 }

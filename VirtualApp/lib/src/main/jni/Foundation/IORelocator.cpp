@@ -3,6 +3,7 @@
 //
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/ptrace.h>
 #include <Substrate/CydiaSubstrate.h>
 #include <Jni/VAJni.h>
 #include <sys/stat.h>
@@ -10,6 +11,8 @@
 #include <Foundation/syscall/BinarySyscallFinder.h>
 #include <limits.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/user.h>
 
 #include <asm/mman.h>
 #include <sys/mman.h>

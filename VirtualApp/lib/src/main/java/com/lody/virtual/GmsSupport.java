@@ -3,9 +3,9 @@ package com.lody.virtual;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 
 import java.util.HashSet;
@@ -73,7 +73,8 @@ public class GmsSupport {
                 continue;
             }
             if (userId == 0) {
-                InstallResult result = core.installPackageSync(info.sourceDir, InstallStrategy.NOT_COPY_APK | InstallStrategy.NOT_NOTIFY);
+                InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
+                InstallResult result = core.installPackageSync(info.sourceDir, options);
                 if (result.isSuccess) {
                     VLog.w(TAG, "install gms pkg success:" + info.packageName);
                 } else {

@@ -5,7 +5,7 @@ import android.os.RemoteException;
 
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppRequestListener;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
 import android.os.ResultReceiver;
@@ -31,7 +31,7 @@ interface IAppManager{
 
     InstalledAppInfo getInstalledAppInfo(String pkg, int flags);
 
-    oneway void installPackage(String path, int flags, in ResultReceiver receiver);
+    oneway void installPackage(String path, in InstallOptions options, in ResultReceiver receiver);
 
     void requestCopyPackage64(String packageName);
 
@@ -58,12 +58,6 @@ interface IAppManager{
     void registerObserver(in IPackageObserver observer);
 
     void unregisterObserver(in IPackageObserver observer);
-
-    void setAppRequestListener(in IAppRequestListener listener);
-
-    void clearAppRequestListener();
-
-    IAppRequestListener getAppRequestListener();
 
     boolean isRun64BitProcess(String packageName);
 

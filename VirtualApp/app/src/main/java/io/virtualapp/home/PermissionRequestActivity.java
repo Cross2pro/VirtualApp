@@ -34,6 +34,7 @@ public class PermissionRequestActivity extends Activity {
         intent.putExtra(EXTRA_PACKAGE_NAME, packageName);
         intent.putExtra(EXTRA_USER_ID, userId);
         activity.startActivityForResult(intent, requestCode);
+        activity.overridePendingTransition(0, 0);
     }
 
     @Override

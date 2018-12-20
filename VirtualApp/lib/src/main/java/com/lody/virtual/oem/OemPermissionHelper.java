@@ -28,7 +28,9 @@ public class OemPermissionHelper {
 
     private static List<ComponentName> VIVO_AUTO_START_COMPONENTS = Arrays.asList(
             new ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"),
-            new ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.PurviewTabActivity")
+            new ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.PurviewTabActivity"),
+            new ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.SoftPermissionDetailActivity"),
+            new ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.PurviewActivity")
     );
 
 

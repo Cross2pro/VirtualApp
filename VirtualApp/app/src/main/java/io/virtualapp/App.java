@@ -30,7 +30,7 @@ public class App extends Application {
 
         @Override
         public String get64bitEnginePackageName() {
-            return BuildConfig.PACKAGE_NAME_ARM64;
+            return null;
         }
 
         @Override
@@ -53,11 +53,6 @@ public class App extends Application {
         @Override
         public AppLibConfig getAppLibConfig(String packageName) {
             return AppLibConfig.UseRealLib;
-        }
-
-        @Override
-        public boolean isDisableDrawOverlays(String packageName) {
-            return super.isDisableDrawOverlays(packageName);
         }
 
         @Override
@@ -97,17 +92,16 @@ public class App extends Application {
 
             @Override
             public void onVirtualProcess() {
-//                new ANRWatchDog().start();
                 //listener components
                 virtualCore.setAppCallback(new MyComponentDelegate());
                 //fake task description's icon and title
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
+                //内部安装，不调用系统的安装，而是自己处理（参考MyAppRequestListener），默认是静默安装在va里面。
+                virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
             }
 
             @Override
             public void onServerProcess() {
-                //内部安装，不调用系统的安装，而是自己处理（参考MyAppRequestListener），默认是静默安装在va里面。
-                virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
 //                 外部安装了下面应用，但是内部没有安装（双开），内部应用在调用下面应用的时候，会调用外面的应用，如果没用addVisibleOutsidePackage，则会相当于没有安装
 //                 比如：内部微信调用QQ分享，但是内部没有QQ，如果没用addVisibleOutsidePackage，那么提示没有安装QQ，如果用了addVisibleOutsidePackage，则启动外部的QQ
 //                 注：应用调用的校验越来越严，与外部的调用可能会失败，这时候就需要都安装在va内部。

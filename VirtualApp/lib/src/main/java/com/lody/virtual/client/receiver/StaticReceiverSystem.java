@@ -64,7 +64,7 @@ public class StaticReceiverSystem {
         }
     }
 
-    public void attach(Context context, ApplicationInfo appInfo, int userId) {
+    public void attach(String processName, Context context, ApplicationInfo appInfo, int userId) {
         if (mApplicationInfo != null) {
             throw new IllegalStateException("attached");
         }
@@ -77,7 +77,7 @@ public class StaticReceiverSystem {
         anrThread.start();
         mScheduler = new StaticScheduler(broadcastThread.getLooper());
         mTimeoutHandler = new TimeoutHandler(anrThread.getLooper());
-        List<ReceiverInfo> receiverList = VPackageManager.get().getReceiverInfos(appInfo.packageName, appInfo.processName, userId);
+        List<ReceiverInfo> receiverList = VPackageManager.get().getReceiverInfos(appInfo.packageName, processName, userId);
         for (ReceiverInfo receiverInfo : receiverList) {
             String componentAction = ComponentUtils.getComponentAction(receiverInfo.info);
             IntentFilter componentFilter = new IntentFilter(componentAction);

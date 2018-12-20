@@ -3,17 +3,13 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.OrientationHelper;
@@ -106,19 +102,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     }
 
 
-    /***
-     * 检测悬浮窗权限
-     */
-    @TargetApi(Build.VERSION_CODES.M)
-    private void checkOverlays() {
-        if (!Settings.canDrawOverlays(this.getApplicationContext())) {
-            //
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()));
-            startActivity(intent);
-        }
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -208,13 +191,13 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     }
 
     private void bindViews() {
-        mLoadingView = (TwoGearsView) findViewById(R.id.pb_loading_app);
-        mLauncherView = (RecyclerView) findViewById(R.id.home_launcher);
+        mLoadingView = findViewById(R.id.pb_loading_app);
+        mLauncherView = findViewById(R.id.home_launcher);
         mMenuView = findViewById(R.id.home_menu);
         mBottomArea = findViewById(R.id.bottom_area);
-        mEnterSettingTextView = (TextView) findViewById(R.id.enter_app_setting_text);
+        mEnterSettingTextView = findViewById(R.id.enter_app_setting_text);
         mDeleteAppBox = findViewById(R.id.delete_app_area);
-        mDeleteAppTextView = (TextView) findViewById(R.id.delete_app_text);
+        mDeleteAppTextView = findViewById(R.id.delete_app_text);
     }
 
     private void initLaunchpad() {

@@ -2,7 +2,6 @@ package io.virtualapp.home.adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,9 +29,9 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
         mInflater = LayoutInflater.from(context);
     }
 
-    public void add(AppData model) {
+    public void add(AppData data) {
         int insertPos = mList.size() - 1;
-        mList.add(insertPos, model);
+        mList.add(insertPos, data);
         notifyItemInserted(insertPos);
     }
 
@@ -136,9 +135,9 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
 
         ViewHolder(View itemView) {
             super(itemView);
-            iconView = (LauncherIconView) itemView.findViewById(R.id.item_app_icon);
-            nameView = (TextView) itemView.findViewById(R.id.item_app_name);
-            spaceLabelView = (LabelView) itemView.findViewById(R.id.item_app_space_idx);
+            iconView = itemView.findViewById(R.id.item_app_icon);
+            nameView = itemView.findViewById(R.id.item_app_name);
+            spaceLabelView = itemView.findViewById(R.id.item_app_space_idx);
             firstOpenDot = itemView.findViewById(R.id.item_first_open_dot);
         }
     }

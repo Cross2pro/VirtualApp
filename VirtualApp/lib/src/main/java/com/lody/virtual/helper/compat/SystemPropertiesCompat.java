@@ -1,5 +1,7 @@
 package com.lody.virtual.helper.compat;
 
+import android.text.TextUtils;
+
 import com.lody.virtual.helper.utils.Reflect;
 
 public class SystemPropertiesCompat {
@@ -20,6 +22,10 @@ public class SystemPropertiesCompat {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static boolean isExist(String key) {
+        return !TextUtils.isEmpty(get(key));
     }
 
     public static int getInt(String key, int def) {

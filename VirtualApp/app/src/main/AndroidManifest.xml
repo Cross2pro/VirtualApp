@@ -83,9 +83,6 @@
         <activity
             android:name=".home.AppSettingActivity"
             android:theme="@style/UITheme.HasActionBar" />
-        <activity android:name=".home.InstallInnerActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
-
 
         <!-- va的x进程处理 -->
         <receiver

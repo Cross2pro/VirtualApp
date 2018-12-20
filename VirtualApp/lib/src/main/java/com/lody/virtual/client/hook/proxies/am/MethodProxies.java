@@ -26,7 +26,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
-import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
@@ -75,7 +74,6 @@ import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.IntentSenderExtData;
-import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.xdja.zs.controllerManager;
 
 import java.io.File;
@@ -684,18 +682,14 @@ class MethodProxies {
             return path;
         }
         private boolean handleInstallRequest(Intent intent) {
-            IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
+            VirtualCore.AppRequestListener listener = VirtualCore.get().getAppRequestListener();
             if (listener != null) {
                 Uri packageUri = intent.getData();
                 if (SCHEME_FILE.equals(packageUri.getScheme())) {
                     File sourceFile = new File(packageUri.getPath());
                     String path = NativeEngine.getRedirectedPath(sourceFile.getAbsolutePath());
-                    try {
-                        listener.onRequestInstall(path);
-                        return true;
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    listener.onRequestInstall(path);
+                    return true;
                 } else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
                     InputStream inputStream = null;
                     OutputStream outputStream = null;
@@ -715,29 +709,22 @@ class MethodProxies {
                         FileUtils.closeQuietly(inputStream);
                         FileUtils.closeQuietly(outputStream);
                     }
-                    try {
-                        listener.onRequestInstall(sharedFileCopy.getPath());
-                        return true;
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    listener.onRequestInstall(sharedFileCopy.getPath());
+                    sharedFileCopy.delete();
+                    return true;
                 }
             }
             return false;
         }
 
         private boolean handleUninstallRequest(Intent intent) {
-            IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
+            VirtualCore.AppRequestListener listener = VirtualCore.get().getAppRequestListener();
             if (listener != null) {
                 Uri packageUri = intent.getData();
                 if (SCHEME_PACKAGE.equals(packageUri.getScheme())) {
                     String pkg = packageUri.getSchemeSpecificPart();
-                    try {
-                        listener.onRequestUninstall(pkg);
-                        return true;
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    listener.onRequestUninstall(pkg);
+                    return true;
                 }
 
             }
@@ -1924,9 +1911,6 @@ class MethodProxies {
             Intent intent = (Intent) args[1];
             String type = (String) args[2];
             intent.setDataAndType(intent.getData(), type);
-            if (VirtualCore.get().getAppCallback() != null) {
-                VirtualCore.get().getAppCallback().onSendBroadcast(intent);
-            }
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;

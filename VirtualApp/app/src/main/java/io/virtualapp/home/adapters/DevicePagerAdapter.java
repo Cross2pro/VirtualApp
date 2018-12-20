@@ -19,8 +19,7 @@ public class DevicePagerAdapter extends FragmentPagerAdapter {
 
     public DevicePagerAdapter(FragmentManager fm) {
         super(fm);
-//        titles.add(App.getApp().getString(R.string.title_app_device));
-        titles.add(App.getApp().getString(R.string.title_user_device));
+        titles.add(App.getApp().getResources().getString(R.string.title_user_device));
     }
 
     @Override

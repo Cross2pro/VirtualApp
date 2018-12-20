@@ -9,13 +9,11 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.stub.StubManifest;
@@ -31,6 +29,7 @@ import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
@@ -38,7 +37,6 @@ import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
-import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -72,7 +70,6 @@ public class VAppManagerService extends IAppManager.Stub {
     private final Set<String> mVisibleOutsidePackages = new HashSet<>();
     private boolean mBooting;
     private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<>();
-    private IAppRequestListener mAppRequestListener;
     private BroadcastReceiver appEventReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -107,7 +104,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (outInfo == null) {
                     return;
                 }
-                InstallResult res = installPackageImpl(outInfo.publicSourceDir, InstallStrategy.FORCE_UPDATE | InstallStrategy.NOT_COPY_APK, false);
+                InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
+                InstallResult res = installPackageImpl(outInfo.publicSourceDir, options);
                 VLog.e(TAG, "Update package %s %s", res.packageName, res.isSuccess ? "success" : "failed");
             } else if (action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
                 if (intent.getBooleanExtra(Intent.EXTRA_DATA_REMOVED, false)) {
@@ -173,7 +171,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (!isAppInstalled(preInstallPkg)) {
                     try {
                         ApplicationInfo outInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(preInstallPkg, 0);
-                        installPackageImpl(outInfo.publicSourceDir, InstallStrategy.NOT_COPY_APK, false);
+                        InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
+                        installPackageImpl(outInfo.publicSourceDir, options);
                     } catch (PackageManager.NameNotFoundException e) {
                         // ignore
                     }
@@ -227,7 +226,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 PackageInfo outInfo = VirtualCore.get().getUnHookPackageManager().getPackageInfo(ps.packageName, 0);
                 if (pkg.mVersionCode != outInfo.versionCode) {
                     VLog.d(TAG, "app (" + ps.packageName + ") has changed version, update it.");
-                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, InstallStrategy.NOT_COPY_APK | InstallStrategy.FORCE_UPDATE, false);
+                    InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
+                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, options);
                 }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
@@ -266,10 +266,10 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     @Override
-    public void installPackage(String path, int flags, ResultReceiver receiver) {
+    public void installPackage(String path, InstallOptions options, ResultReceiver receiver) {
         InstallResult res;
         synchronized (this) {
-            res = installPackageImpl(path, flags, true);
+            res = installPackageImpl(path, options);
         }
         if (receiver != null) {
             android.os.Bundle data = new Bundle();
@@ -291,14 +291,14 @@ public class VAppManagerService extends IAppManager.Stub {
         }
     }
 
-    public InstallResult installPackage(String path, int flags, boolean notify) {
+    public InstallResult installPackage(String path, InstallOptions options) {
         synchronized (this) {
-            return installPackageImpl(path, flags, notify);
+            return installPackageImpl(path, options);
         }
     }
 
 
-    private InstallResult installPackageImpl(String path, int flags, boolean notify) {
+    private InstallResult installPackageImpl(String path, InstallOptions options) {
         long installTime = System.currentTimeMillis();
         if (path == null) {
             return InstallResult.makeFailure("path = NULL");
@@ -306,9 +306,6 @@ public class VAppManagerService extends IAppManager.Stub {
         File packageFile = new File(path);
         if (!packageFile.exists() || !packageFile.isFile()) {
             return InstallResult.makeFailure("Package File is not exist.");
-        }
-        if ((flags & InstallStrategy.NOT_NOTIFY) != 0) {
-            notify = false;
         }
         VPackage pkg = null;
         try {
@@ -325,17 +322,17 @@ public class VAppManagerService extends IAppManager.Stub {
         VPackage existOne = PackageCacheManager.get(pkg.packageName);
         PackageSetting existSetting = existOne != null ? (PackageSetting) existOne.mExtras : null;
         if (existOne != null) {
-            if ((flags & InstallStrategy.IGNORE_NEW_VERSION) != 0) {
+            if (options.updateStrategy == InstallOptions.UpdateStrategy.IGNORE_NEW_VERSION) {
                 res.isUpdate = true;
                 return res;
             }
-            if (!isAllowedUpdate(existOne, pkg, flags)) {
+            if (!isAllowedUpdate(existOne, pkg, options.updateStrategy)) {
                 return InstallResult.makeFailure("Not allowed to update the package.");
             }
             res.isUpdate = true;
             VActivityManagerService.get().killAppByPkg(res.packageName, VUserHandle.USER_ALL);
         }
-        boolean notCopyApk = (flags & InstallStrategy.NOT_COPY_APK) != 0;
+        boolean useSourceLocationApk = options.useSourceLocationApk;
         if (existOne != null) {
             PackageCacheManager.remove(pkg.packageName);
         }
@@ -378,9 +375,14 @@ public class VAppManagerService extends IAppManager.Stub {
                 ps.flag = PackageSetting.FLAG_RUN_64BIT;
             }
         }
+        if (ps.isRunOn64BitProcess()) {
+            if (!VirtualCore.get().is64BitEngineInstalled() || !V64BitHelper.has64BitEngineStartPermission()) {
+                return InstallResult.makeFailure("64bit engine not installed.");
+            }
+        }
         NativeLibraryHelperCompat.copyNativeBinaries(packageFile, VEnvironment.getAppLibDirectory(pkg.packageName));
 
-        if (!notCopyApk) {
+        if (!useSourceLocationApk) {
             File privatePackageFile = VEnvironment.getPackageResourcePath(pkg.packageName);
             try {
                 FileUtils.copyFile(packageFile, privatePackageFile);
@@ -392,11 +394,11 @@ public class VAppManagerService extends IAppManager.Stub {
             VEnvironment.chmodPackageDictionary(packageFile);
         }
 
-        if (support64bit && !notCopyApk) {
+        if (support64bit && !useSourceLocationApk) {
             V64BitHelper.copyPackage64(packageFile.getPath(), pkg.packageName);
         }
 
-        ps.appMode = notCopyApk ? MODE_APP_USE_OUTSIDE_APK : MODE_APP_COPY_APK;
+        ps.appMode = useSourceLocationApk ? MODE_APP_USE_OUTSIDE_APK : MODE_APP_COPY_APK;
         ps.packageName = pkg.packageName;
         ps.appId = VUserHandle.getAppId(mUidSystem.getOrCreateUid(pkg));
         if (res.isUpdate) {
@@ -412,14 +414,14 @@ public class VAppManagerService extends IAppManager.Stub {
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
-        if (support32bit && !notCopyApk) {
+        if (support32bit && !useSourceLocationApk) {
             try {
                 DexOptimizer.optimizeDex(packageFile.getPath(), VEnvironment.getOdexFile(ps.packageName).getPath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        if (notify) {
+        if (options.notify) {
             notifyAppInstalled(ps, -1);
         }
         res.isSuccess = true;
@@ -443,15 +445,14 @@ public class VAppManagerService extends IAppManager.Stub {
         return false;
     }
 
-    private boolean isAllowedUpdate(VPackage existOne, VPackage newOne, int flags) {
-        if ((flags & InstallStrategy.FORCE_UPDATE) != 0) {
-            return true;
-        }
-        if ((flags & InstallStrategy.COMPARE_VERSION) != 0) {
-            return existOne.mVersionCode < newOne.mVersionCode;
-        }
-        if ((flags & InstallStrategy.TERMINATE_IF_EXIST) != 0) {
-            return false;
+    private boolean isAllowedUpdate(VPackage existOne, VPackage newOne, InstallOptions.UpdateStrategy strategy) {
+        switch (strategy) {
+            case FORCE_UPDATE:
+                return true;
+            case COMPARE_VERSION:
+                return existOne.mVersionCode < newOne.mVersionCode;
+            case TERMINATE_IF_EXIST:
+                return false;
         }
         return true;
     }
@@ -701,34 +702,6 @@ public class VAppManagerService extends IAppManager.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public IAppRequestListener getAppRequestListener() {
-        return mAppRequestListener;
-    }
-
-    @Override
-    public void setAppRequestListener(final IAppRequestListener listener) {
-        this.mAppRequestListener = listener;
-        if (listener != null) {
-            try {
-                listener.asBinder().linkToDeath(new IBinder.DeathRecipient() {
-                    @Override
-                    public void binderDied() {
-                        listener.asBinder().unlinkToDeath(this, 0);
-                        VAppManagerService.this.mAppRequestListener = null;
-                    }
-                }, 0);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    public void clearAppRequestListener() {
-        this.mAppRequestListener = null;
     }
 
     @Override

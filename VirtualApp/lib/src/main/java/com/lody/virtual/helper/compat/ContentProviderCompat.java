@@ -14,11 +14,11 @@ import android.os.SystemClock;
  */
 public class ContentProviderCompat {
 
-    public static Bundle call(Context context, Uri uri, String method, String arg, Bundle extras) throws IllegalAccessException {
+    public static Bundle call(Context context, Uri uri, String method, String arg, Bundle extras, int retryCount) throws IllegalAccessException {
         if (VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             return context.getContentResolver().call(uri, method, arg, extras);
         }
-        ContentProviderClient client = acquireContentProviderClient(context, uri);
+        ContentProviderClient client = acquireContentProviderClientRetry(context, uri, retryCount);
         try {
             if (client == null) {
                 throw new IllegalAccessException();
@@ -44,11 +44,11 @@ public class ContentProviderCompat {
         return null;
     }
 
-    public static ContentProviderClient acquireContentProvider(Context context, Uri uri) {
+    public static ContentProviderClient acquireContentProviderClientRetry(Context context, Uri uri, int retryCount) {
         ContentProviderClient client = acquireContentProviderClient(context, uri);
         if (client == null) {
             int retry = 0;
-            while (retry < 5 && client == null) {
+            while (retry < retryCount && client == null) {
                 SystemClock.sleep(100);
                 retry++;
                 client = acquireContentProviderClient(context, uri);
@@ -57,11 +57,11 @@ public class ContentProviderCompat {
         return client;
     }
 
-    public static ContentProviderClient acquireContentProvider(Context context, String name) {
+    public static ContentProviderClient acquireContentProviderClientRetry(Context context, String name, int retryCount) {
         ContentProviderClient client = acquireContentProviderClient(context, name);
         if (client == null) {
             int retry = 0;
-            while (retry < 5 && client == null) {
+            while (retry < retryCount && client == null) {
                 SystemClock.sleep(100);
                 retry++;
                 client = acquireContentProviderClient(context, name);
@@ -77,7 +77,7 @@ public class ContentProviderCompat {
         return context.getContentResolver().acquireContentProviderClient(name);
     }
 
-    public static void releaseQuietly(ContentProviderClient client) {
+    private static void releaseQuietly(ContentProviderClient client) {
         if (client != null) {
             try {
                 if (VERSION.SDK_INT >= Build.VERSION_CODES.N) {

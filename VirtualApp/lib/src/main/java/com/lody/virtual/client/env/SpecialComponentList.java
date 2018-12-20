@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,9 +14,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-
-import mirror.android.webkit.IWebViewUpdateService;
-import mirror.android.webkit.WebViewFactory;
 
 /**
  * @author Lody
@@ -94,16 +90,6 @@ public final class SpecialComponentList {
 
         SPEC_SYSTEM_APP_LIST.add("android");
         SPEC_SYSTEM_APP_LIST.add("com.google.android.webview");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                String webViewPkgN = IWebViewUpdateService.getCurrentWebViewPackageName.call(WebViewFactory.getUpdateService.call());
-                if (webViewPkgN != null) {
-                    SPEC_SYSTEM_APP_LIST.add(webViewPkgN);
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
         PRE_INSTALL_PACKAGES.add("com.huawei.hwid");
     }
 

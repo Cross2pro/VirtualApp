@@ -10,8 +10,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.PermissionCompat;
-import com.lody.virtual.os.VUserInfo;
-import com.lody.virtual.os.VUserManager;
+import com.lody.virtual.open.MultiAppHelper;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.bit64.V64BitHelper;
@@ -53,10 +52,6 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
             mView.showGuide();
             Once.markDone(VCommends.TAG_SHOW_ADD_APP_GUIDE);
         }
-        if (!Once.beenDone(VCommends.TAG_ASK_INSTALL_GMS)) {
-            mView.askInstallGms();
-            Once.markDone(VCommends.TAG_ASK_INSTALL_GMS);
-        }
     }
 
     @Override
@@ -84,7 +79,7 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
                 boolean runAppNow = true;
                 if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(packageName, userId);
-                    ApplicationInfo applicationInfo = info.getApplicationInfo(0);
+                    ApplicationInfo applicationInfo = info.getApplicationInfo(userId);
                     boolean is64bit = VirtualCore.get().isRun64BitProcess(info.packageName);
                     if (is64bit) {
                         if (check64bitEnginePermission()) {
@@ -135,56 +130,25 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
         class AddResult {
             private PackageAppData appData;
             private int userId;
-            private boolean justEnableHidden;
         }
         AddResult addResult = new AddResult();
         ProgressDialog dialog = ProgressDialog.show(mActivity, null, mActivity.getString(R.string.tip_add_apps));
         VUiKit.defer().when(() -> {
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
-            addResult.justEnableHidden = installedAppInfo != null;
-            //multi app's userId
-            int nextUserId = 0;
-            if (addResult.justEnableHidden) {
-                int[] userIds = installedAppInfo.getInstalledUsers();
-                nextUserId = userIds.length;
-                /*
-                  Input : userIds = {0, 1, 3}
-                  Output: nextUserId = 2
-                 */
-                for (int i = 0; i < userIds.length; i++) {
-                    if (userIds[i] != i) {
-                        nextUserId = i;
-                        break;
-                    }
-                }
-                addResult.userId = nextUserId;
-
-                if (VUserManager.get().getUserInfo(nextUserId) == null) {
-                    // user not exist, create it automatically.
-                    String nextUserName = "Space " + (nextUserId + 1);
-                    VUserInfo newUserInfo = VUserManager.get().createUser(nextUserName, VUserInfo.FLAG_ADMIN);
-                    if (newUserInfo == null) {
-                        throw new IllegalStateException();
-                    }
-                }
-                boolean success = VirtualCore.get().installPackageAsUser(nextUserId, info.packageName);
-                if (!success) {
-                    throw new IllegalStateException();
-                }
+            if (installedAppInfo != null) {
+                addResult.userId = MultiAppHelper.installExistedPackage(installedAppInfo);
             } else {
                 InstallResult res = mRepo.addVirtualApp(info);
                 if (!res.isSuccess) {
                     throw new IllegalStateException();
                 }
-
             }
         }).then((res) -> {
             addResult.appData = PackageAppDataStorage.get().acquire(info.packageName);
         }).fail((e) -> {
             dialog.dismiss();
         }).done(res -> {
-            boolean multipleVersion = addResult.justEnableHidden && addResult.userId != 0;
-            if (!multipleVersion) {
+            if (addResult.userId == 0) {
                 PackageAppData data = addResult.appData;
                 data.isLoading = true;
                 mView.addAppToLauncher(data);

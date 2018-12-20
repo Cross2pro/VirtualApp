@@ -2,7 +2,6 @@ package io.virtualapp.delegate;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 
 import com.lody.virtual.client.core.AppCallback;
 
@@ -24,8 +23,4 @@ public class MyComponentDelegate implements AppCallback {
 
     }
 
-    @Override
-    public void onSendBroadcast(Intent intent) {
-
-    }
 }

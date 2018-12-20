@@ -30,16 +30,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.R;
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.remote.InstallOptions;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
@@ -319,7 +318,8 @@ public class InstallerActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            InstallResult res = VirtualCore.get().installPackage(apkinfo.path, InstallStrategy.COMPARE_VERSION);
+                            InstallOptions options = InstallOptions.makeOptions(true, InstallOptions.UpdateStrategy.COMPARE_VERSION);
+                            InstallResult res = VirtualCore.get().installPackage(apkinfo.path, options);
                             Message msg1 = new Message();
                             msg1.what = STATE_INSTALLING;
                             msg1.obj = res;
@@ -337,9 +337,9 @@ public class InstallerActivity extends Activity {
                         }
 
                         try {
-                            IAppRequestListener listener = VirtualCore.get().getAppRequestListener();
+                            VirtualCore.AppRequestListener listener = VirtualCore.get().getAppRequestListener();
                             listener.onRequestInstall(apkinfo.packageName);
-                        } catch (RemoteException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                         //mHandler.sendEmptyMessage(STATE_INSTALLED);

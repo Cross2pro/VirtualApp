@@ -48,8 +48,8 @@ public class BuildCompat {
     }
 
     public static boolean isColorOS() {
-        return SystemPropertiesCompat.get("ro.build.version.opporom") != null
-                || SystemPropertiesCompat.get("ro.rom.different.version") != null;
+        return SystemPropertiesCompat.isExist("ro.build.version.opporom")
+                || SystemPropertiesCompat.isExist("ro.rom.different.version");
     }
 
     public static boolean is360UI() {
@@ -62,7 +62,7 @@ public class BuildCompat {
     }
 
     public static boolean isVivo() {
-        return SystemPropertiesCompat.get("ro.vivo.os.build.display.id") != null;
+        return SystemPropertiesCompat.isExist("ro.vivo.os.build.display.id");
     }
 
 

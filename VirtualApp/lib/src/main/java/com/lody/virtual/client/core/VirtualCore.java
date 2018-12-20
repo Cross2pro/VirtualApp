@@ -50,11 +50,11 @@ import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
-import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
 import com.xdja.zs.IAppPermissionCallback;
@@ -111,6 +111,7 @@ public final class VirtualCore {
     private AppCallback mAppCallback;
     private TaskDescriptionDelegate mTaskDescriptionDelegate;
     private SettingConfig mConfig;
+    private AppRequestListener mAppRequestListener;
 
     private VirtualCore() {
     }
@@ -520,14 +521,14 @@ public final class VirtualCore {
         return VActivityManager.get().isAppRunning(packageName, userId, foreground);
     }
 
-    public InstallResult installPackageSync(String apkPath, int flags) {
+    public InstallResult installPackageSync(String apkPath, InstallOptions options) {
         final ConditionVariable lock = new ConditionVariable();
         final InstallResult[] out = new InstallResult[1];
-        installPackage(apkPath, flags, new InstallCallback() {
+        installPackage(apkPath, options, new InstallCallback() {
             @Override
             public void onFinish(InstallResult result) {
-                lock.open();
                 out[0] = result;
+                lock.open();
             }
         });
         lock.block();
@@ -535,8 +536,8 @@ public final class VirtualCore {
     }
 
     @Deprecated
-    public InstallResult installPackage(String apkPath, int flags) {
-        return installPackageSync(apkPath, flags);
+    public InstallResult installPackage(String apkPath, InstallOptions options) {
+        return installPackageSync(apkPath, options);
     }
 
 
@@ -544,7 +545,7 @@ public final class VirtualCore {
         void onFinish(InstallResult result);
     }
 
-    public void installPackage(String apkPath, int flags, final InstallCallback callback) {
+    public void installPackage(String apkPath, InstallOptions options, final InstallCallback callback) {
         ResultReceiver receiver = new ResultReceiver(null) {
             @Override
             protected void onReceiveResult(int resultCode, Bundle resultData) {
@@ -556,17 +557,17 @@ public final class VirtualCore {
             }
         };
         try {
-            getService().installPackage(apkPath, flags, receiver);
+            getService().installPackage(apkPath, options, receiver);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
     }
 
-    public InstallResult installPackageFromAsset(String asset, int flags) {
+    public InstallResult installPackageFromAsset(String asset, InstallOptions options) {
         InputStream inputStream = null;
         try {
             inputStream = getContext().getAssets().open(asset);
-            return installPackageFromStream(inputStream, flags);
+            return installPackageFromStream(inputStream, options);
         } catch (Throwable e) {
             InstallResult res = new InstallResult();
             res.error = e.getMessage();
@@ -576,7 +577,7 @@ public final class VirtualCore {
         }
     }
 
-    public InstallResult installPackageFromStream(InputStream inputStream, int flags) {
+    public InstallResult installPackageFromStream(InputStream inputStream, InstallOptions options) {
         try {
             File dir = getContext().getCacheDir();
             if (!dir.exists()) {
@@ -584,7 +585,7 @@ public final class VirtualCore {
             }
             File apkFile = new File(dir, "tmp_" + System.currentTimeMillis() + ".apk");
             FileUtils.writeToFile(inputStream, apkFile);
-            InstallResult res = installPackageSync(apkFile.getAbsolutePath(), flags);
+            InstallResult res = installPackageSync(apkFile.getAbsolutePath(), options);
             apkFile.delete();
             return res;
         } catch (Throwable e) {
@@ -901,14 +902,6 @@ public final class VirtualCore {
         }
     }
 
-    public void clearAppRequestListener() {
-        try {
-            getService().clearAppRequestListener();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void scanApps() {
         try {
             getService().scanApps();
@@ -917,41 +910,12 @@ public final class VirtualCore {
         }
     }
 
-    public IAppRequestListener getAppRequestListener() {
-        try {
-            return getService().getAppRequestListener();
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
+    public AppRequestListener getAppRequestListener() {
+        return mAppRequestListener;
     }
 
     public void setAppRequestListener(final AppRequestListener listener) {
-        IAppRequestListener inner = new IAppRequestListener.Stub() {
-            @Override
-            public void onRequestInstall(final String path) {
-                VirtualRuntime.getUIHandler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onRequestInstall(path);
-                    }
-                });
-            }
-
-            @Override
-            public void onRequestUninstall(final String pkg) {
-                VirtualRuntime.getUIHandler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onRequestUninstall(pkg);
-                    }
-                });
-            }
-        };
-        try {
-            getService().setAppRequestListener(inner);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+        this.mAppRequestListener = listener;
     }
 
     public boolean isPackageLaunched(int userId, String packageName) {

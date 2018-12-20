@@ -538,7 +538,7 @@ public final class VClient extends IVClient.Stub {
             }
         }
         VirtualCore.get().getAppCallback().afterApplicationCreate(packageName, processName, mInitialApplication);
-        StaticReceiverSystem.get().attach(context, data.appInfo, userId);
+        StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);
     }
 
@@ -916,6 +916,7 @@ public final class VClient extends IVClient.Stub {
         receiverData.intent = intent;
         receiverData.component = component;
         receiverData.processName = processName;
+        receiverData.stacktrace = new Exception();
         sendMessage(RECEIVER, receiverData);
     }
 
@@ -937,7 +938,7 @@ public final class VClient extends IVClient.Stub {
                 result.finish();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            data.stacktrace.printStackTrace();
             throw new RuntimeException(
                     "Unable to start receiver " + data.component
                             + ": " + e.toString(), e);
@@ -1038,6 +1039,7 @@ public final class VClient extends IVClient.Stub {
         Intent intent;
         ComponentName component;
         String processName;
+        Throwable stacktrace;
     }
 
 

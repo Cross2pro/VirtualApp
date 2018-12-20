@@ -15,6 +15,7 @@ android {
         ]
         externalNativeBuild {
             ndkBuild {
+                arguments "APP_PLATFORM=android-23"
                 abiFilters "armeabi", "armeabi-v7a"
             }
         }

@@ -20,6 +20,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -698,13 +699,13 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 if (!isEnabledLPr(receiver.info, 0, userId)) {
                     continue;
                 }
-                List<IntentFilter> filters = new ArrayList<>();
                 if (receiver.info.processName.equals(processName)) {
+                    List<IntentFilter> filters = new ArrayList<>();
                     for (VPackage.ActivityIntentInfo intentInfo : receiver.intents) {
                         filters.add(intentInfo.filter);
                     }
+                    list.add(new ReceiverInfo(receiver.info, filters));
                 }
-                list.add(new ReceiverInfo(receiver.info, filters));
             }
         }
         return list;

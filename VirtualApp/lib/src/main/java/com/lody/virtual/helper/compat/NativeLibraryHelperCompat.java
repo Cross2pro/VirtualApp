@@ -85,14 +85,14 @@ public class NativeLibraryHelperCompat {
     public static boolean is64bitAbi(String abi) {
         return "arm64-v8a".equals(abi)
                 || "x86_64".equals(abi)
-                || "x86".equals(abi)
-                || "mips".equals(abi);
+                || "mips64".equals(abi);
     }
 
     public static boolean is32bitAbi(String abi) {
         return "armeabi".equals(abi)
                 || "armeabi-v7a".equals(abi)
-                || "mips64".equals(abi);
+                || "mips".equals(abi)
+                || "x86".equals(abi);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)

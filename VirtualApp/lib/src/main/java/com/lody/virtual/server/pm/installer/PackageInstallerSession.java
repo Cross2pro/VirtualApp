@@ -17,9 +17,9 @@ import android.system.Os;
 import android.system.OsConstants;
 import android.text.TextUtils;
 
-import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.server.pm.VAppManagerService;
 
@@ -169,7 +169,7 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         boolean success = false;
         for (File file : stageDir.listFiles()) {
             VLog.e(TAG, "found apk in stage dir: " + file.getPath());
-            InstallResult res = VAppManagerService.get().installPackage(file.getPath(), InstallStrategy.COMPARE_VERSION, true);
+            InstallResult res = VAppManagerService.get().installPackage(file.getPath(), InstallOptions.makeOptions(false));
             if (res.isSuccess) {
                 success = true;
             }
