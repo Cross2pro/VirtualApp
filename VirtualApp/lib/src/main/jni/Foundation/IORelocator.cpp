@@ -734,20 +734,14 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
             virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
             pvfd->incStrong(0);
             /***************************************************/
-            virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
-            /*
-            * 首先获取vfd，获取不到一定是发生异常，返回错误
-            */
-            xdja::zs::sp <virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
-
-            if (vfd.get() == nullptr) {
-                slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-                return -1;
-            }
+            xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
             int _Errno;
             xdja::zs::sp <virtualFile> vf(
                     virtualFileManager::getVFM().getVF(vfd.get(), (char *) relocated_path, &_Errno));
+
+            virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
+
             if (vf.get() != nullptr) {
                 LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(),
                      vf->getVFS(), ret, vfd.get());
@@ -794,12 +788,10 @@ HOOK_DEF(int, close, int __fd) {
         virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
         virtualFileDescribeSet::getVFDSet().reset(__fd);
-        if (vfd->_vf) {
-            xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
-            if (vf.get() != nullptr) {
-                log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vf->getPath(), vfd.get());
-                virtualFileManager::getVFM().releaseVF(vf->getPath(), vfd.get());
-            }
+        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
+        if (vf.get() != nullptr) {
+            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vf->getPath(), vfd.get());
+            virtualFileManager::getVFM().releaseVF(vf->getPath(), vfd.get());
         }
 
         /******through this way to release vfd *********/
