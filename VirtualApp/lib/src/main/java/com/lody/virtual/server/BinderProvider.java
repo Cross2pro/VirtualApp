@@ -93,8 +93,9 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.DEVICE, VDeviceManagerService.get());
         addService(ServiceManagerNative.VIRTUAL_LOC, VirtualLocationService.get());
 
+        /* Start Changed by XDJA */
         VSafekeyManagerService.systemReady(context);
-        //IPCBus.register(IVSafekeyManager.class, VSafekeyManagerService.get());
+        addService(ServiceManagerNative.SAFEKEY, VSafekeyManagerService.get());
         addService(ServiceManagerNative.CONTROLLER, controllerService.get());
         VAppPermissionManagerService.systemReady();
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
@@ -102,6 +103,7 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
         VSafekeyCkmsManagerService.systemReady(context);
         addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
+        /* End Changed by XDJA */
 
         sInitialized = true;
         return true;

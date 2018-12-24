@@ -15,7 +15,7 @@ public class VSafekeyCkmsManager {
     IVSafekeyCkmsManager mService;
 
     private Object getRemoteInterface() {
-        return IVSafekey.Stub
+        return IVSafekeyCkmsManager.Stub
                 .asInterface(ServiceManagerNative.getService(ServiceManagerNative.CKMSSAFEKEY));
     }
 
@@ -35,18 +35,18 @@ public class VSafekeyCkmsManager {
     }
 
 
-    public byte[] ckmsencryptKey(byte[] key,int keylen) {
+    public static byte[] ckmsencryptKey(byte[] key, int keylen) {
         try {
-            return getService().ckmsencryptKey(key,keylen);
+            return get().getService().ckmsencryptKey(key,keylen);
         } catch (RemoteException e) {
             e.printStackTrace();
             return VirtualRuntime.crash(e);
         }
     }
 
-    public byte[] ckmsdecrypeKey(byte[] seckey,int seckeylen) {
+    public static byte[] ckmsdecrypeKey(byte[] seckey,int seckeylen) {
         try {
-            return getService().ckmsdecryptKey(seckey,seckeylen);
+            return get().getService().ckmsdecryptKey(seckey,seckeylen);
         } catch (RemoteException e) {
             e.printStackTrace();
             return VirtualRuntime.crash(e);

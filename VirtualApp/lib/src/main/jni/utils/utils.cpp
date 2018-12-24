@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <string.h>
 #include <map>
+#include <errno.h>
 
 #include "transparentED/originalInterface.h"
 #include "utils.h"
@@ -173,8 +174,8 @@ void doFileTrace(const char* path, char* operation)
 
 const char* EncryptPathMap[] =
         {
-                "/data/data/io.virtualapp/virtual/storage",
-                "/data/user/0/io.virtualapp/virtual/storage/emulated",
+                "/data/data/io.busniess.va/virtual/storage",
+                "/data/user/0/io.busniess.va/virtual/storage/emulated",
                 "/data/data/com.xdja.safetybox/virtual/storage",
                 "/data/user/0/com.xdja.safetybox/virtual/storage/emulated",
                 "/storage",
@@ -198,7 +199,7 @@ bool isEncryptPath(const char *_path) {
 }
 
 const char * magicPath[] = {
-        "/data/user/0/io.virtualapp/files/magic.mgc",
+        "/data/user/0/io.busniess.va/files/magic.mgc",
         "/data/user/0/com.xdja.safetybox/files/magic.mgc"
 };
 

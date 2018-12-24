@@ -74,7 +74,7 @@ bool TemplateFile::doControl(int len) {
 
 int TemplateFile::createTempFile(char *path, zString & tpath) {
     const char *dirs[] = {
-            "/data/data/io.virtualapp/virtual/data",
+            "/data/data/io.busniess.va/virtual/data",
             "/data/data/com.xdja.safetybox/virtual/data"
     };
 
