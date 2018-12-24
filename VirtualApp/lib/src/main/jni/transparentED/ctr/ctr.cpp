@@ -68,6 +68,10 @@ namespace xdja {
         do {
             size_t left_bytes = n;
             char *result = (char *)calloc(1, m_crypter.getBlockSize());
+            if (result == NULL)
+            {
+                return false;
+            }
 
             while (left_bytes > 0)
             {
@@ -91,6 +95,10 @@ namespace xdja {
                         if (counter != NULL)
                         {
                             free(counter);
+                        }
+                        if (result != NULL)
+                        {
+                            free(result);
                         }
                         return false;
                     }
@@ -130,6 +138,10 @@ namespace xdja {
                     }
                 }
                ret = true;
+            }
+            if (result != NULL)
+            {
+                free(result);
             }
         } while (0);
 
