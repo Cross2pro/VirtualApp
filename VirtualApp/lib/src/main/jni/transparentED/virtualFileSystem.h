@@ -43,6 +43,7 @@ public:
     ~virtualFileDescribe() {
         if (_vf != NULL) {
             delete _vf;
+            _vf = 0;
         }
     }
 };

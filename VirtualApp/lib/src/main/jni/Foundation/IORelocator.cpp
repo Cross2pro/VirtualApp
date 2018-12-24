@@ -794,10 +794,12 @@ HOOK_DEF(int, close, int __fd) {
         virtualFileDescribeSet::getVFDSet().setFlag(__fd, FD_CLOSING);
 
         virtualFileDescribeSet::getVFDSet().reset(__fd);
-        xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
-        if (vf.get() != nullptr) {
-            log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vf->getPath(), vfd.get());
-            virtualFileManager::getVFM().releaseVF(vf->getPath(), vfd.get());
+        if (vfd->_vf) {
+            xdja::zs::sp<virtualFile> vf(vfd->_vf->get());
+            if (vf.get() != nullptr) {
+                log("trace_close fd[%d]path[%s]vfd[%p]", __fd, vf->getPath(), vfd.get());
+                virtualFileManager::getVFM().releaseVF(vf->getPath(), vfd.get());
+            }
         }
 
         /******through this way to release vfd *********/
@@ -1109,7 +1111,7 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
         if ((fileInfo->_flag & MAP_SHARED)) {
             int fd = syscall(__NR_openat, AT_FDCWD, fileInfo->_path, O_RDWR, 0);
 
-            if (fd > 0) {
+            if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
                 pvfd->incStrong(0);
                 virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
@@ -1149,7 +1151,7 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
         if ((fileInfo->_flag & MAP_SHARED)) {
             int fd = syscall(__NR_openat, AT_FDCWD, fileInfo->_path, O_RDWR, 0);
 
-            if (fd > 0) {
+            if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
                 pvfd->incStrong(0);
                 virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
