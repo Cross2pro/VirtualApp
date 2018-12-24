@@ -1106,17 +1106,12 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
             if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
                 pvfd->incStrong(0);
-                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
-                xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-
-                if (vfd.get() == nullptr) {
-                    slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-                    return -1;
-                }
+                xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
                 int _Errno;
                 xdja::zs::sp<virtualFile> vf(virtualFileManager::getVFM().getVF(vfd.get(), fileInfo->_path,
                                                                      &_Errno));
+                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
                 if (vf.get() != nullptr) {
                     vf->vpwrite64(vfd.get(), (char *) addr, length, fileInfo->_offsize);
                 }
@@ -1146,17 +1141,12 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
             if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
                 pvfd->incStrong(0);
-                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
-                xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
-
-                if (vfd.get() == nullptr) {
-                    slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-                    return -1;
-                }
+                xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
                 int _Errno;
                 xdja::zs::sp<virtualFile> vf(virtualFileManager::getVFM().getVF(vfd.get(), fileInfo->_path,
                                                                      &_Errno));
+                virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
                 if (vf.get() != nullptr) {
                     vf->vpwrite64(vfd.get(), (char *) addr, size, fileInfo->_offsize);
                 }
@@ -1630,19 +1620,13 @@ HOOK_DEF(int, dup, int oldfd)
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
         pvfd->incStrong(0);
         /***************************************************/
-        virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
-
-        /*
-        * 首先获取vfd，获取不到一定是发生异常，返回错误
-        */
-        xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(ret));
-        if (vfd.get() == nullptr) {
-            slog("!!! get vfd fail in %s:%d !!!", __FILE__, __LINE__);
-            return -1;
-        }
+        xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
         int _Errno;
         xdja::zs::sp<virtualFile> vf(virtualFileManager::getVFM().getVF(vfd.get(), path2.toString(), &_Errno));
+
+        virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
+
         if (vf.get() != nullptr) {
             LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
             vf->vlseek(vfd.get(), 0, SEEK_SET);

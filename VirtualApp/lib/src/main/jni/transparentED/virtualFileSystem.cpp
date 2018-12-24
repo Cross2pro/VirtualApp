@@ -25,7 +25,7 @@ void virtualFileDescribeSet::set(int idx, virtualFileDescribe *vfd) {
         return;
     }
 
-    items[idx].set((uint32_t)vfd);
+    items[idx].set(reinterpret_cast<uint64_t>(vfd));
 }
 
 virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
@@ -33,7 +33,7 @@ virtualFileDescribe* virtualFileDescribeSet::get(int idx) {
         return 0;
     }
 
-    virtualFileDescribe * vfd = (virtualFileDescribe*)items[idx].get();
+    virtualFileDescribe * vfd = reinterpret_cast<virtualFileDescribe *>(items[idx].get());
 
     return vfd;
 }
@@ -43,7 +43,7 @@ void virtualFileDescribeSet::setFlag(int idx, int flag) {
         return;
     }
 
-    flagItems[idx].set((uint64_t)flag);
+    flagItems[idx].set(static_cast<uint64_t>(flag));
 }
 
 uint32_t virtualFileDescribeSet::getFlag(int idx) {
@@ -51,7 +51,7 @@ uint32_t virtualFileDescribeSet::getFlag(int idx) {
         return 0;
     }
 
-    return (uint32_t)(flagItems[idx].get());
+    return static_cast<uint32_t>(flagItems[idx].get());
 }
 
 void virtualFileDescribeSet::clearFlag(int idx) {
@@ -127,6 +127,9 @@ xdja::zs::sp<virtualFile>* virtualFileManager::queryVF(char *path) {
         VFMap::iterator iterator = _vfmap.find(std::string(path));
         if(iterator != _vfmap.end()) {
             vf = iterator->second;
+            if (vf == NULL) {
+                return NULL;
+            }
             vf->get()->addRef();
 
             LOGE("judge : query virtualFile ");
@@ -288,11 +291,10 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
     xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
     VFMap::iterator iter = _vfmap.find(std::string(path));
-    if(iter != _vfmap.end())
-    {
+    if(iter != _vfmap.end()) {
         xdja::zs::sp<virtualFile> *vf = iter->second;
-        log("releaseVF counter %d", vf->get()->getStrongCount());
-        if(vf->get()->delRef() == 0) {
+        if (vf != NULL) {
+            if (vf->get()->delRef() == 0) {
 //            struct stat buf;
 //            buf.st_size = 0;
 //
@@ -302,9 +304,10 @@ void virtualFileManager::releaseVF(char *path, virtualFileDescribe* pvfd) {
 //                originalInterface::original_close(fd);
 //            }
 //            log("judge : file [path %s] [size %lld] real closed", vf->getPath(), buf.st_size);
-            vf->get()->vclose(vfd.get());
-            delete vf;
-            _vfmap.erase(iter);
+                vf->get()->vclose(vfd.get());
+                delete vf;
+                _vfmap.erase(iter);
+            }
         }
     }
 }

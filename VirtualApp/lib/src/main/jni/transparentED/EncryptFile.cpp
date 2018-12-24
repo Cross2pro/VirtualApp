@@ -238,7 +238,7 @@ ssize_t EncryptFile::read(int fd, char *buf, size_t len) {
 
     int ret = originalInterface::original_read(fd, buf, len);
     int tmp;
-    if(ret > 0) {
+    if(ret > 0 && fc2 != NULL) {
         fc2->decrypt(buf, ret, buf, tmp, offset);
     }
 
@@ -253,7 +253,7 @@ ssize_t EncryptFile::write(int fd, char *buf, size_t len) {
 
     char * ebuf = new char[len];
     int elen;
-    if(len > 0) {
+    if(len > 0 && fc2 != NULL) {
         fc2->encrypt((char *)buf, len, (char *)ebuf, elen, lseek(fd, 0, SEEK_CUR));
     }
     int ret = originalInterface::original_write(fd, ebuf, len);
@@ -268,7 +268,7 @@ ssize_t EncryptFile::pread64(int fd, void *buf, size_t len, off64_t offset) {
 
     int ret = originalInterface::original_pread64(fd, buf, len, offset + getHeadOffset()/*透明文件游标*/);
     int tmp;
-    if(ret > 0) {
+    if(ret > 0 && fc2 != NULL) {
         fc2->decrypt((char *)buf, ret, (char *)buf, tmp, offset);
     }
 
@@ -283,7 +283,7 @@ ssize_t EncryptFile::pwrite64(int fd, void *buf, size_t len, off64_t offset) {
 
     char * ebuf = new char[len];
     int elen;
-    if(len > 0) {
+    if(len > 0 && fc2 != NULL) {
         fc2->encrypt((char *)buf, len, (char *)ebuf, elen, offset);
     }
     int ret = originalInterface::original_pwrite64(fd, ebuf, len, offset + getHeadOffset()/*透明文件游标*/);
@@ -448,7 +448,7 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
     {
         return originalInterface::original_ftruncate64(fd,length);
     } else {
-        int ext_length = length - st.st_size;
+        size_t ext_length = static_cast<size_t>(length - st.st_size);
         int elen = 0;
 
         char * buf = new char[ext_length];
@@ -456,7 +456,7 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
         memset(buf,0,sizeof(char) * ext_length);
         memset(ebuf,0,sizeof(char) * ext_length);
         if (ext_length > 0)
-            fc2->encrypt(buf, ext_length, ebuf, elen, lseek(fd, 0, SEEK_END));
+            fc2->encrypt(buf, ext_length, ebuf, elen, static_cast<uint64_t>(lseek(fd, 0, SEEK_END)));
 
         int ret = originalInterface::original_write(fd, ebuf, ext_length);
 
