@@ -29,6 +29,7 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
+import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
 import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
@@ -99,6 +100,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
         VWaterMarkService.systemReady();
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
+        VSafekeyCkmsManagerService.systemReady(context);
+        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
 
         sInitialized = true;
         return true;

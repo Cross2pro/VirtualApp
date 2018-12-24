@@ -135,6 +135,7 @@ jclass nativeEngineClass;
 JavaVM *vm;
 
 jclass vskmClass;
+jclass vsckmsClass;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
     vm = _vm;
@@ -164,6 +165,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
     jclass VSKMClass = env->FindClass("com/xdja/zs/VSafekeyManager");
     vskmClass = (jclass) env->NewGlobalRef(VSKMClass);
     env->DeleteLocalRef(VSKMClass);
+
+    jclass VSCKMSClass = env->FindClass("com/xdja/zs/VSafekeyCkmsManager");
+    vsckmsClass = (jclass)env->NewGlobalRef(VSCKMSClass);
+    env->DeleteLocalRef(VSCKMSClass);
 
     zJNIEnv::initial(vm);
     controllerManagerNative::initial();

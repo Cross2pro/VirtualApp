@@ -215,8 +215,8 @@ bool EncryptFile::create(int fd, ef_mode mode) {
             return false;
     }
     else{
-        header.version1 = header.version2 = 0x01;           //设置加密文件版本
-
+//        header.version1 = header.version2 = 0x01;           //设置加密文件版本
+        header.version1 = header.version2 = 0x02;
         if(!writeHeader(fd))
             return false;
     }

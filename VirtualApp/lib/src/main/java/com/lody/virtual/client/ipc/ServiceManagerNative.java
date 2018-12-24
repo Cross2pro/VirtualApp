@@ -31,6 +31,7 @@ public class ServiceManagerNative {
     public static final String CONTROLLER = "controller";
     public static final String WATERMARK = "watermakr";
     public static final String SAFEKEY = "safekey";
+    public static final String CKMSSAFEKEY = "ckms-safekey";
 
     public static final String SERVICE_DEF_AUTH = "virtual.service.BinderProvider";
     private static final String TAG = ServiceManagerNative.class.getSimpleName();

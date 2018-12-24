@@ -61,6 +61,7 @@ import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.IVSCallback;
 import com.xdja.zs.INotificationCallback;
+import com.xdja.zs.IVSKeyCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -793,6 +794,10 @@ public final class VirtualCore {
     }
 
     public abstract static class ControllerServiceCallback extends IControllerServiceCallback.Stub{
+
+    }
+
+    public abstract static class VSKeyCallback extends IVSKeyCallback.Stub {
 
     }
 

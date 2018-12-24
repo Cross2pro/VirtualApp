@@ -122,4 +122,40 @@ public:
     int getKeyLen();
 };
 
+class ckmsInfo_v2 : public EncryptInfo
+{
+    uint32_t group_id;
+public:
+    ckmsInfo_v2() {group_id = 0x1;}
+    int read(int fd);
+    int write(int fd);
+    int getSize();
+    char * ckmsEncryptKey(char * input, uint32_t inputlen, uint32_t & outputlen);
+    char * ckmsDecryptKey(char * input, uint32_t inputlen, uint32_t & outputlen);
+};
+
+class EncryptInfo_v2 : public EncryptInfo
+{
+    char * key;             //明文key
+    uint32_t keyLen;
+
+    char * key2;            //秘文key
+    uint32_t keyLen2;
+
+    ckmsInfo_v2 ci;
+
+public:
+    int read(int fd);
+    int write(int fd);
+    int getSize();
+
+    EncryptInfo_v2();
+    EncryptInfo_v2(EncryptInfo_v2 &ei);
+
+    virtual ~EncryptInfo_v2();
+
+    char * getKey();
+    int getKeyLen();
+};
+
 #endif //VIRTUALAPP_FILECODER1_H

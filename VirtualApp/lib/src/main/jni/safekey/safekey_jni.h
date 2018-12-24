@@ -14,6 +14,9 @@ public:
     static int decryptKey(char *input, int inputlen, char *output, int outputlen);
     static int operatorKey(char *input, int inputlen, char *output, int outputlen,int mode);
     static int getRandom(int len, char *random);
+    static char * ckmsencryptKey(char *input, int inputlen, uint32_t & outputlen);
+    static char * ckmsdecryptKey(char *input, int inputlen, uint32_t & outputlen);
+    static char * ckmsoperatorKey(char *input, int inputlen, uint32_t & outputlen,int mode);
 };
 
 
