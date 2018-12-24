@@ -18,8 +18,8 @@ public class controllerManager {
     private IController mService;
 
     private Object getRemoteInterface() {
-        return IAppPermission.Stub
-                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.APPPERMISSION));
+        return IController.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.CONTROLLER));
     }
     public IController getService() {
 

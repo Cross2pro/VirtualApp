@@ -161,7 +161,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
         return JNI_ERR;
     }
 
-    jclass VSKMClass = env->FindClass("com/lody/virtual/client/ipc/VSafekeyManager");
+    jclass VSKMClass = env->FindClass("com/xdja/zs/VSafekeyManager");
     vskmClass = (jclass) env->NewGlobalRef(VSKMClass);
     env->DeleteLocalRef(VSKMClass);
 
