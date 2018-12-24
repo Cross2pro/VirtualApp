@@ -1310,8 +1310,6 @@ HOOK_DEF(int, ftruncate64, int fd, off64_t length)
     return ret;
 }
 
-#define ENCRYPTFILE_HEADLENGTH 50
-
 //ssize_t sendfile(int out_fd, int in_fd, off_t* offset, size_t count)
 HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
 {
@@ -1335,18 +1333,19 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
         //完全不管
         ret = orig_sendfile(out_fd, in_fd, offset, count);
     } else {
-
-        size_t real_count = 0;
-        if(off + count > (st.st_size - ENCRYPTFILE_HEADLENGTH)) {
-            real_count = (size_t)(st.st_size - ENCRYPTFILE_HEADLENGTH - off);
-        } else {
-            real_count = count;
-        }
-
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
             xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
+
+            size_t real_count = 0;
+            int encryptFileHeadLength = in_vf.get()->getHeaderOffSet();
+            if(off + count > (st.st_size - encryptFileHeadLength)) {
+                real_count = (size_t)(st.st_size - encryptFileHeadLength - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
@@ -1384,6 +1383,14 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             }
 
             xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
+
+            size_t real_count = 0;
+            if(off + count > st.st_size) {
+                real_count = (size_t)(st.st_size - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 ignoreFile::lseek(in_fd, off, SEEK_SET);
@@ -1421,6 +1428,15 @@ HOOK_DEF(ssize_t, sendfile, int out_fd, int in_fd, off_t* offset, size_t count)
             }
 
             xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
+
+            size_t real_count = 0;
+            int encryptFileHeadLength = in_vf.get()->getHeaderOffSet();
+            if(off + count > (st.st_size - encryptFileHeadLength)) {
+                real_count = (size_t)(st.st_size - encryptFileHeadLength - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 in_vf->vlseek(in_vfd.get(), off, SEEK_SET);
@@ -1481,18 +1497,19 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
         //完全不管
         ret = orig_sendfile64(out_fd, in_fd, offset, count);
     } else {
-
-        size_t real_count = 0;
-        if(off + count > (st.st_size - ENCRYPTFILE_HEADLENGTH)) {
-            real_count = (size_t)(st.st_size - ENCRYPTFILE_HEADLENGTH - off);
-        } else {
-            real_count = count;
-        }
-
         if(in_vfd.get() != nullptr && out_vfd.get() != nullptr) //完全管理
         {
             xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
             xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
+
+            size_t real_count = 0;
+            int encryptFileHeadLength = in_vf.get()->getHeaderOffSet();
+            if(off + count > (st.st_size - encryptFileHeadLength)) {
+                real_count = (size_t)(st.st_size - encryptFileHeadLength - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 loff_t result;
@@ -1531,6 +1548,14 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
                 return -1;
             }
             xdja::zs::sp<virtualFile> out_vf(out_vfd->_vf->get());
+
+            size_t real_count = 0;
+            if(off + count > st.st_size) {
+                real_count = (size_t)(st.st_size - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 loff_t result;
@@ -1570,6 +1595,15 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
             }
 
             xdja::zs::sp<virtualFile> in_vf(in_vfd->_vf->get());
+
+            size_t real_count = 0;
+            int encryptFileHeadLength = in_vf.get()->getHeaderOffSet();
+            if(off + count > (st.st_size - encryptFileHeadLength)) {
+                real_count = (size_t)(st.st_size - encryptFileHeadLength - off);
+            } else {
+                real_count = count;
+            }
+
             if(offset != 0)
             {
                 loff_t result;

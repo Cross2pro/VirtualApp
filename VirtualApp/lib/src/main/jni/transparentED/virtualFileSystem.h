@@ -196,6 +196,8 @@ public:
 
     void forceTranslate();
 
+    int getHeaderOffSet();
+
 private:
 
     friend class virtualFileManager;

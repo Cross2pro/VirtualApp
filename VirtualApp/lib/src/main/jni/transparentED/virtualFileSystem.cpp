@@ -847,3 +847,11 @@ int virtualFile::vftruncate64(virtualFileDescribe* pvfd, off64_t length) {
 
     return 0;
 }
+
+int virtualFile::getHeaderOffSet() {
+    if(ef) {
+        return ef->getHeadOffset();
+    } else {
+        return 0;
+    }
+}
