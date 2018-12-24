@@ -59,7 +59,7 @@ public abstract class SettingConfig {
     }
 
     public boolean isAllowServiceStartForeground() {
-        return false;
+        return true;
     }
 
     public boolean isEnableAppFileSystemIsolation() {
