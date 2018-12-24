@@ -1920,8 +1920,6 @@ void startIOHook(int api_level) {
     originalInterface::original_pread64 = orig_pread64;
     originalInterface::original_ftruncate64 = orig_ftruncate64;
     originalInterface::original_sendfile = orig_sendfile;
-
-    relocate_linker();
 }
 
 
