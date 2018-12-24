@@ -38,6 +38,11 @@ android {
         abortOnError false
         warning 'NewApi', 'OnClick', 'EllipsizeMaxLines'
     }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
 }
 gradle.taskGraph.afterTask { task ->
     def TASK_NAME = "transformNativeLibsWithStripDebugSymbolFor"

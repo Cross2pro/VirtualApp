@@ -65,6 +65,7 @@ import android.util.Log;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
+import com.xdja.zs.LoadModules;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -540,6 +541,13 @@ public final class VClient extends IVClient.Stub {
         VirtualCore.get().getAppCallback().afterApplicationCreate(packageName, processName, mInitialApplication);
         StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);
+
+        //xdja
+        List<InstalledAppInfo> modules = VirtualCore.get().getInstalledApps(0);
+        for (InstalledAppInfo module : modules) {
+            String libPath = VEnvironment.getAppLibDirectory(module.packageName).getAbsolutePath();
+            LoadModules.loadModule(module.getApkPath(), module.getOdexFile().getParent(), libPath, mInitialApplication);
+        }
     }
 
     private void initDataStorage(boolean is64bit, int userId, String pkg) {
