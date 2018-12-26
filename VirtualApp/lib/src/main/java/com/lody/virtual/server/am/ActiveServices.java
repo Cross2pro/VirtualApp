@@ -8,9 +8,11 @@ import android.content.pm.ServiceInfo;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Lody
@@ -214,6 +217,33 @@ public class ActiveServices {
         synchronized (userSpace.mRunningServices) {
             RunningServiceData info = userSpace.mRunningServices.get(component);
             return info.startId;
+        }
+    }
+
+    //xdja
+    public void stopServiceByPkg(int userId, String pkgName){
+        UserSpace userSpace = getUserSpace(userId);
+        RunningServiceData data;
+        synchronized (userSpace.mRunningServices) {
+
+            Set<Map.Entry<ComponentName, RunningServiceData>> set = userSpace.mRunningServices.entrySet();
+            Iterator<Map.Entry<ComponentName, RunningServiceData>> iterator = set.iterator();
+
+            while (iterator.hasNext()){
+                Map.Entry<ComponentName, RunningServiceData> entry = iterator.next();
+                ComponentName a = entry.getKey();
+                if(pkgName.equals(a.getPackageName())){
+                    data = userSpace.mRunningServices.get(a);
+                    stopService(userId, a, -1);
+                    try {
+                        Log.e("wxd", " stop " + a);
+                        VActivityManager.get().stopService(userId, data.info);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+                iterator.remove();
+            }
         }
     }
 

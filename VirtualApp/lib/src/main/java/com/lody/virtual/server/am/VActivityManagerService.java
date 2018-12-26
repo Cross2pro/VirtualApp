@@ -347,6 +347,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             e.printStackTrace();
         }
         app.client = client;
+        notifyAppProcessStatus(app, 0, true);
         try {
             app.appThread = ApplicationThreadCompat.asInterface(client.getAppThread());
         } catch (RemoteException e) {
@@ -361,12 +362,18 @@ public class VActivityManagerService extends IActivityManager.Stub {
             if(status == true) {
                 controllerManager.get().getService().appProcessStart(app.info.packageName, app.processName, app.pid);
                 {
-                    controllerManager.get().getService().appStart(app.info.packageName);
+                    if (!isAppRunning(app.info.packageName, uid, false)) {
+                        controllerManager.get().getService().appStart(app.info.packageName);
+                    }
                 }
             }else {
                 controllerManager.get().getService().appProcessStop(app.info.packageName, app.processName, app.pid);
                 {
                     controllerManager.get().getService().appStop(app.info.packageName);
+                    if (!isAppRunning(app.info.packageName, uid, false)) {
+                        controllerManager.get().getService().appStop(app.info.packageName);
+                    }
+
                 }
             }
         }catch (RemoteException e){
@@ -663,33 +670,16 @@ public class VActivityManagerService extends IActivityManager.Stub {
                             }
                         }
                         if (r.pkgList.contains(pkg)) {
-
-                            /* xdja
-                            for (String pkgName : r.pkgList){
-                                Log.e("wxd", " killAppByPkg item " +pkgName);
+                            //xdja
+                            try {
+                                Log.e("wxd", " killAppByPkg  " + r.pid);
+                                mServices.stopServiceByPkg(userId, pkg);
+                                r.client.clearSettingProvider();
+                                finishAllActivity(r);
+                                r.kill();
+                            }catch (Exception e){
+                                e.printStackTrace();
                             }
-                            Log.e("wxd", " killAppByPkg package" +pkg);
-                            Log.e("wxd", " killAppByPkg pid" +r.pid);
-                            {
-                                try {
-                                    ArrayList<ServiceRecord> tmprecord = new ArrayList<ServiceRecord>();
-                                    synchronized (mHistory) {
-                                        for (ServiceRecord sr : mHistory) {
-                                            if (sr.process == r) {
-                                                tmprecord.add(sr);
-                                            }
-                                        }
-                                    }
-                                    for (ServiceRecord tsr : tmprecord) {
-                                        Log.e("wxd", " killService " + tsr.serviceInfo.toString() + " in " + r.processName + ":" + r.pid);
-                                        stopServiceCommon(tsr, ComponentUtils.toComponentName(tsr.serviceInfo));
-                                    }
-                                    Log.e("wxd", " killAppByPkg  " + r.pid);
-                                    r.client.clearSettingProvider();
-                                    finishAllActivity(r);
-                                }*/
-
-                            r.kill();
                         }
                     }
                 }
