@@ -36,7 +36,7 @@ bool controllerManagerNative::initial() {
             || controllerManagerNative::isChangeConnect_method == NULL
             || controllerManagerNative::isGatewayEnable_method == NULL
             || controllerManagerNative::isCameraEnable_method == NULL
-            || controllerManagerNative::isSoundRecordEnable() == false) /* geyaox修改的，这里不确定对不对 */
+            || controllerManagerNative::isSoundRecordEnable_method == NULL)
             break;
 
         ret = true;
