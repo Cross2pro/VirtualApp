@@ -2158,4 +2158,17 @@ class MethodProxies {
             return isAppProcess();
         }
     }
+    //xdja
+    static class OverridePendingTransition extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "overridePendingTransition";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            return 0;
+        }
+    }
+    //xdja
 }

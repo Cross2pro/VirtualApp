@@ -55,7 +55,7 @@ public abstract class SettingConfig {
     }
 
     public AppLibConfig getAppLibConfig(String packageName) {
-        return AppLibConfig.UseRealLib;
+        return AppLibConfig.UseOwnLib;
     }
 
     public boolean isAllowServiceStartForeground() {
