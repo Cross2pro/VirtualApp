@@ -511,10 +511,18 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (userInfos != null) {
                     for (VUserInfo info : userInfos) {
                         FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(info.id, ps.packageName));
+                        // add by lml@xdja.com
+                        {
+                            FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(info.id, ps.packageName));
+                        }
                     }
                 }
             } else {
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+                // add by lml@xdja.com
+                {
+                    FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(userId, ps.packageName));
+                }
             }
         }
         if (isPackageSupport64Bit(ps)) {

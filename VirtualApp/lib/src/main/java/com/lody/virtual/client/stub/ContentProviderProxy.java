@@ -4,8 +4,11 @@ import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentProviderClient;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.ProviderInfo;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,17 +16,26 @@ import android.os.CancellationSignal;
 import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
+import android.provider.MediaStore;
+import android.provider.OpenableColumns;
+import android.webkit.MimeTypeMap;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Locale;
 
 import mirror.android.content.ContentProviderClientICS;
 import mirror.android.content.ContentProviderClientJB;
+
+import static android.content.ContentResolver.SCHEME_FILE;
 
 /**
  * @author Lody
@@ -42,12 +54,50 @@ public class ContentProviderProxy extends ContentProvider {
         }
     }
 
+    // add by lml@xdja.com
+    private static final String[] COLUMNS = {
+            OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE
+    };
+
+    // add by lml@xdja.com
+    private static String[] copyOf(String[] original, int newLength) {
+        final String[] result = new String[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
+    // add by lml@xdja.com
+    private static Object[] copyOf(Object[] original, int newLength) {
+        final Object[] result = new Object[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
     public static Uri buildProxyUri(int userId, boolean is64bit, String authority, Uri uri) {
         String proxyAuthority = StubManifest.getProxyAuthority(is64bit);
         Uri proxyUriPrefix = Uri.parse(String.format(Locale.ENGLISH, "content://%1$s/%2$d/%3$s", proxyAuthority, userId, authority));
         return Uri.withAppendedPath(proxyUriPrefix, uri.toString());
     }
 
+    // add by lml@xdja.com
+    private static Uri getFileUri(Uri uri) {
+        if (SCHEME_FILE.equals(uri.getQueryParameter("__va_scheme"))) {
+            String path = uri.getEncodedPath();
+            final int splitIndex = path.indexOf('/', 1);
+            final String tag = Uri.decode(path.substring(1, splitIndex));
+            path = Uri.decode(path.substring(splitIndex + 1));
+            if ("external".equals(tag))
+            {
+                int userId = VUserHandle.myUserId();
+                File root = VEnvironment.getExternalStorageDirectory(userId);
+                File file = new File(root, path);
+
+                Uri u = Uri.fromFile(file);
+                return u;
+            }
+        }
+        return null;
+    }
 
     private TargetProviderInfo getProviderProviderInfo(Uri uri) {
         if (!VirtualCore.get().isEngineLaunched()) {
@@ -75,7 +125,8 @@ public class ContentProviderProxy extends ContentProvider {
         return new TargetProviderInfo(
                 userId,
                 providerInfo,
-                Uri.parse(uriContent.substring(authority.length() + uriContent.indexOf(authority, 1) + 1))
+                // changed by lml@xdja.com
+                Uri.parse("content:/" + uriContent.substring(authority.length() + uriContent.indexOf(authority, 1) + 1 + "content:".length()))
         );
     }
 
@@ -110,6 +161,40 @@ public class ContentProviderProxy extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        // add by lml@xdja.com
+        {
+            Uri a = getFileUri(uri);
+            if (a != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    getContext().grantUriPermission(getCallingPackage(), uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+                final File file = new File(a.getPath());
+                if (projection == null) {
+                    projection = COLUMNS;
+                }
+
+                String[] cols = new String[projection.length];
+                Object[] values = new Object[projection.length];
+                int i = 0;
+                for (String col : projection) {
+                    if (OpenableColumns.DISPLAY_NAME.equals(col)) {
+                        cols[i] = OpenableColumns.DISPLAY_NAME;
+                        values[i++] = file.getName();
+                    } else if (OpenableColumns.SIZE.equals(col)) {
+                        cols[i] = OpenableColumns.SIZE;
+                        values[i++] = file.length();
+                    } else if (MediaStore.MediaColumns.DATA.equals(col)) {
+                        cols[i] = MediaStore.MediaColumns.DATA;
+                        values[i++] = file.getAbsolutePath();
+                    }
+                }
+                cols = copyOf(cols, i);
+                values = copyOf(values, i);
+                final MatrixCursor cursor = new MatrixCursor(cols, 1);
+                cursor.addRow(values);
+                return cursor;
+            }
+        }
         TargetProviderInfo info = getProviderProviderInfo(uri);
         if (info != null) {
             ContentProviderClient client = acquireProviderClient(info);
@@ -126,6 +211,22 @@ public class ContentProviderProxy extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
+        // add by lml@xdja.com
+        {
+            Uri a = getFileUri(uri);
+            if (a != null) {
+                final File file = new File(a.getPath());
+                final int lastDot = file.getName().lastIndexOf('.');
+                if (lastDot >= 0) {
+                    final String extension = file.getName().substring(lastDot + 1);
+                    final String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                    if (mime != null) {
+                        return mime;
+                    }
+                }
+                return "application/octet-stream";
+            }
+        }
         TargetProviderInfo info = getProviderProviderInfo(uri);
         if (info != null) {
             ContentProviderClient client = acquireProviderClient(info);
@@ -240,8 +341,40 @@ public class ContentProviderProxy extends ContentProvider {
         return false;
     }
 
+    // add by lml@xdja.com
+    private static int modeToMode(String mode) {
+        int modeBits;
+        if ("r".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
+        } else if ("w".equals(mode) || "wt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else if ("wa".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_APPEND;
+        } else if ("rw".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
+                    | ParcelFileDescriptor.MODE_CREATE;
+        } else if ("rwt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
+                    | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else {
+            throw new IllegalArgumentException("Invalid mode: " + mode);
+        }
+        return modeBits;
+    }
+
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+        {
+            Uri a = getFileUri(uri);
+            if (a != null) {
+                return ParcelFileDescriptor.open(new java.io.File(a.getPath()), modeToMode(mode));
+            }
+        }
         TargetProviderInfo info = getProviderProviderInfo(uri);
         if (info != null) {
             ContentProviderClient client = acquireProviderClient(info);
@@ -255,7 +388,30 @@ public class ContentProviderProxy extends ContentProvider {
         }
         return null;
     }
+    @Override
+    public AssetFileDescriptor openAssetFile(Uri uri, String str) throws FileNotFoundException {
+        VLog.e("xela", "openAssetFile : " + uri);
+        {
+            Uri a = getFileUri(uri);
+            if (a != null) {
+                ParcelFileDescriptor fd = openFile(uri, str);
+                return fd != null ? new AssetFileDescriptor(fd, 0, -1) : null;
+            }
+        }
 
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.openAssetFile(info.uri, str);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
 
     @Override
     public String[] getStreamTypes(Uri uri, String mimeTypeFilter) {

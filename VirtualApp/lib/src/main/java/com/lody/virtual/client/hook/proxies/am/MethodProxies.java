@@ -2061,7 +2061,25 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            MethodParameterUtils.replaceFirstAppPkg(args);
+            //add & change by lml@xdja.com
+            {
+                if (args.length > 2 && args[1] instanceof String) {
+                    String targetPkg = (String)args[1];
+                    if (!isAppPkg(targetPkg)) {
+                        for (int i = 0; i < args.length; i++) {
+                            Object obj = args[i];
+                            if (obj instanceof Uri) {
+                                Uri uri = ComponentUtils.processOutsideUri(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), (Uri) obj);
+                                if (uri != null) {
+                                    args[i] = uri;
+                                }
+                            }
+                        }
+                    } else {
+                        MethodParameterUtils.replaceFirstAppPkg(args);
+                    }
+                }
+            }
             return method.invoke(who, args);
         }
 

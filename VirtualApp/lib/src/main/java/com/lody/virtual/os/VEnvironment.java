@@ -69,10 +69,6 @@ public class VEnvironment {
         USER_DE_DIRECTORY = ensureCreated(new File(DATA_DIRECTORY, "user_de"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
-        // Point to: /storage/
-        EXTERNAL_STORAGE_DIRECTORY = ensureCreated(new File(ROOT, "storage"));
-        // Point to: /storage/emulated
-        EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
 
         File host64 = new File("/data/data/" + StubManifest.PACKAGE_NAME_64BIT);
         // Point to: /
@@ -84,6 +80,15 @@ public class VEnvironment {
         USER_DE_DIRECTORY64 = ensureCreated(new File(DATA_DIRECTORY64, "user_de"));
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY64 = ensureCreated(new File(ROOT64, "opt"));
+    }
+
+    // add by lml@xdja.com
+    static {
+        // Point to: /storage/
+        EXTERNAL_STORAGE_DIRECTORY = ensureCreated(new File(ROOT, "storage"));
+
+        // Point to: /storage/emulated
+        EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
     }
 
     public static void systemReady() {

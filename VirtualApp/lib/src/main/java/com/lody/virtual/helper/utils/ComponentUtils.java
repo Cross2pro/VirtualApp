@@ -9,6 +9,7 @@ import android.content.pm.ComponentInfo;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Process;
 import android.text.TextUtils;
 
@@ -20,6 +21,7 @@ import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.ShadowPendingReceiver;
 import com.lody.virtual.client.stub.ShadowPendingService;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.IntentCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -30,6 +32,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Set;
 
+import static android.content.ContentResolver.SCHEME_CONTENT;
+import static android.content.ContentResolver.SCHEME_FILE;
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
 import static com.lody.virtual.client.env.SpecialComponentList.protectAction;
 
@@ -271,10 +275,21 @@ public class ComponentUtils {
         return intent;
     }
 
-    private static Uri processOutsideUri(int userId, boolean is64bit, Uri uri) {
-        if (TextUtils.equals(uri.getScheme(), "file")) {
-            return Uri.fromFile(new File(NativeEngine.resverseRedirectedPath(uri.getPath())));
+    public static Uri processOutsideUri(int userId, boolean is64bit, Uri uri) {
+        // add & change by lml@xdja.com
+        if (SCHEME_FILE.equals(uri.getScheme())) {
+            String path = uri.getPath();
+            String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            if (path.startsWith(external_path)) {
+                String split_path = path.substring(external_path.length());
+
+                Uri fake_uri = uri.buildUpon().scheme(SCHEME_CONTENT).path("/external" + split_path).authority(StubManifest.getProxyAuthority(is64bit)).appendQueryParameter("__va_scheme", SCHEME_FILE).build();
+                return fake_uri;
+            } else {
+                return Uri.fromFile(new File(NativeEngine.resverseRedirectedPath(uri.getPath())));
+            }
         }
+
         if (!TextUtils.equals(uri.getScheme(), "content")) {
             return uri;
         }
@@ -282,10 +297,11 @@ public class ComponentUtils {
         if (authority == null) {
             return uri;
         }
-        ProviderInfo info = VirtualCore.get().getUnHookPackageManager().resolveContentProvider(authority, 0);
-        if (info == null) {
-            return uri;
-        }
+        // comment by lml@xdja.com
+//        ProviderInfo info = VirtualCore.get().getUnHookPackageManager().resolveContentProvider(authority, 0);
+//        if (info == null) {
+//            return uri;
+//        }
         uri = ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
         return uri;
     }

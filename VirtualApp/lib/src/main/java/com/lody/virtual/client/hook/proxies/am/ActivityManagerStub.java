@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.proxies.am;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -16,6 +17,9 @@ import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.os.VBinder;
+import com.lody.virtual.os.VUserHandle;
 
 import java.lang.reflect.Method;
 
@@ -100,6 +104,20 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 }
             });
             addMethodProxy(new StaticMethodProxy("finishActivity") {
+                // add by lml@xdja.com
+                @Override
+                public boolean beforeCall(Object who, Method method, Object... args) {
+                    if (!VActivityManager.get().isAppPid(VBinder.getCallingPid())) {
+                        for (Object o:args) {
+                            if (o instanceof Intent) {
+                                Intent intent = (Intent)o;
+                                ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
+                            }
+                        }
+                    }
+                    return super.beforeCall(who, method, args);
+                }
+
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     IBinder token = (IBinder) args[0];
