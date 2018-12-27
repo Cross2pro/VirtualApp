@@ -210,9 +210,15 @@ public class NativeEngine {
         if (sFlag) {
             return;
         }
-        Object[] methods = {NativeMethods.gOpenDexFileNative, NativeMethods.gCameraNativeSetup, NativeMethods.gAudioRecordNativeCheckPermission,
-                NativeMethods.gCameraStartPreview, NativeMethods.gCameraNativeTakePicture, NativeMethods.gAudioRecordStart,NativeMethods.gMediaRecordPrepare,
-                NativeMethods.gMediaRecorderNativeSetup, NativeMethods.gAudioRecordNativeSetup};
+        Object[] methods = {NativeMethods.gOpenDexFileNative,
+                NativeMethods.gCameraNativeSetup,
+                NativeMethods.gAudioRecordNativeCheckPermission,
+                NativeMethods.gMediaRecorderNativeSetup,
+                NativeMethods.gAudioRecordNativeSetup,
+                NativeMethods.gCameraStartPreview,
+                NativeMethods.gCameraNativeTakePicture,
+                NativeMethods.gAudioRecordStart,
+                NativeMethods.gMediaRecordPrepare};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType, NativeMethods.gAudioRecordMethodType);
         } catch (Throwable e) {
