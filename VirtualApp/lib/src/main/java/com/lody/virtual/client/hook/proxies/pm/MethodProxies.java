@@ -298,14 +298,14 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkgName = (String) args[0];
             if (pkgName.equals(getHostPkg())) {
-                return 9999;
+                return method.invoke(who, args);
             }
             if (isAppPkg(pkgName)) {
                 int uid = VPackageManager.get().getPackageUid(pkgName, 0);
                 return VUserHandle.getAppId(uid);
             }
             if (isVisiblePackage(pkgName)) {
-                return 9999;
+                return method.invoke(who, args);
             }
             return -1;
         }
