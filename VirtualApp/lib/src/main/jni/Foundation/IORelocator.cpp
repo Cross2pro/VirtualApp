@@ -380,6 +380,20 @@ HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
         if (isReadOnly(relocated_path)) {
             buf->st_mode &= ~S_IWGRP;
         }
+
+        if (is_TED_Enable()) {
+            int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
+
+            if (fd > 0) {
+                if (EncryptFile::isEncryptFile(fd)) {
+                    EncryptFile ef(relocated_path);
+                    if (ef.create(fd, ENCRYPT_READ)) {
+                        ef.fstat(fd, buf);
+                    }
+                }
+                originalInterface::original_close(fd);
+            }
+        }
         return ret;
     }
     errno = EACCES;
