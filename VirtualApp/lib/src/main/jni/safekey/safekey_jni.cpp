@@ -155,6 +155,10 @@ char *SafeKeyJni::ckmsoperatorKey(char *input, int inputlen, uint32_t &outputlen
     }
 
     _output = (jbyteArray) env.get()->CallStaticObjectMethod(vsckmsClass, mid, _input, inputlen);
+    if(NULL == _output) {
+        log("ckms exception return null");
+        return NULL;
+    }
     jbyte *out = env.get()->GetByteArrayElements(_output, JNI_FALSE);
     outputlen = static_cast<uint32_t>(env.get()->GetArrayLength(_output));
     char *temp = (char *) malloc(outputlen);
@@ -163,7 +167,7 @@ char *SafeKeyJni::ckmsoperatorKey(char *input, int inputlen, uint32_t &outputlen
     }
     memcpy(temp, out, (size_t) outputlen);
 
-    log("SafeKeyJni ckmsoperatorKey length = %d", outputlen);
+    log("SafeKeyJni ckmsoperatorKey length = %d mode=%d", outputlen,mode);
 
     env.get()->ReleaseByteArrayElements(_output, out, 0);
     env.get()->DeleteLocalRef(_input);
