@@ -1938,8 +1938,6 @@ class MethodProxies {
 
                 handleUninstallShortcutIntent(intent);
 
-            } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
-                return handleMediaScannerIntent(intent);
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
             } else {
