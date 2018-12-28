@@ -365,7 +365,23 @@ HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_lstat64, relocated_path, buf);
+        long ret = syscall(__NR_lstat64, relocated_path, buf);
+
+        if (is_TED_Enable()) {
+            int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
+
+            if (fd > 0) {
+                if (EncryptFile::isEncryptFile(fd)) {
+                    EncryptFile ef(relocated_path);
+                    if (ef.create(fd, ENCRYPT_READ)) {
+                        ef.fstat(fd, buf);
+                    }
+                }
+                originalInterface::original_close(fd);
+            }
+        }
+
+        return ret;
     }
     errno = EACCES;
     return -1;
