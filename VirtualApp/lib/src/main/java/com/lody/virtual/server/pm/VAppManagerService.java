@@ -70,6 +70,12 @@ public class VAppManagerService extends IAppManager.Stub {
     private final Set<String> mVisibleOutsidePackages = new HashSet<>();
     private boolean mBooting;
     private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<>();
+
+    /*
+        《A》
+        该广播接收器监听外部应用安装/卸载，内部随之做相应的动作（外面的卸载，内部也卸载；外部安装，内部随之更新）。
+        需要屏蔽掉。
+     */
     private BroadcastReceiver appEventReciever = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -133,11 +139,13 @@ public class VAppManagerService extends IAppManager.Stub {
     private void startup() {
         mVisibleOutsidePackages.add("com.android.providers.downloads");
         mUidSystem.initUidList();
-        IntentFilter filter = new IntentFilter();
+
+        //见《A》
+        /*IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
         filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
         filter.addDataScheme("package");
-        VirtualCore.get().getContext().registerReceiver(appEventReciever, filter);
+        VirtualCore.get().getContext().registerReceiver(appEventReciever, filter);*/
     }
 
     public boolean isBooting() {
@@ -161,12 +169,20 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         synchronized (this) {
             mBooting = true;
+
+            /*
+                这里将安装过的应用全部加载起来。
+             */
             mPersistenceLayer.read();
             if (mPersistenceLayer.changed) {
                 mPersistenceLayer.changed = false;
                 mPersistenceLayer.save();
                 VLog.w(TAG, "Package PersistenceLayer updated.");
             }
+
+            /*
+                预安装，目的不明。
+             */
             for (String preInstallPkg : SpecialComponentList.getPreInstallPackages()) {
                 if (!isAppInstalled(preInstallPkg)) {
                     try {
@@ -178,7 +194,12 @@ public class VAppManagerService extends IAppManager.Stub {
                     }
                 }
             }
+
+            /*
+                这个不明白 ***
+             */
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
+
             mBooting = false;
         }
     }
