@@ -11,8 +11,10 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.os.UserHandle;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ActivityFixer;
@@ -20,6 +22,9 @@ import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.interfaces.IInjector;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
+import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.os.VUserHandle;
+import com.xdja.zs.IUiCallback;
 
 import java.lang.reflect.Field;
 
@@ -140,6 +145,26 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
             }
         }
         super.callActivityOnCreate(activity, icicle);
+    }
+
+    @Override
+    public void callActivityOnResume(Activity activity) {
+        super.callActivityOnResume(activity);
+        Intent intent = activity.getIntent();
+        if (intent != null) {
+            Bundle bundle = intent.getBundleExtra("_VA_|_sender_");
+            if (bundle != null) {
+                IBinder callbackToken = BundleCompat.getBinder(bundle, "_VA_|_ui_callback_");
+                IUiCallback callback = IUiCallback.Stub.asInterface(callbackToken);
+                if (callback != null) {
+                    try {
+                        callback.onAppOpened(VClient.get().getCurrentPackage(), VUserHandle.myUserId());
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
     private boolean isOrientationLandscape(int requestedOrientation) {

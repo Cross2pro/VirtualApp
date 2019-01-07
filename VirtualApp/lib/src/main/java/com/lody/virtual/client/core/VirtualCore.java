@@ -44,6 +44,7 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -59,6 +60,7 @@ import com.lody.virtual.server.interfaces.IPackageObserver;
 
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
+import com.xdja.zs.IUiCallback;
 import com.xdja.zs.IVSCallback;
 import com.xdja.zs.INotificationCallback;
 import com.xdja.zs.IVSKeyCallback;
@@ -783,6 +785,16 @@ public final class VirtualCore {
         shortcutIntent.putExtra("_VA_|_uri_", intent.toUri(0));
         shortcutIntent.putExtra("_VA_|_user_id_", userId);
         return shortcutIntent;
+    }
+
+    public abstract static class UiCallback extends IUiCallback.Stub {
+    }
+    public void setUiCallback(Intent intent, IUiCallback callback) {
+        if (callback != null) {
+            Bundle bundle = new Bundle();
+            BundleCompat.putBinder(bundle, "_VA_|_ui_callback_", callback.asBinder());
+            intent.putExtra("_VA_|_sender_", bundle);
+        }
     }
 
     public abstract static class VSCallback extends IVSCallback.Stub {
