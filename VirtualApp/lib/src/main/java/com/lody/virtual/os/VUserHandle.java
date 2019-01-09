@@ -23,6 +23,7 @@ import android.os.Process;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.VirtualCore;
 
 import java.io.PrintWriter;
 
@@ -311,6 +312,9 @@ public final class VUserHandle implements Parcelable {
      * @hide
      */
     public static int myUserId() {
+        if (VirtualCore.get().isMainProcess()) {
+            return 0;
+        }
         return getUserId(VClient.get().getVUid());
     }
 
