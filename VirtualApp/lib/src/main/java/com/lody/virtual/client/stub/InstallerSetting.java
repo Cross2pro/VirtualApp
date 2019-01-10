@@ -47,7 +47,7 @@ public class InstallerSetting {
         systemApps.add("com.android.providers.media");  //媒体存储
         systemApps.add("net.sourceforge.freecamera");   //相机
         systemApps.add("com.xdja.decrypt");         //解密服务
-        systemApps.add("com.xdja.fileexplorer");    //文件浏览器
+        systemApps.add("com.xdja.fileexplore");    //文件浏览器
 
     }
     public static void addProtectApps(String packageName){
