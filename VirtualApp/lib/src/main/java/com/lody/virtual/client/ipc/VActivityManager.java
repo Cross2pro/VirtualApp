@@ -30,6 +30,7 @@ import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
+import com.xdja.floaticonball.FloatIconBallManager;
 
 import java.util.List;
 
@@ -345,7 +346,9 @@ public class VActivityManager {
         // because it may be overwritten.
         int resultCode = mirror.android.app.Activity.mResultCode.get(activity);
         Intent resultData = mirror.android.app.Activity.mResultData.get(activity);
-        ActivityManagerCompat.finishActivity(token, resultCode, resultData);
+        boolean is = ActivityManagerCompat.finishActivity(token, resultCode, resultData);
+        if(is)
+            FloatIconBallManager.get().activityCountReduce(activity.getLocalClassName());
         mirror.android.app.Activity.mFinished.set(activity, true);
     }
 

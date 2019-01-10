@@ -27,6 +27,7 @@ public class ServiceManagerNative {
     public static final String DEVICE = "device";
     public static final String VIRTUAL_LOC = "virtual-loc";
 
+    public static final String FLOATICONBALL = "floaticonball";
     public static final String APPPERMISSION = "app-permission";
     public static final String CONTROLLER = "controller";
     public static final String WATERMARK = "watermakr";

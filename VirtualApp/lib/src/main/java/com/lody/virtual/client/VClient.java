@@ -78,6 +78,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import android.app.Activity;
+import android.os.Bundle;
+import com.xdja.floaticonball.FloatIconBallManager;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -538,6 +541,36 @@ public final class VClient extends IVClient.Stub {
                 throw new RuntimeException("Unable to create application " + data.appInfo.name + ": " + e.toString(), e);
             }
         }
+        mInitialApplication.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle bundle) {
+
+            }
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+                FloatIconBallManager.get().activityCountAdd(activity.getLocalClassName());
+            }
+            @Override
+            public void onActivityResumed(Activity activity) {
+            }
+            @Override
+            public void onActivityPaused(Activity activity) {
+            }
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+                FloatIconBallManager.get().activityCountReduce(activity.getLocalClassName());
+            }
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+
+            }
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+
+            }
+        });
         VirtualCore.get().getAppCallback().afterApplicationCreate(packageName, processName, mInitialApplication);
         StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);

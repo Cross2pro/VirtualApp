@@ -88,6 +88,7 @@ public class App extends Application {
             public void onMainProcess() {
                 AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
                 Once.initialise(App.this);
+                
             }
 
             @Override
