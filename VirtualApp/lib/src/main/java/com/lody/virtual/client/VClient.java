@@ -576,6 +576,7 @@ public final class VClient extends IVClient.Stub {
         VActivityManager.get().appDoneExecuting(info.packageName);
 
         //xdja
+        context.getCacheDir();
         List<InstalledAppInfo> modules = VirtualCore.get().getInstalledApps(0);
         for (InstalledAppInfo module : modules) {
             String libPath = VEnvironment.getAppLibDirectory(module.packageName).getAbsolutePath();
