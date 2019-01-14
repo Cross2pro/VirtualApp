@@ -65,7 +65,8 @@ const char * TED_packageVector[] =
                 "com.android.gallery3d",
                 "com.xdja.decrypt",
                 "android.process.media",
-                "com.xdja.eoa"
+                "com.xdja.eoa",
+                "com.xdja.fileexplore"
         };
 
 bool is_TED_Enable()
