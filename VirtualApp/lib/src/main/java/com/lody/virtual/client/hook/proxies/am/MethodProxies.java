@@ -2074,7 +2074,7 @@ class MethodProxies {
                             }
                         }
                     } else {
-                        MethodParameterUtils.replaceFirstAppPkg(args);
+                        return 0;
                     }
                 }
             }
