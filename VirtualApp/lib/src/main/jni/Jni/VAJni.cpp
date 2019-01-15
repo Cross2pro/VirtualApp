@@ -158,7 +158,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
             {"nativeCloseAllSocket",                   "()Z",                                                         (void *) jni_nativeCloseAllSocket},
     };
 
-    if (env->RegisterNatives(nativeEngineClass, methods, 10) < 0) {
+    if (env->RegisterNatives(nativeEngineClass, methods, 13) < 0) {
         return JNI_ERR;
     }
 
