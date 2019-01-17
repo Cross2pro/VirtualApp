@@ -1,5 +1,9 @@
 ext {
-    PACKAGE_NAME_32BIT = 'io.busniess.va'
+    if (project.hasProperty('appid')) {
+        PACKAGE_NAME_32BIT = appid
+    } else {
+        PACKAGE_NAME_32BIT = 'io.busniess.va'
+    }
     PACKAGE_NAME_ARM64 = 'io.virtualapp.addon.arm64'
     PERMISSION_PREFIX = PACKAGE_NAME_32BIT
     AUTHORITY64_PREFIX = PACKAGE_NAME_ARM64
