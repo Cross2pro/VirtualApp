@@ -1135,7 +1135,6 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
 
             if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
-                pvfd->incStrong(0);
                 xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
                 int _Errno;
@@ -1147,9 +1146,8 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
-                virtualFileDescribeSet::getVFDSet().release(pvfd);
-                syscall(__NR_close, fd);
             }
+            syscall(__NR_close, fd);
         }
     }
 
@@ -1164,13 +1162,13 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
     MmapFileInfo *fileInfo = 0;
     std::map<uint32_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::uint32_t(addr));
     if (iter != MmapInfoMap.end()) {
+        MmapInfoMap.erase(iter);
         fileInfo = iter->second;
         if ((fileInfo->_flag & MAP_SHARED)) {
             int fd = syscall(__NR_openat, AT_FDCWD, fileInfo->_path, O_RDWR, 0);
 
             if (fd > 0 && isEncryptPath(fileInfo->_path)) {
                 virtualFileDescribe *pvfd = new virtualFileDescribe(fd);
-                pvfd->incStrong(0);
                 xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
 
                 int _Errno;
@@ -1182,9 +1180,8 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
-                virtualFileDescribeSet::getVFDSet().release(pvfd);
-                syscall(__NR_close, fd);
             }
+            syscall(__NR_close, fd);
         }
     }
 
@@ -1218,8 +1215,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                     if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
                         LOGE("__mmap2 mprotect failed.");
                     } else {
-                        off64_t pos = pgoffset * 4096;
-                        vf->vpread64(vfd.get(), (char *) ret, length, pos);
+                        vf->vpread64(vfd.get(), (char *) ret, length, pgoffset);
 
                         if (nowrite) {
                             if (0 != mprotect(ret, length, prot)) {
@@ -1230,7 +1226,6 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                                                                   flags);
                         MmapInfoMap.insert(
                                 std::pair<uint32_t, MmapFileInfo *>(uint32_t(ret), fileInfo));
-
                         flag = true;
                     }
                 }
