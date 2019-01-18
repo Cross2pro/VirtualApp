@@ -167,6 +167,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            mHistory.removeAt(N);
                         }
                     }
                 }

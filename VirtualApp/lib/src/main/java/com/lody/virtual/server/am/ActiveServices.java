@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import mirror.android.widget.Toast;
+
 /**
  * @author Lody
  */
@@ -55,6 +57,7 @@ public class ActiveServices {
                 data = mRunningServices.get(component);
                 if (data == null) {
                     data = new RunningServiceData(serviceInfo);
+                    Log.e(TAG, " getOrCreateRunningServiceInfo mRunningServices put" + component.toString());
                     mRunningServices.put(component, data);
                 }
             }
@@ -216,6 +219,10 @@ public class ActiveServices {
         UserSpace userSpace = getUserSpace(userId);
         synchronized (userSpace.mRunningServices) {
             RunningServiceData info = userSpace.mRunningServices.get(component);
+            if(info == null){
+                Log.e(TAG, " onUnbind RunningServiceData is null " + component.toString());
+                return 0;
+            }
             return info.startId;
         }
     }
@@ -307,6 +314,7 @@ public class ActiveServices {
             while (it.hasNext()) {
                 RunningServiceData data = it.next();
                 if (data.info.processName.equals(process.processName)) {
+                    Log.e(TAG, " processDied remove runningServices " + data.info.toString());
                     it.remove();
                 }
             }

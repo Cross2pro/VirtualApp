@@ -673,7 +673,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
                             //xdja
                             try {
                                 Log.e("wxd", " killAppByPkg  " + r.pid);
-                                mServices.stopServiceByPkg(userId, pkg);
+                                //processDied处有做处理
+                                //mServices.stopServiceByPkg(userId, pkg);
                                 r.client.clearSettingProvider();
                                 finishAllActivity(r);
                                 r.kill();
