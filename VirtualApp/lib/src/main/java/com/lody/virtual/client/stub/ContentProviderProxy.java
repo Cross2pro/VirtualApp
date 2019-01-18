@@ -122,11 +122,17 @@ public class ContentProviderProxy extends ContentProvider {
             return null;
         }
         String uriContent = uri.toString();
+        String realUri = uriContent.substring(authority.length() + uriContent.indexOf(authority, 1) + 1 + "content:".length());
+        if (realUri.startsWith("/") &&!realUri.startsWith("//")) {
+            realUri = "content://" + realUri.substring(realUri.indexOf("/" , 0) + "/".length());
+        } else {
+            realUri = "content://" + realUri.substring(realUri.indexOf("//" , 0) + "//".length());
+        }
+
         return new TargetProviderInfo(
                 userId,
                 providerInfo,
-                // changed by lml@xdja.com
-                Uri.parse("content:/" + uriContent.substring(authority.length() + uriContent.indexOf(authority, 1) + 1 + "content:".length()))
+                Uri.parse(realUri)
         );
     }
 
