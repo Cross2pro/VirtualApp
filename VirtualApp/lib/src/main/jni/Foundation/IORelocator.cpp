@@ -1142,7 +1142,7 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
                                                                      &_Errno));
                 virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
                 if (vf.get() != nullptr) {
-                    vf->vpwrite64(vfd.get(), (char *) addr, length, fileInfo->_offsize);
+                    vf->vpwrite64(vfd.get(), (char *) addr, length, fileInfo->_offsize * 4096);
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
@@ -1176,7 +1176,7 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
                                                                      &_Errno));
                 virtualFileDescribeSet::getVFDSet().set(fd, pvfd);
                 if (vf.get() != nullptr) {
-                    vf->vpwrite64(vfd.get(), (char *) addr, size, fileInfo->_offsize);
+                    vf->vpwrite64(vfd.get(), (char *) addr, size, fileInfo->_offsize * 4096);
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
@@ -1215,7 +1215,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                     if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
                         LOGE("__mmap2 mprotect failed.");
                     } else {
-                        vf->vpread64(vfd.get(), (char *) ret, length, pgoffset);
+                        vf->vpread64(vfd.get(), (char *) ret, length, pgoffset * 4096);
 
                         if (nowrite) {
                             if (0 != mprotect(ret, length, prot)) {
