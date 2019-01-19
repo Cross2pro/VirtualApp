@@ -29,6 +29,7 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.util.Log;
 
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.R;
@@ -384,6 +385,7 @@ public final class VirtualCore {
         if (initializer == null) {
             throw new IllegalStateException("Initializer = NULL");
         }
+        Log.d("Vxlib", "version: " + BuildConfig.commit);
         switch (processType) {
             case Main:
                 initializer.onMainProcess();

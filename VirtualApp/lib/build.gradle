@@ -8,6 +8,13 @@ android {
         targetSdkVersion 22
 
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + rootProject.ext.VERSION + '"'
+
+        if (project.hasProperty('commit')) {
+            buildConfigField 'String', 'commit', '"' + commit + '"'
+        } else {
+            buildConfigField 'String', 'commit', '"000000"'
+        }
+
         manifestPlaceholders = [
                 PERMISSION_PREFIX:  rootProject.ext.PACKAGE_NAME_32BIT,
                 AUTHORITY_PREFIX :  rootProject.ext.PACKAGE_NAME_32BIT,
