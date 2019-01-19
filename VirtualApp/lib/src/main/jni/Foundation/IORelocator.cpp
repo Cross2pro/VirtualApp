@@ -1181,6 +1181,7 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
+                vf->delRef();
             }
             syscall(__NR_close, fd);
         }
