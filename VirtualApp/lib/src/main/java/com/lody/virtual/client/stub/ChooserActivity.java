@@ -24,9 +24,13 @@ public class ChooserActivity extends ResolverActivity {
     static {
         Intent target = new Intent();
         Intent intent = Intent.createChooser(target, "");
+        intent.setAction("android.intent.action.VIEW");
         ACTION = intent.getAction();
     }
     public static boolean check(Intent intent) {
+        if(intent.getComponent()!=null){
+            return false;
+        }
         try {
             return TextUtils.equals(ACTION, intent.getAction())
                     ||TextUtils.equals(Intent.ACTION_CHOOSER, intent.getAction());

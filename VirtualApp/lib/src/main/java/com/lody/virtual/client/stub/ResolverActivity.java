@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PatternMatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +39,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
@@ -124,8 +126,12 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 return;
             }
         }
-
-        if (count == 1) {
+        if(count==0){
+            intent = ComponentUtils.processOutsideIntent(0, VirtualCore.get().is64BitEngine(), intent);
+            startActivity(intent);
+            finish();
+            return;
+        }else if (count == 1) {
             startSelected(0, false);
             mRegistered = false;
             finish();
