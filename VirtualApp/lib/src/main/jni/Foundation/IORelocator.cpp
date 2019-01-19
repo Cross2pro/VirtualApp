@@ -1146,6 +1146,7 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
                 }
 
                 virtualFileDescribeSet::getVFDSet().reset(fd);
+                vf->delRef();
             }
             syscall(__NR_close, fd);
         }
