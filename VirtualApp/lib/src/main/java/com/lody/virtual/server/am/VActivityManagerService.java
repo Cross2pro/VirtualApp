@@ -663,7 +663,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 SparseArray<ProcessRecord> uids = map.valueAt(N);
                 if (uids != null) {
                     for (int i = 0; i < uids.size(); i++) {
-                        ProcessRecord r = uids.valueAt(i);
+                        final ProcessRecord r = uids.valueAt(i);
                         if (userId != VUserHandle.USER_ALL) {
                             if (r.userId != userId) {
                                 continue;
@@ -677,7 +677,17 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                 //mServices.stopServiceByPkg(userId, pkg);
                                 r.client.clearSettingProvider();
                                 finishAllActivity(r);
-                                r.kill();
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            Thread.sleep(600);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        r.kill();
+                                    }
+                                }).start();
                             }catch (Exception e){
                                 e.printStackTrace();
                             }
