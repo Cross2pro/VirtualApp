@@ -117,7 +117,8 @@ public class PackageSetting implements Parcelable {
     }
 
     public boolean isRunOn64BitProcess() {
-        switch (flag) {
+        return false;
+        /*switch (flag) {
             case FLAG_RUN_32BIT:
                 return false;
             case FLAG_RUN_64BIT:
@@ -126,7 +127,7 @@ public class PackageSetting implements Parcelable {
                 return VirtualCore.getConfig().get64bitEnginePackageName() != null;
             default:
                 return false;
-        }
+        }*/
     }
 
     @Override
