@@ -35,25 +35,30 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
         return sService.get();
     }
     boolean mShow = false;
-    private Map<String,Integer> mActivityMap = new HashMap<>();
+    private Map<String,Integer> mActivityMap = new HashMap<String,Integer>();
     synchronized public void activityCountAdd(String pkg){
-        Object num = mActivityMap.get(pkg);
-        if(num==null)
+        int num;
+        if(mActivityMap.containsKey(pkg)){
+            num = mActivityMap.get(pkg);
+        }else{
             num = 0;
-        mActivityMap.put(pkg,(Integer) num+1);
+        }
+        num+=1;
+        mActivityMap.put(pkg,num);
         int count = getFroundCount();
         Log.d(TAG,"count++ "+count + " pkg "+pkg);
         if( count > 0 && !mShow)
             changeState(true);
     }
     synchronized public void activityCountReduce(String pkg){
-        Object num = mActivityMap.get(pkg);
-        if(num==null)
+        int num;
+        if(mActivityMap.containsKey(pkg)){
+            num = mActivityMap.get(pkg);
+        }else{
             num = 0;
-        int numb = (int)num -1;
-        if(numb<0)
-            numb=0;
-        mActivityMap.put(pkg,numb);
+        }
+        num = (num-=1)<0?0:num;
+        mActivityMap.put(pkg,num);
         int count = getFroundCount();
         Log.d(TAG,"count-- "+count + " pkg "+pkg);
         if(count<=0&&mShow)
@@ -65,6 +70,7 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
         if (keys!=null){
             int count = 0;
             for (String key: keys){
+                Log.e(TAG,"getCount() key "+key+ " count "+mActivityMap.get(key));
                 count += mActivityMap.get(key);
             }
             return count;
