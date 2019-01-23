@@ -9,6 +9,7 @@ import com.lody.virtual.helper.utils.VLog;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,27 +34,45 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
     public static FloatIconBallService get() {
         return sService.get();
     }
-    int mCount = 0;
     boolean mShow = false;
-    private Set<String> mActivitys = new HashSet<>();
-    synchronized public void activityCountAdd(String name){
-        mActivitys.add(name);
-        mCount = mActivitys.size();
-        Log.d(TAG,"mCount++ "+mCount);
-        Log.d(TAG,"mActivitys "+mActivitys);
-        if( mCount > 0 && !mShow)
+    private Map<String,Integer> mActivityMap = new HashMap<>();
+    synchronized public void activityCountAdd(String pkg){
+        Object num = mActivityMap.get(pkg);
+        if(num==null)
+            num = 0;
+        mActivityMap.put(pkg,(Integer) num+1);
+        int count = getFroundCount();
+        Log.d(TAG,"count++ "+count + " pkg "+pkg);
+        if( count > 0 && !mShow)
             changeState(true);
     }
-    synchronized public void activityCountReduce(String name){
-        mActivitys.remove(name);
-        mCount=mActivitys.size();
-        Log.d(TAG,"mCount-- "+mCount + " name "+name);
-        Log.d(TAG,"mActivitys "+mActivitys);
-        if(mCount<=0&&mShow)
+    synchronized public void activityCountReduce(String pkg){
+        Object num = mActivityMap.get(pkg);
+        if(num==null)
+            num = 0;
+        mActivityMap.put(pkg,(Integer) num-1);
+        int count = getFroundCount();
+        Log.d(TAG,"count-- "+count + " pkg "+pkg);
+        if(count<=0&&mShow)
             changeState(false);
     }
+
+    private int getFroundCount(){
+        Set<String> keys = mActivityMap.keySet();
+        if (keys!=null){
+            int count = 0;
+            for (String key: keys){
+                count += mActivityMap.get(key);
+            }
+            return count;
+        }
+        return 0;
+    }
     public boolean isForeGroundApp(String pkg){
-        return mShow;
+        return mActivityMap.get(pkg)>0;
+    }
+    public boolean isForeGround(){
+        return getFroundCount()>0;
     }
     private void changeState(boolean show) {
         mShow = show;

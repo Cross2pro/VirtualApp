@@ -52,6 +52,13 @@ public class FloatIconBallManager {
             VirtualRuntime.crash(e);
         }
         return false;
+    }public boolean isForeGround(){
+        try {
+            return getRemote().isForeGround();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return false;
     }
     public void registerCallback(IFloatIconBallCallback fibCallback) {
         try {

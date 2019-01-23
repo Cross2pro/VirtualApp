@@ -7,6 +7,7 @@ interface IFloatIconBallService {
     void activityCountAdd(String pkg);
     void activityCountReduce(String pkg);
     boolean isForeGroundApp(String pkg);
+    boolean isForeGround();
     void registerCallback(IFloatIconBallCallback vsCallback);
     void unregisterCallback();
 }

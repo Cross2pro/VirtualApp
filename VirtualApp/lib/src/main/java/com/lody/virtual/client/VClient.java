@@ -549,7 +549,7 @@ public final class VClient extends IVClient.Stub {
             @Override
             public void onActivityStarted(Activity activity) {
 
-                FloatIconBallManager.get().activityCountAdd(activity.getLocalClassName());
+                FloatIconBallManager.get().activityCountAdd(activity.getPackageName());
             }
             @Override
             public void onActivityResumed(Activity activity) {
@@ -560,7 +560,7 @@ public final class VClient extends IVClient.Stub {
             @Override
             public void onActivityStopped(Activity activity) {
 
-                FloatIconBallManager.get().activityCountReduce(activity.getLocalClassName());
+                FloatIconBallManager.get().activityCountReduce(activity.getPackageName());
             }
             @Override
             public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
