@@ -608,7 +608,9 @@ class MethodProxies {
                 extras.putBundle(ChooserActivity.EXTRA_DATA, options);
                 extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
                 extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
-                extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                if(intent.getAction()!=null&&intent.getAction().equals(Intent.ACTION_VIEW)){
+                    extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                }
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
                 intent.setAction(null);
