@@ -614,6 +614,7 @@ class MethodProxies {
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
                 intent.setAction(null);
+                intent.setData(null);
                 intent.putExtras(extras);
                 return method.invoke(who, args);
             }
