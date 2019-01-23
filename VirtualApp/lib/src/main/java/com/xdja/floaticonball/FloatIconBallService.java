@@ -50,7 +50,10 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
         Object num = mActivityMap.get(pkg);
         if(num==null)
             num = 0;
-        mActivityMap.put(pkg,(Integer) num-1);
+        int numb = (int)num -1;
+        if(numb<0)
+            numb=0;
+        mActivityMap.put(pkg,numb);
         int count = getFroundCount();
         Log.d(TAG,"count-- "+count + " pkg "+pkg);
         if(count<=0&&mShow)
