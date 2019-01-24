@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Date 18-11-28 10
@@ -21,6 +22,9 @@ import java.util.TimerTask;
  */
 public class FloatIconBallService extends IFloatIconBallService.Stub {
 
+    public static final int ADD = 0;
+    public static final int RDU = 1;
+    public static final int GET = 2;
     private String TAG = "wechat-FloatIconBallService";
     private IFloatIconBallCallback mFIBCallback = null;
 
@@ -35,33 +39,63 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
         return sService.get();
     }
     boolean mShow = false;
-    private Map<String,Integer> mActivityMap = new HashMap<String,Integer>();
-    synchronized public void activityCountAdd(String pkg){
-        int num;
-        if(mActivityMap.containsKey(pkg)){
-            num = mActivityMap.get(pkg);
-        }else{
-            num = 0;
-        }
-        num+=1;
-        mActivityMap.put(pkg,num);
-        int count = getFroundCount();
-        Log.d(TAG,"count++ "+count + " pkg "+pkg);
-        if( count > 0 && !mShow)
-            changeState(true);
+    private Map<String,Integer> mActivityMap = new ConcurrentHashMap<>();
+
+    @Override
+    public void activityCountAdd(String pkg) throws RemoteException {
+        activityCounter(pkg,ADD);
     }
-    synchronized public void activityCountReduce(String pkg){
+
+    @Override
+    public void activityCountReduce(String pkg) throws RemoteException {
+        activityCounter(pkg,RDU);
+    }
+
+    @Override
+    public boolean isForeGroundApp(String pkg) throws RemoteException {
+        return activityCounter(pkg,GET);
+    }
+
+    @Override
+    public boolean isForeGround() throws RemoteException {
+        return activityCounter(null,GET);
+    }
+
+    synchronized public boolean activityCounter(String pkg,int mode){
+        switch(mode){
+            case ADD:
+            case RDU:
+                count(pkg,mode);
+                break;
+            case GET:
+                if(pkg==null){
+                    return getAllCount();
+                }else{
+                    return getAppCount(pkg);
+                }
+        }
+        return false;
+    }
+    public void count(String pkg,int mode){
         int num;
         if(mActivityMap.containsKey(pkg)){
             num = mActivityMap.get(pkg);
         }else{
             num = 0;
         }
-        num = (num-=1)<0?0:num;
+        Log.d(TAG,"count pkg "+pkg + " mode "+mode+" num "+num);
+        if(mode==ADD)
+            num+=1;
+        else if(mode==RDU){
+            num-=1;
+            num = num<0?0:num;
+        }
         mActivityMap.put(pkg,num);
         int count = getFroundCount();
-        Log.d(TAG,"count-- "+count + " pkg "+pkg);
-        if(count<=0&&mShow)
+        Log.d(TAG,"count "+count);
+        if(mode==ADD && count > 0 && !mShow)
+            changeState(true);
+        else if(mode==RDU && count<=0 && mShow)
             changeState(false);
     }
 
@@ -70,17 +104,17 @@ public class FloatIconBallService extends IFloatIconBallService.Stub {
         if (keys!=null){
             int count = 0;
             for (String key: keys){
-                Log.e(TAG,"getCount() key "+key+ " count "+mActivityMap.get(key));
+                Log.e(TAG,"getCount() count "+mActivityMap.get(key)+" key "+key);
                 count += mActivityMap.get(key);
             }
             return count;
         }
         return 0;
     }
-    public boolean isForeGroundApp(String pkg){
+    boolean getAppCount(String pkg){
         return mActivityMap.get(pkg)>0;
     }
-    public boolean isForeGround(){
+    boolean getAllCount(){
         return getFroundCount()>0;
     }
     private void changeState(boolean show) {

@@ -346,9 +346,7 @@ public class VActivityManager {
         // because it may be overwritten.
         int resultCode = mirror.android.app.Activity.mResultCode.get(activity);
         Intent resultData = mirror.android.app.Activity.mResultData.get(activity);
-        boolean is = ActivityManagerCompat.finishActivity(token, resultCode, resultData);
-        if(is)
-            FloatIconBallManager.get().activityCountReduce(activity.getPackageName());
+        ActivityManagerCompat.finishActivity(token, resultCode, resultData);
         mirror.android.app.Activity.mFinished.set(activity, true);
     }
 
