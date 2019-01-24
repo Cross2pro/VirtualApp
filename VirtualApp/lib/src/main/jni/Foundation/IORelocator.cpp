@@ -1976,7 +1976,7 @@ IOUniformer::startUniformer(const char *so_path, const char *so_path_64, const c
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
     char api_level_chars[56];
     setenv("V_SO_PATH", so_path, 1);
-    setenv("V_SO_PATH_64", so_path_64, 1);
+//    setenv("V_SO_PATH_64", so_path_64, 1);
     sprintf(api_level_chars, "%i", api_level);
     setenv("V_API_LEVEL", api_level_chars, 1);
     sprintf(api_level_chars, "%i", preview_api_level);
