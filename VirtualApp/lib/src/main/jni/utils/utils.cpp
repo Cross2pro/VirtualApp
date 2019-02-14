@@ -66,7 +66,9 @@ const char * TED_packageVector[] =
                 "com.xdja.decrypt",
                 "android.process.media",
                 "com.xdja.eoa",
-                "com.xdja.fileexplore"
+                "com.xdja.fileexplore",
+                "com.xdja.actoma",
+                "com.xdja.HDSafeEMailClient"
         };
 
 bool is_TED_Enable()
