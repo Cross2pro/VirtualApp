@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Window;
 
 import com.lody.virtual.R;
@@ -27,7 +28,7 @@ public class ChooserActivity extends ResolverActivity {
         ACTION = intent.getAction();
     }
     public static boolean check(Intent intent) {
-        if(intent.getComponent()!=null){
+        if(intent!=null&&intent.getBooleanExtra("_VA_CHOOSER",false)){
             return false;
         }
         try {
