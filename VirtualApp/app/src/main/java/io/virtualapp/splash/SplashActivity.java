@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.WindowManager;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.xdja.utils.Stirrer;
 
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
@@ -35,6 +36,8 @@ public class SplashActivity extends VActivity {
             finish();
             overridePendingTransition(0, 0);
         });
+
+        Stirrer.preInit();
     }
 
     private void doActionInThread() {
