@@ -469,7 +469,7 @@ class MethodProxies {
             }
             IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             String resultWho = null;
-            int requestCode = 0;
+            int requestCode = -1;
             Bundle options = ArrayUtils.getFirst(args, Bundle.class);
             if (resultTo != null) {
                 resultWho = (String) args[resultToIndex + 1];

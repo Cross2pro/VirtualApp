@@ -1,4 +1,4 @@
-package com.xdja.safeclient;
+package com.xdja.tun;
 
 import android.net.VpnService;
 
@@ -7,5 +7,5 @@ import android.net.VpnService;
  */
 
 public class TunVpnService extends VpnService{
-    //add com.xdja.safeclient.TunVpnService into AndroidManifest.xml
+    //add com.xdja.tun.TunVpnService into AndroidManifest.xml
 }
