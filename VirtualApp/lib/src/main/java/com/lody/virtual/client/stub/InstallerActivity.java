@@ -318,7 +318,7 @@ public class InstallerActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            InstallOptions options = InstallOptions.makeOptions(true, InstallOptions.UpdateStrategy.COMPARE_VERSION);
+                            InstallOptions options = InstallOptions.makeOptions(false, InstallOptions.UpdateStrategy.COMPARE_VERSION);
                             InstallResult res = VirtualCore.get().installPackage(apkinfo.path, options);
                             Message msg1 = new Message();
                             msg1.what = STATE_INSTALLING;
@@ -338,6 +338,7 @@ public class InstallerActivity extends Activity {
 
                         try {
                             VirtualCore.AppRequestListener listener = VirtualCore.get().getAppRequestListener();
+                            if(listener!=null)
                             listener.onRequestInstall(apkinfo.packageName);
                         } catch (Exception e) {
                             e.printStackTrace();
