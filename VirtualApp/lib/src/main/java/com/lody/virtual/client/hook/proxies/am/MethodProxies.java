@@ -610,10 +610,13 @@ class MethodProxies {
                 extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
                 if(intent.getAction()!=null&&intent.getAction().equals(Intent.ACTION_VIEW)){
                     extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                }else if(intent.getAction()!=null
+                        &&(intent.getAction().equals(ChooserActivity.ACTION)||intent.getAction().equals(Intent.ACTION_CHOOSER))){
+                    extras.putParcelable(Intent.EXTRA_INTENT,intent.getParcelableExtra(Intent.EXTRA_INTENT));
                 }
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 intent =  new Intent();
-                intent = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
+                //intent = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
                 intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
                 intent.putExtras(extras);
                 intent.putExtra("_VA_CHOOSER",true);
