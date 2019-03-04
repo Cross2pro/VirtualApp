@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
@@ -405,7 +406,8 @@ class MethodProxies {
                 }
                 args[5] = new Intent[]{targetIntent};
                 args[6] = new String[]{null};
-                args[7] = flags & ~fillInFlags;
+                //xdja add FLAG_CANCEL_CURRENT cancle cache
+                args[7] = (flags | PendingIntent.FLAG_CANCEL_CURRENT) & ~fillInFlags;
                 IInterface sender = (IInterface) method.invoke(who, args);
                 if (sender != null) {
                     IBinder token = sender.asBinder();
