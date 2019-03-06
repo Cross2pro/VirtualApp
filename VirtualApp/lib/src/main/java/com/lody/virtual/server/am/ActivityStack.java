@@ -236,8 +236,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                     reuseTask = findTaskByAffinityLocked(userId, affinity);
                     break;
                 }
-                case LAUNCH_MULTIPLE:
                 case LAUNCH_SINGLE_TASK:
+                    //xdja
+                    if(!isAllowUseSourceTask(sourceRecord, info)){
+                        //sourceRecord被LAUNCH_SINGLE_INSTANCE模式启动, 需要newTask
+                        break;
+                    }
+                    //LAUNCH_SINGLE_TASK模式需要对比taskAffinity，如果affinity不同需要newTask
+                    reuseTask = findTaskByAffinityLocked(userId, affinity);
+                    break;
+                case LAUNCH_MULTIPLE:
                 case LAUNCH_SINGLE_TOP: {
                     if (newTask || sourceTask == null) {
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
