@@ -272,6 +272,14 @@ public class ComponentUtils {
                 }
             }
         }
+
+        if (intent.hasExtra(Intent.EXTRA_INTENT)) {
+            Object extraintent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+            if (extraintent instanceof Intent) {
+                Intent outIntent = processOutsideIntent(userId, is64bit, (Intent) extraintent);
+                intent.putExtra(Intent.EXTRA_INTENT, outIntent);
+            }
+        }
         return intent;
     }
 

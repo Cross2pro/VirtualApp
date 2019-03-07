@@ -128,6 +128,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         }
         if(count==0){
             intent = ComponentUtils.processOutsideIntent(0, VirtualCore.get().is64BitEngine(), intent);
+            intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             startActivity(intent);
             finish();
             return;
