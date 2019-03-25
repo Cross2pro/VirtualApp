@@ -241,7 +241,6 @@ ssize_t EncryptFile::read(int fd, char *buf, size_t len) {
     if(ret > 0 && fc2 != NULL) {
         fc2->decrypt(buf, ret, buf, tmp, offset);
     }
-
     return ret;
 }
 
@@ -266,7 +265,7 @@ ssize_t EncryptFile::write(int fd, char *buf, size_t len) {
 ssize_t EncryptFile::pread64(int fd, void *buf, size_t len, off64_t offset) {
     //log("EncryptFile::pread64 [fd %d] [len %zu] [offset %lld]", fd, len, offset);
 
-    int ret = originalInterface::original_pread64(fd, buf, len, offset + getHeadOffset()/*透明文件游标*/);
+    int ret = originalInterface::original_pread64(fd, buf, len, offset + (getHeadOffset() & 0x0000ffff)/*透明文件游标*/);
     int tmp;
     if(ret > 0 && fc2 != NULL) {
         fc2->decrypt((char *)buf, ret, (char *)buf, tmp, offset);
@@ -286,7 +285,7 @@ ssize_t EncryptFile::pwrite64(int fd, void *buf, size_t len, off64_t offset) {
     if(len > 0 && fc2 != NULL) {
         fc2->encrypt((char *)buf, len, (char *)ebuf, elen, offset);
     }
-    int ret = originalInterface::original_pwrite64(fd, ebuf, len, offset + getHeadOffset()/*透明文件游标*/);
+    int ret = originalInterface::original_pwrite64(fd, ebuf, len, offset +  (getHeadOffset() & 0x0000ffff)/*透明文件游标*/);
 
     delete []ebuf;
 
@@ -302,7 +301,7 @@ off_t EncryptFile::lseek(int fd, off_t offset, int whence) {
     //log("EncryptFile::lseek [fd %d] [offset %d] [whence %d]", fd, offset, whence);
 
     off_t ret = 0;
-
+    LOGE("lseek fd : %d, offset %d whence %d", fd, offset, whence);
     switch (whence)
     {
         case SEEK_SET:
@@ -364,7 +363,7 @@ int EncryptFile::llseek(int fd, unsigned long offset_high, unsigned long offset_
                 unsigned long off_lo = static_cast<unsigned long>(offset);
 
                 ret = originalInterface::original_llseek(fd, off_hi, off_lo, result, SEEK_SET);
-                *result -= getHeadOffset()/*减去加密头长度*/;
+                *result -= (getHeadOffset() & 0x0000ffff)/*减去加密头长度*/;
             }
         }
             break;
@@ -372,14 +371,14 @@ int EncryptFile::llseek(int fd, unsigned long offset_high, unsigned long offset_
         case SEEK_END: /* if ABS(offset) > lenof(file) WRONG !!! */
         {
             ret = originalInterface::original_llseek(fd, offset_high, offset_low, result, SEEK_END);
-            *result -= getHeadOffset()/*减去加密头长度*/;
+            *result -= (getHeadOffset() & 0x0000ffff)/*减去加密头长度*/;
         }
             break;
 
         case SEEK_CUR:
         {
             ret = originalInterface::original_llseek(fd, offset_high, offset_low, result, SEEK_CUR);
-            *result -= getHeadOffset()/*减去加密头长度*/;
+            *result -= (getHeadOffset() & 0x0000ffff)/*减去加密头长度*/;
         }
             break;
 
@@ -409,7 +408,7 @@ int EncryptFile::fstat(int fd, struct stat *buf) {
     if(ret == 0)
     {
         if(buf->st_size >= getHeadOffset()) {
-            buf->st_size -= getHeadOffset();
+            buf->st_size -= (getHeadOffset() & 0x0000ffff);
         }
         else {
             log("EncryptFile::fstat file size < head offset\n");
@@ -438,7 +437,7 @@ int EncryptFile::ftruncate64(int fd, off64_t length) {
 
     if(length > 0)
     {
-        length += getHeadOffset();
+        length += (getHeadOffset()&0x0000ffff);
     }
 
     struct stat st;
