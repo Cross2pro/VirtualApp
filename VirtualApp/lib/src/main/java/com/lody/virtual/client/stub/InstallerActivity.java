@@ -4,18 +4,24 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IInterface;
 import android.os.Message;
 import android.os.RemoteException;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -33,7 +39,10 @@ import com.lody.virtual.R;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.utils.MediaFileUtil;
 import com.lody.virtual.remote.InstallOptions;
+import com.xdja.utils.Stirrer;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.os.VUserHandle;
@@ -42,6 +51,9 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.pm.VAppManagerService;
 
 import java.io.File;
+
+import mirror.android.content.ContentProviderClientICS;
+import mirror.android.content.ContentProviderClientJB;
 
 /**
  * @Date 18-4-16 15
@@ -380,6 +392,20 @@ public class InstallerActivity extends Activity {
         });
         Button btn_del_del = delDlg.getWindow().findViewById(R.id.btn_del_del);
         btn_del_del.setOnClickListener(new View.OnClickListener() {
+            private Uri getContentUriByCategory(String path) {
+                Uri uri;
+                String volumeName = "external";
+                if(MediaFileUtil.isImageFileTypeForPath(path)){
+                    uri = MediaStore.Images.Media.getContentUri(volumeName);
+                }else if(MediaFileUtil.isVideoFileTypeForPath(path)){
+                    uri = MediaStore.Video.Media.getContentUri(volumeName);
+                }else {
+                    uri = MediaStore.Files.getContentUri(volumeName);
+                }
+                return uri;
+            }
+
+
             @Override
             public void onClick(View view) {
 
@@ -389,6 +415,26 @@ public class InstallerActivity extends Activity {
                     boolean delsuc = FileUtils.deleteDir(apkinfo.path) > 0;
                     if(delsuc){
                         InstallerSetting.showToast(InstallerActivity.this,"安装包删除成功",Toast.LENGTH_SHORT);
+
+                        // notify MediaProvider to remove the item
+                        {
+                            int root_idx = apkinfo.path.indexOf("/storage/emulated/");
+                            if (root_idx != -1) {
+                                String inner_path = apkinfo.path.substring(root_idx);
+                                {
+                                    Uri uri = getContentUriByCategory(inner_path);
+                                    ContentProviderClient contentProviderClient = Stirrer.getConentProvider("media");
+                                    if (contentProviderClient != null) {
+                                        try {
+                                            contentProviderClient.delete(uri,MediaStore.MediaColumns.DATA+"=?",
+                                                    new String[]{inner_path});
+                                        } catch (RemoteException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }else{
                         InstallerSetting.showToast(InstallerActivity.this,"安装包删除失败",Toast.LENGTH_SHORT);
                     }
