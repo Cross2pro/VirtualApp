@@ -65,6 +65,7 @@ import android.util.Log;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
+import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.LoadModules;
 
 import java.io.File;
@@ -80,7 +81,6 @@ import java.util.Map;
 
 import android.app.Activity;
 import android.os.Bundle;
-import com.xdja.floaticonball.FloatIconBallManager;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -243,7 +243,12 @@ public final class VClient extends IVClient.Stub {
     public boolean isAppRunning() {
         return mBoundApplication != null;
     }
-
+    //xdja
+    int countOfActivity = 0;
+    @Override
+    public boolean isAppForeground(){
+        return countOfActivity > 0;
+    }
     public void initProcess(ClientConfig clientConfig) {
         if (this.clientConfig != null) {
             throw new RuntimeException("reject init process: " + clientConfig.processName + ", this process is : " + this.clientConfig.processName);
@@ -543,29 +548,23 @@ public final class VClient extends IVClient.Stub {
         }
         mInitialApplication.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
-            public void onActivityCreated(Activity activity, Bundle bundle) {
-
-            }
+            public void onActivityCreated(Activity activity, Bundle bundle) { }
             @Override
             public void onActivityStarted(Activity activity) {
-
-                FloatIconBallManager.get().activityCountAdd(activity.getPackageName());
+                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),android.os.Process.myPid());
+                countOfActivity++;
             }
             @Override
-            public void onActivityResumed(Activity activity) {
-            }
+            public void onActivityResumed(Activity activity) { }
             @Override
-            public void onActivityPaused(Activity activity) {
-            }
+            public void onActivityPaused(Activity activity) { }
             @Override
             public void onActivityStopped(Activity activity) {
-
-                FloatIconBallManager.get().activityCountReduce(activity.getPackageName());
+                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),android.os.Process.myPid());
+                countOfActivity--;
             }
             @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-
-            }
+            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) { }
             @Override
             public void onActivityDestroyed(Activity activity) {
 

@@ -20,6 +20,7 @@ interface IVClient {
     IBinder getAppThread();
     IBinder getToken();
     boolean isAppRunning();
+    boolean isAppForeground();
     String getDebugInfo();
     void stopService(in ComponentName component);
 }

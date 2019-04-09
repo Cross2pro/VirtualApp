@@ -29,11 +29,11 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
+import com.xdja.activitycounter.ActivityCounterService;
 import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
 import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
-import com.xdja.floaticonball.FloatIconBallService;
 
 import com.xdja.zs.VAppPermissionManagerService;
 /**
@@ -104,7 +104,7 @@ public final class BinderProvider extends ContentProvider {
         VSafekeyCkmsManagerService.systemReady(context);
         addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
         /* End Changed by XDJA */
-		addService(ServiceManagerNative.FLOATICONBALL, FloatIconBallService.get());
+		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
         return true;
     }

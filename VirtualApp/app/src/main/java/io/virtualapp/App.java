@@ -1,13 +1,17 @@
 package io.virtualapp;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.app.AppCompatDelegate;
+import android.util.Log;
 
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
+import com.xdja.activitycounter.ActivityCounterManager;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
@@ -82,6 +86,7 @@ public class App extends Application {
         gApp = this;
         super.onCreate();
         VirtualCore virtualCore = VirtualCore.get();
+        virtualCore.registerActivityLifecycleCallbacks(this);
         virtualCore.initialize(new VirtualCore.VirtualInitializer() {
 
             @Override

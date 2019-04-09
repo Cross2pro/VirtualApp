@@ -30,7 +30,6 @@ import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
-import com.xdja.floaticonball.FloatIconBallManager;
 
 import java.util.List;
 

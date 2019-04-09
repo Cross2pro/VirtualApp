@@ -1,4 +1,4 @@
-package com.xdja.floaticonball;
+package com.xdja.activitycounter;
 
 import android.os.RemoteException;
 
@@ -12,35 +12,42 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
  * @Author lxf@xdja.com
  * @Descrip:
  */
-public class FloatIconBallManager {
-    private static final FloatIconBallManager sInstance = new FloatIconBallManager();
-    public static FloatIconBallManager get() { return sInstance; }
+public class ActivityCounterManager {
+    private static final ActivityCounterManager sInstance = new ActivityCounterManager();
+    public static ActivityCounterManager get() { return sInstance; }
 
-    private IFloatIconBallService mRemote;
-    public IFloatIconBallService getRemote() {
+    private  IActivityCounterService mRemote;
+    public  IActivityCounterService getRemote() {
         if (mRemote == null ||
                 (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
-            synchronized (FloatIconBallManager.class) {
+            synchronized (ActivityCounterManager.class) {
                 Object remote = getStubInterface();
-                mRemote = LocalProxyUtils.genProxy(IFloatIconBallService.class, remote);
+                mRemote = LocalProxyUtils.genProxy( IActivityCounterService.class, remote);
             }
         }
         return mRemote;
     }
     private Object getStubInterface() {
-        return IFloatIconBallService.Stub
+        return  IActivityCounterService.Stub
                 .asInterface(ServiceManagerNative.getService(ServiceManagerNative.FLOATICONBALL));
     }
-    public void activityCountAdd(String pkg){
+    public void activityCountAdd(String pkg,int pid ){
         try {
-            getRemote().activityCountAdd(pkg);
+            getRemote().activityCountAdd(pkg,pid);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
     }
-    public void activityCountReduce(String pkg){
+    public void activityCountReduce(String pkg,int pid){
         try {
-            getRemote().activityCountReduce(pkg);
+            getRemote().activityCountReduce(pkg,pid);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+    public void cleanProcess(int pid){
+        try{
+            getRemote().cleanProcess(pid);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
@@ -60,7 +67,7 @@ public class FloatIconBallManager {
         }
         return false;
     }
-    public void registerCallback(IFloatIconBallCallback fibCallback) {
+    public void registerCallback(IForegroundInterface fibCallback) {
         try {
             getRemote().registerCallback(fibCallback);
         } catch (RemoteException e) {

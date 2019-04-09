@@ -55,6 +55,7 @@ import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
+import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
@@ -186,6 +187,36 @@ public class VActivityManagerService extends IActivityManager.Stub {
     //xdja
     public void finishAllActivity(ProcessRecord record) {
         mActivityStack.finishAllActivity(record);
+    }
+
+    //xdja
+    public boolean isAppForeground(String packageName, int userId) throws RemoteException {
+        synchronized (mPidsSelfLocked) {
+            int N = mPidsSelfLocked.size();
+            while (N-- > 0) {
+                ProcessRecord r = mPidsSelfLocked.get(N);
+                if (r.userId == userId && r.info.packageName.equals(packageName)) {
+                    if(r.client.isAppForeground()){
+                        Log.e(TAG, " process is foreground " + r.processName);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+    //xdja
+    public boolean isForeground()throws RemoteException{
+        synchronized (mPidsSelfLocked) {
+            int N = mPidsSelfLocked.size();
+            boolean foreground = false;
+            while (N-- > 0) {
+                ProcessRecord r = mPidsSelfLocked.get(N);
+                foreground|=r.client.isAppForeground();
+            }
+            Log.e(TAG, " process is foreground " + foreground);
+            return foreground;
+        }
     }
 
 
@@ -389,6 +420,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         //xdja
         notifyAppProcessStatus(record, 0, false);
         processDied(record);
+        ActivityCounterManager.get().cleanProcess(record.pid);
     }
 
     @Override

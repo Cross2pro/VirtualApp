@@ -36,7 +36,7 @@ public class MethodProxies {
         boolean notifyForDescendents = (boolean) args[1];
         IContentObserver observer = (IContentObserver) args[2];
         if (isAppUri(uri)) {
-            VContentManager.get().registerContentObserver(uri, notifyForDescendents, observer, VUserHandle.myUserId());
+            VContentService.get().registerContentObserver(uri, notifyForDescendents, observer);
             return 0;
         } else {
             return method.invoke(who, args);
@@ -45,7 +45,7 @@ public class MethodProxies {
 
     public static Object unregisterContentObserver(Object who, Method method, Object[] args) throws Throwable {
         IContentObserver observer = (IContentObserver) args[0];
-        VContentManager.get().unregisterContentObserver(observer);
+        VContentService.get().unregisterContentObserver(observer);
         return method.invoke(who, args);
     }
 

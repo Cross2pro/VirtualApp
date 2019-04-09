@@ -1,7 +1,9 @@
 package com.lody.virtual.client.core;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.app.DownloadManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -59,6 +61,7 @@ import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
+import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.IUiCallback;
@@ -379,6 +382,30 @@ public final class VirtualCore {
 
     public String getEngineProcessName() {
         return context.getString(R.string.engine_process_name);
+    }
+
+    public void registerActivityLifecycleCallbacks(Application app){
+        app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            }
+            @Override
+            public void onActivityStarted(Activity activity) {
+                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),android.os.Process.myPid());
+            }
+            @Override
+            public void onActivityResumed(Activity activity) {}
+            @Override
+            public void onActivityPaused(Activity activity) {}
+            @Override
+            public void onActivityStopped(Activity activity) {
+                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),android.os.Process.myPid());
+            }
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
+            @Override
+            public void onActivityDestroyed(Activity activity) { }
+        });
     }
 
     public void initialize(VirtualInitializer initializer) {
