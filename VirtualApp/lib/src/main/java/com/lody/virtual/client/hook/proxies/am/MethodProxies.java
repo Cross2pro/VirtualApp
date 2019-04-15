@@ -441,9 +441,11 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if(!controllerManager.getActivitySwitch()){
+
+            //xdja
+          /*  if(!controllerManager.getActivitySwitch()){
                 return 0;
-            }
+            }*/
             int intentIndex = ArrayUtils.indexOfObject(args, Intent.class, 1);
             if (intentIndex < 0) {
                 return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;

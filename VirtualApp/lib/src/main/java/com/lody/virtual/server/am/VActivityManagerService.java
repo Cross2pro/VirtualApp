@@ -56,6 +56,7 @@ import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.call.PhoneCallService;
 import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
@@ -182,6 +183,15 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private void processDied(ProcessRecord record) {
         mServices.processDied(record);
         mActivityStack.processDied(record);
+        reBindDialerService(record);
+    }
+
+    //xdja
+    public void reBindDialerService(ProcessRecord record){
+        if(record.processName.equals("com.xdja.dialer")){
+            Intent intent = new Intent(VirtualCore.get().getContext(), PhoneCallService.class);
+            VirtualCore.get().getContext().startService(intent);
+        }
     }
 
     //xdja

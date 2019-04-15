@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
@@ -30,6 +31,7 @@ import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
 import com.xdja.activitycounter.ActivityCounterService;
+import com.xdja.call.PhoneCallService;
 import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
 import com.xdja.zs.VWaterMarkService;
@@ -106,6 +108,9 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
 		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
+        if(VirtualCore.get().isAppInstalled("com.xdja.dialer")) {
+            context.startService(new Intent(context, PhoneCallService.class));
+        }
         return true;
     }
 

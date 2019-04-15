@@ -3,9 +3,13 @@ package com.lody.virtual.client.hook.proxies.telecom;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.lody.virtual.client.hook.base.StaticMethodProxy;
+
+import java.lang.reflect.Method;
 
 import mirror.com.android.internal.telecom.ITelecomService;
 
@@ -47,5 +51,14 @@ public class TelecomManagerStub extends BinderInvocationProxy {
         addMethodProxy(new ReplaceCallingPkgMethodProxy("isTtySupported"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getCurrentTtyMode"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("placeCall"));
+
+        //xdja 设置默认拨号盘
+        addMethodProxy(new StaticMethodProxy("getDefaultDialerPackage"){
+            @Override
+            public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+                String defaultDialerPackage = "com.xdja.dialer";
+                return defaultDialerPackage;
+            }
+        });
     }
 }
