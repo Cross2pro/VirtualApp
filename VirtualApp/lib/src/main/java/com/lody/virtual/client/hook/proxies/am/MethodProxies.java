@@ -407,7 +407,7 @@ class MethodProxies {
                 args[5] = new Intent[]{targetIntent};
                 args[6] = new String[]{null};
                 //xdja add FLAG_CANCEL_CURRENT cancle cache
-                args[7] = (flags | PendingIntent.FLAG_CANCEL_CURRENT) & ~fillInFlags;
+                args[7] = (flags | PendingIntent.FLAG_UPDATE_CURRENT) & ~fillInFlags;
                 IInterface sender = (IInterface) method.invoke(who, args);
                 if (sender != null) {
                     IBinder token = sender.asBinder();
