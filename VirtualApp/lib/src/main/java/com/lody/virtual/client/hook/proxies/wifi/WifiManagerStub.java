@@ -208,8 +208,12 @@ public class WifiManagerStub extends BinderInvocationProxy {
             if (appPermissionEnable) {
                 Log.e("geyao_WifiManagerStub", "getConnectionInfo return");
 
-                //这里这样处理是否合适需要再确认
-                return createWifiInfo(status);
+                //返回一个无用的wifiinfo
+                WifiInfo info = mirror.android.net.wifi.WifiInfo.ctor.newInstance();
+                mirror.android.net.wifi.WifiInfo.mBSSID.set(info, "00:00:00:00:00:00");
+                mirror.android.net.wifi.WifiInfo.mMacAddress.set(info, "00:00:00:00:00:00");
+
+                return info;
             }
             if (status != null) {
                 return createWifiInfo(status);

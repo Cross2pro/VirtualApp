@@ -107,7 +107,8 @@ public class ServiceManager {
         try {
             record = getOrCreateService(component, serviceInfo);
         } catch (Throwable e) {
-            throw new RuntimeException("bindService fail: " + intent, e);
+            //throw new RuntimeException("bindService fail: " + intent, e);
+            record = null;
         }
         if (record == null) {
             return null;
