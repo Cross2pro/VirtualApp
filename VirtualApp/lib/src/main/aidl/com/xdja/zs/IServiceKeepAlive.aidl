@@ -1,0 +1,10 @@
+// IServiceKeepAlive.aidl
+package com.xdja.zs;
+
+// Declare any non-default types here with import statements
+
+interface IServiceKeepAlive {
+    void addKeepAliveServiceName(String pkgName, String serviceName);
+    void removeKeepAliveServiceName(String serviceName);
+    void runKeepAliveService(String pkgName, int userId);
+}

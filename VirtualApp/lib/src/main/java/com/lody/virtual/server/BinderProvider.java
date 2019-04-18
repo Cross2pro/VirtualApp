@@ -34,6 +34,8 @@ import com.xdja.activitycounter.ActivityCounterService;
 import com.xdja.call.PhoneCallService;
 import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
+import com.xdja.zs.VServiceKeepAliveManager;
+import com.xdja.zs.VServiceKeepAliveService;
 import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
 
@@ -105,6 +107,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
         VSafekeyCkmsManagerService.systemReady(context);
         addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
+        VServiceKeepAliveService.systemReady();
+        addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         /* End Changed by XDJA */
 		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
