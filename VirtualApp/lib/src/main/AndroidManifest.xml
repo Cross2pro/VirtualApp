@@ -3471,6 +3471,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name="com.xdja.call.PhoneCallReceiver"
+            android:enabled="true"
+            android:exported="true">
+        </receiver>
 
 
         <meta-data

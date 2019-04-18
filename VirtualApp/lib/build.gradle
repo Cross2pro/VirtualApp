@@ -90,4 +90,5 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     provided 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
     provided 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.26'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
 }

@@ -62,6 +62,7 @@ import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.call.PhoneCallReceiver;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.IUiCallback;
@@ -277,6 +278,9 @@ public final class VirtualCore {
             unHookPackageManager = context.getPackageManager();
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
+            if (isMainProcess()) {
+                PhoneCallReceiver.register();
+            }
             if (isServerProcess() || isVAppProcess()) {
                 NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();
                 //////////////////////////////
