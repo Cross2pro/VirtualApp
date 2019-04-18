@@ -10,6 +10,8 @@ public class DataCleanManager {
     public static int FOLDER_TYPE_APP = 1;
     public static int FOLDER_TYPE_DATA = 2;
     public static int FOLDER_TYPE_CACHE = 3;
+    public static int FOLDER_TYPE_TOTAL = 4;
+
     public static String TAG = "DataCleanManager";
 
     public static String getPackageFolderSize(int userId, String packageName, int type){
@@ -34,6 +36,15 @@ public class DataCleanManager {
                 Log.i(TAG, file_cache.getAbsolutePath() + " size : " + getFormatSize(getFolderSize(file_cache))
                         + file_cache_storage.getAbsolutePath() + " size : " + getFormatSize(getFolderSize(file_cache_storage)));
             }
+            if (type == FOLDER_TYPE_TOTAL) {
+                File file_app = VEnvironment.getDataAppPackageDirectory(packageName);
+                File file_data = VEnvironment.getDataUserPackageDirectory(userId, packageName);
+                File file_data_storage = VEnvironment.getExternalStorageAppDataDir(userId, packageName);
+                folderSize = getFormatSize(getFolderSize(file_app) + getFolderSize(file_data) + getFolderSize(file_data_storage));
+                Log.i(TAG, file_app.getAbsolutePath() + " size : " + getFormatSize(getFolderSize(file_app))
+                        + file_data.getAbsolutePath() + " size : " + getFormatSize(getFolderSize(file_data))
+                        + file_data_storage.getAbsolutePath() + " size : " + getFormatSize(getFolderSize(file_data_storage)));
+            }
         }catch (Exception e){
             e.printStackTrace();
             return folderSize;
@@ -49,12 +60,15 @@ public class DataCleanManager {
                 File file_data_storage = VEnvironment.getExternalStorageAppDataDir(useId, packageName);
                 deleteDir(file_data);
                 deleteDir(file_data_storage);
-            }
-            if (type == FOLDER_TYPE_CACHE) {
+                Log.i(TAG, " clearPackageFolder FOLDER_TYPE_DATA");
+            }else if (type == FOLDER_TYPE_CACHE) {
                 File file_cache = new File(VEnvironment.getDataUserPackageDirectory(useId, packageName), "cache");
                 File file_cache_storage = new File(VEnvironment.getExternalStorageAppDataDir(useId, packageName), "cache");
                 deleteDir(file_cache);
                 deleteDir(file_cache_storage);
+                Log.i(TAG, " clearPackageFolder FOLDER_TYPE_CACHE");
+            }else{
+                Log.i(TAG, " clearPackageFolder " + type);
             }
         }catch (Exception e){
             e.printStackTrace();
