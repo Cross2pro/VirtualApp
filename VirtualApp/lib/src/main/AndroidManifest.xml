@@ -402,16 +402,26 @@
             android:exported="true"
             android:finishOnCloseSystemDialogs="true"
             android:process="@string/engine_process_name"
+            android:taskAffinity="com.xdja.safety.Installer"
             android:screenOrientation="portrait"
-            android:theme="@style/InstallerTheme" />
+            android:theme="@style/InstallerTheme" >
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".client.stub.UnInstallerActivity"
             android:configChanges="keyboard|keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:exported="true"
             android:finishOnCloseSystemDialogs="true"
             android:process="@string/engine_process_name"
+            android:taskAffinity="com.xdja.safety.Installer"
             android:screenOrientation="portrait"
-            android:theme="@style/InstallerTheme" />
+            android:theme="@style/InstallerTheme" >
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!--xdja-->
 
         <provider

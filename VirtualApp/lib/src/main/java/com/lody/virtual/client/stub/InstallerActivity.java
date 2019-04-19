@@ -93,7 +93,6 @@ public class InstallerActivity extends Activity {
         if(!VAppPermissionManager.get().getThirdAppInstallationEnable()){
             InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
             finish();
-            return;
         }
 
         rl_check = (RelativeLayout) findViewById(R.id.rl_check);
