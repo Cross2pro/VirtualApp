@@ -411,7 +411,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             }else {
                 controllerManager.get().getService().appProcessStop(app.info.packageName, app.processName, app.pid);
                 {
-                    controllerManager.get().getService().appStop(app.info.packageName);
+//                    controllerManager.get().getService().appStop(app.info.packageName);
                     if (!isAppRunning(app.info.packageName, uid, false)) {
                         controllerManager.get().getService().appStop(app.info.packageName);
                     }
