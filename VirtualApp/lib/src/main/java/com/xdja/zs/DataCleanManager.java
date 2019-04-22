@@ -53,25 +53,37 @@ public class DataCleanManager {
     }
 
 
-    public static void clearPackageFolder(int useId, String packageName, int type){
+    public static boolean clearPackageFolder(int useId, String packageName, int type){
+        boolean status = true;
         try {
             if (type == FOLDER_TYPE_DATA) {
                 File file_data = VEnvironment.getDataUserPackageDirectory(useId, packageName);
                 File file_data_storage = VEnvironment.getExternalStorageAppDataDir(useId, packageName);
-                deleteDir(file_data);
-                deleteDir(file_data_storage);
+                if(file_data.exists() && !deleteDir(file_data)){
+                    return false;
+                }
+                if(file_data_storage.exists() && !deleteDir(file_data_storage)){
+                    return false;
+                }
                 Log.i(TAG, " clearPackageFolder FOLDER_TYPE_DATA");
             }else if (type == FOLDER_TYPE_CACHE) {
                 File file_cache = new File(VEnvironment.getDataUserPackageDirectory(useId, packageName), "cache");
                 File file_cache_storage = new File(VEnvironment.getExternalStorageAppDataDir(useId, packageName), "cache");
-                deleteDir(file_cache);
-                deleteDir(file_cache_storage);
+                if(file_cache.exists() && !deleteDir(file_cache)){
+                   return false;
+                }
+                if(file_cache_storage.exists() && !deleteDir(file_cache_storage)){
+                    return false;
+                }
                 Log.i(TAG, " clearPackageFolder FOLDER_TYPE_CACHE");
             }else{
                 Log.i(TAG, " clearPackageFolder " + type);
+                return false;
             }
+            return status;
         }catch (Exception e){
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -81,6 +93,7 @@ public class DataCleanManager {
             for (int i = 0; i < children.length; i++) {
                 boolean success = deleteDir(new File(dir, children[i]));
                 if (!success) {
+                    Log.e(TAG, " deleteDir error" + dir.getAbsolutePath());
                     return false;
                 }
             }
