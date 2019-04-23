@@ -279,7 +279,7 @@ public final class VirtualCore {
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
             if (isMainProcess()) {
-                CallLogObserver.observe(VirtualCore.get().getContext());
+                CallLogObserver.observe();
             }
             if (isServerProcess() || isVAppProcess()) {
                 NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();

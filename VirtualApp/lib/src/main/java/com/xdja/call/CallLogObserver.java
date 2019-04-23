@@ -19,48 +19,34 @@ import com.xdja.utils.Stirrer;
 
 public class CallLogObserver extends android.database.ContentObserver {
     private static final CallLogObserver ourInstance = new CallLogObserver(getAsyncHandler());
+    private static final String TAG = "xela-" + new Object() { }.getClass().getEnclosingClass().getSimpleName();
 
     static CallLogObserver getInstance() {
         return ourInstance;
     }
 
-    private Context mContext = null;
-
     private CallLogObserver(Handler handler) {
         super(handler);
     }
 
-    private void transferCallLog() {
-        transferCallLog(null);
+    private Context getContext() {
+        return VirtualCore.get().getContext();
     }
 
-    private void transferCallLog(String number) {
+    private void transferCallLog() {
         long currTime = System.currentTimeMillis();
-        if (ActivityCompat.checkSelfPermission(VirtualCore.get().getContext(), Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
-            Log.e("xela", this.getClass() + " do not have permission to read call log.");
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "i do not have permission to read call log.");
             return;
         }
 
-        Cursor cursor = null;
-        if (number != null) {
-            cursor = mContext.getContentResolver().query(CallLog.Calls.CONTENT_URI, null, "number = ?", new String[]{number}, "date DESC");
-        } else {
-            cursor = mContext.getContentResolver().query(CallLog.Calls.CONTENT_URI, null, null, null, "date DESC");
-        }
+        Cursor cursor = getContext().getContentResolver().query(CallLog.Calls.CONTENT_URI, null, null, null, "date DESC");
 
         if (cursor != null) {
             String[] columns = new String[]{"add_for_all_users", "countryiso", "data_usage", "date", "duration", "features", "formatted_number", "geocoded_location", "is_read", "last_modified", "lookup_uri", "matched_number", "name", "new", "normalized_number", "number", "numberlabel", "numbertype", "phone_account_address", "photo_id", "photo_uri", "post_dial_digits", "presentation", "subscription_component_name", "subscription_id", "transcription", "type", "via_number", "voicemail_uri"};
 
             if (cursor.moveToFirst()) {
                 ContentValues contentValues = new ContentValues();
-                int dateIndex = cursor.getColumnIndex(CallLog.Calls.DATE);
-                int durationIndex = cursor.getColumnIndex(CallLog.Calls.DURATION);
-                if (Cursor.FIELD_TYPE_INTEGER != cursor.getType(dateIndex)) {
-                    return;
-                }
-                if (Cursor.FIELD_TYPE_INTEGER != cursor.getType(durationIndex)) {
-                    return;
-                }
 
                 long last_modified = cursor.getLong(cursor.getColumnIndex(CallLog.Calls.LAST_MODIFIED));
                 if (Math.abs(currTime - last_modified) > 500) {
@@ -71,34 +57,35 @@ public class CallLogObserver extends android.database.ContentObserver {
                     int colindex = cursor.getColumnIndex(column);
                     if (colindex != -1) {
                         int type = cursor.getType(colindex);
-                        if (type == 1) {
+                        if (type == Cursor.FIELD_TYPE_INTEGER) {
                             long value = cursor.getLong(colindex);
                             contentValues.put(column, value);
-                        } else if (type == 3) {
+                        } else if (type == Cursor.FIELD_TYPE_STRING) {
                             String value = cursor.getString(colindex);
                             contentValues.put(column, value);
                         }
                     }
                 }
                 try {
-                    Stirrer.getConentProvider("call_log").insert(CallLog.Calls.CONTENT_URI, contentValues);
+                    Stirrer.getConentProvider(CallLog.AUTHORITY).insert(CallLog.Calls.CONTENT_URI, contentValues);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
                 int id = cursor.getInt(cursor.getColumnIndex(CallLog.Calls._ID));
-                if (ActivityCompat.checkSelfPermission(VirtualCore.get().getContext(), Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
-                    Log.e("xela", this.getClass() + " do not have permission to write call log.");
+                cursor.close();
+                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, this.getClass() + " do not have permission to write call log.");
                     return;
                 }
-                mContext.getContentResolver().unregisterContentObserver(CallLogObserver.getInstance());
-                mContext.getContentResolver().delete(CallLog.Calls.CONTENT_URI, "_id = ?", new String[]{String.valueOf(id)});
-                mContext.getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, CallLogObserver.getInstance());
+                getContext().getContentResolver().unregisterContentObserver(getInstance());
+                getContext().getContentResolver().delete(CallLog.Calls.CONTENT_URI, "_id = ?", new String[]{String.valueOf(id)});
+                getContext().getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, getInstance());
             } else {
-                Log.d("xela", "cursor.moveToFirst failed");
+                Log.d(TAG, "cursor.moveToFirst failed");
             }
 
         } else {
-            Log.d("xela", "get nothing by calllog  number: " + number);
+            Log.d(TAG, "get nothing from calllog ");
         }
     }
 
@@ -121,13 +108,7 @@ public class CallLogObserver extends android.database.ContentObserver {
     private static HandlerThread sAsyncHandlerThread;
     private static Handler sAsyncHandler;
 
-    public static boolean observe(Context context) {
-        if (ourInstance.mContext == null) {
-            ourInstance.mContext = context;
-        } else {
-            return false;
-        }
-        ourInstance.mContext.getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, CallLogObserver.getInstance());
-        return true;
+    public static void observe() {
+        getInstance().getContext().getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, getInstance());
     }
 }
