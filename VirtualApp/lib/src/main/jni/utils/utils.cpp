@@ -60,15 +60,15 @@ bool getPathFromFd(int fd, zString & path) {
 
 const char * TED_packageVector[] =
         {
-                "com.tencent.mm",
-                "cn.wps.moffice",
-                "com.android.gallery3d",
-                "com.xdja.decrypt",
-                "android.process.media",
-                "com.xdja.eoa",
-                "com.xdja.fileexplore",
-                "com.xdja.actoma",
-                "com.xdja.HDSafeEMailClient"
+//                "com.tencent.mm",
+//                "cn.wps.moffice",
+//                "com.android.gallery3d",
+//                "com.xdja.decrypt",
+//                "android.process.media",
+//                "com.xdja.eoa",
+//                "com.xdja.fileexplore",
+//                "com.xdja.actoma",
+//                "com.xdja.HDSafeEMailClient"
         };
 
 bool is_TED_Enable()
