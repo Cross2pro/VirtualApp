@@ -112,9 +112,6 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
 		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
-        if(VirtualCore.get().isAppInstalled("com.xdja.dialer")) {
-            context.startService(new Intent(context, PhoneCallService.class));
-        }
         return true;
     }
 

@@ -62,6 +62,7 @@ import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.CallLogObserver;
+import com.xdja.call.PhoneCallService;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.INotificationCallback;
@@ -319,6 +320,24 @@ public final class VirtualCore {
 
     public void waitForEngine() {
         ServiceManagerNative.ensureServerStarted();
+        preLaunchApp();
+    }
+
+    //Add by xdja
+    public void preLaunchApp() {
+
+        if (shouldLaunchApp("com.xdja.dialer")) {
+            VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
+        }
+
+        if (shouldLaunchApp("com.xdja.emm")) {
+            VActivityManager.get().launchApp(myUserId(), "com.xdja.emm");
+        }
+    }
+
+    //Add by xdja
+    private boolean shouldLaunchApp(String pkgName) {
+        return (isAppInstalled(pkgName) && !isAppRunning(pkgName, myUserId(), false));
     }
 
     public boolean isEngineLaunched() {
@@ -567,6 +586,8 @@ public final class VirtualCore {
             }
         });
         lock.block();
+        //Add by xdja
+        preLaunchApp();
         return out[0];
     }
 
