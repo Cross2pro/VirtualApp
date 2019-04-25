@@ -190,8 +190,18 @@ public class VActivityManagerService extends IActivityManager.Stub {
     //xdja
     public void reBindDialerService(ProcessRecord record){
         if(record.processName.equals("com.xdja.dialer")){
-            Intent intent = new Intent(VirtualCore.get().getContext(), PhoneCallService.class);
-            VirtualCore.get().getContext().startService(intent);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Thread.sleep(200);
+                        Intent intent = new Intent(VirtualCore.get().getContext(), PhoneCallService.class);
+                        VirtualCore.get().getContext().startService(intent);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
         }
     }
 
