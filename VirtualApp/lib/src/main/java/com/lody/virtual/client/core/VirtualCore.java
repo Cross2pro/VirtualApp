@@ -330,9 +330,9 @@ public final class VirtualCore {
             VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
         }
 
-        if (shouldLaunchApp("com.xdja.emm")) {
-            VActivityManager.get().launchApp(myUserId(), "com.xdja.emm");
-        }
+//        if (shouldLaunchApp("com.xdja.emm")) {
+//            VActivityManager.get().launchApp(myUserId(), "com.xdja.emm");
+//        }
     }
 
     //Add by xdja
