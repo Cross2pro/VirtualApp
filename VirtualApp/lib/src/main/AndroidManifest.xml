@@ -435,7 +435,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p0"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -444,7 +443,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p1"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -453,7 +451,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p2"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -462,7 +459,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P3"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p3"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -471,7 +467,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P4"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p4"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -480,7 +475,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P5"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p5"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -489,7 +483,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P6"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p6"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -498,7 +491,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P7"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p7"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -507,7 +499,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P8"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p8"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -516,7 +507,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P9"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p9"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -525,7 +515,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P10"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p10"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -534,7 +523,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P11"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p11"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -543,7 +531,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P12"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p12"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -552,7 +539,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P13"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p13"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -561,7 +547,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P14"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p14"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -570,7 +555,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P15"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p15"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -579,7 +563,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P16"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p16"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -588,7 +571,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P17"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p17"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -597,7 +579,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P18"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p18"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -606,7 +587,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P19"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p19"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -615,7 +595,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P20"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p20"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -624,7 +603,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P21"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p21"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -633,7 +611,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P22"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p22"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -642,7 +619,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P23"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p23"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -651,7 +627,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P24"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p24"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -660,7 +635,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P25"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p25"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -669,7 +643,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P26"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p26"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -678,7 +651,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P27"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p27"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -705,7 +677,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P30"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p30"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -714,7 +685,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P31"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p31"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -723,7 +693,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P32"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p32"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -732,7 +701,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P33"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p33"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -741,7 +709,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P34"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p34"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -750,7 +717,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P35"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p35"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -759,7 +725,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P36"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p36"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -768,7 +733,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P37"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p37"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -777,7 +741,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P38"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p38"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -786,7 +749,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P39"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p39"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -795,7 +757,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P40"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p40"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -804,7 +765,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P41"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p41"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -813,7 +773,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P42"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p42"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -822,7 +781,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P43"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p43"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -831,7 +789,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P44"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p44"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -840,7 +797,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P45"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p45"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -849,7 +805,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P46"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p46"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -858,7 +813,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P47"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p47"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -867,7 +821,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P48"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p48"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -876,7 +829,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P49"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p49"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -885,7 +837,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P50"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p50"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -894,7 +845,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P51"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p51"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -903,7 +853,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P52"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p52"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -912,7 +861,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P53"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p53"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -921,7 +869,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P54"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p54"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -930,7 +877,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P55"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p55"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -939,7 +885,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P56"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p56"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -948,7 +893,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P57"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p57"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -957,7 +901,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P58"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p58"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -966,7 +909,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P59"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p59"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -975,7 +917,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P60"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p60"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -984,7 +925,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P61"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p61"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -993,7 +933,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P62"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p62"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1002,7 +941,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P63"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p63"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1011,7 +949,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P64"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p64"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1020,7 +957,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P65"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p65"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1029,7 +965,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P66"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p66"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1038,7 +973,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P67"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p67"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1047,7 +981,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P68"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p68"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1056,7 +989,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P69"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p69"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1065,7 +997,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P70"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p70"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1074,7 +1005,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P71"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p71"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1083,7 +1013,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P72"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p72"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1092,7 +1021,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P73"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p73"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1101,7 +1029,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P74"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p74"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1110,7 +1037,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P75"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p75"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1119,7 +1045,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P76"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p76"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1128,7 +1053,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P77"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p77"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1137,7 +1061,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P78"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p78"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1146,7 +1069,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P79"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p79"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1155,7 +1077,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P80"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p80"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1164,7 +1085,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P81"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p81"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1173,7 +1093,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P82"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p82"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1182,7 +1101,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P83"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p83"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1191,7 +1109,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P84"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p84"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1200,7 +1117,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P85"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p85"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1209,7 +1125,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P86"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p86"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1218,7 +1133,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P87"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p87"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1227,7 +1141,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P88"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p88"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1236,7 +1149,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P89"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p89"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1245,7 +1157,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P90"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p90"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1254,7 +1165,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P91"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p91"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1263,7 +1173,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P92"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p92"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1272,7 +1181,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P93"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p93"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1281,7 +1189,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P94"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p94"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1290,7 +1197,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P95"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p95"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1299,7 +1205,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P96"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p96"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1308,7 +1213,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P97"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p97"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1317,7 +1221,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P98"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p98"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
@@ -1326,7 +1229,6 @@
             android:name="com.lody.virtual.client.stub.ShadowActivity$P99"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:excludeFromRecents="true"
             android:process=":p99"
             android:taskAffinity="com.lody.virtual.virtual_task"
             android:theme="@style/VATheme" />
