@@ -111,4 +111,8 @@ public class CallLogObserver extends android.database.ContentObserver {
     public static void observe() {
         getInstance().getContext().getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, getInstance());
     }
+
+    public static void unObserve() {
+        getInstance().getContext().getContentResolver().unregisterContentObserver(getInstance());
+    }
 }
