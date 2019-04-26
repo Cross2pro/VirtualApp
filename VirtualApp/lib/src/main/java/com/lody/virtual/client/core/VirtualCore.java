@@ -63,6 +63,7 @@ import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.CallLogObserver;
 import com.xdja.call.PhoneCallService;
+import com.xdja.utils.PackagePermissionManager;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.INotificationCallback;
@@ -888,6 +889,8 @@ public final class VirtualCore {
 
     public boolean uninstallPackageAsUser(String pkgName, int userId) {
         try {
+            if(PackagePermissionManager.getProtectUninstallList().contains(pkgName))
+                return false;
             return getService().uninstallPackageAsUser(pkgName, userId);
         } catch (RemoteException e) {
             // Ignore
@@ -897,6 +900,8 @@ public final class VirtualCore {
 
     public boolean uninstallPackage(String pkgName) {
         try {
+            if(PackagePermissionManager.getProtectUninstallList().contains(pkgName))
+                return false;
             return getService().uninstallPackage(pkgName);
         } catch (RemoteException e) {
             // Ignore
