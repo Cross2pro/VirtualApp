@@ -61,13 +61,15 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
-
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.call.CallLogObserver;
+import com.xdja.call.PhoneCallService;
+import com.xdja.utils.PackagePermissionManager;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
+import com.xdja.zs.INotificationCallback;
 import com.xdja.zs.IUiCallback;
 import com.xdja.zs.IVSCallback;
-import com.xdja.zs.INotificationCallback;
 import com.xdja.zs.IVSKeyCallback;
 
 import java.io.File;
@@ -278,6 +280,9 @@ public final class VirtualCore {
             unHookPackageManager = context.getPackageManager();
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
+            if (isMainProcess()) {
+                CallLogObserver.observe();
+            }
             if (isServerProcess() || isVAppProcess()) {
                 NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();
                 //////////////////////////////
@@ -326,6 +331,24 @@ public final class VirtualCore {
 
     public void waitForEngine() {
         ServiceManagerNative.ensureServerStarted();
+        preLaunchApp();
+    }
+
+    //Add by xdja
+    public void preLaunchApp() {
+
+        if (shouldLaunchApp("com.xdja.dialer")) {
+            VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
+        }
+
+//        if (shouldLaunchApp("com.xdja.emm")) {
+//            VActivityManager.get().launchApp(myUserId(), "com.xdja.emm");
+//        }
+    }
+
+    //Add by xdja
+    private boolean shouldLaunchApp(String pkgName) {
+        return (isAppInstalled(pkgName) && !isAppRunning(pkgName, myUserId(), false));
     }
 
     public boolean isEngineLaunched() {
@@ -574,6 +597,8 @@ public final class VirtualCore {
             }
         });
         lock.block();
+        //Add by xdja
+        preLaunchApp();
         return out[0];
     }
 
@@ -874,6 +899,8 @@ public final class VirtualCore {
 
     public boolean uninstallPackageAsUser(String pkgName, int userId) {
         try {
+            if(PackagePermissionManager.getProtectUninstallList().contains(pkgName))
+                return false;
             return getService().uninstallPackageAsUser(pkgName, userId);
         } catch (RemoteException e) {
             // Ignore
@@ -883,6 +910,8 @@ public final class VirtualCore {
 
     public boolean uninstallPackage(String pkgName) {
         try {
+            if(PackagePermissionManager.getProtectUninstallList().contains(pkgName))
+                return false;
             return getService().uninstallPackage(pkgName);
         } catch (RemoteException e) {
             // Ignore

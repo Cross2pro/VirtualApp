@@ -57,6 +57,7 @@ import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.PhoneCallService;
+import com.xdja.zs.VServiceKeepAliveManager;
 import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
@@ -189,8 +190,18 @@ public class VActivityManagerService extends IActivityManager.Stub {
     //xdja
     public void reBindDialerService(ProcessRecord record){
         if(record.processName.equals("com.xdja.dialer")){
-            Intent intent = new Intent(VirtualCore.get().getContext(), PhoneCallService.class);
-            VirtualCore.get().getContext().startService(intent);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        Thread.sleep(200);
+                        Intent intent = new Intent(VirtualCore.get().getContext(), PhoneCallService.class);
+                        VirtualCore.get().getContext().startService(intent);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
         }
     }
 
@@ -410,7 +421,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             }else {
                 controllerManager.get().getService().appProcessStop(app.info.packageName, app.processName, app.pid);
                 {
-                    controllerManager.get().getService().appStop(app.info.packageName);
+//                    controllerManager.get().getService().appStop(app.info.packageName);
                     if (!isAppRunning(app.info.packageName, uid, false)) {
                         controllerManager.get().getService().appStop(app.info.packageName);
                     }
@@ -431,6 +442,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         notifyAppProcessStatus(record, 0, false);
         processDied(record);
         ActivityCounterManager.get().cleanProcess(record.pid);
+        //xdja
+        VLog.d("wuyaowei", "onProcessDied:" + record.info.packageName);
+        VServiceKeepAliveManager.get().runKeepAliveService(record.info.packageName, VUserHandle.myUserId());
+
     }
 
     @Override

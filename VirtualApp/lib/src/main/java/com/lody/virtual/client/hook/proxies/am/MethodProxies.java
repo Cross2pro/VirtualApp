@@ -1951,6 +1951,8 @@ class MethodProxies {
 
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
+            } else if ("com.xdja.dialer.removecall".equals(action)) {
+                return intent;
             } else {
                 return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
             }

@@ -83,6 +83,9 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
         //update images/videos by media provider
         PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        //xdja
+        PROTECTED_ACTION_MAP.put("com.xdja.safety.action.enter", "com.xdja.safety.action.enter");
+        PROTECTED_ACTION_MAP.put("com.xdja.safety.action.exit", "com.xdja.safety.action.exit");
 
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic");
         INSTRUMENTATION_CONFLICTING.add("com.qihoo.magic_mutiple");

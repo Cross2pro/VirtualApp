@@ -49,7 +49,14 @@ public class PhoneCallService extends InCallService {
     }
 
     @Override
+    public void onDestroy() {
+        Log.i(TAG, " PhoneCallService onDestroy");
+        super.onDestroy();
+    }
+
+    @Override
     public boolean onUnbind(Intent intent) {
+        Log.i(TAG, " PhoneCallService onUnbind");
         return super.onUnbind(intent);
     }
 
@@ -64,6 +71,8 @@ public class PhoneCallService extends InCallService {
         @Override
         public void onServiceDisconnected(ComponentName name) {
             Log.i(TAG, "onServiceDisconnected");
+            unbindService(conn);
+            stopSelf();
         }
     };
 }
