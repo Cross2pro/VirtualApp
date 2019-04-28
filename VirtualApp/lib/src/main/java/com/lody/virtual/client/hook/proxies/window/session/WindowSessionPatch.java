@@ -35,7 +35,7 @@ public class WindowSessionPatch extends MethodInvocationProxy<MethodInvocationSt
         });
         addMethodProxy(new BaseMethodProxy("addToDisplayWithoutInputChannel"));
         addMethodProxy(new BaseMethodProxy("addWithoutInputChannel"));
-		addMethodProxy(new BaseMethodProxy("relayout"));
+		addMethodProxy(new Relayout("relayout"));
 	}
 
 
