@@ -1,17 +1,23 @@
 package com.xdja.call;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.os.RemoteException;
 import android.provider.CallLog;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.telecom.TelecomManager;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -19,7 +25,8 @@ import com.xdja.utils.Stirrer;
 
 public class CallLogObserver extends android.database.ContentObserver {
     private static final CallLogObserver ourInstance = new CallLogObserver(getAsyncHandler());
-    private static final String TAG = "xela-" + new Object() { }.getClass().getEnclosingClass().getSimpleName();
+    private static final String TAG = "xela-" + new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
 
     static CallLogObserver getInstance() {
         return ourInstance;
@@ -109,10 +116,66 @@ public class CallLogObserver extends android.database.ContentObserver {
     private static Handler sAsyncHandler;
 
     public static void observe() {
+        Log.d("xela", "Observe call log");
+        getInstance().listenPhoneState(getInstance().getContext());
+    }
+
+    private static void doObserve() {
         getInstance().getContext().getContentResolver().registerContentObserver(CallLog.Calls.CONTENT_URI, true, getInstance());
     }
 
+    private PhoneStateListener phoneStateListener = new PhoneStateListener() {
+        private boolean DIALING = false;
+
+        @TargetApi(Build.VERSION_CODES.M)
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber) {
+            super.onCallStateChanged(state, incomingNumber);
+            TelecomManager telecomManager;
+
+            telecomManager = (TelecomManager) getContext().getSystemService(Context.TELECOM_SERVICE);
+
+            switch (state) {
+                case TelephonyManager.CALL_STATE_IDLE:
+                    if (DIALING) {
+                        DIALING = false;
+                    }
+                    break;
+                case TelephonyManager.CALL_STATE_RINGING:
+                case TelephonyManager.CALL_STATE_OFFHOOK:
+                    if (!DIALING) {
+                        DIALING = true;
+                        if (telecomManager.getDefaultDialerPackage().equals(VirtualCore.get().getHostPkg())) {
+                            CallLogObserver.doObserve();
+                        } else {
+                            CallLogObserver.doUnObserve();
+                        }
+                    }
+                    break;
+                default:
+                    Log.d("xela", "other state: " + incomingNumber);
+            }
+        }
+
+    };
+
+    private void listenPhoneState(@NonNull Context context) {
+        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+    }
+
     public static void unObserve() {
+        TelecomManager telecomManager;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            telecomManager = (TelecomManager) getInstance().getContext().getSystemService(Context.TELECOM_SERVICE);
+            if (!telecomManager.getDefaultDialerPackage().equals(VirtualCore.get().getHostPkg())) {
+                doUnObserve();
+            }
+        }
+        Log.d("xela", "unObserve call log");
+    }
+
+    private static void doUnObserve() {
         getInstance().getContext().getContentResolver().unregisterContentObserver(getInstance());
     }
 }
