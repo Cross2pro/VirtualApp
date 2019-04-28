@@ -165,6 +165,11 @@ public class CallLogObserver extends android.database.ContentObserver {
     }
 
     public static void unObserve() {
+        TelephonyManager telephonyManager = (TelephonyManager) getInstance().getContext().getSystemService(Context.TELEPHONY_SERVICE);
+        if (telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE) {
+            return;
+        }
+
         TelecomManager telecomManager;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             telecomManager = (TelecomManager) getInstance().getContext().getSystemService(Context.TELECOM_SERVICE);
