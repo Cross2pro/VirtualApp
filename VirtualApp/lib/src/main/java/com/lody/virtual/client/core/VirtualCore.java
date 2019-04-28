@@ -51,6 +51,7 @@ import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
@@ -310,6 +311,15 @@ public final class VirtualCore {
             invocationStubManager.injectAll();
             ContextFixer.fixContext(context);
             isStartUp = true;
+
+            //xdja 屏蔽‘不兼容api’对话框
+            try {
+                Reflect.on("android.app.ActivityThread").call("currentActivityThread").set("mHiddenApiWarningShown", true);
+            } catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
             mInitLock.open();
         }
     }
