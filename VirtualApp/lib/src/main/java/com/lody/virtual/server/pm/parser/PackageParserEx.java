@@ -21,6 +21,7 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -570,6 +571,10 @@ public class PackageParserEx {
         }
         // Make shallow copy so we can store the metadata/libraries safely
         ApplicationInfo ai = new ApplicationInfo(p.applicationInfo);
+        //
+        if(InstallerSetting.systemApps.contains(p.packageName)){
+            ai.flags = ai.flags | ApplicationInfo.FLAG_SYSTEM;
+        }
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }

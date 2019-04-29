@@ -19,6 +19,56 @@ import java.util.Set;
  */
 public class InstallerSetting {
 
+    /**
+     * MDMService包名
+     */
+    public static final String MDM_SERVICE_PKG = "com.xdja.mdmservice";
+    /**
+     * MDMClient包名
+     */
+    public static final String MDM_CLIENT_PKG = "com.xdja.emm";
+    /**
+     * 电话包名
+     */
+    public static final String DIALER_PKG = "com.xdja.dialer";
+    /**
+     * 文件管理器包名
+     */
+    public static final String FILE_EXPLORER_PKG = "com.secspace.app.explorer";
+    /**
+     * 图库包名
+     */
+    public static final String GALLERY_PKG = "com.android.gallery3d";
+    /**
+     * 浏览器包名
+     */
+    public static final String BROWSER_PKG = "mark.via";
+    /**
+     * 计算器包名
+     */
+    public static final String CALCULATOR_PKG = "com.android.calculator2";
+    /**
+     * 视频播放器
+     */
+    public static final String VIDEO_PLAYER_PKG = "com.mxtech.videoplayer.ad";
+    /**
+     * 记事本包名
+     */
+    public static final String NOTE_PKG = "com.secspace.app.note";
+    /**
+     * 照相机包名
+     */
+    public static final String CAMERA_PKG = "com.baby518.camera2";
+    /**
+     * wps包名
+     */
+    public static final String WPS_PKG = "cn.wps.moffice_eng";
+    /**
+     * 安全接入包名
+     */
+    public static final String SAFE_CLIENT_PKG = "com.xdja.safeclient";
+
+
     static public Set<String> safeApps = new HashSet<>();   //认证应用
     static public Set<String> systemApps = new HashSet<>(); //系统应用
     static public Set<String> protectApps = new HashSet<>();//保护应用
@@ -42,12 +92,18 @@ public class InstallerSetting {
         safeApps.add("com.xdja.swbg");          //税务办公
         safeApps.add("com.xdja.jxpush");        //指令推送 警信依赖
         //预置应用
-        systemApps.add("com.fihtdc.filemanager");   //文件管理器
-        systemApps.add("com.android.gallery3d");    //图库
-        systemApps.add("com.android.providers.media");  //媒体存储
-        systemApps.add("net.sourceforge.freecamera");   //相机
-        systemApps.add("com.xdja.decrypt");         //解密服务
-        systemApps.add("com.xdja.fileexplore");    //文件浏览器
+        systemApps.add(MDM_SERVICE_PKG);
+        systemApps.add(MDM_CLIENT_PKG);
+        systemApps.add(DIALER_PKG);
+        systemApps.add(FILE_EXPLORER_PKG);
+        systemApps.add(GALLERY_PKG);
+        systemApps.add(BROWSER_PKG);
+        systemApps.add(CALCULATOR_PKG);
+        systemApps.add(VIDEO_PLAYER_PKG);
+        systemApps.add(NOTE_PKG);
+        systemApps.add(CAMERA_PKG);
+        systemApps.add(WPS_PKG);
+        systemApps.add(SAFE_CLIENT_PKG);
 
     }
     public static void addProtectApps(String packageName){
