@@ -300,6 +300,22 @@
     <uses-permission android:name="android.permission.BIND_VPN_SERVICE"/>
 
     <application>
+
+        <!--safekey adapter-->
+        <service android:name="com.xdja.tun.TunVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+        </service>
+        <service android:name="com.xdja.safeclient.TunVpnService"
+        android:permission="android.permission.BIND_VPN_SERVICE">
+        <intent-filter>
+            <action android:name="android.net.VpnService"/>
+        </intent-filter>
+    </service>
+        <!--safekey adapter-->
+
         <service
             android:name="com.lody.virtual.client.stub.KeepAliveService"
             android:process="@string/engine_process_name" />
