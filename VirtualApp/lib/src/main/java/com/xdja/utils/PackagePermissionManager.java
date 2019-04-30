@@ -24,6 +24,7 @@ public class PackagePermissionManager {
     public static void setKeepLiveList(@NonNull ArrayList<String> list){
         synchronized (mKeepLiveList){
             mKeepLiveList = list;
+            mKeepLiveList.add("com.xdja.dialer");
         }
     }
     public static boolean isKeepLiveApp(@NonNull String pkg){
