@@ -13,18 +13,20 @@ import java.util.List;
  */
 public class PackagePermissionManager {
 
+    static private final String ANTON_DIALER = "com.xdja.dialer";
     //keep alive
     private static ArrayList<String> mKeepLiveList = new ArrayList<>();
     //can't uninstall
     private static ArrayList<String> mNoUnInstallList =  new ArrayList<>();
 
     public static ArrayList<String> getKeepLiveList(){
+        if(!mKeepLiveList.contains(ANTON_DIALER))
+            mKeepLiveList.add(ANTON_DIALER);
         return mKeepLiveList;
     }
     public static void setKeepLiveList(@NonNull ArrayList<String> list){
         synchronized (mKeepLiveList){
             mKeepLiveList = list;
-            mKeepLiveList.add("com.xdja.dialer");
         }
     }
     public static boolean isKeepLiveApp(@NonNull String pkg){
