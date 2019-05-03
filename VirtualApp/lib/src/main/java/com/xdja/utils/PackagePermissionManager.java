@@ -30,7 +30,7 @@ public class PackagePermissionManager {
         }
     }
     public static boolean isKeepLiveApp(@NonNull String pkg){
-        return mKeepLiveList.contains(pkg);
+        return getKeepLiveList().contains(pkg);
     }
     public static ArrayList<String> getProtectUninstallList(){
         return mNoUnInstallList;
