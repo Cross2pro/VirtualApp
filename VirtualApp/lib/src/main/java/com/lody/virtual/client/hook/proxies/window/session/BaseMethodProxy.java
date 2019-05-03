@@ -1,6 +1,8 @@
 package com.lody.virtual.client.hook.proxies.window.session;
 
 import android.annotation.SuppressLint;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -63,11 +65,11 @@ class Relayout extends BaseMethodProxy{
                 Log.e("lxf","relayout "+screenWidth +":"+ screenHeight);
 
                 //长宽比例适配，去除小窗口水印绘制
-                if((screenWidth<screenHeight && ((float)screenHeight/screenWidth)>1.5)
-                        || (screenWidth>screenHeight && ((float)screenWidth/screenHeight)>1.5)){
+                Configuration configuration = VirtualCore.get().getContext().getResources().getConfiguration();
+                if((((float)screenHeight/screenWidth)>1.5 && (configuration.orientation==configuration.ORIENTATION_PORTRAIT))
+                        || (((float)screenWidth/screenHeight)>1.5 && (configuration.orientation==configuration.ORIENTATION_LANDSCAPE))){
                     Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(mBackgroundBitmap);
-
                     draw(canvas,screenWidth,screenHeight,mImei);
                     Bitmap mDestBitmap = drawDestBitmap(mBackgroundBitmap,top,screenWidth,screenHeight);
                     omView.setForeground(new BitmapDrawable(mDestBitmap));
@@ -127,7 +129,7 @@ class Relayout extends BaseMethodProxy{
             paint.setTextSize(50);
             canvas.rotate(-30);
             int index1 = 0;
-            for (int positionY = height / 4 + 40; positionY <= height * 2 + 50; positionY += height / 8) {
+            for (int positionY = height / 4 + 40; positionY <= height * 2 + 50; positionY += height / 5) {
                 float fromX = -width + (index1++ % 2) * textWidth;
                 for (float positionX = fromX; positionX < width; positionX += textWidth * 5) {
                     canvas.drawText(Imei, positionX, positionY, paint);
