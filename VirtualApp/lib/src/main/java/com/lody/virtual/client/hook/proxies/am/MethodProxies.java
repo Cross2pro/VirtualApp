@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -940,7 +941,16 @@ class MethodProxies {
                 Icon icon = Icon.createWithResource(getHostPkg(), notification.icon);
                 Reflect.on(notification).call("setSmallIcon", icon);
             }
-
+            id = VNotificationManager.get().dealNotificationId(id, component.getPackageName(), null, 0);
+            String tag = VNotificationManager.get().dealNotificationTag(id, component.getPackageName(), null, 0);
+            VNotificationManager.get().addNotification(id, tag, component.getPackageName(), 0);
+            try {
+                NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
+                        .getSystemService(Context.NOTIFICATION_SERVICE);
+                nm.notify(tag, id, notification);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
 //            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
         }
