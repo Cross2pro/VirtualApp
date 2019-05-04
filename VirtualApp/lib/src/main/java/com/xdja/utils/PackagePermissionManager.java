@@ -50,7 +50,7 @@ public class PackagePermissionManager {
      *
      * @param bundle
      */
-    public void setEnableInstallationSource(Bundle bundle) {
+    public static void setEnableInstallationSource(Bundle bundle) {
         ArrayList<String> apps = bundle.getStringArrayList("installationSourceList");
         synchronized (EnabledInstallationSource){
             if (apps != null && !apps.isEmpty()) {
@@ -60,7 +60,7 @@ public class PackagePermissionManager {
             }
         }
     }
-    public ArrayList<String> setEnableInstallationSource(){
+    public static ArrayList<String> getEnableInstallationSource(){
         return EnabledInstallationSource;
     }
 }

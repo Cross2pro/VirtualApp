@@ -42,6 +42,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.MediaFileUtil;
 import com.lody.virtual.remote.InstallOptions;
+import com.xdja.utils.PackagePermissionManager;
 import com.xdja.utils.Stirrer;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
@@ -90,10 +91,10 @@ public class InstallerActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.custom_installer);
 
-        if(!VAppPermissionManager.get().getThirdAppInstallationEnable()){
-            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
-            finish();
-        }
+//        if(!VAppPermissionManager.get().getThirdAppInstallationEnable()){
+//            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
+//            finish();
+//        }
 
         rl_check = (RelativeLayout) findViewById(R.id.rl_check);
         rl_install = (RelativeLayout) findViewById(R.id.rl_install);
@@ -161,31 +162,41 @@ public class InstallerActivity extends Activity {
 
         String path = getIntent().getStringExtra("installer_path");
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
-        if("com.tencent.mm".equals(source_apk_packagename)
-                ||"cn.wps.moffice".equals(source_apk_packagename)
-                ||"com.android.gallery3d".equals(source_apk_packagename)
-                || "com.xdja.jxclient".equals(source_apk_packagename)){
 
-            IntentFilter filter=new IntentFilter();
-            filter.addAction(SpecialComponentList.protectAction("com.xdja.decrypt.DecryptService.DECRYPT_RESULT"));
-            registerReceiver(myReceiver,filter);
-            isRegisterReceiver = true;
+        if(!PackagePermissionManager.getEnableInstallationSource().contains("*")
+                && !PackagePermissionManager.getEnableInstallationSource().contains(source_apk_packagename)){
+            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
+            finish();
+            return;
+        }
+        initView(getIntent());
+        stateChanged(STATE_INSTALL);
 
-            Intent intent = new Intent();
-            intent.setAction("com.xdja.decrypt.COPYFILE");
-            intent.putExtra("workspace",VirtualCore.get().getHostPkg());
-            intent.putExtra("source_apk", source_apk_packagename);
-            intent.putExtra("installer_path", path);
-            intent.putExtra("_VA_|_user_id_",0);
-            intent.setComponent(new ComponentName("com.xdja.decrypt", "com.xdja.decrypt.DecryptService"));
-//            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            VirtualCore.get().getContext().startService(intent);
-            stateChanged(STATE_NONE);
-        }
-        else{
-            initView(getIntent());
-            stateChanged(STATE_INSTALL);
-        }
+        //关闭了透明加解密
+//        if("com.tencent.mm".equals(source_apk_packagename)
+//                ||"cn.wps.moffice".equals(source_apk_packagename)
+//                ||"com.android.gallery3d".equals(source_apk_packagename)
+//                || "com.xdja.jxclient".equals(source_apk_packagename)){
+//
+//            IntentFilter filter=new IntentFilter();
+//            filter.addAction(SpecialComponentList.protectAction("com.xdja.decrypt.DecryptService.DECRYPT_RESULT"));
+//            registerReceiver(myReceiver,filter);
+//            isRegisterReceiver = true;
+//
+//            Intent intent = new Intent();
+//            intent.setAction("com.xdja.decrypt.COPYFILE");
+//            intent.putExtra("workspace",VirtualCore.get().getHostPkg());
+//            intent.putExtra("source_apk", source_apk_packagename);
+//            intent.putExtra("installer_path", path);
+//            intent.putExtra("_VA_|_user_id_",0);
+//            intent.setComponent(new ComponentName("com.xdja.decrypt", "com.xdja.decrypt.DecryptService"));
+//            VirtualCore.get().getContext().startService(intent);
+//            stateChanged(STATE_NONE);
+//        }
+//        else{
+//            initView(getIntent());
+//            stateChanged(STATE_INSTALL);
+//        }
     }
 
     private void initView(Intent intent){
