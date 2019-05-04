@@ -332,6 +332,7 @@ public final class VirtualCore {
 
     public void waitForEngine() {
         ServiceManagerNative.ensureServerStarted();
+        sendBootCompleteBC("com.xdja.emm", "xdja.emm.initservice");
         preLaunchApp();
     }
 
@@ -341,16 +342,19 @@ public final class VirtualCore {
         if (shouldLaunchApp("com.xdja.dialer")) {
             VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
         }
+    }
 
-        if (shouldLaunchApp("com.xdja.emm")) {
-            Intent intent = new Intent("xdja.emm.initservice");
+    //Add by xdja
+    public void sendBootCompleteBC(final String packageName, String action) {
+        if (shouldLaunchApp(packageName)) {
+            Intent intent = new Intent(action);
             VActivityManager.get().startService(0, intent);
             new Thread() {
                 @Override
                 public void run() {
                     try {
-                        sleep(3000);
-                        PrivilegeAppOptimizer.get().performOptimize("com.xdja.emm", 0);
+                        sleep(2000);
+                        PrivilegeAppOptimizer.get().performOptimize(packageName, 0);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
