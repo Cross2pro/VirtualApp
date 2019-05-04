@@ -112,7 +112,18 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
 		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
-        VirtualCore.get().sendBootCompleteBC("com.xdja.emm", "xdja.emm.initservice");
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                VirtualCore.get().sendBootCompleteBC("com.xdja.emm", "xdja.emm.initservice");
+            }
+        }.start();
+
         return true;
     }
 
