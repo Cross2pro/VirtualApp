@@ -179,6 +179,7 @@ public class StaticReceiverSystem {
         }
         ComponentName componentName = ComponentUtils.toComponentName(info);
         broadcastSent(info, result);
+        SpecialComponentList.unprotectIntent(data.intent);
         VClient.get().scheduleReceiver(info.processName, componentName, data.intent, result);
         return true;
     }
