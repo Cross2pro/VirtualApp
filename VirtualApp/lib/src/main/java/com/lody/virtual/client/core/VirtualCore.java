@@ -61,6 +61,7 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
+import com.lody.virtual.server.pm.PrivilegeAppOptimizer;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.CallLogObserver;
 import com.xdja.call.PhoneCallService;
@@ -341,9 +342,21 @@ public final class VirtualCore {
             VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
         }
 
-//        if (shouldLaunchApp("com.xdja.emm")) {
-//            VActivityManager.get().launchApp(myUserId(), "com.xdja.emm");
-//        }
+        if (shouldLaunchApp("com.xdja.emm")) {
+            Intent intent = new Intent("xdja.emm.initservice");
+            VActivityManager.get().startService(0, intent);
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        sleep(3000);
+                        PrivilegeAppOptimizer.get().performOptimize("com.xdja.emm", 0);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }.start();
+        }
     }
 
     //Add by xdja

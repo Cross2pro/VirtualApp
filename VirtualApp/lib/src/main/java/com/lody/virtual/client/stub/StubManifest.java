@@ -28,7 +28,7 @@ public class StubManifest {
 
     public static int STUB_COUNT = 100;
     public static String[] PRIVILEGE_APPS = new String[]{
-            // EMPTY NOW
+            "com.xdja.emm"
     };
 
 
