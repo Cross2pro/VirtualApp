@@ -332,7 +332,6 @@ public final class VirtualCore {
 
     public void waitForEngine() {
         ServiceManagerNative.ensureServerStarted();
-        preLaunchApp();
     }
 
     //Add by xdja

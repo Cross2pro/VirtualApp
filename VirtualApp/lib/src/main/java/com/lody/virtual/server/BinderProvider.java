@@ -116,7 +116,10 @@ public final class BinderProvider extends ContentProvider {
             @Override
             public void run() {
                 try {
-                    sleep(10000);
+                    Log.d("wxd", " start preLaunchApp");
+                    VirtualCore.get().preLaunchApp();
+                    Log.d("wxd", " end preLaunchApp");
+                    sleep(8000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
