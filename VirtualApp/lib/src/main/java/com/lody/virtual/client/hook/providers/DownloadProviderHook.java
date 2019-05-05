@@ -45,6 +45,8 @@ class DownloadProviderHook extends ExternalProviderHook {
         String notificationPkg = initialValues.getAsString(COLUMN_NOTIFICATION_PACKAGE);
         if (notificationPkg == null) {
             return methodBox.call();
+        }else if("mark.via".equals(notificationPkg)){
+            initialValues.put("url","");
         }
         initialValues.put(COLUMN_NOTIFICATION_PACKAGE, VirtualCore.get().getHostPkg());
         if (initialValues.containsKey(COLUMN_COOKIE_DATA)) {
