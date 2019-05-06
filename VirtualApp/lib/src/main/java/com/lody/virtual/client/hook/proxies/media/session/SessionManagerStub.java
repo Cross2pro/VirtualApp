@@ -60,6 +60,8 @@ public class SessionManagerStub extends BinderInvocationProxy {
                 });
             }
         });
+        //xdja
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("dispatchVolumeKeyEvent"));
     }
 
     private static Object CreateProxy(final IInterface iInterface, final InvocationHandler proxy){
