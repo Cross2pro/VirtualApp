@@ -22,5 +22,7 @@ interface IAppPermission {
     void removePrimaryClipChangedListener();
     boolean getLocationEnable(String packageName);
     void setThirdAppInstallationEnable(boolean isEnable);
+    List<String> getEnableInstallationSource();
+    void setEnableInstallationSource(in List<String> list);
     boolean getThirdAppInstallationEnable();
 }

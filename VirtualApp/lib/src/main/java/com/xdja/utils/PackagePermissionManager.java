@@ -1,7 +1,11 @@
 package com.xdja.utils;
 
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.xdja.zs.VAppPermissionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +48,6 @@ public class PackagePermissionManager {
         return mNoUnInstallList.contains(pkg);
     }
 
-    private static ArrayList<String> EnabledInstallationSource = new ArrayList<>();
     /**
      * 控制安全域内安装源接口
      *
@@ -52,15 +55,22 @@ public class PackagePermissionManager {
      */
     public static void setEnableInstallationSource(Bundle bundle) {
         ArrayList<String> apps = bundle.getStringArrayList("installationSourceList");
-        synchronized (EnabledInstallationSource){
-            if (apps != null && !apps.isEmpty()) {
-                EnabledInstallationSource = apps;
-            } else {
-                EnabledInstallationSource.clear();
-            }
+        Log.e("lxf-PackagePermission","setEnableInstallationSource "+apps);
+        List<String> list = new ArrayList<>(apps);
+        try {
+            VAppPermissionManager.get().getService().setEnableInstallationSource(list);
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
     public static ArrayList<String> getEnableInstallationSource(){
-        return EnabledInstallationSource;
+        ArrayList<String> list = new ArrayList<>();
+        try {
+            list.addAll(VAppPermissionManager.get().getService().getEnableInstallationSource());
+            Log.e("lxf-PackagePermission","EnabledInstallationSource "+list);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

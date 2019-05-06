@@ -1,12 +1,15 @@
 package com.xdja.zs;
 
 import android.content.ClipData;
+import android.os.Bundle;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -226,6 +229,23 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
         return isAllowThirdAppInstallion;
     }
 
+
+    private static ArrayList<String> EnabledInstallationSource = new ArrayList<>();
+    public void setEnableInstallationSource(List<String> list) {
+        Log.e("lxf-PackagePermission","setEnableInstallationSource "+list);
+        synchronized (EnabledInstallationSource){
+            if (list != null && !list.isEmpty()) {
+                EnabledInstallationSource.clear();
+                EnabledInstallationSource.addAll(list);
+            } else {
+                EnabledInstallationSource.clear();
+            }
+        }
+    }
+    public ArrayList<String> getEnableInstallationSource(){
+        Log.e("lxf-PackagePermission","EnabledInstallationSource "+EnabledInstallationSource);
+        return EnabledInstallationSource;
+    }
 
     /**
      * 构建缓存权限map的key
