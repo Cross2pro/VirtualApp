@@ -3386,6 +3386,15 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name="com.xdja.zs.NotificationListener"
+            android:label="安全盒双域"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService"/>
+            </intent-filter>
+        </service>
+
         <activity android:name="com.xdja.call.DialerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
