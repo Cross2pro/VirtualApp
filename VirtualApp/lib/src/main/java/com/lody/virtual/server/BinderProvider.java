@@ -98,8 +98,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.VIRTUAL_LOC, VirtualLocationService.get());
 
         /* Start Changed by XDJA */
-        VSafekeyManagerService.systemReady(context);
-        addService(ServiceManagerNative.SAFEKEY, VSafekeyManagerService.get());
+//        VSafekeyManagerService.systemReady(context);
+//        addService(ServiceManagerNative.SAFEKEY, VSafekeyManagerService.get());
         addService(ServiceManagerNative.CONTROLLER, controllerService.get());
         VAppPermissionManagerService.systemReady();
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
