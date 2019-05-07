@@ -19,11 +19,11 @@ public class ScreenLockManager extends BaseCounterManager{
 
     private static boolean isScreenOn = true;
 
-    final int UNLOCK = 0; //解锁
-    final int LOCK = 1; //锁定
-    final int SHOW = 2; //显示
-    final int HIDE = 3; //隐藏
-    final int INCALL = 4; //来电页面
+    final int UNLOCK = 0; // 亮屏到前台
+    final int LOCK = 1; //  手机灭屏
+    final int SHOW = 2; //  到前台
+    final int HIDE = 3; //  到后台
+    final int INCALL = 4; //来电页面到前台
 
     public ScreenLockManager(){
 
@@ -40,6 +40,10 @@ public class ScreenLockManager extends BaseCounterManager{
         if ("com.xdja.incallui.InCallActivity".equals(name)){
             screenLock(4);
             return;
+        }
+        if(isScreenOn){
+            screenLock(UNLOCK);
+            isScreenOn = false; // 进入安全盒后清除锁屏状态
         }
         screenLock(on?SHOW:HIDE);
     }
@@ -64,9 +68,11 @@ public class ScreenLockManager extends BaseCounterManager{
 
             Log.e(TAG,"onReceive " + intent.getAction());
            if(Intent.ACTION_SCREEN_OFF.equals(intent.getAction())){
+               isScreenOn = false;
                screenLock(LOCK);
             }else if(Intent.ACTION_SCREEN_ON.equals(intent.getAction())){
-               screenLock(UNLOCK);
+//               screenLock(UNLOCK);
+               isScreenOn = true;
            }
         }
     }
