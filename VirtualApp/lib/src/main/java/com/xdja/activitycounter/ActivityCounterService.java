@@ -40,13 +40,13 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
     private Map<Integer,String> mProcessesMap = new HashMap<>();
 
     @Override
-    public void activityCountAdd(String pkg,int pid) throws RemoteException {
-        activityCounter(pkg,pid,ADD);
+    public void activityCountAdd(String pkg, String name, int pid) throws RemoteException {
+        activityCounter(pkg,name,pid,ADD);
     }
 
     @Override
-    public void activityCountReduce(String pkg,int pid) throws RemoteException {
-        activityCounter(pkg,pid,RDU);
+    public void activityCountReduce(String pkg, String name, int pid) throws RemoteException {
+        activityCounter(pkg,name,pid,RDU);
     }
 
     @Override
@@ -73,6 +73,9 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
         int count = 0;
         //get all count of pid
         for(int id:mActivityCounter.keySet()){
+            String packagename = mProcessesMap.get(id);
+            Log.e("lxf-ActivityCounter",packagename);
+            Log.e("lxf-ActivityCounter","count "+mActivityCounter.get(id));
             count += mActivityCounter.get(id);
         }
         Log.d(TAG,"getFroundCount "+count);
@@ -83,7 +86,7 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
         mActivityCounter.remove(pid);
         mProcessesMap.remove(pid);
     }
-    synchronized private void activityCounter(String pkg,int pid, int mode){
+    synchronized private void activityCounter(String pkg,String name,int pid, int mode){
         int num;
         if(mActivityCounter.containsKey(pid)){
             num = mActivityCounter.get(pid);
@@ -106,8 +109,8 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
             mProcessesMap.remove(pid);
         }
         //回调上层
-        floatIconBallManager.nofityFroundChange(getFroundCount(), mode);
-        screenLockManager.nofityFroundChange(getFroundCount(),mode);
+        floatIconBallManager.nofityFroundChange(getFroundCount(), mode,name);
+        screenLockManager.nofityFroundChange(getFroundCount(),mode,name);
 
     }
 

@@ -31,16 +31,16 @@ public class ActivityCounterManager {
         return  IActivityCounterService.Stub
                 .asInterface(ServiceManagerNative.getService(ServiceManagerNative.FLOATICONBALL));
     }
-    public void activityCountAdd(String pkg,int pid ){
+    public void activityCountAdd(String pkg, String name, int pid ){
         try {
-            getRemote().activityCountAdd(pkg,pid);
+            getRemote().activityCountAdd(pkg,name,pid);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
     }
-    public void activityCountReduce(String pkg,int pid){
+    public void activityCountReduce(String pkg,String name,int pid){
         try {
-            getRemote().activityCountReduce(pkg,pid);
+            getRemote().activityCountReduce(pkg,name,pid);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }

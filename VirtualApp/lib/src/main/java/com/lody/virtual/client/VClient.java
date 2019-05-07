@@ -551,7 +551,7 @@ public final class VClient extends IVClient.Stub {
             public void onActivityCreated(Activity activity, Bundle bundle) { }
             @Override
             public void onActivityStarted(Activity activity) {
-                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),android.os.Process.myPid());
+                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getLocalClassName(), android.os.Process.myPid());
                 countOfActivity++;
             }
             @Override
@@ -560,7 +560,7 @@ public final class VClient extends IVClient.Stub {
             public void onActivityPaused(Activity activity) { }
             @Override
             public void onActivityStopped(Activity activity) {
-                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),android.os.Process.myPid());
+                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),activity.getLocalClassName(),android.os.Process.myPid());
                 countOfActivity--;
             }
             @Override

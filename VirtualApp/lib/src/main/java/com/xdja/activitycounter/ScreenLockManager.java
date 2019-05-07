@@ -23,6 +23,7 @@ public class ScreenLockManager extends BaseCounterManager{
     final int LOCK = 1; //锁定
     final int SHOW = 2; //显示
     final int HIDE = 3; //隐藏
+    final int INCALL = 4; //来电页面
 
     public ScreenLockManager(){
 
@@ -33,8 +34,13 @@ public class ScreenLockManager extends BaseCounterManager{
     }
 
     @Override
-    void changeState(int mode, boolean on) {
+    void changeState(int mode, boolean on,String name) {
         Log.e(TAG,"isScreenOn " + on);
+        Log.e(TAG,"name " + name);
+        if ("com.xdja.incallui.InCallActivity".equals(name)){
+            screenLock(4);
+            return;
+        }
         screenLock(on?SHOW:HIDE);
     }
 

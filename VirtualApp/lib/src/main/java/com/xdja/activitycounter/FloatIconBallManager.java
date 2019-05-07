@@ -12,7 +12,7 @@ public class FloatIconBallManager extends BaseCounterManager{
 
     private String TAG = "FloatIconBallManager";
 
-    protected void changeState(int mode, boolean show) {
+    protected void changeState(int mode, boolean show,String name) {
         Log.d(TAG,"floaticonball "+show );
         if(mForegroundInterface==null){
             Log.e(TAG,"FloatIconBall Callback is null.");

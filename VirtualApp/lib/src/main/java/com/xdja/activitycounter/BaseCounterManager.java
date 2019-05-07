@@ -8,16 +8,16 @@ abstract public class BaseCounterManager {
 
     public IForegroundInterface mForegroundInterface = null;
     protected boolean mShow = false;
-    public void nofityFroundChange(int count, int mode ){
+    public void nofityFroundChange(int count, int mode, String name){
 
         if(mode==ActivityCounterService.ADD && count > 0 && !mShow){
             mShow = true;
-            changeState(mode,true);
+            changeState(mode,true, name);
         }
         else if(mode==ActivityCounterService.RDU && count<=0 && mShow){
             mShow = false;
-            changeState(mode,false);
+            changeState(mode,false, name);
         }
     }
-    abstract void changeState(int mode, boolean on);
+    abstract void changeState(int mode, boolean on,String name);
 }
