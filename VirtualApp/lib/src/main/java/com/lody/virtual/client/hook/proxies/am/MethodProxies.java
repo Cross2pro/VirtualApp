@@ -924,6 +924,9 @@ class MethodProxies {
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
             }
+
+            fixSmallIcon(notification, component);
+
             if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg())) {
                 notification = new Notification();
                 notification.icon = getHostContext().getApplicationInfo().icon;
@@ -937,8 +940,7 @@ class MethodProxies {
              * which will throw an exception on :x process thus crash the application
              */
             if (notification != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung")
-                        ||Build.BRAND.equalsIgnoreCase("HUAWEI") || Build.MANUFACTURER.equalsIgnoreCase("HUAWEI"))) {
+                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung"))) {
                 notification.icon = getHostContext().getApplicationInfo().icon;
                 Icon icon = Icon.createWithResource(getHostPkg(), notification.icon);
                 Reflect.on(notification).call("setSmallIcon", icon);
@@ -955,6 +957,23 @@ class MethodProxies {
             }
 //            VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
+        }
+
+        private void fixSmallIcon(Notification notification, ComponentName component) {
+            if (notification != null) {
+                Context appContext = null;
+                try {
+                    appContext = getHostContext().createPackageContext(component.getPackageName(),
+                            Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    Icon icon = Icon.createWithResource(appContext.getPackageName(), appContext.getApplicationInfo().icon);
+                    Reflect.on(notification).call("setSmallIcon", icon);
+                }
+            }
         }
 
         @Override
