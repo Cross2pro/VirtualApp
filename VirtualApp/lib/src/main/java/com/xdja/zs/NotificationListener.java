@@ -78,6 +78,7 @@ public class NotificationListener extends NotificationListenerService {
 
             return;
         }
+        Log.e(Tag, "currentSpace "+currentSpace());
 
         if(isSystemApp(packageName) && currentSpace())
         {
@@ -92,7 +93,7 @@ public class NotificationListener extends NotificationListenerService {
 
         try {
             Bundle bundle = new Bundle();
-            Bundle result = context.getContentResolver().call(CONTENT_URI, "currentSpace", null, bundle);
+            Bundle result = context.getContentResolver().call(CONTENT_URI, "currentSpace", "com.xdja.safetybox", bundle);
             return result.getBoolean("space");
         } catch (Exception e) {
             e.printStackTrace();
