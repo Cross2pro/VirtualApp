@@ -64,8 +64,6 @@ import mirror.android.app.NotificationO;
         //check outside and inside's version
         boolean isInstalled = outside != null && outside.versionCode == inside.versionCode;
 
-        //Fix RemoteViews
-        getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, isInstalled);
             getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, isInstalled);
@@ -73,6 +71,8 @@ import mirror.android.app.NotificationO;
             getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
         }
         notification.icon = host.icon;
+        //Fix RemoteViews
+        getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
 
         //fix apk path
         ApplicationInfo proxyApplicationInfo;
