@@ -84,6 +84,14 @@ public class NotificationListener extends NotificationListenerService {
         {
             Log.e(Tag, "\tdelete this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
+
+            return;
+        }
+
+        if(currentSpace())
+        {
+            Log.e(Tag, "\tsnooze this notify " + sbn.getKey());
+            snoozeNotification(sbn.getKey(), 10 * 1000);
         }
     }
 
