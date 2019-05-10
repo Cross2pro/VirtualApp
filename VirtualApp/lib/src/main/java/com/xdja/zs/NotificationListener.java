@@ -2,7 +2,9 @@ package com.xdja.zs;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -12,6 +14,7 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.xdja.activitycounter.ActivityCounterManager;
 
 @SuppressLint("OverrideAbstract")
@@ -30,6 +33,39 @@ public class NotificationListener extends NotificationListenerService {
 
         mApp = getApplicationContext();
         packageManager = mApp.getPackageManager();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(Tag, "onStartCommand");
+        if(intent == null) {
+            return super.onStartCommand(intent, flags, startId);
+        } else {
+            String type = intent.getType();
+
+            if(type.equals("cancelAll"))
+            {
+                //cancelAllNotifications();
+
+                Log.e(Tag, "cancelAll");
+                StatusBarNotification all[] = this.getActiveNotifications();
+                if(all != null) {
+                    for (StatusBarNotification item : all) {
+                        Notification notification = item.getNotification();
+                        Bundle extras = notification.extras;
+                        String notificationTitle = extras.getString(Notification.EXTRA_TITLE);
+
+                        if (!item.getPackageName().equals(mApp.getPackageName())) {
+                            Log.e(Tag, String.format("int NotificationListener, snooze [Title: %s]", notificationTitle));
+                            snoozeNotification(item.getKey(), 10 * 1000);
+                        }
+                    }
+                }
+            }
+
+
+            return super.onStartCommand(intent, flags, startId);
+        }
     }
 
     @Override
@@ -108,5 +144,16 @@ public class NotificationListener extends NotificationListenerService {
         }
 
         return false;
+    }
+
+    public static void clearAllNotifications()
+    {
+        Log.e("zs_NotificationListener", "clearAllNotifications");
+
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName(VirtualCore.get().getHostPkg(), NotificationListener.class.getName()));
+        intent.setType("cancelAll");
+
+        VirtualCore.get().getContext().startService(intent);
     }
 }
