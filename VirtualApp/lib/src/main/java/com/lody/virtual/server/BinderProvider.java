@@ -105,8 +105,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
         VWaterMarkService.systemReady();
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
-        VSafekeyCkmsManagerService.systemReady(context);
-        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
+//        VSafekeyCkmsManagerService.systemReady(context);
+//        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
         VServiceKeepAliveService.systemReady();
         addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         /* End Changed by XDJA */

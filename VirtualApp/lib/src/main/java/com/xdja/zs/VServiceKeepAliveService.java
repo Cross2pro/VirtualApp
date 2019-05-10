@@ -2,8 +2,12 @@ package com.xdja.zs;
 
 
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -59,18 +63,29 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
     }
 
     @Override
-    public void runKeepAliveService(String pkgName, int userId) {
+    public void runKeepAliveService(final String pkgName, final int userId) {
         Iterator entries = mKeepAliveServiceList.entrySet().iterator();
         if (entries.hasNext()) {
             do {
-                Map.Entry entry = (Map.Entry) entries.next();
+                final Map.Entry entry = (Map.Entry) entries.next();
                 if (entry.getValue().equals(pkgName)) {
-                    Intent intent = new Intent();
-                    intent.setClassName(pkgName, (String) entry.getKey());
-                    VLog.d(TAG, "service:" + entry.getKey());
-                    VActivityManager.get().startService(userId, intent);
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                sleep(10000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            Intent intent = new Intent();
+                            intent.setClassName(pkgName, (String) entry.getKey());
+                            VLog.d(TAG, "service:" + entry.getKey());
+                            VActivityManager.get().startService(userId, intent);
+                        }
+                    }.start();
                 }
             } while (entries.hasNext());
         }
     }
+
 }
