@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
@@ -56,7 +57,12 @@ public class TelecomManagerStub extends BinderInvocationProxy {
         addMethodProxy(new StaticMethodProxy("getDefaultDialerPackage"){
             @Override
             public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
-                String defaultDialerPackage = "com.xdja.dialer";
+
+                String defaultDialerPackage = (String) result;
+                Log.i("wxd", " getDefaultDialerPackage " + defaultDialerPackage);
+                if(defaultDialerPackage != null && defaultDialerPackage.equals(VirtualCore.get().getHostPkg())){
+                    defaultDialerPackage = "com.xdja.dialer";
+                }
                 return defaultDialerPackage;
             }
         });

@@ -617,9 +617,7 @@ class MethodProxies {
                     extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                 }else if(intent.getAction()!=null
                         &&(intent.getAction().equals(ChooserActivity.ACTION)||intent.getAction().equals(Intent.ACTION_CHOOSER))){
-                    //双域版中屏蔽chooser 寻找外部应用.
-                    // extras.putParcelable(Intent.EXTRA_INTENT,intent.getParcelableExtra(Intent.EXTRA_INTENT));
-                    return 0;
+                    extras.putParcelable(Intent.EXTRA_INTENT,intent.getParcelableExtra(Intent.EXTRA_INTENT));
                 }
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 intent =  new Intent();
