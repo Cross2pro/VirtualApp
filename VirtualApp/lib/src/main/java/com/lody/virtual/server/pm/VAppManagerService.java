@@ -41,6 +41,7 @@ import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
 import com.lody.virtual.server.pm.parser.VPackage;
+import com.xdja.zs.VServiceKeepAliveManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -351,6 +352,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 return InstallResult.makeFailure("Not allowed to update the package.");
             }
             res.isUpdate = true;
+            VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_DEL);
             VActivityManagerService.get().killAppByPkg(res.packageName, VUserHandle.USER_ALL);
         }
         boolean useSourceLocationApk = options.useSourceLocationApk;
@@ -446,6 +448,7 @@ public class VAppManagerService extends IAppManager.Stub {
             notifyAppInstalled(ps, -1);
         }
         res.isSuccess = true;
+        VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_ADD);
         return res;
     }
 
@@ -503,6 +506,7 @@ public class VAppManagerService extends IAppManager.Stub {
             if (userIds.length == 1) {
                 uninstallPackageFully(ps, true);
             } else {
+                VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
                 // Just hidden it
                 VActivityManagerService.get().killAppByPkg(packageName, userId);
                 ps.setInstalled(userId, false);
@@ -565,6 +569,7 @@ public class VAppManagerService extends IAppManager.Stub {
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
         String packageName = ps.packageName;
         try {
+            VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
                 VEnvironment.getPackageResourcePath(packageName).delete();
