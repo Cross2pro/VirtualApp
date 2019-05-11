@@ -20,6 +20,7 @@ import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
@@ -146,6 +147,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 }
             }
             if (!taskAlive) {
+                TaskRecord taskRecord = mHistory.valueAt(N);
+                for(ActivityRecord activityRecord:taskRecord.activities) {
+                    if ((activityRecord.info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0) {
+                        VLog.d("optimizeTasksLocked", "Skip optimize for Activity:" + activityRecord.info);
+                        return;
+                    }
+                }
                 mHistory.removeAt(N);
             }
         }

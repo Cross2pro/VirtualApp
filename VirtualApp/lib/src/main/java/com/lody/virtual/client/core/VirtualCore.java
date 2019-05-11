@@ -343,10 +343,13 @@ public final class VirtualCore {
     }
 
     //Add by xdja
-    public void sendBootCompleteBC(final String packageName, String action) {
+    public void sendBootCompleteBC(final String packageName, String action, boolean update) {
         if (shouldLaunchApp(packageName)) {
             Intent intent = new Intent(action);
             VActivityManager.get().startService(0, intent);
+            if (update) {
+                return;
+            }
             new Thread() {
                 @Override
                 public void run() {
