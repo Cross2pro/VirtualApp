@@ -18,6 +18,7 @@ class TaskRecord {
     public int userId;
     public String affinity;
     public Intent taskRoot;
+    public boolean recentFlag = false;
 
     TaskRecord(int taskId, int userId, String affinity, Intent intent) {
         this.taskId = taskId;
