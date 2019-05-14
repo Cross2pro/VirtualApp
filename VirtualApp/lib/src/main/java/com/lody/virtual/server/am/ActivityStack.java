@@ -245,6 +245,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                     break;
                 }
                 case LAUNCH_SINGLE_TASK:
+                    //xdja 安通拨号首界面多个实例
+                    if("com.xdja.dialer".equals(affinity) && "android.intent.action.MAIN".equals(intent.getAction())){
+                        reuseTask = findTaskByAffinityLocked(userId, affinity);
+                        break;
+                    }
                     //xdja
                     if(!isAllowUseSourceTask(sourceRecord, info)){
                         //sourceRecord被LAUNCH_SINGLE_INSTANCE模式启动, 需要newTask
