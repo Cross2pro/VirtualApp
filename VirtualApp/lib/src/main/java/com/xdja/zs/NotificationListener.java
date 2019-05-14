@@ -57,7 +57,7 @@ public class NotificationListener extends NotificationListenerService {
 
                         if (!item.getPackageName().equals(mApp.getPackageName())) {
                             Log.e(Tag, String.format("int NotificationListener, snooze [Title: %s]", notificationTitle));
-                            snoozeNotification(item.getKey(), 10 * 1000);
+                            cancelNotification(item.getKey());
                         }
                     }
                 }
@@ -127,7 +127,7 @@ public class NotificationListener extends NotificationListenerService {
         if(currentSpace())
         {
             Log.e(Tag, "\tsnooze this notify " + sbn.getKey());
-            snoozeNotification(sbn.getKey(), 10 * 1000);
+            cancelNotification(sbn.getKey());
         }
     }
 
