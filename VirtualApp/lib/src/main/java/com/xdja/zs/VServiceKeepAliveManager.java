@@ -8,6 +8,9 @@ import com.lody.virtual.helper.utils.IInterfaceUtils;
 
 public class VServiceKeepAliveManager {
 
+    public static final int ACTION_DEL = 1;
+    public static final int ACTION_ADD = 2;
+
     private static final VServiceKeepAliveManager sInstance = new VServiceKeepAliveManager();
     IServiceKeepAlive mService;
 
@@ -46,9 +49,17 @@ public class VServiceKeepAliveManager {
         }
     }
 
-    public void runKeepAliveService(String pkgName, int userId) {
+    public void scheduleUpdateKeepAliveList(String pkgName, int action) {
         try {
-            get().getService().runKeepAliveService(pkgName, userId);
+            get().getService().scheduleUpdateKeepAliveList(pkgName, action);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void scheduleRunKeepAliveService(String pkgName, int userId) {
+        try {
+            get().getService().scheduleRunKeepAliveService(pkgName, userId);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

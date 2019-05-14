@@ -444,8 +444,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         ActivityCounterManager.get().cleanProcess(record.pid);
         //xdja
         VLog.d("wuyaowei", "onProcessDied:" + record.info.packageName);
-        VServiceKeepAliveManager.get().runKeepAliveService(record.info.packageName, VUserHandle.myUserId());
-
+        VServiceKeepAliveManager.get().scheduleRunKeepAliveService(record.info.packageName, VUserHandle.myUserId());
     }
 
     @Override

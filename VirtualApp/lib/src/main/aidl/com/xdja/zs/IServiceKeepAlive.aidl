@@ -6,5 +6,6 @@ package com.xdja.zs;
 interface IServiceKeepAlive {
     void addKeepAliveServiceName(String pkgName, String serviceName);
     void removeKeepAliveServiceName(String serviceName);
-    void runKeepAliveService(String pkgName, int userId);
+    void scheduleRunKeepAliveService(String pkgName, int userId);
+    void scheduleUpdateKeepAliveList(String pkgName, int action);
 }
