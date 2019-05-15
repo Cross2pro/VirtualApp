@@ -148,9 +148,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
             if (!taskAlive) {
                 TaskRecord taskRecord = mHistory.valueAt(N);
-                if (taskRecord.recentFlag && taskRecord.activities.size() > 0) {
-                    VLog.d("optimizeTasksLocked", "Skip optimize for task：" + taskRecord.taskId + " " + taskRecord.affinity);
-                    return;
+                synchronized (taskRecord.activities) {
+                    if (taskRecord.recentFlag && taskRecord.activities.size() > 0) {
+                        VLog.d("optimizeTasksLocked", "Skip optimize for task：" + taskRecord.taskId + " " + taskRecord.affinity);
+                        return;
+                    }
                 }
                 mHistory.removeAt(N);
             }
