@@ -45,21 +45,26 @@ public class NotificationListener extends NotificationListenerService {
 
             if(type.equals("cancelAll"))
             {
-                //cancelAllNotifications();
+                try {
+                    cancelAllNotifications();
 
-                Log.e(Tag, "cancelAll");
-                StatusBarNotification all[] = this.getActiveNotifications();
-                if(all != null) {
-                    for (StatusBarNotification item : all) {
-                        Notification notification = item.getNotification();
-                        Bundle extras = notification.extras;
-                        String notificationTitle = extras.getString(Notification.EXTRA_TITLE);
+                    Log.e(Tag, "cancelAll");
+                    StatusBarNotification all[] = this.getActiveNotifications();
+                    if (all != null) {
+                        for (StatusBarNotification item : all) {
+                            Notification notification = item.getNotification();
+                            Bundle extras = notification.extras;
+                            String notificationTitle = extras.getString(Notification.EXTRA_TITLE);
 
-                        if (!item.getPackageName().equals(mApp.getPackageName())) {
-                            Log.e(Tag, String.format("int NotificationListener, snooze [Title: %s]", notificationTitle));
-                            cancelNotification(item.getKey());
+                            if (!item.getPackageName().equals(mApp.getPackageName())) {
+                                Log.e(Tag, String.format("int NotificationListener, snooze [Title: %s]", notificationTitle));
+                                cancelNotification(item.getKey());
+                            }
                         }
                     }
+                }catch (Exception e)
+                {
+                    //不做处理
                 }
             }
 
