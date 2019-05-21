@@ -31,6 +31,7 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.BuildConfig;
@@ -47,6 +48,7 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
@@ -421,6 +423,35 @@ public final class VirtualCore {
             list.addAll(list64);
         }
         return list;
+    }
+
+    public List<ActivityManager.RecentTaskInfo> getAppTasksEx() {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.AppTask> list = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            //TODO V64BitHelper.getgetAppTasks64
+            list = new ArrayList<>(am.getAppTasks());
+            List<ActivityManager.RecentTaskInfo> recentTaskInfoList = new ArrayList<>();
+            for (ActivityManager.AppTask task : list) {
+                ActivityManager.RecentTaskInfo info = task.getTaskInfo();
+                if (info == null) {
+                    continue;
+                }
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    //過濾其他App
+                    String pkg = ActivityManagerCompat.getPackageName(info);
+                    if (!(TextUtils.equals(VirtualCore.getConfig().getHostPackageName(), pkg)
+                            || TextUtils.equals(VirtualCore.getConfig().get64bitEnginePackageName(), pkg)
+                    )) {
+                        continue;
+                    }
+                }
+                recentTaskInfoList.add(info);
+            }
+            return recentTaskInfoList;
+        } else {
+            return getRecentTasksEx(128, ActivityManager.RECENT_IGNORE_UNAVAILABLE | ActivityManager.RECENT_WITH_EXCLUDED);
+        }
     }
 
     public void requestCopyPackage64(String packageName) {

@@ -110,4 +110,20 @@ public class ActivityManagerCompat {
             }
         }
     }
+
+	public static String getPackageName(android.app.ActivityManager.RecentTaskInfo taskInfo) {
+		if (taskInfo == null) {
+			return null;
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			if (taskInfo.baseActivity != null) {
+				return taskInfo.baseActivity.getPackageName();
+			}
+		} else {
+			if (taskInfo.baseIntent != null) {
+				return IntentCompat.getPackageName(taskInfo.baseIntent);
+			}
+		}
+		return null;
+	}
 }

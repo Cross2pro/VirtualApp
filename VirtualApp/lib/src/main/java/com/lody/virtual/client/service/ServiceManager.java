@@ -102,6 +102,11 @@ public class ServiceManager {
         if (intent == null || serviceInfo == null) {
             return null;
         }
+
+        if (!serviceInfo.packageName.equals(VClient.get().getCurrentPackage())) {
+            return null;
+        }
+
         ComponentName component = ComponentUtils.toComponentName(serviceInfo);
         ServiceRecord record;
         try {

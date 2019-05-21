@@ -131,8 +131,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
      * as well. A new TaskRecord will be recreated in `onActivityCreated`
      */
     private void optimizeTasksLocked() {
-        List<ActivityManager.RecentTaskInfo> recentTask = VirtualCore.get().getRecentTasksEx(Integer.MAX_VALUE,
-                ActivityManager.RECENT_WITH_EXCLUDED | ActivityManager.RECENT_IGNORE_UNAVAILABLE);
+        List<ActivityManager.RecentTaskInfo> recentTask = VirtualCore.get().getAppTasksEx();
         int N = mHistory.size();
         while (N-- > 0) {
             TaskRecord task = mHistory.valueAt(N);
@@ -147,13 +146,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 }
             }
             if (!taskAlive) {
-                TaskRecord taskRecord = mHistory.valueAt(N);
-                synchronized (taskRecord.activities) {
-                    if (taskRecord.recentFlag && taskRecord.activities.size() > 0) {
-                        VLog.d("optimizeTasksLocked", "Skip optimize for task：" + taskRecord.taskId + " " + taskRecord.affinity);
-                        return;
-                    }
-                }
                 mHistory.removeAt(N);
             }
         }
@@ -618,11 +610,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 synchronized (r.task.activities) {
                     r.task.activities.remove(r);
                     r.task.activities.add(r);
-                    if (r.task.activities.size() == 1) {
-                        if ((r.info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0) {
-                            r.task.recentFlag = true;
-                        }
-                    }
                 }
             }
         }
