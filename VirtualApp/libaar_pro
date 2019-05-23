@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+COMMIT=`git log --abbrev-commit --pretty=format:%h -n 1`
+
+if [ -e ./libva.aar ]; then
+    rm -rf ./libva.aar
+fi
+./gradlew lib:clean;
+./gradlew lib:assembleRelease -Pappid="com.xdja.safetybox" -Pcommit="$COMMIT"
+cp ./lib/build/outputs/aar/lib-release.aar libva.aar
+
+if [ -e ./libva_pro.aar ]; then
+    rm -rf ./libva_pro.aar
+fi
+./gradlew lib:clean;
+./gradlew lib:assembleRelease -Pappid="com.xdja.safetybox.pro" -Pcommit="$COMMIT"
+cp ./lib/build/outputs/aar/lib-release.aar libva_pro.aar

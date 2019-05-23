@@ -3353,7 +3353,7 @@
 
         <provider
             android:name="com.xdja.ckms.TokenProvider"
-            android:authorities="com.xdja.safetybox.TokenProvider"
+            android:authorities="${AUTHORITY_PREFIX}.TokenProvider"
             android:enabled="true"
             android:exported="true">
         </provider>

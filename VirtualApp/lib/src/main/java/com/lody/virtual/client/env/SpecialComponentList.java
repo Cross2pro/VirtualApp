@@ -5,6 +5,9 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.util.Log;
+
+import com.lody.virtual.client.core.VirtualCore;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,18 +193,20 @@ public final class SpecialComponentList {
         if (newAction == null) {
             newAction = PROTECT_ACTION_PREFIX + originAction;
         }
-        return newAction;
+        Log.e("lxf","protectAction "+newAction);
+        return VirtualCore.get().getHostPkg() + newAction;
     }
 
     public static String unprotectAction(String action) {
         if (action == null) {
             return null;
         }
-        if (action.startsWith(PROTECT_ACTION_PREFIX)) {
-            return action.substring(PROTECT_ACTION_PREFIX.length());
+        if (action.startsWith(VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX)) {
+            return action.substring((VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX).length());
         }
         for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
             String modifiedAction = next.getValue();
+            modifiedAction = modifiedAction.substring((VirtualCore.get().getHostPkg()).length());
             if (modifiedAction.equals(action)) {
                 return next.getKey();
             }
