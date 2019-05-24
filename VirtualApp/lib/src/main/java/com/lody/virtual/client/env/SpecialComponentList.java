@@ -198,16 +198,18 @@ public final class SpecialComponentList {
     }
 
     public static String unprotectAction(String action) {
+        Log.e("lxf","unprotectAction "+action);
         if (action == null) {
             return null;
         }
         if (action.startsWith(VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX)) {
             return action.substring((VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX).length());
         }
+        action = action.substring((VirtualCore.get().getHostPkg()).length());
         for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
             String modifiedAction = next.getValue();
-            modifiedAction = modifiedAction.substring((VirtualCore.get().getHostPkg()).length());
             if (modifiedAction.equals(action)) {
+                Log.e("lxf","unprotectAction next.getKey() "+next.getKey());
                 return next.getKey();
             }
         }
