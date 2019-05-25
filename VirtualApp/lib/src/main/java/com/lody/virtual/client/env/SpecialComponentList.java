@@ -205,7 +205,11 @@ public final class SpecialComponentList {
         if (action.startsWith(VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX)) {
             return action.substring((VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX).length());
         }
-        action = action.substring((VirtualCore.get().getHostPkg()).length());
+
+        if (action.startsWith(VirtualCore.get().getHostPkg())) {
+            action = action.substring((VirtualCore.get().getHostPkg()).length());
+        }
+
         for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
             String modifiedAction = next.getValue();
             if (modifiedAction.equals(action)) {
