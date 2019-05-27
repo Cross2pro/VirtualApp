@@ -1057,6 +1057,19 @@ public final class VClient extends IVClient.Stub {
                 handler.handleUncaughtException(t, e);
             } else {
                 VLog.e("uncaught", e);
+                
+                //xdja
+                Object defaultUncaughtExceptionHandler = Reflect.on(t).field("defaultUncaughtExceptionHandler").get();
+                if (defaultUncaughtExceptionHandler == null) {
+                    Log.e(TAG, "Thread defaultUncaughtExceptionHandler is null");
+                } else {
+                    try {
+                        Reflect.on(defaultUncaughtExceptionHandler).call("uncaughtException", t, e);
+                    } catch (Exception e2) {
+                        Log.e(TAG, e2.toString());
+                    }
+                }
+
                 System.exit(0);
             }
         }
