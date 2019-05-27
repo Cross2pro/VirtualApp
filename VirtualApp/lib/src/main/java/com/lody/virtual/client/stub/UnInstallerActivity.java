@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -64,6 +65,11 @@ public class UnInstallerActivity extends Activity {
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
         Log.e(TAG, " uninstall app : " + uninstall_app + " source_apk : " + source_apk_packagename);
 
+        if(TextUtils.isEmpty(uninstall_app)){
+            Log.e(TAG,"Uninstall app name is NULL!");
+            finish();
+            return;
+        }
         apkinfo = paseUninstallApp(uninstall_app);
 
         img_appicon.setImageDrawable(apkinfo.icon);

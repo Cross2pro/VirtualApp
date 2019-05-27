@@ -22,6 +22,8 @@ import android.os.IInterface;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -50,6 +52,8 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.pm.VAppManagerService;
+
+import org.w3c.dom.Text;
 
 import java.io.File;
 
@@ -163,12 +167,12 @@ public class InstallerActivity extends Activity {
         String path = getIntent().getStringExtra("installer_path");
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
 
-        if(!PackagePermissionManager.getEnableInstallationSource().contains("*")
-                && !PackagePermissionManager.getEnableInstallationSource().contains(source_apk_packagename)){
-            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
-            finish();
-            return;
-        }
+//        if(!PackagePermissionManager.getEnableInstallationSource().contains("*")
+//                && !PackagePermissionManager.getEnableInstallationSource().contains(source_apk_packagename)){
+//            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
+//            finish();
+//            return;
+//        }
         initView(getIntent());
         stateChanged(STATE_INSTALL);
 
@@ -203,21 +207,36 @@ public class InstallerActivity extends Activity {
         String path = intent.getStringExtra("installer_path");
         String source_apk_packagename = intent.getStringExtra("source_apk");
         String source_lable = intent.getStringExtra("source_label");
-        if(source_lable!=null){
-            tv_source.setText("应用来源："+source_lable);
-        }else {
-            InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(source_apk_packagename, 0);
-            sourceapkinfo = parseInstallApk(info.getApkPath());
-            tv_source.setText("应用来源："+sourceapkinfo.name);
-        }
-        apkinfo = parseInstallApk(path);
-        img_appicon.setImageDrawable(apkinfo.icon);
-        tv_appname.setText(apkinfo.name);
 
-        if(InstallerSetting.safeApps.contains(apkinfo.packageName)){
-            tv_warn_isshow = false;
+        String sourceText;
+        if(!TextUtils.isEmpty(source_lable)){
+            sourceText = "应用来源："+source_lable;
+        }else {
+            if(!TextUtils.isEmpty(source_apk_packagename)){
+                InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(source_apk_packagename, 0);
+                if(info==null|| TextUtils.isEmpty(info.getApkPath())){
+                    sourceText = "应用来源：未知";
+                }else{
+                    sourceapkinfo = parseInstallApk(info.getApkPath());
+                    sourceText = "应用来源："+sourceapkinfo.name;
+                }
+            }else{
+                sourceText = "应用来源：未知";
+            }
+        }
+        tv_source.setText(sourceText);
+        if(!TextUtils.isEmpty(path)){
+            apkinfo = parseInstallApk(path);
+            img_appicon.setImageDrawable(apkinfo.icon);
+            tv_appname.setText(apkinfo.name);
+            if(InstallerSetting.safeApps.contains(apkinfo.packageName)){
+                tv_warn_isshow = false;
+            }else{
+                tv_warn_isshow = true;
+            }
         }else{
-            tv_warn_isshow = true;
+            Log.e(TAG,"InstallApk path is NULL!");
+            finish();
         }
     }
 
@@ -295,7 +314,7 @@ public class InstallerActivity extends Activity {
 
     }
 
-    private AppInfo parseInstallApk(String path) {
+    private AppInfo parseInstallApk(@NonNull String path) {
         AppInfo appinfo = new AppInfo();
         File f = new File(path);
         PackageManager pm = VirtualCore.get().getContext().getPackageManager();
