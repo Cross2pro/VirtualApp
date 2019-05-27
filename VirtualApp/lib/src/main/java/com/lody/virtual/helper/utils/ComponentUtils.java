@@ -137,7 +137,7 @@ public class ComponentUtils {
     }
 
     public static String getComponentAction(String packageName, String name) {
-        return String.format("_VA_%s_%s", packageName, name);
+        return String.format(VirtualCore.get().getHostPkg()+"_VA_%s_%s", packageName, name);
     }
 
     public static Intent redirectBroadcastIntent(Intent intent, int userId) {

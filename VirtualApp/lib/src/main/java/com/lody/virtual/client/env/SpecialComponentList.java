@@ -186,7 +186,7 @@ public final class SpecialComponentList {
         if (originAction == null) {
             return null;
         }
-        if (originAction.startsWith("_VA_")) {
+        if (originAction.startsWith(VirtualCore.get().getHostPkg()+"_VA_")) {
             return originAction;
         }
         String newAction = PROTECTED_ACTION_MAP.get(originAction);
