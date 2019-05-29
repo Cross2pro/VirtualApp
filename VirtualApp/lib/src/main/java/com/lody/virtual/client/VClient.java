@@ -722,7 +722,13 @@ public final class VClient extends IVClient.Stub {
         }
         File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
         NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
-
+        if(!userLibDir.exists()){
+            try {
+                FileUtils.createSymlink(libPath, userLibDir.getPath());
+            } catch (Exception e) {
+                //ignore
+            }
+        }
         //xdja safekey adapter
         String subPathData = "/Android/data/"+info.packageName;
         File[] efd = VEnvironment.getTFRoots();

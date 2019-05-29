@@ -41,6 +41,16 @@ public class RequestPermissionsActivity extends Activity {
             finish();
             return;
         }
+        doIntent(intent);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        doIntent(intent);
+    }
+
+    private void doIntent(Intent intent) {
         final String[] permissions = intent.getStringArrayExtra("permissions");
         IBinder binder = BundleCompat.getBinder(intent, "callback");
         if (binder == null || permissions == null) {

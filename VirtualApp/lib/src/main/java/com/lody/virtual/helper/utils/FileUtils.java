@@ -63,7 +63,6 @@ public class FileUtils {
     /**
      * @param path
      * @param mode {@link FileMode}
-     * @throws Exception
      */
     public static void chmod(String path, int mode) throws Exception {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -85,6 +84,10 @@ public class FileUtils {
     }
 
     public static void createSymlink(String oldPath, String newPath) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Os.link(oldPath, newPath);
+            return;
+        }
         Runtime.getRuntime().exec("ln -s " + oldPath + " " + newPath).waitFor();
     }
 

@@ -19,6 +19,10 @@ public class BuildCompat {
         return 0;
     }
 
+    public static boolean isQ() {
+        return Build.VERSION.SDK_INT > 28 || (Build.VERSION.SDK_INT == 28 && getPreviewSDKInt() > 0);
+    }
+
     public static boolean isOreo() {
         return Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && getPreviewSDKInt() > 0);
     }
