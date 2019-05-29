@@ -19,6 +19,7 @@ import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -227,11 +228,37 @@ public class NativeEngine {
         sFlag = true;
     }
 
+    public static void bypassHiddenAPI(){
+        if (BuildCompat.isPie()) {
+            try {
+                Method forNameMethod = Class.class.getDeclaredMethod("forName", String.class);
+                Class<?> clazz = (Class<?>) forNameMethod.invoke(null, "dalvik.system.VMRuntime");
+                Method getMethodMethod = Class.class.getDeclaredMethod("getDeclaredMethod", String.class, Class[].class);
+                Method getRuntime = (Method) getMethodMethod.invoke(clazz, "getRuntime", new Class[0]);
+                Method setHiddenApiExemptions = (Method) getMethodMethod.invoke(clazz, "setHiddenApiExemptions", new Class[]{String[].class});
+                Object runtime = getRuntime.invoke(null);
+                setHiddenApiExemptions.invoke(runtime, new Object[]{
+                        new String[]{
+                                "Landroid/",
+                                "Lcom/android/",
+                                "Ljava/lang/",
+                                "Ldalvik/system/",
+                                "Llibcore/io/",
+                        }
+                });
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void bypassHiddenAPIEnforcementPolicyIfNeeded() {
         if (sBypassedP) {
             return;
         }
-        if (BuildCompat.isPie()) {
+        if (BuildCompat.isQ()) {
+            bypassHiddenAPI();
+        } else if (BuildCompat.isPie()) {
             try {
                 nativeBypassHiddenAPIEnforcementPolicy();
             } catch (Throwable e) {

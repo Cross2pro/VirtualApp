@@ -282,15 +282,17 @@ public final class VirtualCore {
             this.context = context;
             unHookPackageManager = context.getPackageManager();
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
+
+            NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();
+            //////////////////////////////
+            // Now we can use hidden API//
+            //////////////////////////////
+
             detectProcessType();
             if (isMainProcess()) {
                 CallLogObserver.observe();
             }
             if (isServerProcess() || isVAppProcess()) {
-                NativeEngine.bypassHiddenAPIEnforcementPolicyIfNeeded();
-                //////////////////////////////
-                // Now we can use hidden API//
-                //////////////////////////////
                 mainThread = ActivityThread.currentActivityThread.call();
             }
             if (is64BitEngine()) {
@@ -320,13 +322,13 @@ public final class VirtualCore {
             ContextFixer.fixContext(context);
             isStartUp = true;
 
-            //xdja 屏蔽‘不兼容api’对话框
-            try {
+            //xdja 屏蔽‘不兼容api’对话框    (进一步确保）    暂时屏蔽，观察效果。
+            /*try {
                 Reflect.on("android.app.ActivityThread").call("currentActivityThread").set("mHiddenApiWarningShown", true);
             } catch (Exception e)
             {
                 e.printStackTrace();
-            }
+            }*/
 
             mInitLock.open();
         }

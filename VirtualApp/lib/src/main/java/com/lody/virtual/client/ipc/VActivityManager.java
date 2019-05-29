@@ -458,12 +458,15 @@ public class VActivityManager {
         } else {
             intent.putExtra("_VA_|no_animation", true);
             WindowPreviewActivity.previewActivity(userId, info);
-            VirtualRuntime.getUIHandler().postDelayed(new Runnable() {
+
+            /*VirtualRuntime.getUIHandler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     VActivityManager.get().startActivity(intent, userId);
                 }
-            }, 400L);
+            }, 400L);*/
+
+            VActivityManager.get().startActivity(intent, userId);
         }
         return true;
     }
