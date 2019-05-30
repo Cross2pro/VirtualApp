@@ -142,7 +142,8 @@ public class ActiveServices {
                 userId,
                 serviceInfo.packageName,
                 -1,
-                VBinder.getCallingUid()
+                VBinder.getCallingUid(),
+                "startService"
         );
         if (targetApp == null) {
             return null;
@@ -196,7 +197,8 @@ public class ActiveServices {
                 userId,
                 serviceInfo.packageName,
                 -1,
-                VBinder.getCallingUid()
+                VBinder.getCallingUid(),
+                "bindService"
         );
         if (targetApp == null) {
             return null;

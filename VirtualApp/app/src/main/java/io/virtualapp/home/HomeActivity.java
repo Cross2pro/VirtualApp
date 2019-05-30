@@ -3,8 +3,10 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -26,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.oem.OemPermissionHelper;
@@ -106,7 +109,18 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         initMagic();
         mPresenter.check64bitEnginePermission();
         mPresenter.start();
+        VirtualCore.get().registerReceiver(this, receiver, new IntentFilter("com.xdja.dialer.removecall"));
+        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+        filter.addDataScheme("package");
+        VirtualCore.get().registerReceiver(this, receiver, filter);
     }
+
+    private VirtualCore.Receiver receiver = new VirtualCore.Receiver() {
+        @Override
+        public void onReceive(Context context, Intent intent, int userId) {
+            Log.i("kk", "intent=" + intent + ",userId=" + userId + ",test=" + intent.getStringExtra("test"));
+        }
+    };
 
     /* Start changed by XDJA */
     private void initMagic() {
@@ -156,6 +170,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(receiver);
         super.onDestroy();
     }
 

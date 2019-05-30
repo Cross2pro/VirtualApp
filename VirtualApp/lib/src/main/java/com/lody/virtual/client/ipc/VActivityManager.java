@@ -27,6 +27,7 @@ import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
+import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -548,6 +549,14 @@ public class VActivityManager {
             return getService().finishActivityAffinity(userId, token);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void broadcastFinish(PendingResultData res) {
+        try {
+            getService().broadcastFinish(res, VUserHandle.myUserId());
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
         }
     }
 }

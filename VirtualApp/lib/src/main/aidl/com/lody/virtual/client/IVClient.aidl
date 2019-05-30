@@ -11,6 +11,7 @@ import android.content.Intent;
 import com.lody.virtual.remote.PendingResultData;
 
 interface IVClient {
+    void scheduleReceiver(in String processName, in ComponentName component, in Intent intent, in PendingResultData resultData);
     void scheduleNewIntent(in String creator, in IBinder token, in Intent intent);
     void finishActivity(in IBinder token);
     void closeAllLongSocket();

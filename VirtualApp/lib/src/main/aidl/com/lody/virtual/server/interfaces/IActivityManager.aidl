@@ -121,4 +121,6 @@ interface IActivityManager{
     int getRunningAppMemorySize(String packageName, int userId);
 
     void closeAllLongSocket(String packageName, int userId);
+
+    void broadcastFinish(in PendingResultData res, int userId);
 }

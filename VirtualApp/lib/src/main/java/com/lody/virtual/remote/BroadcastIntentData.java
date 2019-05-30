@@ -11,6 +11,7 @@ public class BroadcastIntentData implements Parcelable {
     public int userId;
     public Intent intent;
     public String targetPackage;
+    public boolean fromSystem;
 
 
     @Override
@@ -23,18 +24,21 @@ public class BroadcastIntentData implements Parcelable {
         dest.writeInt(this.userId);
         dest.writeParcelable(this.intent, flags);
         dest.writeString(this.targetPackage);
+        dest.writeByte((byte) (fromSystem ? 1 : 0));
     }
 
-    public BroadcastIntentData(int userId, Intent intent, String targetPackage) {
+    public BroadcastIntentData(int userId, Intent intent, String targetPackage, boolean fromSystem) {
         this.userId = userId;
         this.intent = intent;
         this.targetPackage = targetPackage;
+        this.fromSystem = fromSystem;
     }
 
     public BroadcastIntentData(Parcel in) {
         this.userId = in.readInt();
         this.intent = in.readParcelable(Intent.class.getClassLoader());
         this.targetPackage = in.readString();
+        this.fromSystem = in.readByte() > 0;
     }
 
     public static final Parcelable.Creator<BroadcastIntentData> CREATOR = new Parcelable.Creator<BroadcastIntentData>() {
@@ -48,4 +52,14 @@ public class BroadcastIntentData implements Parcelable {
             return new BroadcastIntentData[size];
         }
     };
+
+    @Override
+    public String toString() {
+        return "BroadcastIntentData{" +
+                "userId=" + userId +
+                ", intent=" + intent +
+                ", targetPackage='" + targetPackage + '\'' +
+                ", fromSystem=" + fromSystem +
+                '}';
+    }
 }

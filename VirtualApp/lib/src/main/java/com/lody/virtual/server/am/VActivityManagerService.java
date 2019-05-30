@@ -46,8 +46,10 @@ import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
+import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
+import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -246,7 +248,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         String processName = info.processName;
         ProcessRecord r;
         synchronized (this) {
-            r = startProcessIfNeedLocked(processName, userId, info.packageName, -1, VBinder.getCallingUid());
+            r = startProcessIfNeedLocked(processName, userId, info.packageName, -1, VBinder.getCallingUid(), "provider");
         }
         if (r != null) {
             try {
@@ -343,7 +345,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
                 int vpid = parseVPid(stubProcessName);
                 if (vpid != -1) {
-                    startProcessIfNeedLocked(processName, userId, packageName, vpid, callingVUid);
+                    startProcessIfNeedLocked(processName, userId, packageName, vpid, callingVUid, "processRestarted");
                 }
             }
         }
@@ -472,7 +474,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public ClientConfig initProcess(String packageName, String processName, int userId) {
         synchronized (this) {
-            ProcessRecord r = startProcessIfNeedLocked(processName, userId, packageName, -1, VBinder.getCallingUid());
+            ProcessRecord r = startProcessIfNeedLocked(processName, userId, packageName, -1, VBinder.getCallingUid(), "initProcess/getContentProvider");
             if (r != null) {
                 return r.getClientConfig();
             }
@@ -490,7 +492,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
 
-    ProcessRecord startProcessIfNeedLocked(String processName, int userId, String packageName, int vpid, int callingUid) {
+    ProcessRecord startProcessIfNeedLocked(String processName, int userId, String packageName, int vpid, int callingUid, String season) {
         runProcessGC();
         PackageSetting ps = PackageCacheManager.getSetting(packageName);
         ApplicationInfo info = VPackageManagerService.get().getApplicationInfo(packageName, 0, userId);
@@ -516,7 +518,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                         return app;
                     }
                 }
-                VLog.w(TAG, "start new process : " + processName);
+                VLog.w(TAG, "start new process : " + processName + " by " + season);
                 vpid = queryFreeStubProcess(is64bit);
             }
             if (vpid == -1) {
@@ -1035,5 +1037,61 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     public void beforeProcessKilled(ProcessRecord processRecord) {
         // EMPTY
+    }
+
+    boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
+        if (data.userId >= 0) {
+            return handleStaticBroadcastAsUser(data, appId, data.userId, info, result);
+        } else {
+            int[] users = VAppManagerService.get().getPackageInstalledUsers(info.packageName);
+            for (int userId : users) {
+                handleStaticBroadcastAsUser(data, appId, userId, info, result);
+            }
+            return true;
+        }
+    }
+
+    private boolean handleStaticBroadcastAsUser(BroadcastIntentData data, int appId, int userId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
+        int vuid = VUserHandle.getUid(userId, appId);
+        boolean send = false;
+        synchronized (this) {
+            ProcessRecord r = findProcessLocked(info.processName, vuid);
+            if (r == null && isStartProcessForBroadcast(info.packageName, userId)) {
+                r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, "broadcast");
+            }
+            if (r != null && r.appThread != null) {
+                send = true;
+                performScheduleReceiver(r.client, vuid, info, data.intent, new PendingResultData(result));
+            }
+        }
+        return send;
+    }
+
+    private boolean isStartProcessForBroadcast(String packageName, int userId) {
+        if (isAppRunning(packageName, userId, false)) {
+            //应用已经启动
+            return true;
+        }
+        //是否允许因静态广播而启动进程
+        return VirtualCore.getConfig().isAllowStartByReceiver(packageName, userId);
+    }
+
+    private void performScheduleReceiver(IVClient client, int vuid, ActivityInfo info, Intent intent,
+                                         PendingResultData result) {
+
+        ComponentName componentName = ComponentUtils.toComponentName(info);
+        BroadcastSystem.get().broadcastSent(vuid, info, result);
+        try {
+            client.scheduleReceiver(info.processName, componentName, intent, result);
+        } catch (Throwable e) {
+            if (result != null) {
+                result.finish();
+            }
+        }
+    }
+
+    @Override
+    public void broadcastFinish(PendingResultData res, int userId) {
+        BroadcastSystem.get().broadcastFinish(res, userId);
     }
 }

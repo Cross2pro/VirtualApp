@@ -33,6 +33,7 @@ import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
+import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
@@ -257,6 +258,9 @@ public class VAppManagerService extends IAppManager.Stub {
             }
 
         }
+
+        BroadcastSystem.get().startApp(pkg);
+
         return true;
     }
 
@@ -338,6 +342,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (pkg == null || pkg.packageName == null) {
             return InstallResult.makeFailure("Unable to parse the package.");
         }
+        BroadcastSystem.get().stopApp(pkg.packageName);
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
         // PackageCache holds all packages, try to check if we need to update.
@@ -444,6 +449,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        BroadcastSystem.get().startApp(pkg);
         if (options.notify) {
             notifyAppInstalled(ps, -1);
         }
@@ -569,6 +575,7 @@ public class VAppManagerService extends IAppManager.Stub {
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
         String packageName = ps.packageName;
         try {
+            BroadcastSystem.get().stopApp(packageName);
             VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
@@ -676,6 +683,9 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
+        }
         sendInstalledBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();
         VAccountManagerService.get().refreshAuthenticatorCache(null);
@@ -695,6 +705,9 @@ public class VAppManagerService extends IAppManager.Stub {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
         }
         sendUninstalledBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();

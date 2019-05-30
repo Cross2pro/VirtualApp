@@ -1,6 +1,7 @@
 package com.lody.virtual.client;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Application;
@@ -19,7 +20,9 @@ import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.ConditionVariable;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -28,7 +31,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
-import android.os.Environment;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.CrashHandler;
@@ -45,28 +48,24 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
-import com.lody.virtual.client.receiver.StaticReceiverSystem;
 import com.lody.virtual.client.service.ServiceManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
-import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.compat.StrictModeCompat;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.InstalledAppInfo;
-import android.os.storage.StorageManager;
-import android.os.storage.StorageVolume;
-import android.util.Log;
+import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
-import com.xdja.zs.LoadModules;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -79,8 +78,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import android.app.Activity;
-import android.os.Bundle;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -571,7 +568,6 @@ public final class VClient extends IVClient.Stub {
             }
         });
         VirtualCore.get().getAppCallback().afterApplicationCreate(packageName, processName, mInitialApplication);
-        StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);
 
         //xdja
@@ -957,7 +953,8 @@ public final class VClient extends IVClient.Stub {
         sendMessage(NEW_INTENT, data);
     }
 
-    public void scheduleReceiver(String processName, ComponentName component, Intent intent, BroadcastReceiver.PendingResult pendingResult) {
+    @Override
+    public void scheduleReceiver(String processName, ComponentName component, Intent intent, PendingResultData pendingResult) {
         ReceiverData receiverData = new ReceiverData();
         receiverData.pendingResult = pendingResult;
         receiverData.intent = intent;
@@ -968,7 +965,10 @@ public final class VClient extends IVClient.Stub {
     }
 
     private void handleReceiver(ReceiverData data) {
-        BroadcastReceiver.PendingResult result = data.pendingResult;
+        if (!isAppRunning()) {
+            bindApplication(data.component.getPackageName(), data.processName);
+        }
+        BroadcastReceiver.PendingResult result = data.pendingResult.build();
         try {
             Context context = mInitialApplication.getBaseContext();
             Context receiverContext = ContextImpl.getReceiverRestrictedContext.call(context);
@@ -990,7 +990,7 @@ public final class VClient extends IVClient.Stub {
                     "Unable to start receiver " + data.component
                             + ": " + e.toString(), e);
         }
-        StaticReceiverSystem.get().broadcastFinish(data.pendingResult);
+        VActivityManager.get().broadcastFinish(data.pendingResult);
     }
 
     public ClassLoader getClassLoader() {
@@ -1095,7 +1095,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     private final class ReceiverData {
-        BroadcastReceiver.PendingResult pendingResult;
+        PendingResultData pendingResult;
         Intent intent;
         ComponentName component;
         String processName;

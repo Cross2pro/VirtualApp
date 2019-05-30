@@ -82,6 +82,16 @@ public abstract class SettingConfig {
         return false;
     }
 
+    /**
+     * 是否允许通过广播启动进程
+     * 允许规则：
+     * 1.userId对应的应用任意一个进程已经启动
+     * 2.isAllowStartByReceiver返回true
+     */
+    public boolean isAllowStartByReceiver(String packageName, int userId) {
+        return false;
+    }
+
     public static class FakeWifiStatus {
 
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";

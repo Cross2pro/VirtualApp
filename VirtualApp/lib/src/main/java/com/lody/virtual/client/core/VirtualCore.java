@@ -1145,6 +1145,42 @@ public final class VirtualCore {
         }
     }
 
+    public abstract static class Receiver extends BroadcastReceiver{
+        @Override
+        public final void onReceive(Context context, Intent intent) {
+            Bundle extraData = intent.getExtras();
+            BroadcastIntentData intentData = null;
+            if (extraData != null) {
+                extraData.setClassLoader(BroadcastIntentData.class.getClassLoader());
+                intentData = extraData.getParcelable("_VA_|_data_");
+            }
+            int userId;
+            if (intentData != null) {
+                //内部广播，或者服务进程广播
+                intent = intentData.intent;
+                userId = intentData.userId;
+            } else {
+                //系统广播
+                userId = VUserHandle.USER_ALL;
+                SpecialComponentList.unprotectIntent(intent);
+            }
+            onReceive(context, intent, userId);
+        }
+
+        public abstract void onReceive(Context context, Intent intent, int userId);
+    }
+
+    /**
+     *
+     * @param context 直接用这个context进行unregisterReceiver
+     * @param receiver intent的内容会自动处理，和原生一样
+     * @param filter 自动处理
+     */
+    public void registerReceiver(Context context, Receiver receiver, IntentFilter filter){
+        SpecialComponentList.protectIntentFilter(filter, true);
+        context.registerReceiver(receiver, filter);
+    }
+
     /**
      * Process type
      */

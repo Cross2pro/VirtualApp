@@ -35,7 +35,7 @@ public class Constants {
 	public static final String ACTION_USER_REMOVED = "virtual." + "android.intent.action.USER_REMOVED";
 	public static final String ACTION_USER_INFO_CHANGED = "virtual." + "android.intent.action.USER_CHANGED";
 	public static final String ACTION_USER_STARTED = "Virtual." + "android.intent.action.USER_STARTED";
-
+	public static final String ACTION_BOOT_COMPLETED = "virtual." + Intent.ACTION_BOOT_COMPLETED;
 
     /**
 	 * Server process name of VA

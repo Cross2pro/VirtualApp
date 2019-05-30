@@ -63,6 +63,11 @@ public class App extends Application {
         public boolean isAllowCreateShortcut() {
             return false;
         }
+
+        @Override
+        public boolean isAllowStartByReceiver(String packageName, int userId) {
+            return "com.example.demo2".equals(packageName);
+        }
     };
 
     public static App getApp() {

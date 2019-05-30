@@ -1980,8 +1980,9 @@ class MethodProxies {
 
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
-            } else if ("com.xdja.dialer.removecall".equals(action)) {
-                return intent;
+                //已经加到SpecialComponentList#SYSTEM_BROADCAST_ACTION
+//            } else if ("com.xdja.dialer.removecall".equals(action)) {
+//                return intent;
             } else {
                 return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
             }

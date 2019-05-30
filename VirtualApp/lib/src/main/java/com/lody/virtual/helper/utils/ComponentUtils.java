@@ -161,7 +161,7 @@ public class ComponentUtils {
         } else {
             newIntent.setAction(protectAction(intent.getAction()));
         }
-        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage);
+        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, true);
         newIntent.putExtra("_VA_|_data_", data);
         return newIntent;
     }
