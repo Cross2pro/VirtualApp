@@ -161,8 +161,10 @@ public class ComponentUtils {
         } else {
             newIntent.setAction(protectAction(intent.getAction()));
         }
-        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage);
-        newIntent.putExtra("_VA_|_data_", data);
+        if(VirtualCore.get().isVAppProcess()) {
+            BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage);
+            newIntent.putExtra("_VA_|_data_", data);
+        }
         return newIntent;
     }
 
