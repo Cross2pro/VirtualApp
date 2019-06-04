@@ -170,11 +170,12 @@ public class BroadcastSystem {
         }
         for (VPackage.ActivityComponent receiver : p.receivers) {
             ActivityInfo info = receiver.info;
-            String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
+            String componentAction = VirtualCore.get().getHostPkg() + String.format("_VA_%s_%s", info.packageName, info.name);
             IntentFilter componentFilter = new IntentFilter(componentAction);
             StaticBroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
             receivers.add(r);
+            Log.d("kk", "registerReceiver:" + info.name + ",action=" + componentAction);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
@@ -319,7 +320,6 @@ public class BroadcastSystem {
                 VLog.w(TAG, "StaticBroadcastReceiver:ignore by targetPackage:%s", intent.getAction());
                 return;
             }
-            VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", intent.getAction());
             BroadcastIntentData data = null;
             if (intent.hasExtra("_VA_|_data_")) {
                 intent.setExtrasClassLoader(BroadcastIntentData.class.getClassLoader());
@@ -346,6 +346,7 @@ public class BroadcastSystem {
                     return;
                 }
             }
+            VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", data.intent);
             PendingResult result = goAsync();
             if (!mAMS.handleStaticBroadcast(data, this.appId, info, result)) {
                 result.finish();

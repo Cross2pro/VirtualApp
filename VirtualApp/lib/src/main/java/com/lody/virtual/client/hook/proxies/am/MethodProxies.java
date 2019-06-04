@@ -1678,7 +1678,7 @@ class MethodProxies {
                     intentData = extraData.getParcelable("_VA_|_data_");
                 }
                 if (intentData != null) {
-                    if (intentData.userId != VUserHandle.myUserId()) {
+                    if (intentData.userId >= 0 && intentData.userId != VUserHandle.myUserId()) {
                         return;
                     }
                     intent = intentData.intent;
@@ -1954,6 +1954,7 @@ class MethodProxies {
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
+                Log.i("kk", "send broadcast " + intent + "=>" + newIntent);
             } else {
                 return 0;
             }
