@@ -426,7 +426,7 @@ public class VActivityManager {
         return launchApp(userId, packageName, true);
     }
 
-    public boolean launchApp(final int userId, String packageName, boolean preview) {
+    public boolean launchApp(final int userId,final String packageName, boolean preview) {
         if (VirtualCore.get().isRun64BitProcess(packageName)) {
             if (!V64BitHelper.has64BitEngineStartPermission()) {
                 return false;
@@ -450,24 +450,31 @@ public class VActivityManager {
         if (ris == null || ris.size() <= 0) {
             return false;
         }
-        ActivityInfo info = ris.get(0).activityInfo;
+        final ActivityInfo info = ris.get(0).activityInfo;
         final Intent intent = new Intent(intentToResolve);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setClassName(info.packageName, info.name);
+        //1.va的进程初始化500ms
+        //2.app的Application初始化，这个要看app
+        //3.app的4组件初始化
         if (!preview || VActivityManager.get().isAppRunning(info.packageName, userId, true)) {
+            VLog.d("kk", "app's main thread was running.");
             VActivityManager.get().startActivity(intent, userId);
         } else {
+            VLog.d("kk", "app's main thread not running.");
             intent.putExtra("_VA_|no_animation", true);
-            WindowPreviewActivity.previewActivity(userId, info);
-
-            /*VirtualRuntime.getUIHandler().postDelayed(new Runnable() {
+            VirtualCore.getConfig().startPreviewActivity(userId, info);
+            final String processName = ComponentUtils.getProcessName(info);
+            new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    VActivityManager.get().startActivity(intent, userId);
+                    //wait 500ms
+                    ClientConfig clientConfig = initProcess(packageName, processName, userId);
+                    if(clientConfig != null){
+                        VActivityManager.get().startActivity(intent, userId);
+                    }
                 }
-            }, 400L);*/
-
-            VActivityManager.get().startActivity(intent, userId);
+            }).start();
         }
         return true;
     }

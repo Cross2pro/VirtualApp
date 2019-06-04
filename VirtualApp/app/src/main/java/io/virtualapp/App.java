@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
@@ -72,6 +73,12 @@ public class App extends Application {
                         VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
             }
             return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName);
+        }
+
+        @Override
+        public void startPreviewActivity(int userId, ActivityInfo info){
+            super.startPreviewActivity(userId, info);
+            //如果需要自定义，要注释super.startPreviewActivity，并且启动一个类似WindowPreviewActivity
         }
     };
 

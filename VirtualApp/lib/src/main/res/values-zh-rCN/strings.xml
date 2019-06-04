@@ -11,4 +11,5 @@
     <string name="keep_service_damon_noti_text_v24">保持应用后台运行，能够及时接收消息</string>
     <string name="keep_service_damon_noti_title">提示: 消息应该是隐藏的</string>
     <string name="keep_service_damon_noti_text">消失</string>
+    <string name="launch_tip">应用正在启动</string>
 </resources>
