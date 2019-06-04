@@ -140,7 +140,11 @@ public class ComponentUtils {
         return String.format(VirtualCore.get().getHostPkg()+"_VA_%s_%s", packageName, name);
     }
 
-    public static Intent redirectBroadcastIntent(Intent intent, int userId) {
+    public static Intent redirectBroadcastIntent(Intent intent, int userId){
+        return redirectBroadcastIntent(intent, userId, false);
+    }
+
+    public static Intent redirectBroadcastIntent(Intent intent, int userId, boolean fromSystem) {
         Intent newIntent = new Intent();
         newIntent.setDataAndType(intent.getData(), intent.getType());
         Set<String> categories = intent.getCategories();
@@ -159,10 +163,17 @@ public class ComponentUtils {
                 targetPackage = component.getPackageName();
             }
         } else {
-            newIntent.setAction(protectAction(intent.getAction()));
+            String action = protectAction(intent.getAction());
+            if(action != null) {
+                newIntent.setAction(action);
+            }
         }
-        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, true);
+        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
         newIntent.putExtra("_VA_|_data_", data);
+        //TODO 内部广播，其他应用无法收到(包括64位应用)
+        //if(TextUtils.isEmpty(VirtualCore.getConfig().get64bitEnginePackageName())) {
+        //    newIntent.setPackage(VirtualCore.get().getHostPkg());
+        //}
         return newIntent;
     }
 

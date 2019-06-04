@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,6 +73,8 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.DYNAMIC_SENSOR_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("dynamic_sensor_change");
         SYSTEM_BROADCAST_ACTION.add("com.xdja.dialer.removecall");
+		//图标广播
+        SYSTEM_BROADCAST_ACTION.add(Constants.ACTION_BADGER_CHANGE);
 
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE);
@@ -84,6 +87,8 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_ADDED, Constants.ACTION_PACKAGE_ADDED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REMOVED, Constants.ACTION_PACKAGE_REMOVED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_CHANGED, Constants.ACTION_PACKAGE_CHANGED);
+        PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_ADDED, Constants.ACTION_USER_ADDED);
+        PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_REMOVED, Constants.ACTION_USER_REMOVED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_BOOT_COMPLETED, Constants.ACTION_BOOT_COMPLETED);
         //TODO 是否需要改为仅内部媒体存储收到
         //update images/videos by media provider

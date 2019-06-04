@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -57,6 +58,7 @@ public class BroadcastSystem {
     private static final int BROADCAST_TIME_OUT = 8500;
     private static BroadcastSystem gDefault;
 
+    private final Map<String, Boolean> mReceiverStatus = new ArrayMap<>();
     private final ArrayMap<String, List<StaticBroadcastReceiver>> mReceivers = new ArrayMap<>();
     private final Map<Key, BroadcastRecord> mBroadcastRecords = new HashMap<>();
     private final Context mContext;
@@ -148,16 +150,26 @@ public class BroadcastSystem {
     }
 
     public void startApp(VPackage p) {
+        Boolean status;
+        synchronized (mReceiverStatus) {
+            status = mReceiverStatus.get(p.packageName);
+        }
+        if(status != null){
+            stopApp(p.packageName);
+        }
+        synchronized (mReceiverStatus) {
+            mReceiverStatus.put(p.packageName, true);
+        }
         VLog.i(TAG, "startApp:%s,version=%s/%d", p.packageName, p.mVersionName, p.mVersionCode);
         PackageSetting setting = (PackageSetting) p.mExtras;
         //微信有60多个静态receiver,华为低版本是每进程500个receiver对象，高版本是每进程1000个对象
+        List<StaticBroadcastReceiver> receivers = mReceivers.get(p.packageName);
+        if (receivers == null) {
+            receivers = new ArrayList<>();
+            mReceivers.put(p.packageName, receivers);
+        }
         for (VPackage.ActivityComponent receiver : p.receivers) {
             ActivityInfo info = receiver.info;
-            List<StaticBroadcastReceiver> receivers = mReceivers.get(p.packageName);
-            if (receivers == null) {
-                receivers = new ArrayList<>();
-                mReceivers.put(p.packageName, receivers);
-            }
             String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
             IntentFilter componentFilter = new IntentFilter(componentAction);
             StaticBroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info);
@@ -172,6 +184,13 @@ public class BroadcastSystem {
     }
 
     public void stopApp(String packageName) {
+        Boolean status;
+        synchronized (mReceiverStatus) {
+            status = mReceiverStatus.remove(packageName);
+        }
+        if(status == null || !status){
+            return;
+        }
         synchronized (mBroadcastRecords) {
             Iterator<Map.Entry<Key, BroadcastRecord>> iterator = mBroadcastRecords.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -188,7 +207,11 @@ public class BroadcastSystem {
             if (receivers != null) {
                 for (int i = receivers.size() - 1; i >= 0; i--) {
                     StaticBroadcastReceiver r = receivers.get(i);
-                    mContext.unregisterReceiver(r);
+                    try {
+                        mContext.unregisterReceiver(r);
+                    }catch (Throwable e){
+                        //ignore
+                    }
                     receivers.remove(r);
                 }
             }
@@ -288,7 +311,12 @@ public class BroadcastSystem {
                 return;
             }
             if ((intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY) != 0 || isInitialStickyBroadcast()) {
-                VLog.w(TAG, "StaticBroadcastReceiver:ignore:%s", intent.getAction());
+                VLog.w(TAG, "StaticBroadcastReceiver:ignore by FLAG_RECEIVER_REGISTERED_ONLY:%s", intent.getAction());
+                return;
+            }
+            String targetPackage = intent.getStringExtra("_VA_|_privilege_pkg_");
+            if(!TextUtils.isEmpty(targetPackage) && !TextUtils.equals(info.packageName, targetPackage)){
+                VLog.w(TAG, "StaticBroadcastReceiver:ignore by targetPackage:%s", intent.getAction());
                 return;
             }
             VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", intent.getAction());

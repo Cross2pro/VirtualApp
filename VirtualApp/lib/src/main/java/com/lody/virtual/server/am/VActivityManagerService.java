@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.IVClient;
@@ -886,24 +887,17 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return 0;
     }
 
-    public void sendOrderedBroadcastAsUser(Intent intent, VUserHandle user, String receiverPermission,
+    public void sendOrderedBroadcastAsUser(Intent target, VUserHandle user, String receiverPermission,
                                            BroadcastReceiver resultReceiver, Handler scheduler, int initialCode,
                                            String initialData, Bundle initialExtras) {
-        Context context = VirtualCore.get().getContext();
-        if (user != null) {
-            intent.putExtra("_VA_|_user_id_", user.getIdentifier());
-        }
-        context.sendOrderedBroadcast(intent, null/* permission */, resultReceiver, scheduler, initialCode, initialData,
+        int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        VirtualCore.get().getContext().sendOrderedBroadcast(intent, null/* permission */, resultReceiver, scheduler, initialCode, initialData,
                 initialExtras);
     }
 
-    public void sendBroadcastAsUser(Intent intent, VUserHandle user) {
-        SpecialComponentList.protectIntent(intent);
-        Context context = VirtualCore.get().getContext();
-        if (user != null) {
-            intent.putExtra("_VA_|_user_id_", user.getIdentifier());
-        }
-        context.sendBroadcast(intent);
+    public void sendBroadcastAsUser(Intent target, VUserHandle user) {
+        sendBroadcastAsUser(target, user, null);
     }
 
     public boolean bindServiceAsUser(Intent service, ServiceConnection connection, int flags, VUserHandle user) {
@@ -914,15 +908,20 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return VirtualCore.get().getContext().bindService(service, connection, flags);
     }
 
-    public void sendBroadcastAsUser(Intent intent, VUserHandle user, String permission) {
-        SpecialComponentList.protectIntent(intent);
-        Context context = VirtualCore.get().getContext();
-        if (user != null) {
-            intent.putExtra("_VA_|_user_id_", user.getIdentifier());
-        }
-        context.sendBroadcast(intent);
+    public void sendBroadcastAsUser(Intent target, VUserHandle user, String permission) {
+        int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        VirtualCore.get().getContext().sendBroadcast(intent);
     }
 
+    public void sendBroadcastAsUserWithPackage(Intent target, VUserHandle user, String targetPackage) {
+        int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        if(!TextUtils.isEmpty(targetPackage)){
+            intent.putExtra("_VA_|_privilege_pkg_", targetPackage);
+        }
+        VirtualCore.get().getContext().sendBroadcast(intent);
+    }
 
     @Override
     public void notifyBadgerChange(BadgerInfo info) {
@@ -930,7 +929,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         intent.putExtra("userId", info.userId);
         intent.putExtra("packageName", info.packageName);
         intent.putExtra("badgerCount", info.badgerCount);
-        VirtualCore.get().getContext().sendBroadcast(intent);
+		sendBroadcastAsUser(intent, VUserHandle.ALL);
     }
 
     @Override
@@ -1030,8 +1029,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public void handleDownloadCompleteIntent(Intent intent) {
         intent.setPackage(null);
         intent.setComponent(null);
-        Intent send = ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.USER_ALL);
-        VirtualCore.get().getContext().sendBroadcast(send);
+        sendBroadcastAsUser(intent, VUserHandle.ALL);
     }
 
 
