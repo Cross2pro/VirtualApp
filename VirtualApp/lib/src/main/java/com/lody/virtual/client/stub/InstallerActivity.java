@@ -218,6 +218,11 @@ public class InstallerActivity extends Activity {
                     sourceText = "应用来源：未知";
                 }else{
                     sourceapkinfo = parseInstallApk(info.getApkPath());
+                    if(sourceapkinfo==null){
+                        InstallerSetting.showToast(this,"安装包解析错误", Toast.LENGTH_LONG);
+                        finish();
+                        return;
+                    }
                     sourceText = "应用来源："+sourceapkinfo.name;
                 }
             }else{
@@ -227,6 +232,11 @@ public class InstallerActivity extends Activity {
         tv_source.setText(sourceText);
         if(!TextUtils.isEmpty(path)){
             apkinfo = parseInstallApk(path);
+            if(apkinfo==null){
+                InstallerSetting.showToast(this,"安装包解析错误", Toast.LENGTH_LONG);
+                finish();
+                return;
+            }
             img_appicon.setImageDrawable(apkinfo.icon);
             tv_appname.setText(apkinfo.name);
             if(InstallerSetting.safeApps.contains(apkinfo.packageName)){
@@ -315,10 +325,11 @@ public class InstallerActivity extends Activity {
     }
 
     private AppInfo parseInstallApk(@NonNull String path) {
-        AppInfo appinfo = new AppInfo();
+        AppInfo appinfo = null;
         File f = new File(path);
         PackageManager pm = VirtualCore.get().getContext().getPackageManager();
         try {
+            appinfo = new AppInfo();
             PackageInfo pkgInfo = VirtualCore.get().getContext().getPackageManager().getPackageArchiveInfo(f.getAbsolutePath(), 0);
             ApplicationInfo ai = pkgInfo.applicationInfo;
             ai.sourceDir = f.getAbsolutePath();
