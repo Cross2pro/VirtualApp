@@ -41,10 +41,10 @@ public class VNotificationManager {
         return sInstance;
     }
 
-    public boolean dealNotification(int id, Notification notification, String packageName) {
+    public boolean dealNotification(int id, Notification notification, String packageName, int userId) {
         if (notification == null) return false;
         return VirtualCore.get().getHostPkg().equals(packageName)
-                || mNotificationCompat.dealNotification(id, notification, packageName);
+                || mNotificationCompat.dealNotification(id, notification, packageName, userId);
     }
 
     public int dealNotificationId(int id, String packageName, String tag, int userId) {
@@ -111,6 +111,73 @@ public class VNotificationManager {
             getService().registerCallback(iNotificationCallback);
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public boolean checkNotificationTag(String tag, String packageName, int userId){
+        try {
+            return getService().checkNotificationTag(tag, packageName, userId);
+        } catch (RemoteException e) {
+           return false;
+        }
+    }
+
+    public boolean checkNotificationChannel(String id, String packageName, int userId){
+        try {
+            return getService().checkNotificationChannel(id, packageName, userId);
+        } catch (RemoteException e) {
+            return false;
+        }
+    }
+
+    public boolean checkNotificationGroup(String id, String packageName, int userId){
+        try {
+            return getService().checkNotificationGroup(id, packageName, userId);
+        } catch (RemoteException e) {
+            return false;
+        }
+    }
+
+    public String dealNotificationChannel(String id, String packageName, int userId){
+        try {
+            return getService().dealNotificationChannel(id, packageName, userId);
+        } catch (RemoteException e) {
+            return id;
+        }
+    }
+
+    public String dealNotificationGroup(String id, String packageName, int userId){
+        if (id == null) {
+            return null;
+        }
+        try {
+            return getService().dealNotificationGroup(id, packageName, userId);
+        } catch (RemoteException e) {
+            return id;
+        }
+    }
+
+    public String getRealNotificationTag(String tag, String packageName, int userId){
+        try {
+            return getService().getRealNotificationTag(tag, packageName, userId);
+        } catch (RemoteException e) {
+            return tag;
+        }
+    }
+
+    public String getRealNotificationChannel(String tag, String packageName, int userId){
+        try {
+            return getService().getRealNotificationChannel(tag, packageName, userId);
+        } catch (RemoteException e) {
+            return tag;
+        }
+    }
+
+    public String getRealNotificationGroup(String tag, String packageName, int userId){
+        try {
+            return getService().getRealNotificationGroup(tag, packageName, userId);
+        } catch (RemoteException e) {
+            return tag;
         }
     }
 }

@@ -23,4 +23,20 @@ interface INotificationManager {
     void cancelNotification(String pkg, String tag, int id, int userId);
 
     void registerCallback(INotificationCallback iNotificationCallback);
+
+    boolean checkNotificationTag(String tag, String packageName, int userId);
+
+    boolean checkNotificationChannel(String id, String packageName, int userId);
+
+    boolean checkNotificationGroup(String id, String packageName, int userId);
+
+    String dealNotificationChannel(String id, String packageName, int userId);
+
+    String dealNotificationGroup(String id, String packageName, int userId);
+
+    String getRealNotificationTag(String tag, String packageName, int userId);
+
+    String getRealNotificationChannel(String id, String packageName, int userId);
+
+    String getRealNotificationGroup(String id, String packageName, int userId);
 }

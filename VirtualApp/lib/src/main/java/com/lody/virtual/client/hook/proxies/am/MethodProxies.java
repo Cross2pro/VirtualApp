@@ -924,8 +924,7 @@ class MethodProxies {
             }
 
             fixSmallIcon(notification, component);
-
-            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg())) {
+            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg(), getAppUserId())) {
                 notification = new Notification();
                 notification.icon = getHostContext().getApplicationInfo().icon;
             }

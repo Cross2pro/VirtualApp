@@ -86,5 +86,5 @@ public abstract class NotificationCompat {
         return null;
     }
 
-    public abstract boolean dealNotification(int id, Notification notification, String packageName);
+    public abstract boolean dealNotification(int id, Notification notification, String packageName, int userId);
 }

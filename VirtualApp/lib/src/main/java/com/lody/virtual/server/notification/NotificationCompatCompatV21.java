@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.widget.RemoteViews;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Reflect;
@@ -31,12 +32,25 @@ import mirror.android.app.NotificationO;
     }
 
     @Override
-    public boolean dealNotification(int id, Notification notification, String packageName) {
+    public boolean dealNotification(int id, Notification notification, String packageName,int userId) {
         Context appContext = getAppContext(packageName);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if(VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
+            if (VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
                 if (TextUtils.isEmpty(notification.getChannelId())) {
-                    NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
+                    if (NotificationO.mChannelId != null) {
+                        NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
+                    }
+                } else {
+                    String channel = VNotificationManager.get().dealNotificationChannel(notification.getChannelId(), packageName, userId);
+                    if (NotificationO.mChannelId != null) {
+                        NotificationO.mChannelId.set(notification, channel);
+                    }
+                }
+                if (notification.getGroup() != null) {
+                    String group = VNotificationManager.get().dealNotificationGroup(notification.getGroup(), packageName, userId);
+                    if (NotificationO.mGroupKey != null) {
+                        NotificationO.mGroupKey.set(notification, group);
+                    }
                 }
             }
         }
