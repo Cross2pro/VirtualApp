@@ -31,6 +31,7 @@ public class Constants {
     public static final String ACTION_PACKAGE_WILL_ADDED = "virtual.intent.action.PACKAGE_WILL_ADDED";
 	public static final String ACTION_PACKAGE_ADDED = "virtual." + Intent.ACTION_PACKAGE_ADDED;
 	public static final String ACTION_PACKAGE_REMOVED = "virtual." + Intent.ACTION_PACKAGE_REMOVED;
+	public static final String ACTION_PACKAGE_REPLACED = "virtual." + Intent.ACTION_PACKAGE_REPLACED;
 	public static final String ACTION_PACKAGE_CHANGED = "virtual." + Intent.ACTION_PACKAGE_CHANGED;
 	public static final String ACTION_USER_ADDED = "virtual." + VUserManager.ACTION_USER_ADDED;
 	public static final String ACTION_USER_REMOVED = "virtual." + VUserManager.ACTION_USER_REMOVED;
