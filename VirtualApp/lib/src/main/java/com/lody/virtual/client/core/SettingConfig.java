@@ -88,7 +88,7 @@ public abstract class SettingConfig {
      * 1.userId对应的应用任意一个进程已经启动
      * 2.isAllowStartByReceiver返回true
      */
-    public boolean isAllowStartByReceiver(String packageName, int userId) {
+    public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
         return false;
     }
 

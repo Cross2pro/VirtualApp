@@ -55,7 +55,7 @@ public class BroadcastSystem {
     /**
      * MUST < 10000.
      */
-    private static final int BROADCAST_TIME_OUT = 8500;
+    private static final int BROADCAST_TIME_OUT = 9000;
     private static BroadcastSystem gDefault;
 
     private final Map<String, Boolean> mReceiverStatus = new ArrayMap<>();
@@ -160,7 +160,7 @@ public class BroadcastSystem {
         synchronized (mReceiverStatus) {
             mReceiverStatus.put(p.packageName, true);
         }
-        VLog.i(TAG, "startApp:%s,version=%s/%d", p.packageName, p.mVersionName, p.mVersionCode);
+        VLog.d(TAG, "startApp:%s,version=%s/%d", p.packageName, p.mVersionName, p.mVersionCode);
         PackageSetting setting = (PackageSetting) p.mExtras;
         //微信有60多个静态receiver,华为低版本是每进程500个receiver对象，高版本是每进程1000个对象
         List<StaticBroadcastReceiver> receivers = mReceivers.get(p.packageName);
@@ -175,7 +175,7 @@ public class BroadcastSystem {
             StaticBroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
             receivers.add(r);
-            Log.d("kk", "registerReceiver:" + info.name + ",action=" + componentAction);
+            Log.v("kk", "registerReceiver:" + info.name + ",action=" + componentAction);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
@@ -224,7 +224,9 @@ public class BroadcastSystem {
         synchronized (mBroadcastRecords) {
             BroadcastRecord record = mBroadcastRecords.remove(new Key(res.mToken, userId));
             if (record == null) {
-                VLog.e(TAG, "Unable to find the BroadcastRecord by token: " + res.mToken);
+                VLog.e(TAG, "Unable to find the BroadcastRecord by token: %s@%d", res.mToken, userId);
+            } else {
+                VLog.v(TAG, "broadcastFinish token: %s", res.mToken);
             }
         }
         mTimeoutHandler.removeMessages(BROADCAST_TIME_OUT);
@@ -233,6 +235,7 @@ public class BroadcastSystem {
 
     void broadcastSent(int vuid, ActivityInfo receiverInfo, PendingResultData res) {
         int userId = VUserHandle.getUserId(vuid);
+        VLog.v(TAG, "broadcastSent token: %s@%d", res.mToken, userId);
         BroadcastRecord record = new BroadcastRecord(vuid, receiverInfo, res);
         synchronized (mBroadcastRecords) {
             mBroadcastRecords.put(new Key(res.mToken, userId), record);
@@ -289,7 +292,7 @@ public class BroadcastSystem {
             int userId = msg.arg1;
             BroadcastRecord r = mBroadcastRecords.remove(new Key(token, userId));
             if (r != null) {
-                VLog.w(TAG, "Broadcast timeout, cancel to dispatch it.");
+                VLog.w(TAG, "Broadcast timeout, cancel to dispatch it %s@%d", token, userId);
                 r.pendingResult.finish();
             }
         }
@@ -333,7 +336,7 @@ public class BroadcastSystem {
                 //系统
                 intent.setPackage(null);
                 data = new BroadcastIntentData(VUserHandle.USER_ALL, intent, null, true);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && info.applicationInfo.targetSdkVersion >= Build.VERSION_CODES.O) {
                 //8.0的静态广播限制，需要setComponent
                 //非系统发送的广播
                 if (data.fromSystem
@@ -346,7 +349,7 @@ public class BroadcastSystem {
                     return;
                 }
             }
-            VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", data.intent);
+            VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", data.intent.getAction());
             PendingResult result = goAsync();
             if (!mAMS.handleStaticBroadcast(data, this.appId, info, result)) {
                 result.finish();

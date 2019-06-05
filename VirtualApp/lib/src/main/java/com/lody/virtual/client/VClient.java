@@ -976,7 +976,7 @@ public final class VClient extends IVClient.Stub {
             ClassLoader classLoader = LoadedApk.getClassLoader.call(mBoundApplication.info);
             BroadcastReceiver receiver = (BroadcastReceiver) classLoader.loadClass(className).newInstance();
             mirror.android.content.BroadcastReceiver.setPendingResult.call(receiver, result);
-            data.intent.setExtrasClassLoader(context.getClassLoader());
+            data.intent.setExtrasClassLoader(classLoader);
             if (data.intent.getComponent() == null) {
                 data.intent.setComponent(data.component);
             }

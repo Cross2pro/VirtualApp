@@ -65,7 +65,10 @@ public class App extends Application {
         }
 
         @Override
-        public boolean isAllowStartByReceiver(String packageName, int userId) {
+        public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
+            if(Intent.ACTION_BOOT_COMPLETED.equals(action)){
+                return "com.example.demo2".equals(packageName);
+            }
             return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName);
         }
     };

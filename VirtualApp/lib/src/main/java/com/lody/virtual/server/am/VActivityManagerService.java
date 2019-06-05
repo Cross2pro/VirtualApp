@@ -1054,7 +1054,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         boolean send = false;
         synchronized (this) {
             ProcessRecord r = findProcessLocked(info.processName, vuid);
-            if (r == null && isStartProcessForBroadcast(info.packageName, userId)) {
+            if (r == null && isStartProcessForBroadcast(info.packageName, userId, data.intent.getAction())) {
                 r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, "broadcast");
             }
             if (r != null && r.appThread != null) {
@@ -1065,13 +1065,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return send;
     }
 
-    private boolean isStartProcessForBroadcast(String packageName, int userId) {
+    private boolean isStartProcessForBroadcast(String packageName, int userId, String action) {
         if (isAppRunning(packageName, userId, false)) {
             //应用已经启动
             return true;
         }
         //是否允许因静态广播而启动进程
-        return VirtualCore.getConfig().isAllowStartByReceiver(packageName, userId);
+        return VirtualCore.getConfig().isAllowStartByReceiver(packageName, userId, action);
     }
 
     private void performScheduleReceiver(IVClient client, int vuid, ActivityInfo info, Intent intent,
