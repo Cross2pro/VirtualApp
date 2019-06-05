@@ -60,6 +60,7 @@ import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
@@ -349,22 +350,7 @@ public final class VirtualCore {
     //Add by xdja
     public void sendBootCompleteBC(final String packageName, String action, boolean update) {
         if (shouldLaunchApp(packageName)) {
-            Intent intent = new Intent(action);
-            VActivityManager.get().startService(0, intent);
-            if (update) {
-                return;
-            }
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        sleep(2000);
-                        PrivilegeAppOptimizer.get().performOptimize(packageName, 0);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }.start();
+            VActivityManager.get().sendBroadcast(new Intent(Intent.ACTION_BOOT_COMPLETED), VUserHandle.myUserId());
         }
     }
 

@@ -61,6 +61,7 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.PhoneCallService;
 import com.xdja.zs.VServiceKeepAliveManager;
+import com.xdja.zs.VServiceKeepAliveService;
 import com.xdja.zs.controllerManager;
 
 import java.util.ArrayList;
@@ -446,8 +447,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         processDied(record);
         ActivityCounterManager.get().cleanProcess(record.pid);
         //xdja
-        VLog.d("wuyaowei", "onProcessDied:" + record.info.packageName);
-        VServiceKeepAliveManager.get().scheduleRunKeepAliveService(record.info.packageName, VUserHandle.myUserId());
+        VLog.d(TAG, "onProcessDied:" + record.info.packageName);
+        VServiceKeepAliveService.get().scheduleRunKeepAliveService(record.info.packageName, VUserHandle.myUserId());
     }
 
     @Override
