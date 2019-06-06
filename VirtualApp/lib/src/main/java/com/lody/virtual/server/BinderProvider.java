@@ -85,6 +85,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         addService(ServiceManagerNative.ACTIVITY, VActivityManagerService.get());
         addService(ServiceManagerNative.USER, VUserManagerService.get());
+        VServiceKeepAliveService.systemReady();
+        addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         VAppManagerService.systemReady();
         addService(ServiceManagerNative.APP, VAppManagerService.get());
         BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
@@ -112,8 +114,6 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
 //        VSafekeyCkmsManagerService.systemReady(context);
 //        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
-        VServiceKeepAliveService.systemReady();
-        addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         /* End Changed by XDJA */
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
