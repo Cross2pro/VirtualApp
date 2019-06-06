@@ -170,7 +170,7 @@ public class BroadcastSystem {
         }
         for (VPackage.ActivityComponent receiver : p.receivers) {
             ActivityInfo info = receiver.info;
-            String componentAction = VirtualCore.get().getHostPkg() + String.format("_VA_%s_%s", info.packageName, info.name);
+            String componentAction = ComponentUtils.getComponentAction(info);
             IntentFilter componentFilter = new IntentFilter(componentAction);
             StaticBroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info);
             mContext.registerReceiver(r, componentFilter, null, mScheduler);
