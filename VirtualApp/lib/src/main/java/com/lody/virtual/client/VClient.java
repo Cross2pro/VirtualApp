@@ -1058,24 +1058,45 @@ public final class VClient extends IVClient.Stub {
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {
-            CrashHandler handler = VClient.gClient.crashHandler;
-            if (handler != null) {
-                handler.handleUncaughtException(t, e);
-            } else {
-                VLog.e("uncaught", e);
-                
-                //xdja
-                Object defaultUncaughtExceptionHandler = Reflect.on(t).field("defaultUncaughtExceptionHandler").get();
-                if (defaultUncaughtExceptionHandler == null) {
-                    Log.e(TAG, "Thread defaultUncaughtExceptionHandler is null");
-                } else {
-                    try {
-                        Reflect.on(defaultUncaughtExceptionHandler).call("uncaughtException", t, e);
-                    } catch (Exception e2) {
-                        Log.e(TAG, e2.toString());
-                    }
-                }
+            Thread.UncaughtExceptionHandler threadHandler = null;
+            try {
+                //当前线程的handler
+                threadHandler = Reflect.on(t).get("uncaughtExceptionHandler");
+            } catch (Throwable ignore) {
 
+            }
+            if(threadHandler == null){
+                //应用进程的Thread.class的ClassLoader是系统classloader，所以直接用静态方法
+                threadHandler = Thread.getDefaultUncaughtExceptionHandler();
+            }
+            Thread.UncaughtExceptionHandler handler;
+            if (threadHandler != null) {
+                handler = threadHandler;
+            } else {
+                handler = VClient.gClient.crashHandler;
+            }
+            boolean isMainThread = Looper.getMainLooper() == Looper.myLooper();
+            //要考虑下面几个情况：
+            //1.defHandler.uncaughtException里面自己杀死当前进程，如果是top activity，则会无限重启
+            //2.defHandler.uncaughtException里面没有杀死当前进程
+            if(isMainThread){
+                //如果是activity是最上层，可能会不断重启activity，或者保留一个白色无效的activity
+                //返回主界面
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    VirtualCore.get().getContext().startActivity(intent);
+                } catch (Throwable ignore) {
+                    VLog.w(TAG, "back home", e);
+                }
+            }
+            if (handler != null) {
+                handler.uncaughtException(t, e);
+            }
+            //如果上面方法退出进程，则下面不会执行
+            //主进程异常后，是无法响应后续事件，只能杀死
+            if (isMainThread) {
                 System.exit(0);
             }
         }
