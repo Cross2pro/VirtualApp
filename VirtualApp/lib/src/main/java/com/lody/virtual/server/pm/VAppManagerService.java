@@ -452,7 +452,11 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         BroadcastSystem.get().startApp(pkg);
         if (options.notify) {
-            notifyAppInstalled(ps, -1);
+            if(res.isUpdate){
+                notifyAppUpdate(ps, -1);
+            }else {
+                notifyAppInstalled(ps, -1);
+            }
         }
         res.isSuccess = true;
         VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_ADD);
@@ -688,6 +692,30 @@ public class VAppManagerService extends IAppManager.Stub {
             userId = VUserHandle.USER_OWNER;
         }
         sendInstalledBroadcast(pkg, new VUserHandle(userId));
+        mRemoteCallbackList.finishBroadcast();
+        VAccountManagerService.get().refreshAuthenticatorCache(null);
+    }
+
+    private void notifyAppUpdate(PackageSetting setting, int userId) {
+        final String pkg = setting.packageName;
+        int N = mRemoteCallbackList.beginBroadcast();
+        while (N-- > 0) {
+            try {
+                if (userId == -1) {
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdate(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdateAsUser(0, pkg);
+
+                } else {
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdateAsUser(userId, pkg);
+                }
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
+        }
+        sendUpdateBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();
         VAccountManagerService.get().refreshAuthenticatorCache(null);
     }
