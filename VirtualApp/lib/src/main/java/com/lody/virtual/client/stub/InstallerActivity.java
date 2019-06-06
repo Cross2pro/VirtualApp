@@ -372,6 +372,7 @@ public class InstallerActivity extends Activity {
                     InstallResult res = (InstallResult)msg.obj;
                     if (res.isSuccess) {
                         if (res.isUpdate) {
+                            VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
                             VAppManagerService.get().sendUpdateBroadcast(res.packageName, VUserHandle.ALL);
                         } else {
                             VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);

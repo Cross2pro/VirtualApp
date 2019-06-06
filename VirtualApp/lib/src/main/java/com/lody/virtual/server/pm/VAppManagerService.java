@@ -452,10 +452,9 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         BroadcastSystem.get().startApp(pkg);
         if (options.notify) {
+            notifyAppInstalled(ps, -1);
             if(res.isUpdate){
                 notifyAppUpdate(ps, -1);
-            }else {
-                notifyAppInstalled(ps, -1);
             }
         }
         res.isSuccess = true;
