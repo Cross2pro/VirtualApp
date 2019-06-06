@@ -12,6 +12,7 @@ import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.zs.VServiceKeepAliveManager;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
@@ -67,7 +68,8 @@ public class App extends Application {
         @Override
         public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
             if(Intent.ACTION_BOOT_COMPLETED.equals(action)){
-                return "com.example.demo2".equals(packageName);
+                return "com.example.demo2".equals(packageName) ||
+                        VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
             }
             return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName);
         }

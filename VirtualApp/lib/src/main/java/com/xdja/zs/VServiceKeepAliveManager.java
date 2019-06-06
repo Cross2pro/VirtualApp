@@ -8,8 +8,10 @@ import com.lody.virtual.helper.utils.IInterfaceUtils;
 
 public class VServiceKeepAliveManager {
 
-    public static final int ACTION_DEL = 1;
-    public static final int ACTION_ADD = 2;
+    public static final int ACTION_ADD = 1;
+    public static final int ACTION_DEL = 2;
+    public static final int ACTION_TEMP_ADD = 3;
+    public static final int ACTION_TEMP_DEL = 4;
 
     private static final VServiceKeepAliveManager sInstance = new VServiceKeepAliveManager();
     IServiceKeepAlive mService;
@@ -33,22 +35,6 @@ public class VServiceKeepAliveManager {
         return sInstance;
     }
 
-    public void addKeepAliveServiceName(String pkgName, String serviceName) {
-        try {
-            get().getService().addKeepAliveServiceName(pkgName, serviceName);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void removeKeepAliveServiceName(String name) {
-        try {
-            get().getService().removeKeepAliveServiceName(name);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void scheduleUpdateKeepAliveList(String pkgName, int action) {
         try {
             get().getService().scheduleUpdateKeepAliveList(pkgName, action);
@@ -62,6 +48,15 @@ public class VServiceKeepAliveManager {
             get().getService().scheduleRunKeepAliveService(pkgName, userId);
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public boolean inKeepAliveServiceList(String pkgName) {
+        try {
+            return get().getService().inKeepAliveServiceList(pkgName);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

@@ -6,36 +6,42 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.os.RemoteException;
-import android.util.Log;
 
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.server.am.VActivityManagerService;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
 
     private static final String TAG = "VServiceKeepAliveService";
-    private static VServiceKeepAliveService sInstance;
-    private static Map<String, String> mKeepAliveServiceList = new HashMap<>();
+    private static Singleton<VServiceKeepAliveService> sService = new Singleton<VServiceKeepAliveService>() {
+
+        @Override
+        protected VServiceKeepAliveService create() {
+            return new VServiceKeepAliveService();
+        }
+    };
+    private static final List<String> mKeepAliveServiceList = new ArrayList<>();
+    private static List<String> mTemporaryCacheList = new ArrayList<>();
     private static HandlerThread mHandlerThread = new HandlerThread("keepAliveThread");
     private static Handler mHandler;
     private static final int UPDATE_APP_LIST = 1;
     private static final int RUN_KEEPALIVE_APP = 2;
-    private static final int ACTION_DEL = 1;
-    private static final int ACTION_ADD = 2;
+    private static final int ACTION_ADD = 1;
+    private static final int ACTION_DEL = 2;
+    private static final int ACTION_TEMP_ADD = 3;
+    private static final int ACTION_TEMP_DEL = 4;
 
 
     static {
-        mKeepAliveServiceList.put("com.xdja.emm.InitService", "com.xdja.emm");
+        mKeepAliveServiceList.add("com.xdja.emm");
     }
 
     public static void systemReady() {
-        sInstance = new VServiceKeepAliveService();
         mHandlerThread.start();
         mHandler = new H(mHandlerThread.getLooper());
     }
@@ -49,61 +55,23 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
     }
 
     public static VServiceKeepAliveService get() {
-        return sInstance;
+        return sService.get();
     }
 
-
-    @Override
-    public void addKeepAliveServiceName(String pkgName, String serviceName) throws RemoteException {
-        if (!mKeepAliveServiceList.containsKey(serviceName)) {
-            mKeepAliveServiceList.put(serviceName, pkgName);
+    private static boolean hasKeepAliveService(String pkgName) {
+        synchronized (mKeepAliveServiceList) {
+            return mKeepAliveServiceList.contains(pkgName);
         }
-    }
-
-    @Override
-    public void removeKeepAliveServiceName(String name) throws RemoteException {
-        mKeepAliveServiceList.remove(name);
-    }
-
-    private boolean hasKeepAliveService(String pkgName) {
-        Iterator entries = mKeepAliveServiceList.entrySet().iterator();
-        if (entries.hasNext()) {
-            do {
-                Map.Entry entry = (Map.Entry) entries.next();
-                if (entry.getValue().equals(pkgName)) {
-                    return true;
-                }
-            } while (entries.hasNext());
-        }
-        return false;
     }
 
     private static void runKeepAliveService(String pkgName, int userId) {
-        Iterator entries = mKeepAliveServiceList.entrySet().iterator();
-        if (entries.hasNext()) {
-            do {
-                final Map.Entry entry = (Map.Entry) entries.next();
-                if (entry.getValue().equals(pkgName)) {
-
-                    Intent intent = new Intent();
-                    intent.setClassName(pkgName, (String) entry.getKey());
-                    VLog.d(TAG, "service:" + entry.getKey());
-                    VActivityManager.get().startService(userId, intent);
-                }
-            } while (entries.hasNext());
-        }
+        Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
+        VActivityManagerService.get().sendBroadcastAsUserWithPackage(intent, new VUserHandle(userId), pkgName);
     }
 
     private static void clearAppFromList(String pkgName) {
-        Iterator entries = mKeepAliveServiceList.entrySet().iterator();
-        if (entries.hasNext()) {
-            do {
-                final Map.Entry entry = (Map.Entry) entries.next();
-                if (entry.getValue().equals(pkgName)) {
-                    //noinspection SuspiciousMethodCalls
-                    mKeepAliveServiceList.remove(entry.getKey());
-                }
-            } while (entries.hasNext());
+        synchronized (mKeepAliveServiceList) {
+            mKeepAliveServiceList.remove(pkgName);
         }
     }
 
@@ -117,6 +85,11 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
         sendMessage(UPDATE_APP_LIST, action, pkgName);
     }
 
+    @Override
+    public boolean inKeepAliveServiceList(String pkgName) {
+        return hasKeepAliveService(pkgName);
+    }
+
     private static class H extends Handler {
         public H(Looper looper) {
             super(looper);
@@ -127,13 +100,27 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
             switch (msg.what) {
                 case UPDATE_APP_LIST:
                     String pkg = msg.obj.toString();
-                    if (msg.arg1 == ACTION_DEL) {
+                    if (msg.arg1 == ACTION_ADD) {
+                        synchronized (mKeepAliveServiceList) {
+                            mKeepAliveServiceList.add(pkg);
+                        }
+                        VLog.d(TAG, "Update add List:" + mKeepAliveServiceList);
+                    } else if (msg.arg1 == ACTION_DEL) {
                         clearAppFromList(pkg);
                         VLog.d(TAG, "Update del List:" + mKeepAliveServiceList);
-                    } else if(msg.arg1 == ACTION_ADD) {
-                        if (pkg.equals("com.xdja.emm")) {
-                            mKeepAliveServiceList.put("com.xdja.emm.InitService", "com.xdja.emm");
-                            VLog.d(TAG, "Update add List:" + mKeepAliveServiceList);
+                    } else if (msg.arg1 == ACTION_TEMP_DEL) {
+                        if (hasKeepAliveService(pkg)) {
+                            clearAppFromList(pkg);
+                        }
+                        mTemporaryCacheList.add(pkg);
+                        VLog.d(TAG, "Update temporary add List:" + mKeepAliveServiceList);
+                    } else if (msg.arg1 == ACTION_TEMP_ADD) {
+                        if (mTemporaryCacheList.contains(pkg)) {
+                            synchronized (mKeepAliveServiceList) {
+                                mKeepAliveServiceList.add(pkg);
+                            }
+                            mTemporaryCacheList.remove(pkg);
+                            VLog.d(TAG, "Update temporary del List:" + mKeepAliveServiceList);
                         }
                     }
                     break;

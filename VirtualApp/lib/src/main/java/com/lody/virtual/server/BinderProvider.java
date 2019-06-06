@@ -130,7 +130,6 @@ public final class BinderProvider extends ContentProvider {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                VirtualCore.get().sendBootCompleteBC("com.xdja.emm", "xdja.emm.initservice", false);
             }
         }.start();
         return true;
