@@ -33,6 +33,7 @@ import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
+import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
@@ -42,6 +43,7 @@ import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
 import com.lody.virtual.server.pm.parser.VPackage;
 import com.xdja.zs.VServiceKeepAliveManager;
+import com.xdja.zs.VServiceKeepAliveService;
 
 import java.io.File;
 import java.io.IOException;
@@ -249,7 +251,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (pkg.mVersionCode != outInfo.versionCode) {
                     VLog.d(TAG, "app (" + ps.packageName + ") has changed version, update it.");
                     InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
-                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, options);
+                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, options, true);
                 }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
@@ -257,6 +259,9 @@ public class VAppManagerService extends IAppManager.Stub {
             }
 
         }
+
+        BroadcastSystem.get().startApp(pkg);
+
         return true;
     }
 
@@ -319,8 +324,11 @@ public class VAppManagerService extends IAppManager.Stub {
         }
     }
 
+    private InstallResult installPackageImpl(String path, InstallOptions options){
+        return installPackageImpl(path, options, false);
+    }
 
-    private InstallResult installPackageImpl(String path, InstallOptions options) {
+    private InstallResult installPackageImpl(String path, InstallOptions options, boolean loadingApp) {
         long installTime = System.currentTimeMillis();
         if (path == null) {
             return InstallResult.makeFailure("path = NULL");
@@ -338,6 +346,9 @@ public class VAppManagerService extends IAppManager.Stub {
         if (pkg == null || pkg.packageName == null) {
             return InstallResult.makeFailure("Unable to parse the package.");
         }
+        if(!loadingApp) {
+            BroadcastSystem.get().stopApp(pkg.packageName);
+        }
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
         // PackageCache holds all packages, try to check if we need to update.
@@ -352,7 +363,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 return InstallResult.makeFailure("Not allowed to update the package.");
             }
             res.isUpdate = true;
-            VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_DEL);
+            VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_DEL);
             VActivityManagerService.get().killAppByPkg(res.packageName, VUserHandle.USER_ALL);
         }
         boolean useSourceLocationApk = options.useSourceLocationApk;
@@ -444,11 +455,17 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        if(!loadingApp) {
+            BroadcastSystem.get().startApp(pkg);
+        }
         if (options.notify) {
             notifyAppInstalled(ps, -1);
+            if(res.isUpdate){
+                notifyAppUpdate(ps, -1);
+            }
         }
         res.isSuccess = true;
-        VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_ADD);
+        VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_ADD);
         return res;
     }
 
@@ -506,7 +523,7 @@ public class VAppManagerService extends IAppManager.Stub {
             if (userIds.length == 1) {
                 uninstallPackageFully(ps, true);
             } else {
-                VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
+                VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
                 // Just hidden it
                 VActivityManagerService.get().killAppByPkg(packageName, userId);
                 ps.setInstalled(userId, false);
@@ -569,7 +586,8 @@ public class VAppManagerService extends IAppManager.Stub {
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
         String packageName = ps.packageName;
         try {
-            VServiceKeepAliveManager.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
+            BroadcastSystem.get().stopApp(packageName);
+            VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
                 VEnvironment.getPackageResourcePath(packageName).delete();
@@ -676,7 +694,34 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
+        }
         sendInstalledBroadcast(pkg, new VUserHandle(userId));
+        mRemoteCallbackList.finishBroadcast();
+        VAccountManagerService.get().refreshAuthenticatorCache(null);
+    }
+
+    private void notifyAppUpdate(PackageSetting setting, int userId) {
+        final String pkg = setting.packageName;
+        int N = mRemoteCallbackList.beginBroadcast();
+        while (N-- > 0) {
+            try {
+                if (userId == -1) {
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdate(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdateAsUser(0, pkg);
+
+                } else {
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUpdateAsUser(userId, pkg);
+                }
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
+        }
+        sendUpdateBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();
         VAccountManagerService.get().refreshAuthenticatorCache(null);
     }
@@ -695,6 +740,9 @@ public class VAppManagerService extends IAppManager.Stub {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        }
+        if(userId == -1){
+            userId = VUserHandle.USER_OWNER;
         }
         sendUninstalledBroadcast(pkg, new VUserHandle(userId));
         mRemoteCallbackList.finishBroadcast();

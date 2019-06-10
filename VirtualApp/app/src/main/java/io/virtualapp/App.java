@@ -1,17 +1,15 @@
 package io.virtualapp;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
+import android.content.pm.ActivityInfo;
 import android.support.v7.app.AppCompatDelegate;
-import android.util.Log;
 
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.VLog;
-import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.zs.VServiceKeepAliveManager;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
@@ -62,6 +60,21 @@ public class App extends Application {
         @Override
         public boolean isAllowCreateShortcut() {
             return false;
+        }
+
+        @Override
+        public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
+            if(Intent.ACTION_BOOT_COMPLETED.equals(action)){
+                return "com.example.demo2".equals(packageName) ||
+                        VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
+            }
+            return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName);
+        }
+
+        @Override
+        public void startPreviewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack){
+            super.startPreviewActivity(userId, info, callBack);
+            //如果需要自定义，要注释super.startPreviewActivity，并且启动一个类似WindowPreviewActivity
         }
     };
 

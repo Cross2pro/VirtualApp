@@ -17,7 +17,6 @@ import android.os.RemoteException;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.stub.WindowPreviewActivity;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -27,6 +26,7 @@ import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
+import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -425,7 +425,7 @@ public class VActivityManager {
         return launchApp(userId, packageName, true);
     }
 
-    public boolean launchApp(final int userId, String packageName, boolean preview) {
+    public boolean launchApp(final int userId,final String packageName, boolean preview) {
         if (VirtualCore.get().isRun64BitProcess(packageName)) {
             if (!V64BitHelper.has64BitEngineStartPermission()) {
                 return false;
@@ -449,24 +449,52 @@ public class VActivityManager {
         if (ris == null || ris.size() <= 0) {
             return false;
         }
-        ActivityInfo info = ris.get(0).activityInfo;
+        final ActivityInfo info = ris.get(0).activityInfo;
         final Intent intent = new Intent(intentToResolve);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setClassName(info.packageName, info.name);
+        //1.va的进程初始化500ms
+        //2.app的Application初始化，这个要看app
+        //3.app的4组件初始化
         if (!preview || VActivityManager.get().isAppRunning(info.packageName, userId, true)) {
+            VLog.d("kk", "app's main thread was running.");
             VActivityManager.get().startActivity(intent, userId);
         } else {
+            VLog.d("kk", "app's main thread not running.");
             intent.putExtra("_VA_|no_animation", true);
-            WindowPreviewActivity.previewActivity(userId, info);
+            final VirtualCore.UiCallback callBack = new VirtualCore.UiCallback() {
+                private boolean mLaunched;
 
-            /*VirtualRuntime.getUIHandler().postDelayed(new Runnable() {
+                @Override
+                public void onAppOpened(String packageName, int userId) {
+                    VLog.d("WindowPreviewActivity", "onAppOpened:"+packageName);
+                    synchronized (this) {
+                        mLaunched = true;
+                    }
+                }
+
+                @Override
+                public boolean isLaunched(String packageName, int userId) {
+                    synchronized (this) {
+                        return mLaunched;
+                    }
+                }
+            };
+
+            VirtualCore.getConfig().startPreviewActivity(userId, info, callBack);
+            VirtualCore.get().setUiCallback(intent, callBack);
+            final String processName = ComponentUtils.getProcessName(info);
+            new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    VActivityManager.get().startActivity(intent, userId);
+                    //wait 500ms
+                    ClientConfig clientConfig = initProcess(packageName, processName, userId);
+                    if(clientConfig != null){
+                        VActivityManager.get().startActivity(intent, userId);
+                        //VActivityManager#startActivity启动速度比WindowPreviewActivity快
+                    }
                 }
-            }, 400L);*/
-
-            VActivityManager.get().startActivity(intent, userId);
+            }).start();
         }
         return true;
     }
@@ -548,6 +576,14 @@ public class VActivityManager {
             return getService().finishActivityAffinity(userId, token);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void broadcastFinish(PendingResultData res) {
+        try {
+            getService().broadcastFinish(res, VUserHandle.myUserId());
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
         }
     }
 }

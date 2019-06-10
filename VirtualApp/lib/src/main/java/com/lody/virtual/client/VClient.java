@@ -1,6 +1,7 @@
 package com.lody.virtual.client;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.Application;
@@ -19,7 +20,9 @@ import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.ConditionVariable;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
@@ -28,7 +31,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
-import android.os.Environment;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.CrashHandler;
@@ -45,28 +48,24 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
-import com.lody.virtual.client.receiver.StaticReceiverSystem;
 import com.lody.virtual.client.service.ServiceManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
-import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.compat.StrictModeCompat;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.InstalledAppInfo;
-import android.os.storage.StorageManager;
-import android.os.storage.StorageVolume;
-import android.util.Log;
+import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
-import com.xdja.zs.LoadModules;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -79,8 +78,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import android.app.Activity;
-import android.os.Bundle;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
@@ -571,7 +568,6 @@ public final class VClient extends IVClient.Stub {
             }
         });
         VirtualCore.get().getAppCallback().afterApplicationCreate(packageName, processName, mInitialApplication);
-        StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);
 
         //xdja
@@ -957,7 +953,8 @@ public final class VClient extends IVClient.Stub {
         sendMessage(NEW_INTENT, data);
     }
 
-    public void scheduleReceiver(String processName, ComponentName component, Intent intent, BroadcastReceiver.PendingResult pendingResult) {
+    @Override
+    public void scheduleReceiver(String processName, ComponentName component, Intent intent, PendingResultData pendingResult) {
         ReceiverData receiverData = new ReceiverData();
         receiverData.pendingResult = pendingResult;
         receiverData.intent = intent;
@@ -968,7 +965,10 @@ public final class VClient extends IVClient.Stub {
     }
 
     private void handleReceiver(ReceiverData data) {
-        BroadcastReceiver.PendingResult result = data.pendingResult;
+        if (!isAppRunning()) {
+            bindApplication(data.component.getPackageName(), data.processName);
+        }
+        BroadcastReceiver.PendingResult result = data.pendingResult.build();
         try {
             Context context = mInitialApplication.getBaseContext();
             Context receiverContext = ContextImpl.getReceiverRestrictedContext.call(context);
@@ -976,7 +976,7 @@ public final class VClient extends IVClient.Stub {
             ClassLoader classLoader = LoadedApk.getClassLoader.call(mBoundApplication.info);
             BroadcastReceiver receiver = (BroadcastReceiver) classLoader.loadClass(className).newInstance();
             mirror.android.content.BroadcastReceiver.setPendingResult.call(receiver, result);
-            data.intent.setExtrasClassLoader(context.getClassLoader());
+            data.intent.setExtrasClassLoader(classLoader);
             if (data.intent.getComponent() == null) {
                 data.intent.setComponent(data.component);
             }
@@ -990,7 +990,7 @@ public final class VClient extends IVClient.Stub {
                     "Unable to start receiver " + data.component
                             + ": " + e.toString(), e);
         }
-        StaticReceiverSystem.get().broadcastFinish(data.pendingResult);
+        VActivityManager.get().broadcastFinish(data.pendingResult);
     }
 
     public ClassLoader getClassLoader() {
@@ -1058,24 +1058,45 @@ public final class VClient extends IVClient.Stub {
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {
-            CrashHandler handler = VClient.gClient.crashHandler;
-            if (handler != null) {
-                handler.handleUncaughtException(t, e);
-            } else {
-                VLog.e("uncaught", e);
-                
-                //xdja
-                Object defaultUncaughtExceptionHandler = Reflect.on(t).field("defaultUncaughtExceptionHandler").get();
-                if (defaultUncaughtExceptionHandler == null) {
-                    Log.e(TAG, "Thread defaultUncaughtExceptionHandler is null");
-                } else {
-                    try {
-                        Reflect.on(defaultUncaughtExceptionHandler).call("uncaughtException", t, e);
-                    } catch (Exception e2) {
-                        Log.e(TAG, e2.toString());
-                    }
-                }
+            Thread.UncaughtExceptionHandler threadHandler = null;
+            try {
+                //当前线程的handler
+                threadHandler = Reflect.on(t).get("uncaughtExceptionHandler");
+            } catch (Throwable ignore) {
 
+            }
+            if(threadHandler == null){
+                //应用进程的Thread.class的ClassLoader是系统classloader，所以直接用静态方法
+                threadHandler = Thread.getDefaultUncaughtExceptionHandler();
+            }
+            Thread.UncaughtExceptionHandler handler;
+            if (threadHandler != null) {
+                handler = threadHandler;
+            } else {
+                handler = VClient.gClient.crashHandler;
+            }
+            boolean isMainThread = Looper.getMainLooper() == Looper.myLooper();
+            //要考虑下面几个情况：
+            //1.defHandler.uncaughtException里面自己杀死当前进程，如果是top activity，则会无限重启
+            //2.defHandler.uncaughtException里面没有杀死当前进程
+            if(isMainThread){
+                //如果是activity是最上层，可能会不断重启activity，或者保留一个白色无效的activity
+                //返回主界面
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    VirtualCore.get().getContext().startActivity(intent);
+                } catch (Throwable ignore) {
+                    VLog.w(TAG, "back home", e);
+                }
+            }
+            if (handler != null) {
+                handler.uncaughtException(t, e);
+            }
+            //如果上面方法退出进程，则下面不会执行
+            //主进程异常后，是无法响应后续事件，只能杀死
+            if (isMainThread) {
                 System.exit(0);
             }
         }
@@ -1095,7 +1116,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     private final class ReceiverData {
-        BroadcastReceiver.PendingResult pendingResult;
+        PendingResultData pendingResult;
         Intent intent;
         ComponentName component;
         String processName;

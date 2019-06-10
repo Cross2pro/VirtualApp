@@ -15,6 +15,10 @@ import java.util.List;
  * Manages users and user details on a multi-user system.
  */
 public class VUserManager {
+    public static final String ACTION_USER_ADDED = "android.intent.action.USER_ADDED";
+    public static final String ACTION_USER_REMOVED = "android.intent.action.USER_REMOVED";
+    public static final String ACTION_USER_INFO_CHANGED = "android.intent.action.USER_CHANGED";
+    public static final String ACTION_USER_STARTED = "android.intent.action.USER_STARTED";
 
     private static String TAG = "VUserManager";
     private final IUserManager mService;

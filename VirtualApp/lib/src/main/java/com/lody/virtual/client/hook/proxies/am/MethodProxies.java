@@ -924,8 +924,7 @@ class MethodProxies {
             }
 
             fixSmallIcon(notification, component);
-
-            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg())) {
+            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg(), getAppUserId())) {
                 notification = new Notification();
                 notification.icon = getHostContext().getApplicationInfo().icon;
             }
@@ -1678,7 +1677,7 @@ class MethodProxies {
                     intentData = extraData.getParcelable("_VA_|_data_");
                 }
                 if (intentData != null) {
-                    if (intentData.userId != VUserHandle.myUserId()) {
+                    if (intentData.userId >= 0 && intentData.userId != VUserHandle.myUserId()) {
                         return;
                     }
                     intent = intentData.intent;
@@ -1954,6 +1953,7 @@ class MethodProxies {
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
+                Log.i("kk", "send broadcast " + intent + "=>" + newIntent);
             } else {
                 return 0;
             }
@@ -1980,8 +1980,9 @@ class MethodProxies {
 
             } else if (BadgerManager.handleBadger(intent)) {
                 return null;
-            } else if ("com.xdja.dialer.removecall".equals(action)) {
-                return intent;
+                //已经加到SpecialComponentList#SYSTEM_BROADCAST_ACTION
+//            } else if ("com.xdja.dialer.removecall".equals(action)) {
+//                return intent;
             } else {
                 return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
             }

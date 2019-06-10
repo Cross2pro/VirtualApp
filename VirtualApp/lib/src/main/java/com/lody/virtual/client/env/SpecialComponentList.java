@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +42,7 @@ public final class SpecialComponentList {
     private static final HashSet<String> SPEC_SYSTEM_APP_LIST = new HashSet<>(3);
     private static final Set<String> SYSTEM_BROADCAST_ACTION = new HashSet<>(7);
     private static final Set<String> PRE_INSTALL_PACKAGES = new HashSet<>(7);
-    private static String PROTECT_ACTION_PREFIX = "_VA_protected_";
+    private static final String PROTECT_ACTION_PREFIX = "_VA_protected_";
 
     static {
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_SCREEN_ON);
@@ -71,6 +73,9 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.DYNAMIC_SENSOR_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("dynamic_sensor_change");
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        SYSTEM_BROADCAST_ACTION.add("com.xdja.dialer.removecall");
+		//图标广播
+        SYSTEM_BROADCAST_ACTION.add(Constants.ACTION_BADGER_CHANGE);
 
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE);
@@ -82,9 +87,12 @@ public final class SpecialComponentList {
 
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_ADDED, Constants.ACTION_PACKAGE_ADDED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REMOVED, Constants.ACTION_PACKAGE_REMOVED);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REPLACED, Constants.ACTION_PACKAGE_REPLACED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_CHANGED, Constants.ACTION_PACKAGE_CHANGED);
-        PROTECTED_ACTION_MAP.put("android.intent.action.USER_ADDED", Constants.ACTION_USER_ADDED);
-        PROTECTED_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
+        PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_ADDED, Constants.ACTION_USER_ADDED);
+        PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_REMOVED, Constants.ACTION_USER_REMOVED);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_BOOT_COMPLETED, Constants.ACTION_BOOT_COMPLETED);
+        //TODO 是否需要改为仅内部媒体存储收到
         //update images/videos by media provider
         PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         //xdja
@@ -149,12 +157,16 @@ public final class SpecialComponentList {
     }
 
     public static void protectIntentFilter(IntentFilter filter) {
+        protectIntentFilter(filter, false);
+    }
+
+    public static void protectIntentFilter(IntentFilter filter, boolean ignoreBlack) {
         if (filter != null) {
             List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
             ListIterator<String> iterator = actions.listIterator();
             while (iterator.hasNext()) {
                 String action = iterator.next();
-                if (SpecialComponentList.isActionInBlackList(action)) {
+                if (!ignoreBlack && SpecialComponentList.isActionInBlackList(action)) {
                     iterator.remove();
                     continue;
                 }
@@ -162,6 +174,7 @@ public final class SpecialComponentList {
                 if (newAction != null) {
                     iterator.set(newAction);
                 }
+                VLog.d("lxf", action + "->" + newAction);
             }
         }
     }
@@ -182,39 +195,49 @@ public final class SpecialComponentList {
 
     public static String protectAction(String originAction) {
         if (SYSTEM_BROADCAST_ACTION.contains(originAction)) {
+            //处理A
             return originAction;
         }
         if (originAction == null) {
             return null;
         }
+        //这种不用处理，大多数是主进程和应用进程通信的广播
         if (originAction.startsWith(VirtualCore.get().getHostPkg()+"_VA_")) {
             return originAction;
         }
+        //test
         String newAction = PROTECTED_ACTION_MAP.get(originAction);
         if (newAction == null) {
+            //处理B VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX + originAction
             newAction = PROTECT_ACTION_PREFIX + originAction;
         }
-        Log.e("lxf","protectAction "+newAction);
+        //处理C，目的是广播隔离？
+        VLog.e("lxf","protectAction "+newAction);
         return VirtualCore.get().getHostPkg() + newAction;
     }
 
     public static String unprotectAction(String action) {
-        Log.e("lxf","unprotectAction "+action);
+        VLog.e("lxf","unprotectAction "+action);
         if (action == null) {
             return null;
         }
+        if (SYSTEM_BROADCAST_ACTION.contains(action)) {
+            //处理A
+            return null;
+        }
+        //处理B
         if (action.startsWith(VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX)) {
             return action.substring((VirtualCore.get().getHostPkg() + PROTECT_ACTION_PREFIX).length());
         }
-
+        //对应处理C
         if (action.startsWith(VirtualCore.get().getHostPkg())) {
             action = action.substring((VirtualCore.get().getHostPkg()).length());
         }
-
+        //？？？
         for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
             String modifiedAction = next.getValue();
             if (modifiedAction.equals(action)) {
-                Log.e("lxf","unprotectAction next.getKey() "+next.getKey());
+                VLog.e("lxf","unprotectAction next.getKey() "+next.getKey());
                 return next.getKey();
             }
         }

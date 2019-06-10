@@ -16,6 +16,10 @@ public class ParceledListSliceCompat {
 		return method != null && method.getReturnType() == ParceledListSlice.TYPE;
 	}
 
+	public static boolean isParceledListSlice(Object obj) {
+		return obj != null && obj.getClass() == ParceledListSlice.TYPE;
+	}
+
 	public static  Object create(List list) {
 		if (ParceledListSliceJBMR2.ctor != null) {
 			return ParceledListSliceJBMR2.ctor.newInstance(list);

@@ -3359,6 +3359,7 @@
         <activity
             android:name=".client.stub.WindowPreviewActivity"
             android:excludeFromRecents="true"
+            android:launchMode="singleTop"
             android:process=":x"
             android:taskAffinity="com.lody.virtual.window_preview"
             android:theme="@style/WindowBackgroundTheme" />

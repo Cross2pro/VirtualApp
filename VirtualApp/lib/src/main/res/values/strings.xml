@@ -12,4 +12,5 @@
     <string name="keep_service_damon_noti_text_v24">Keep app alive to receive new messages on time</string>
     <string name="keep_service_damon_noti_title">Tip: Message Should Be Hidden</string>
     <string name="keep_service_damon_noti_text">Get Removed</string>
+    <string name="launch_tip">App launching</string>
 </resources>

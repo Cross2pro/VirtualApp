@@ -60,6 +60,7 @@ import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
+import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
@@ -349,22 +350,7 @@ public final class VirtualCore {
     //Add by xdja
     public void sendBootCompleteBC(final String packageName, String action, boolean update) {
         if (shouldLaunchApp(packageName)) {
-            Intent intent = new Intent(action);
-            VActivityManager.get().startService(0, intent);
-            if (update) {
-                return;
-            }
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        sleep(2000);
-                        PrivilegeAppOptimizer.get().performOptimize(packageName, 0);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }.start();
+            VActivityManager.get().sendBroadcast(new Intent(Intent.ACTION_BOOT_COMPLETED), VUserHandle.myUserId());
         }
     }
 
@@ -903,7 +889,9 @@ public final class VirtualCore {
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {
+
     }
+
     public void setUiCallback(Intent intent, IUiCallback callback) {
         if (callback != null) {
             Bundle bundle = new Bundle();
@@ -1143,6 +1131,42 @@ public final class VirtualCore {
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
+    }
+
+    public abstract static class Receiver extends BroadcastReceiver{
+        @Override
+        public final void onReceive(Context context, Intent intent) {
+            Bundle extraData = intent.getExtras();
+            BroadcastIntentData intentData = null;
+            if (extraData != null) {
+                extraData.setClassLoader(BroadcastIntentData.class.getClassLoader());
+                intentData = extraData.getParcelable("_VA_|_data_");
+            }
+            int userId;
+            if (intentData != null) {
+                //内部广播，或者服务进程广播
+                intent = intentData.intent;
+                userId = intentData.userId;
+            } else {
+                //系统广播
+                userId = VUserHandle.USER_ALL;
+                SpecialComponentList.unprotectIntent(intent);
+            }
+            onReceive(context, intent, userId);
+        }
+
+        public abstract void onReceive(Context context, Intent intent, int userId);
+    }
+
+    /**
+     *
+     * @param context 直接用这个context进行unregisterReceiver
+     * @param receiver intent的内容会自动处理，和原生一样
+     * @param filter 自动处理
+     */
+    public void registerReceiver(Context context, Receiver receiver, IntentFilter filter){
+        SpecialComponentList.protectIntentFilter(filter, true);
+        context.registerReceiver(receiver, filter);
     }
 
     /**

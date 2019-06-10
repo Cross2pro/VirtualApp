@@ -9,4 +9,5 @@ import mirror.RefObject;
 public class NotificationO {
     public static Class<?> TYPE = RefClass.load(NotificationO.class, Notification.class);
     public static RefObject<String> mChannelId;
+    public static RefObject<String> mGroupKey;
 }

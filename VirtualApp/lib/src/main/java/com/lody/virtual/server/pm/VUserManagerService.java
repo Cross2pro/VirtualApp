@@ -242,7 +242,7 @@ public class VUserManagerService extends IUserManager.Stub {
     }
 
     private void sendUserInfoChangedBroadcast(int userId) {
-        Intent changedIntent = new Intent(Constants.ACTION_USER_INFO_CHANGED);
+        Intent changedIntent = new Intent(VUserManager.ACTION_USER_INFO_CHANGED);
         changedIntent.putExtra(Constants.EXTRA_USER_HANDLE, userId);
         changedIntent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
         VActivityManagerService.get().sendBroadcastAsUser(changedIntent, new VUserHandle(userId));
@@ -683,10 +683,9 @@ public class VUserManagerService extends IUserManager.Stub {
                     updateUserIdsLocked();
                 }
             }
-            Intent addedIntent = new Intent(Constants.ACTION_USER_ADDED);
+            Intent addedIntent = new Intent(VUserManager.ACTION_USER_ADDED);
             addedIntent.putExtra(Constants.EXTRA_USER_HANDLE, userInfo.id);
-            VActivityManagerService.get().sendBroadcastAsUser(addedIntent, VUserHandle.ALL,
-                    null);
+            VActivityManagerService.get().sendBroadcastAsUser(addedIntent, VUserHandle.ALL);
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
@@ -734,7 +733,7 @@ public class VUserManagerService extends IUserManager.Stub {
         // wiping the user's system directory and removing from the user list
         long identity = Binder.clearCallingIdentity();
         try {
-            Intent addedIntent = new Intent(Constants.ACTION_USER_REMOVED);
+            Intent addedIntent = new Intent(VUserManager.ACTION_USER_REMOVED);
             addedIntent.putExtra(Constants.EXTRA_USER_HANDLE, userHandle);
             VActivityManagerService.get().sendOrderedBroadcastAsUser(addedIntent, VUserHandle.ALL,
                     null,

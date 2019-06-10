@@ -14,10 +14,13 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.accounts.VAccountManagerService;
+import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.content.VContentService;
 import com.lody.virtual.server.device.VDeviceManagerService;
@@ -40,6 +43,7 @@ import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
 
 import com.xdja.zs.VAppPermissionManagerService;
+
 /**
  * @author Lody
  */
@@ -81,8 +85,11 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         addService(ServiceManagerNative.ACTIVITY, VActivityManagerService.get());
         addService(ServiceManagerNative.USER, VUserManagerService.get());
+        VServiceKeepAliveService.systemReady();
+        addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         VAppManagerService.systemReady();
         addService(ServiceManagerNative.APP, VAppManagerService.get());
+        BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             addService(ServiceManagerNative.JOB, VJobSchedulerService.get());
         }
@@ -107,11 +114,11 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
 //        VSafekeyCkmsManagerService.systemReady(context);
 //        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
-        VServiceKeepAliveService.systemReady();
-        addService(ServiceManagerNative.KEEPALIVE, VServiceKeepAliveService.get());
         /* End Changed by XDJA */
-		addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
+        addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
+        VActivityManagerService.get().sendBroadcastAsUser(new Intent(Intent.ACTION_BOOT_COMPLETED, null), VUserHandle.ALL);
+
         new Thread() {
             @Override
             public void run() {
@@ -123,10 +130,8 @@ public final class BinderProvider extends ContentProvider {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                VirtualCore.get().sendBootCompleteBC("com.xdja.emm", "xdja.emm.initservice", false);
             }
         }.start();
-
         return true;
     }
 

@@ -45,14 +45,13 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
         }
 
         if(BuildCompat.isOreo()) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("createNotificationChannelGroups"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationChannelGroups"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("deleteNotificationChannelGroup"));
-
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("createNotificationChannels"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationChannels"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationChannel"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("deleteNotificationChannel"));
+            addMethodProxy(new MethodProxies.CreateNotificationChannelGroups());
+            addMethodProxy(new MethodProxies.DeleteNotificationChannelGroup());
+            addMethodProxy(new MethodProxies.GetNotificationChannelGroups());
+            addMethodProxy(new MethodProxies.CreateNotificationChannels());
+            addMethodProxy(new MethodProxies.GetNotificationChannels());
+            addMethodProxy(new MethodProxies.DeleteNotificationChannel());
+            addMethodProxy(new MethodProxies.GetNotificationChannel());
         }
         addMethodProxy(new ReplaceCallingPkgMethodProxy("setInterruptionFilter"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getPackageImportance"));

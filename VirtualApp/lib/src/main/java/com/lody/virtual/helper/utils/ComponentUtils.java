@@ -140,7 +140,11 @@ public class ComponentUtils {
         return String.format(VirtualCore.get().getHostPkg()+"_VA_%s_%s", packageName, name);
     }
 
-    public static Intent redirectBroadcastIntent(Intent intent, int userId) {
+    public static Intent redirectBroadcastIntent(Intent intent, int userId){
+        return redirectBroadcastIntent(intent, userId, false);
+    }
+
+    public static Intent redirectBroadcastIntent(Intent intent, int userId, boolean fromSystem) {
         Intent newIntent = new Intent();
         newIntent.setDataAndType(intent.getData(), intent.getType());
         Set<String> categories = intent.getCategories();
@@ -159,12 +163,15 @@ public class ComponentUtils {
                 targetPackage = component.getPackageName();
             }
         } else {
-            newIntent.setAction(protectAction(intent.getAction()));
+            String action = protectAction(intent.getAction());
+            if(action != null) {
+                newIntent.setAction(action);
+            }
         }
-        if(VirtualCore.get().isVAppProcess()) {
-            BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage);
-            newIntent.putExtra("_VA_|_data_", data);
-        }
+
+        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
+        newIntent.putExtra("_VA_|_data_", data);
+
         return newIntent;
     }
 

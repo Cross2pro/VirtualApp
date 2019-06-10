@@ -1,6 +1,9 @@
 package com.lody.virtual.client.core;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+
+import com.lody.virtual.client.stub.WindowPreviewActivity;
 
 /**
  * @author Lody
@@ -80,6 +83,25 @@ public abstract class SettingConfig {
      */
     public boolean isDisableDrawOverlays(String packageName){
         return false;
+    }
+
+    /**
+     * 是否允许通过广播启动进程
+     * 允许规则：
+     * 1.userId对应的应用任意一个进程已经启动
+     * 2.isAllowStartByReceiver返回true
+     */
+    public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
+        return false;
+    }
+
+    /**
+     * 预留接口：定制白屏/黑屏，透明的默认显示界面
+     * @param userId
+     * @param info
+     */
+    public void startPreviewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack){
+        WindowPreviewActivity.previewActivity(userId, info, callBack);
     }
 
     public static class FakeWifiStatus {

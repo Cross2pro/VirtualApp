@@ -25,7 +25,7 @@ class NotificationCompatCompatV14 extends NotificationCompat {
     }
 
     @Override
-    public boolean dealNotification(int id, Notification notification, final String packageName) {
+    public boolean dealNotification(int id, Notification notification, final String packageName, int userId) {
         Context appContext = getAppContext(packageName);
         if (appContext == null) {
             return false;

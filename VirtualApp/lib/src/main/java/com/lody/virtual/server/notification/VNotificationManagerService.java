@@ -6,6 +6,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Singleton;
 import com.xdja.zs.INotificationCallback;
 import com.lody.virtual.server.interfaces.INotificationManager;
@@ -191,6 +192,131 @@ public class VNotificationManagerService extends INotificationManager.Stub {
 
     public void registerCallback(INotificationCallback iNotificationCallback) {
         this.iNotificationCallback = iNotificationCallback;
+    }
+
+    @Override
+    public boolean checkNotificationTag(String tag, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName)) {
+            return false;
+        }
+        if (tag == null) {
+            return false;
+        }
+//        return packageName + ":" + tag + "@" + userId;
+        String suffix = "@" + userId;
+        if (!tag.endsWith(suffix)) {
+            return false;
+        }
+        return tag.startsWith(packageName + "@") || tag.startsWith(packageName + ":");
+    }
+
+    @Override
+    public boolean checkNotificationChannel(String id, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id)) {
+            return false;
+        }
+        if (id == null) {
+            return false;
+        }
+        String prefix = packageName + "@" + userId;
+        return id.startsWith(prefix);
+    }
+
+    @Override
+    public boolean checkNotificationGroup(String id, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName)) {
+            return false;
+        }
+        if (id == null) {
+            return false;
+        }
+        String prefix = packageName + "@" + userId;
+        return id.startsWith(prefix);
+    }
+
+    @Override
+    public String dealNotificationChannel(String id, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.DEFAULT_ID.equals(id)) {
+            return id;
+        }
+        String prefix = packageName + "@" + userId;
+        if (id == null) {
+            return prefix;
+        }
+        if (!id.startsWith(prefix)) {
+            return prefix + id;
+        }
+        return id;
+    }
+
+    @Override
+    public String dealNotificationGroup(String id, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName)) {
+            return id;
+        }
+        if (id == null) {
+            return null;
+        }
+        String prefix = packageName + "@" + userId;
+        if (!id.startsWith(prefix)) {
+            return prefix + id;
+        }
+        return id;
+    }
+
+    @Override
+    public String getRealNotificationTag(String tag, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName)) {
+            return tag;
+        }
+        if (tag == null) {
+            return null;
+        }
+        if (tag.equals(packageName + "@" + userId)) {
+            return null;
+        }
+        int i = tag.indexOf(packageName + ":");
+        int j = tag.lastIndexOf("@" + userId);
+        if (i > 0 && j > 0) {
+            return tag.substring(i + 1, j);
+        } else if (i > 0) {
+            return tag.substring(i + 1);
+        } else if (j > 0) {
+            return tag.substring(0, j);
+        }
+        return tag;
+    }
+
+    @Override
+    public String getRealNotificationChannel(String id, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.DEFAULT_ID.equals(id)) {
+            return id;
+        }
+        if (id == null) {
+            return null;
+        }
+        String prefix = packageName + "@" + userId;
+        int start = prefix.length() + 1;
+        if (start < id.length()) {
+            return id.substring(start);
+        }
+        return id;
+    }
+
+    @Override
+    public String getRealNotificationGroup(String tag, String packageName, int userId) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName)) {
+            return tag;
+        }
+        if (tag == null) {
+            return null;
+        }
+        String prefix = packageName + "@" + userId;
+        int start = prefix.length() + 1;
+        if (start < tag.length()) {
+            return tag.substring(start);
+        }
+        return tag;
     }
 
     private static class NotificationInfo {
