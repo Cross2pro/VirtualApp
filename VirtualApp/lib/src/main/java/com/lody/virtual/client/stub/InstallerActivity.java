@@ -371,13 +371,6 @@ public class InstallerActivity extends Activity {
                 case STATE_INSTALLING:
                     InstallResult res = (InstallResult)msg.obj;
                     if (res.isSuccess) {
-                        if (res.isUpdate) {
-                            VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
-                            VAppManagerService.get().sendUpdateBroadcast(res.packageName, VUserHandle.ALL);
-                        } else {
-                            VAppManagerService.get().sendInstalledBroadcast(res.packageName, VUserHandle.ALL);
-                        }
-
                         try {
                             VirtualCore.AppRequestListener listener = VirtualCore.get().getAppRequestListener();
                             if(listener!=null)
