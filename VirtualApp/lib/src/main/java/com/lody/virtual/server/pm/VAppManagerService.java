@@ -251,7 +251,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (pkg.mVersionCode != outInfo.versionCode) {
                     VLog.d(TAG, "app (" + ps.packageName + ") has changed version, update it.");
                     InstallOptions options = InstallOptions.makeOptions(true, false, InstallOptions.UpdateStrategy.FORCE_UPDATE);
-                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, options);
+                    installPackageImpl(outInfo.applicationInfo.publicSourceDir, options, true);
                 }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
@@ -324,8 +324,11 @@ public class VAppManagerService extends IAppManager.Stub {
         }
     }
 
+    private InstallResult installPackageImpl(String path, InstallOptions options){
+        return installPackageImpl(path, options, false);
+    }
 
-    private InstallResult installPackageImpl(String path, InstallOptions options) {
+    private InstallResult installPackageImpl(String path, InstallOptions options, boolean loadingApp) {
         long installTime = System.currentTimeMillis();
         if (path == null) {
             return InstallResult.makeFailure("path = NULL");
@@ -343,7 +346,9 @@ public class VAppManagerService extends IAppManager.Stub {
         if (pkg == null || pkg.packageName == null) {
             return InstallResult.makeFailure("Unable to parse the package.");
         }
-        BroadcastSystem.get().stopApp(pkg.packageName);
+        if(!loadingApp) {
+            BroadcastSystem.get().stopApp(pkg.packageName);
+        }
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
         // PackageCache holds all packages, try to check if we need to update.
@@ -450,7 +455,9 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
-        BroadcastSystem.get().startApp(pkg);
+        if(!loadingApp) {
+            BroadcastSystem.get().startApp(pkg);
+        }
         if (options.notify) {
             if(res.isUpdate){
                 notifyAppUpdate(ps, -1);
