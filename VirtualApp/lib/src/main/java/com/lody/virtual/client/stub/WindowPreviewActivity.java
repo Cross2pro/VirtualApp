@@ -7,6 +7,8 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.text.TextUtils;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -15,7 +17,10 @@ import android.widget.TextView;
 import com.lody.virtual.R;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.am.AttributeCache;
+import com.xdja.zs.IUiCallback;
 
 import mirror.com.android.internal.R_Hide;
 
@@ -23,18 +28,20 @@ import mirror.com.android.internal.R_Hide;
  * @author Lody
  */
 public class WindowPreviewActivity extends Activity {
-
+    private static final String TAG = WindowPreviewActivity.class.getSimpleName();
     private long startTime;
     private int mTargetUserId;
     private String mTargetPackageName;
+    private IUiCallback mCallback;
 
-    public static void previewActivity(int userId, ActivityInfo info) {
+    public static void previewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack) {
         Context context = VirtualCore.get().getContext();
         Intent windowBackgroundIntent = new Intent(context, WindowPreviewActivity.class);
         windowBackgroundIntent.putExtra("_VA_|user_id", userId);
         windowBackgroundIntent.putExtra("_VA_|activity_info", info);
         windowBackgroundIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         windowBackgroundIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        BundleCompat.putBinder(windowBackgroundIntent, "callBack", callBack.asBinder());
         context.startActivity(windowBackgroundIntent);
     }
 
@@ -43,6 +50,8 @@ public class WindowPreviewActivity extends Activity {
         startTime = System.currentTimeMillis();
         overridePendingTransition(0, 0);
         super.onCreate(savedInstanceState);
+        //需要判断startActivity是否比preview快
+        VLog.d(TAG, "preview::onCreate");
         Intent intent = getIntent();
         if (intent == null) {
             finish();
@@ -56,6 +65,14 @@ public class WindowPreviewActivity extends Activity {
         }
         mTargetUserId = userId;
         mTargetPackageName = info.packageName;
+        //
+        IBinder binder = BundleCompat.getBinder(intent, "callBack");
+        mCallback = binder != null ? IUiCallback.Stub.asInterface(binder) : null;
+        if(checkLaunched("onCreate")){
+            finish();
+            return;
+        }
+
         int theme = info.theme;
         if (theme == 0) {
             theme = info.applicationInfo.theme;
@@ -67,7 +84,18 @@ public class WindowPreviewActivity extends Activity {
         }
     }
 
-    protected boolean startWindowPreview(ActivityInfo info, int theme){
+    private boolean checkLaunched(String season){
+        try {
+            if(mCallback != null && mCallback.isLaunched(mTargetPackageName, mTargetUserId)){
+                VLog.i(TAG, "preview::app %s(%d) is launched. check by %s", mTargetPackageName, mTargetUserId, season);
+                return true;
+            }
+        } catch (RemoteException ignore) {
+        }
+        return false;
+    }
+
+    protected boolean startWindowPreview(ActivityInfo info, int theme) {
         boolean hasCustomBg = false;
         AttributeCache.Entry windowExt = AttributeCache.instance().get(info.packageName, theme,
                 R_Hide.styleable.Window.get());
@@ -137,6 +165,7 @@ public class WindowPreviewActivity extends Activity {
     public void onBackPressed() {
         long time = System.currentTimeMillis();
         if (time - startTime > 5000L) {
+            VLog.d(TAG, "preview::onBackPressed");
             //用户手动退出
             if (!TextUtils.isEmpty(mTargetPackageName)) {
                 VActivityManager.get().killAppByPkg(mTargetPackageName, mTargetUserId);
@@ -146,7 +175,17 @@ public class WindowPreviewActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        VLog.d(TAG, "preview::onResume");
+        super.onResume();
+        if(checkLaunched("onResume")){
+            finish();
+        }
+    }
+
+    @Override
     protected void onStop() {
+        VLog.d(TAG, "preview::onStop");
         super.onStop();
         if(!isFinishing()) {
             finish();

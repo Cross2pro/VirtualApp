@@ -17,7 +17,6 @@ import android.os.RemoteException;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.stub.WindowPreviewActivity;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -463,7 +462,27 @@ public class VActivityManager {
         } else {
             VLog.d("kk", "app's main thread not running.");
             intent.putExtra("_VA_|no_animation", true);
-            VirtualCore.getConfig().startPreviewActivity(userId, info);
+            final VirtualCore.UiCallback callBack = new VirtualCore.UiCallback() {
+                private boolean mLaunched;
+
+                @Override
+                public void onAppOpened(String packageName, int userId) {
+                    VLog.d("WindowPreviewActivity", "onAppOpened:"+packageName);
+                    synchronized (this) {
+                        mLaunched = true;
+                    }
+                }
+
+                @Override
+                public boolean isLaunched(String packageName, int userId) {
+                    synchronized (this) {
+                        return mLaunched;
+                    }
+                }
+            };
+
+            VirtualCore.getConfig().startPreviewActivity(userId, info, callBack);
+            VirtualCore.get().setUiCallback(intent, callBack);
             final String processName = ComponentUtils.getProcessName(info);
             new Thread(new Runnable() {
                 @Override
@@ -472,6 +491,7 @@ public class VActivityManager {
                     ClientConfig clientConfig = initProcess(packageName, processName, userId);
                     if(clientConfig != null){
                         VActivityManager.get().startActivity(intent, userId);
+                        //VActivityManager#startActivity启动速度比WindowPreviewActivity快
                     }
                 }
             }).start();

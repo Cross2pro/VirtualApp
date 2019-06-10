@@ -163,6 +163,7 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
                         e.printStackTrace();
                     }
                 }
+                intent.removeExtra("_VA_|_sender_");
             }
         }
     }

@@ -889,7 +889,9 @@ public final class VirtualCore {
     }
 
     public abstract static class UiCallback extends IUiCallback.Stub {
+
     }
+
     public void setUiCallback(Intent intent, IUiCallback callback) {
         if (callback != null) {
             Bundle bundle = new Bundle();

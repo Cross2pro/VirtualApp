@@ -100,8 +100,8 @@ public abstract class SettingConfig {
      * @param userId
      * @param info
      */
-    public void startPreviewActivity(int userId, ActivityInfo info){
-        WindowPreviewActivity.previewActivity(userId, info);
+    public void startPreviewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack){
+        WindowPreviewActivity.previewActivity(userId, info, callBack);
     }
 
     public static class FakeWifiStatus {
