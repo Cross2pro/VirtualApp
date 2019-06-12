@@ -219,11 +219,11 @@ public class InstallerActivity extends Activity {
                 }else{
                     sourceapkinfo = parseInstallApk(info.getApkPath());
                     if(sourceapkinfo==null){
-                        InstallerSetting.showToast(this,"安装包解析错误", Toast.LENGTH_LONG);
-                        finish();
-                        return;
+                        InstallerSetting.showToast(this,"安装源解析失败", Toast.LENGTH_LONG);
+                        sourceText = "应用来源：未知";
+                    }else{
+                        sourceText = "应用来源："+sourceapkinfo.name;
                     }
-                    sourceText = "应用来源："+sourceapkinfo.name;
                 }
             }else{
                 sourceText = "应用来源：未知";
@@ -329,8 +329,11 @@ public class InstallerActivity extends Activity {
         File f = new File(path);
         PackageManager pm = VirtualCore.get().getContext().getPackageManager();
         try {
+            PackageInfo pkgInfo = pm.getPackageArchiveInfo(f.getAbsolutePath(), 0);
+            if(pkgInfo==null){
+                return null;
+            }
             appinfo = new AppInfo();
-            PackageInfo pkgInfo = VirtualCore.get().getContext().getPackageManager().getPackageArchiveInfo(f.getAbsolutePath(), 0);
             ApplicationInfo ai = pkgInfo.applicationInfo;
             ai.sourceDir = f.getAbsolutePath();
             ai.publicSourceDir = f.getAbsolutePath();
