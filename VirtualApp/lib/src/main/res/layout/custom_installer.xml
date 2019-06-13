@@ -223,7 +223,7 @@
                 android:layout_marginLeft="16dp"
                 android:layout_weight="1"
                 android:background="@drawable/btn_install_quit"
-                android:text="取消"
+                android:text="完成"
                 android:textColor="#ffffff"
                 android:textSize="16sp" />
 
