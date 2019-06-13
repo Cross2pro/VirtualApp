@@ -31,6 +31,7 @@ public class ServiceManagerNative {
     public static final String APPPERMISSION = "app-permission";
     public static final String CONTROLLER = "controller";
     public static final String WATERMARK = "watermakr";
+    public static final String WATERMARK_DIALOG = "watermark-dialog";
     public static final String SAFEKEY = "safekey";
     public static final String CKMSSAFEKEY = "ckms-safekey";
     public static final String KEEPALIVE = "keepalive";

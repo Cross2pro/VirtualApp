@@ -83,7 +83,10 @@
         <activity
             android:name=".home.AppSettingActivity"
             android:theme="@style/UITheme.HasActionBar" />
-
+        <provider
+            android:name=".provider.SafetyProvider"
+            android:authorities="com.xdja.engine.provider"
+            android:exported="true" />
         <!-- va的x进程处理 -->
         <receiver
             android:name=".PackageReceiver"
