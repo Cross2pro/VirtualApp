@@ -729,14 +729,17 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                 continue;
                             }
                         }
-                        if (r.pkgList.contains(pkg)) {
+                        if (r.pkgList.contains(pkg) || r.info.packageName.equals(pkg)) {
                             //xdja
                             try {
-                                Log.e("wxd", " killAppByPkg  " + r.pid);
+                                Log.e("wxd", " killAppByPkg  " + r.processName + r.pkgList.toString());
                                 //processDied处有做处理
                                 //mServices.stopServiceByPkg(userId, pkg);
                                 r.client.clearSettingProvider();
                                 finishAllActivity(r);
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }finally {
                                 new Thread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -748,8 +751,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                         r.kill();
                                     }
                                 }).start();
-                            }catch (Exception e){
-                                e.printStackTrace();
                             }
                         }
                     }

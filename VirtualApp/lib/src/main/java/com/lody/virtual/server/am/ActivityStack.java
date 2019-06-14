@@ -162,12 +162,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                         if (r.process.pid == record.pid) {
                             Log.e("wxd", " finishActivity : " + r.component);
                             try {
-                                task.activities.remove(r);
                                 r.process.client.finishActivity(r.token);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            mHistory.removeAt(N);
                         }
                     }
                 }
