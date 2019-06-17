@@ -3,6 +3,7 @@ package io.virtualapp.provider;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,7 +11,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.xdja.watermark.VWaterMarkManager;
+import com.xdja.zs.VWaterMarkManager;
 import com.xdja.zs.WaterMarkInfo;
 
 /**
@@ -49,9 +50,21 @@ public class SafetyProvider extends ContentProvider {
         }
         switch (method) {
             case "setWaterMarkContent":
-                String content = extras.getString("watermarkContext");
-                Log.e("lxf-SafettyProvider","content "+content);
-                VWaterMarkManager.get().setWaterMark(content);
+                String content = extras.getString("content");
+                int rotate = extras.getInt("rotate");
+                float distance = extras.getFloat("distance");
+                float textSize = extras.getFloat("textSize");
+                float textAlpha = extras.getFloat("textAlpha");
+                String textColor = extras.getString("textColor");
+
+                WaterMarkInfo info = new WaterMarkInfo();
+                info.setWaterMarkContent(content);
+                info.setRotate(rotate);
+                info.setDistance(distance);
+                info.setTextSize(textSize);//20 24 26sp 60 72 78;
+                info.setTextAlpha(textAlpha);
+                info.setTextColor(textColor);
+                VWaterMarkManager.get().setWaterMark(info);
                 break;
         }
         return result;

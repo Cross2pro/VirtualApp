@@ -39,8 +39,7 @@ import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
 import com.xdja.zs.VServiceKeepAliveManager;
 import com.xdja.zs.VServiceKeepAliveService;
-//import com.xdja.zs.VWaterMarkService;
-import com.xdja.watermark.VWaterMarkService;
+import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
 
 import com.xdja.zs.VAppPermissionManagerService;
@@ -113,7 +112,6 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
         VWaterMarkService.systemReady();
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
-        addService(ServiceManagerNative.WATERMARK_DIALOG, VWaterMarkService.get());
 //        VSafekeyCkmsManagerService.systemReady(context);
 //        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
         /* End Changed by XDJA */

@@ -39,6 +39,10 @@ public class WaterMarkInfo implements Parcelable {
      */
     private long companyId;
     /**
+     * 旋转角度
+     */
+    private int rotate = -20;
+    /**
      * 文字间隔
      */
     private float distance;
@@ -107,6 +111,13 @@ public class WaterMarkInfo implements Parcelable {
         this.companyId = companyId;
     }
 
+    public int getRotate() {
+        return rotate;
+    }
+
+    public void setRotate(int rotate) {
+        this.rotate = rotate;
+    }
     public float getDistance() {
         return distance;
     }
@@ -127,6 +138,7 @@ public class WaterMarkInfo implements Parcelable {
                 ", logoFilePath='" + logoFilePath + '\'' +
                 ", companyId=" + companyId +
                 ", distance=" + distance +
+                ", rotate=" + rotate +
                 '}';
     }
 
@@ -146,6 +158,7 @@ public class WaterMarkInfo implements Parcelable {
         dest.writeString(this.logoFilePath);
         dest.writeLong(this.companyId);
         dest.writeFloat(this.distance);
+        dest.writeInt(this.rotate);
     }
 
     public WaterMarkInfo() {
@@ -161,6 +174,7 @@ public class WaterMarkInfo implements Parcelable {
         this.logoFilePath = in.readString();
         this.companyId = in.readLong();
         this.distance = in.readFloat();
+        this.rotate = in.readInt();
     }
 
     public static final Parcelable.Creator<WaterMarkInfo> CREATOR = new Parcelable.Creator<WaterMarkInfo>() {
