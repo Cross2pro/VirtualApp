@@ -19,6 +19,7 @@ import android.view.WindowManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.helper.utils.ArrayUtils;
+import com.xdja.zs.VAppPermissionManager;
 import com.xdja.zs.VWaterMarkManager;
 import com.xdja.zs.MobileInfoUtil;
 import com.xdja.zs.WaterMarkInfo;
@@ -53,10 +54,13 @@ class Relayout extends BaseMethodProxy{
     }
 
     private void updateContent(){
-
+        if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
+            return;
+        }
         mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
         infos.clear();
         infos.add(mImei);
+
         WaterMarkInfo waterMark = VWaterMarkManager.get().getWaterMark();
         if (waterMark == null || TextUtils.isEmpty(waterMark.getWaterMarkContent())) {
             Log.e("lxf-Relayout","WaterMarkInfo is Null!");

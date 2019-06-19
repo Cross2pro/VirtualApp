@@ -211,7 +211,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
 
     /**
      * 设置安装第三方应用状态
-     *
+     * @hide 方法过期，
      * @param isEnable 是否可安装 true:允许安装第三方应用 false:不允许安装第三方应用
      */
     @Override
@@ -221,7 +221,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
 
     /**
      * 获取是否可以安装第三方应用状态
-     *
+     * @hide
      * @return 是否可以安装第三方应用状态 true:可以安装第三方应用 false:不可以安装第三方应用
      */
     @Override
@@ -237,8 +237,10 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
             if (list != null && !list.isEmpty()) {
                 EnabledInstallationSource.clear();
                 EnabledInstallationSource.addAll(list);
+                isAllowThirdAppInstallion = true;
             } else {
                 EnabledInstallationSource.clear();
+                isAllowThirdAppInstallion = false;
             }
         }
     }
