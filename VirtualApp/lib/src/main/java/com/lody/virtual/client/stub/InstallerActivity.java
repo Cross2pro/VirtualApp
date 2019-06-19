@@ -45,6 +45,7 @@ import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.utils.MediaFileUtil;
 import com.lody.virtual.remote.InstallOptions;
 import com.xdja.utils.PackagePermissionManager;
+import com.xdja.utils.SignatureVerify;
 import com.xdja.utils.Stirrer;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.helper.utils.FileUtils;
@@ -99,7 +100,6 @@ public class InstallerActivity extends Activity {
 //            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
 //            finish();
 //        }
-
         rl_check = (RelativeLayout) findViewById(R.id.rl_check);
         rl_install = (RelativeLayout) findViewById(R.id.rl_install);
         ll_install = (LinearLayout) findViewById(R.id.ll_install);
@@ -167,12 +167,27 @@ public class InstallerActivity extends Activity {
         String path = getIntent().getStringExtra("installer_path");
         String source_apk_packagename = getIntent().getStringExtra("source_apk");
 
-//        if(!PackagePermissionManager.getEnableInstallationSource().contains("*")
-//                && !PackagePermissionManager.getEnableInstallationSource().contains(source_apk_packagename)){
-//            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
-//            finish();
-//            return;
-//        }
+        if(!PackagePermissionManager.getEnableInstallationSource().contains("*")
+                && !PackagePermissionManager.getEnableInstallationSource().contains(source_apk_packagename)){
+            InstallerSetting.showToast(this,"安全策略已阻止第三方应用安装", Toast.LENGTH_LONG);
+            finish();
+            return;
+        }
+        //xdja　安装源签名验证
+        if(SignatureVerify.isEnable) {
+            if (!TextUtils.isEmpty(source_apk_packagename)) {
+                boolean pass = new SignatureVerify().checkSourceSignature(source_apk_packagename);
+                if (!pass){
+                    InstallerSetting.showToast(this, "安装源签名验证失败", Toast.LENGTH_LONG);
+                    finish();
+                    return;
+                }
+            } else {
+                    InstallerSetting.showToast(this, "安装源签名获取失败", Toast.LENGTH_LONG);
+                    finish();
+                    return;
+            }
+        }
         initView(getIntent());
         stateChanged(STATE_INSTALL);
 

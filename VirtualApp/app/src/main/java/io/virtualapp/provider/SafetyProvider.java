@@ -3,7 +3,6 @@ package io.virtualapp.provider;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,8 +10,11 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.xdja.utils.SignatureVerify;
 import com.xdja.zs.VWaterMarkManager;
 import com.xdja.zs.WaterMarkInfo;
+
+import static android.os.Binder.getCallingUid;
 
 /**
  * Created by thz on 2019/4/16.
@@ -43,6 +45,16 @@ public class SafetyProvider extends ContentProvider {
     @Nullable
     @Override
     public Bundle call(@NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
+
+        String packageName = null;
+        String[] packages = getContext().getPackageManager().getPackagesForUid(getCallingUid());
+        if(packages!=null && packages.length>0) {
+            packageName = packages[0];
+        }
+        Log.e("lxf-SafetyProvider","CallingPackageName "+ packageName);
+        String sha1 = SignatureVerify.getSHA1Signature(packageName);
+        Log.e("lxf-SafetyProvider","SHA1 "+ sha1);
+
         Bundle result = new Bundle();
         //校验调用方的合法性
         if (TextUtils.isEmpty(method) || TextUtils.isEmpty(arg) || !judgeCaller(arg)) {
