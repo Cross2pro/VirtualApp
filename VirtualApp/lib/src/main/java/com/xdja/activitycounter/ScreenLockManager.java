@@ -17,7 +17,7 @@ public class ScreenLockManager extends BaseCounterManager{
 
     private String TAG = "ScreenLockManager";
 
-    private static boolean isScreenOn = true;
+    private static boolean isScreenOn = false;
 
     final int UNLOCK = 0; // 亮屏到前台
     final int LOCK = 1; //  手机灭屏
