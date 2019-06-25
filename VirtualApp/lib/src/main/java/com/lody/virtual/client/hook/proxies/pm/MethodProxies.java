@@ -1204,6 +1204,12 @@ class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             String pkg = (String) args[0];
             int flags = (int) args[1];
+            //get provider uri
+            if ("com.xdja.engine.provider".equalsIgnoreCase(pkg) && flags==PackageManager.GET_META_DATA){
+                args[0] = VirtualCore.get().getHostPkg();
+                return method.invoke(who, args);
+            }
+
             if (getHostPkg().equals(pkg)) {
                 return method.invoke(who, args);
             }
