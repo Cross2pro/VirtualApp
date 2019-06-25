@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
-COMMIT=`git log --abbrev-commit --pretty=format:%h -n 1`
 
-if [ -f ./libva.aar ]; then
-    rm ./libva.aar
-fi
-./gradlew lib:clean;
-./gradlew lib:assembleRelease -Pappid="com.xdja.safetybox" -Pcommit="$COMMIT"
-cp ./lib/build/outputs/aar/lib-release.aar libva.aar
+build_aar() {
+    AAR=$1".libva.aar"
+    AAR_FILE="./"$AAR
+
+    COMMIT=`git log --pretty=format:%h -n 1`
+
+    if [ -f $AAR_FILE ]; then
+        rm $AAR_FILE
+    fi
+    ./gradlew lib:clean;
+    ./gradlew lib:assembleRelease -Pappid="$1" -Pcommit="$COMMIT"
+    cp ./lib/build/outputs/aar/lib-release.aar $AAR_FILE
+}
+
+build_aars()
+{
+    for package in "$@"
+    do
+        build_aar $package
+        echo -e "\033[3;3;34m  · $package\033[0m"
+    done
+}
+
+PACKAGE_NAMES="com.xdja.safetybox com.xdja.safetysandbox com.xdja.safetysandbox.system com.xdja.safetysandbox.pro"
+build_aars $PACKAGE_NAMES
