@@ -33,6 +33,20 @@ public class PackagePermissionManager {
             mKeepLiveList = list;
         }
     }
+    public static void addKeepLiveList(@NonNull String packagename){
+        synchronized (mKeepLiveList){
+            if(!mKeepLiveList.contains(packagename))
+                mKeepLiveList.add(packagename);
+        }
+    }
+
+    public static void removeKeepLiveList(@NonNull String packagename){
+        synchronized (mKeepLiveList){
+            if(!mKeepLiveList.contains(packagename))
+                mKeepLiveList.remove(packagename);
+        }
+    }
+
     public static boolean isKeepLiveApp(@NonNull String pkg){
         return getKeepLiveList().contains(pkg);
     }
