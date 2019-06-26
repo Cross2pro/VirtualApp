@@ -336,7 +336,7 @@ public class ActiveServices {
             for (RunningServiceData data : userSpace.mRunningServices.values()) {
                 int appId = VUserHandle.getAppId(data.info.applicationInfo.uid);
                 int uid = VUserHandle.getUid(userId, appId);
-                ProcessRecord r = VActivityManagerService.get().findProcessLocked(data.info.processName, uid);
+                ProcessRecord r = VActivityManagerService.get().findProcess(data.info.processName, uid);
                 if (r == null) {
                     VLog.e(TAG, "Can't find Process for process: " + data.info.processName);
                     continue;

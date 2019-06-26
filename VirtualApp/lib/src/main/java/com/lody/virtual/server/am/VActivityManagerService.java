@@ -508,8 +508,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
         int vuid = VUserHandle.getUid(userId, ps.appId);
         boolean is64bit = ps.isRunOn64BitProcess();
+        ProcessRecord app = null;
         synchronized (mProcessLock) {
-            ProcessRecord app = null;
             if (vpid == -1) {
                 app = mProcessNames.get(processName, vuid);
                 if (app != null) {
@@ -541,6 +541,16 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 return null;
             }
         }
+        if(app != null){
+            //不需要在mProcessLock里面处理
+            //申请到权限后，继续操作
+            requestPermissionIfNeed(app, 8*1000);
+//            if(!mResult){
+//                app.kill();//权限没全部申请完
+//                return null;
+//            }
+        }
+        return app;
     }
 
 
@@ -603,13 +613,12 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
 
-    private boolean initProcess(ProcessRecord app, @VActivityManager.ProcessStartType int type) {
+    /**
+     * 初始化进程的ClientConfig
+     */
+    private boolean initProcess(ProcessRecord app) {
         try {
-            if ((type & PROCESS_TYPE_ACTIVITY) != 0) {
-                requestPermissionIfNeed(app);
-            } else {
-                Log.w(TAG, "requestPermission need start by activity");
-            }
+            //仅仅只是传递ClientConfig，还不需要用到权限
             Bundle extras = new Bundle();
             extras.putParcelable("_VA_|_client_config_", app.getClientConfig());
             Bundle res = ProviderCall.callSafely(app.getProviderAuthority(), "_VA_|_init_process_", null, extras);
@@ -625,13 +634,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    private void requestPermissionIfNeed(ProcessRecord app) {
+    private void requestPermissionIfNeed(ProcessRecord app, int timeout) {
         if (PermissionCompat.isCheckPermissionRequired(app.info.targetSdkVersion)) {
             String[] permissions = VPackageManagerService.get().getDangrousPermissions(app.info.packageName);
             if (!PermissionCompat.checkPermissions(permissions, app.is64bit)) {
+                mResult = false;
                 final ConditionVariable permissionLock = new ConditionVariable();
                 startRequestPermissions(app.is64bit, permissions, permissionLock);
-                permissionLock.block();
+                permissionLock.block(timeout);
             }
         }
     }
@@ -871,8 +881,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
      *
      * @param uid vuid
      */
-    public ProcessRecord findProcessLocked(String processName, int uid) {
+    private ProcessRecord findProcessLocked(String processName, int uid) {
         return mProcessNames.get(processName, uid);
+    }
+
+    public ProcessRecord findProcess(String processName, int uid) {
+        synchronized (mProcessLock) {
+            return findProcessLocked(processName, uid);
+        }
     }
 
     public int stopUser(int userHandle, IStopUserCallback.Stub stub) {
@@ -978,7 +994,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         synchronized (mServices) {
             int appId = VUserHandle.getAppId(serviceInfo.applicationInfo.uid);
             int uid = VUserHandle.getUid(userId, appId);
-            ProcessRecord r = findProcessLocked(serviceInfo.processName, uid);
+            ProcessRecord r = findProcess(serviceInfo.processName, uid);
             if (r != null) {
                 try {
                     r.client.stopService(ComponentUtils.toComponentName(serviceInfo));
@@ -1059,7 +1075,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         int vuid = VUserHandle.getUid(userId, appId);
         boolean send = false;
         synchronized (this) {
-            ProcessRecord r = findProcessLocked(info.processName, vuid);
+            ProcessRecord r = findProcess(info.processName, vuid);
             if (r == null && isStartProcessForBroadcast(info.packageName, userId, data.intent.getAction())) {
                 r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, VActivityManager.PROCESS_TYPE_RECEIVER);
             }

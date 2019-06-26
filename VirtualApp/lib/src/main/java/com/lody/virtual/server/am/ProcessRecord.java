@@ -71,14 +71,16 @@ final class ProcessRecord extends Binder {
     }
 
     public void kill() {
-        VActivityManagerService.get().beforeProcessKilled(this);
-        if (is64bit) {
-            V64BitHelper.forceStop64(pid);
-        } else {
-            try {
-                Process.killProcess(pid);
-            } catch (Throwable e) {
-                e.printStackTrace();
+        if(pid > 0) {
+            VActivityManagerService.get().beforeProcessKilled(this);
+            if (is64bit) {
+                V64BitHelper.forceStop64(pid);
+            } else {
+                try {
+                    Process.killProcess(pid);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
