@@ -14,6 +14,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -556,7 +557,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid) {
-        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, callingUid, "activity");
+        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
         if (targetApp == null) {
             return null;
         }

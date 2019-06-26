@@ -30,9 +30,8 @@ import android.util.Log;
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.ProviderCall;
-import com.lody.virtual.client.ipc.VNotificationManager;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
@@ -60,7 +59,6 @@ import com.lody.virtual.server.pm.VAppManagerService;
 import com.lody.virtual.server.pm.VPackageManagerService;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.PhoneCallService;
-import com.xdja.zs.VServiceKeepAliveManager;
 import com.xdja.zs.VServiceKeepAliveService;
 import com.xdja.zs.controllerManager;
 
@@ -69,6 +67,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.lody.virtual.client.ipc.VActivityManager.PROCESS_TYPE_ACTIVITY;
 
 /**
  * @author Lody
@@ -250,7 +250,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         String processName = info.processName;
         ProcessRecord r;
         synchronized (this) {
-            r = startProcessIfNeedLocked(processName, userId, info.packageName, -1, VBinder.getCallingUid(), "provider");
+            r = startProcessIfNeedLocked(processName, userId, info.packageName, -1, VBinder.getCallingUid(), VActivityManager.PROCESS_TYPE_PROVIDER);
         }
         if (r != null) {
             try {
@@ -347,7 +347,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
                 int vpid = parseVPid(stubProcessName);
                 if (vpid != -1) {
-                    startProcessIfNeedLocked(processName, userId, packageName, vpid, callingVUid, "processRestarted");
+                    startProcessIfNeedLocked(processName, userId, packageName, vpid, callingVUid, VActivityManager.PROCESS_TYPE_OTHER);
                 }
             }
         }
@@ -474,9 +474,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     @Override
-    public ClientConfig initProcess(String packageName, String processName, int userId) {
+    public ClientConfig initProcess(String packageName, String processName, int userId, int type) {
         synchronized (this) {
-            ProcessRecord r = startProcessIfNeedLocked(processName, userId, packageName, -1, VBinder.getCallingUid(), "initProcess/getContentProvider");
+            ProcessRecord r = startProcessIfNeedLocked(processName, userId, packageName, -1, VBinder.getCallingUid(), type);
             if (r != null) {
                 return r.getClientConfig();
             }
@@ -494,7 +494,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
 
-    ProcessRecord startProcessIfNeedLocked(String processName, int userId, String packageName, int vpid, int callingUid, String season) {
+    ProcessRecord startProcessIfNeedLocked(String processName, int userId, String packageName, int vpid, int callingUid, @VActivityManager.ProcessStartType int type) {
         runProcessGC();
         PackageSetting ps = PackageCacheManager.getSetting(packageName);
         ApplicationInfo info = VPackageManagerService.get().getApplicationInfo(packageName, 0, userId);
@@ -520,8 +520,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
                         return app;
                     }
                 }
-                VLog.w(TAG, "start new process : " + processName + " by " + season);
-                vpid = queryFreeStubProcess(is64bit);
+                VLog.w(TAG, "start new process : " + processName + " by " + VActivityManager.getTypeString(type));
+                vpid = queryFreeStubProcessLocked(is64bit);
             }
             if (vpid == -1) {
                 VLog.e(TAG, "Unable to query free stub for : " + processName);
@@ -535,7 +535,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             app = new ProcessRecord(info, processName, vuid, vpid, callingUid, is64bit);
             mProcessNames.put(app.processName, app.vuid, app);
             mPidsSelfLocked.add(app);
-            if (initProcess(app)) {
+            if (initProcess(app, type)) {
                 return app;
             } else {
                 return null;
@@ -603,9 +603,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
 
-    private boolean initProcess(ProcessRecord app) {
+    private boolean initProcess(ProcessRecord app, @VActivityManager.ProcessStartType int type) {
         try {
-            requestPermissionIfNeed(app);
+            if ((type & PROCESS_TYPE_ACTIVITY) != 0) {
+                requestPermissionIfNeed(app);
+            } else {
+                Log.w(TAG, "requestPermission need start by activity");
+            }
             Bundle extras = new Bundle();
             extras.putParcelable("_VA_|_client_config_", app.getClientConfig());
             Bundle res = ProviderCall.callSafely(app.getProviderAuthority(), "_VA_|_init_process_", null, extras);
@@ -1057,7 +1061,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         synchronized (this) {
             ProcessRecord r = findProcessLocked(info.processName, vuid);
             if (r == null && isStartProcessForBroadcast(info.packageName, userId, data.intent.getAction())) {
-                r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, "broadcast");
+                r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, VActivityManager.PROCESS_TYPE_RECEIVER);
             }
             if (r != null && r.appThread != null) {
                 send = true;
@@ -1094,4 +1098,5 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public void broadcastFinish(PendingResultData res, int userId) {
         BroadcastSystem.get().broadcastFinish(res, userId);
     }
+
 }

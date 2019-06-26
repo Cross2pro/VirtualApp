@@ -143,7 +143,7 @@ public class ActiveServices {
                 serviceInfo.packageName,
                 -1,
                 VBinder.getCallingUid(),
-                "startService"
+                VActivityManager.PROCESS_TYPE_SERVICE
         );
         if (targetApp == null) {
             return null;
@@ -198,7 +198,7 @@ public class ActiveServices {
                 serviceInfo.packageName,
                 -1,
                 VBinder.getCallingUid(),
-                "bindService"
+                VActivityManager.PROCESS_TYPE_SERVICE_BIND
         );
         if (targetApp == null) {
             return null;

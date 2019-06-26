@@ -1763,7 +1763,7 @@ class MethodProxies {
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
             if (info != null && info.enabled && isAppPkg(info.packageName)) {
-                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId, VActivityManager.PROCESS_TYPE_PROVIDER);
                 if (config == null) {
                     return null;
                 }

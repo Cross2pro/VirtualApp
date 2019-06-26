@@ -22,7 +22,7 @@ import com.lody.virtual.remote.VParceledListSlice;
  */
 interface IActivityManager{
 
-    ClientConfig initProcess(String packageName, String processName, int userId);
+    ClientConfig initProcess(String packageName, String processName, int userId, int type);
 
     void appDoneExecuting(in String packageName, int userId);
 

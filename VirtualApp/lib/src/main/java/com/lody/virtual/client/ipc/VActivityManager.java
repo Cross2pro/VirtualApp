@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
+import android.support.annotation.IntDef;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -31,6 +32,8 @@ import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 
 import mirror.android.app.ActivityThread;
@@ -40,6 +43,26 @@ import mirror.android.content.ContentProviderNative;
  * @author Lody
  */
 public class VActivityManager {
+
+    public static final int PROCESS_TYPE_OTHER = 0x0;
+    public static final int PROCESS_TYPE_ACTIVITY = 0x1;
+    public static final int PROCESS_TYPE_SERVICE = 0x20;
+    public static final int PROCESS_TYPE_SERVICE_BIND = 0x21;
+    public static final int PROCESS_TYPE_PROVIDER = 0x40;
+    public static final int PROCESS_TYPE_RECEIVER = 0x80;
+    public static final int PROCESS_TYPE_RESTART = 0x100;
+    @IntDef({
+            PROCESS_TYPE_OTHER,
+            PROCESS_TYPE_ACTIVITY,
+            PROCESS_TYPE_SERVICE,
+            PROCESS_TYPE_SERVICE_BIND,
+            PROCESS_TYPE_PROVIDER,
+            PROCESS_TYPE_RECEIVER,
+            PROCESS_TYPE_RESTART
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ProcessStartType {
+    }
 
     private static final VActivityManager sAM = new VActivityManager();
     private IActivityManager mService;
@@ -361,9 +384,9 @@ public class VActivityManager {
         return VClient.get().getVUid();
     }
 
-    public ClientConfig initProcess(String packageName, String processName, int userId) {
+    public ClientConfig initProcess(String packageName, String processName, int userId, @ProcessStartType int type) {
         try {
-            return getService().initProcess(packageName, processName, userId);
+            return getService().initProcess(packageName, processName, userId, type);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -425,7 +448,7 @@ public class VActivityManager {
         return launchApp(userId, packageName, true);
     }
 
-    public boolean launchApp(final int userId,final String packageName, boolean preview) {
+    public boolean launchApp(final int userId, final String packageName, boolean preview) {
         if (VirtualCore.get().isRun64BitProcess(packageName)) {
             if (!V64BitHelper.has64BitEngineStartPermission()) {
                 return false;
@@ -467,7 +490,7 @@ public class VActivityManager {
 
                 @Override
                 public void onAppOpened(String packageName, int userId) {
-                    VLog.d("WindowPreviewActivity", "onAppOpened:"+packageName);
+                    VLog.d("WindowPreviewActivity", "onAppOpened:" + packageName);
                     synchronized (this) {
                         mLaunched = true;
                     }
@@ -488,8 +511,8 @@ public class VActivityManager {
                 @Override
                 public void run() {
                     //wait 500ms
-                    ClientConfig clientConfig = initProcess(packageName, processName, userId);
-                    if(clientConfig != null){
+                    ClientConfig clientConfig = initProcess(packageName, processName, userId, PROCESS_TYPE_ACTIVITY);
+                    if (clientConfig != null) {
                         VActivityManager.get().startActivity(intent, userId);
                         //VActivityManager#startActivity启动速度比WindowPreviewActivity快
                     }
@@ -584,6 +607,27 @@ public class VActivityManager {
             getService().broadcastFinish(res, VUserHandle.myUserId());
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
+        }
+    }
+
+    public static String getTypeString(@ProcessStartType int type) {
+        switch (type) {
+
+            case PROCESS_TYPE_ACTIVITY:
+                return "activity";
+            case PROCESS_TYPE_SERVICE:
+                return "Service";
+            case PROCESS_TYPE_SERVICE_BIND:
+                return "BindService";
+            case PROCESS_TYPE_PROVIDER:
+                return "provider";
+            case PROCESS_TYPE_RECEIVER:
+                return "receiver";
+            case PROCESS_TYPE_RESTART:
+                return "restart";
+            case PROCESS_TYPE_OTHER:
+            default:
+                return "other";
         }
     }
 }
