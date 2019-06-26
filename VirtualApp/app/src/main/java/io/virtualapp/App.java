@@ -68,7 +68,7 @@ public class App extends Application {
                 return "com.example.demo2".equals(packageName) ||
                         VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
             }
-            return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName);
+            return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName) || "com.android.providers.media".equals(packageName);
         }
 
         @Override

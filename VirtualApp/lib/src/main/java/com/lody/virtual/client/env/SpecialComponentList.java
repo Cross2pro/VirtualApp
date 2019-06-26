@@ -72,7 +72,6 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.CONFIGURATION_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.DYNAMIC_SENSOR_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("dynamic_sensor_change");
-        SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         SYSTEM_BROADCAST_ACTION.add("com.xdja.dialer.removecall");
 		//图标广播
         SYSTEM_BROADCAST_ACTION.add(Constants.ACTION_BADGER_CHANGE);

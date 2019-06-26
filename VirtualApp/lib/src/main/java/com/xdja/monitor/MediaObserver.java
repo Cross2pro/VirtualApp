@@ -1,6 +1,7 @@
 package com.xdja.monitor;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.compat.StrictModeCompat;
 import com.lody.virtual.os.VEnvironment;
 
 import java.io.File;
@@ -171,6 +173,8 @@ public class MediaObserver {
             Intent intent = new Intent();
             intent.setAction(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             intent.setData(uri);
+            ComponentName componentName = new ComponentName("com.android.providers.media", "com.android.providers.media.MediaScannerReceiver");
+            intent.setPackage("com.android.providers.media");
             VActivityManager.get().sendBroadcast(intent, 0);
         }
 
@@ -196,6 +200,10 @@ public class MediaObserver {
         boolean result = false;
 
         do {
+            if (!StrictModeCompat.disableDeathOnFileUriExposure()) {
+                Log.d(TAG, "can't exposed file uri yet");
+                break;
+            }
             if (context == null) {
                 break;
             }

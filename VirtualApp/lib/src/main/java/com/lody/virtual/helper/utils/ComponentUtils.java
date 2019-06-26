@@ -168,10 +168,9 @@ public class ComponentUtils {
                 newIntent.setAction(action);
             }
         }
-        if(VirtualCore.get().isVAppProcess()) {
-            BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
-            newIntent.putExtra("_VA_|_data_", data);
-        }
+
+        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
+        newIntent.putExtra("_VA_|_data_", data);
 
         return newIntent;
     }

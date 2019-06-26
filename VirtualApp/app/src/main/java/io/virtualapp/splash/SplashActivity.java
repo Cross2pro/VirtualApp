@@ -36,8 +36,6 @@ public class SplashActivity extends VActivity {
             finish();
             overridePendingTransition(0, 0);
         });
-
-        Stirrer.preInit();
     }
 
     private void doActionInThread() {
