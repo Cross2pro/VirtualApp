@@ -360,10 +360,7 @@ public class BroadcastSystem {
                 }
             }
             VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", data.intent.getAction());
-            PendingResult result = goAsync();
-            if (!mAMS.handleStaticBroadcast(data, this.appId, info, result)) {
-                result.finish();
-            }
+            mAMS.scheduleStaticBroadcast(data, this.appId, info, goAsync());
         }
     }
 

@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.Debug;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -90,6 +91,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
+    private HandlerThread mWorkThread = new HandlerThread("_VA_ams_work");
+    private final Handler mWorkHandler;
     private boolean mResult;
 
     //xdja
@@ -100,6 +103,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return sService.get();
     }
 
+    private VActivityManagerService(){
+        mWorkThread.start();
+        mWorkHandler = new Handler(mWorkThread.getLooper());
+    }
 
     @Override
     public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
@@ -1059,11 +1066,25 @@ public class VActivityManagerService extends IActivityManager.Stub {
         // EMPTY
     }
 
-    boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
+    void scheduleStaticBroadcast(final BroadcastIntentData data, final int appId, final ActivityInfo info, final BroadcastReceiver.PendingResult result) {
+        mWorkHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!handleStaticBroadcast(data, appId, info, result)) {
+                    result.finish();
+                }
+            }
+        });
+    }
+
+    private boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
         if (data.userId >= 0) {
             return handleStaticBroadcastAsUser(data, appId, data.userId, info, result);
         } else {
             int[] users = VAppManagerService.get().getPackageInstalledUsers(info.packageName);
+            if (users.length == 1) {
+                return handleStaticBroadcastAsUser(data, appId, users[0], info, result);
+            }
             for (int userId : users) {
                 handleStaticBroadcastAsUser(data, appId, userId, info, result);
             }
@@ -1098,14 +1119,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     private void performScheduleReceiver(IVClient client, int vuid, ActivityInfo info, Intent intent,
                                          PendingResultData result) {
-
+        int userId = VUserHandle.getUserId(vuid);
         ComponentName componentName = ComponentUtils.toComponentName(info);
         BroadcastSystem.get().broadcastSent(vuid, info, result);
         try {
             client.scheduleReceiver(info.processName, componentName, intent, result);
         } catch (Throwable e) {
             if (result != null) {
-                result.finish();
+                BroadcastSystem.get().broadcastFinish(result, userId);
             }
         }
     }
