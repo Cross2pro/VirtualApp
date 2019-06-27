@@ -529,7 +529,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                     }
                 }
                 VLog.w(TAG, "start new process : " + processName + " by " + VActivityManager.getTypeString(type));
-                vpid = queryFreeStubProcessLocked(is64bit);
+                vpid = queryFreeStubProcess(is64bit);
             }
             if (vpid == -1) {
                 VLog.e(TAG, "Unable to query free stub for : " + processName);
@@ -655,21 +655,23 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    private int queryFreeStubProcessLocked(boolean is64bit) {
-        for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
-            int N = mPidsSelfLocked.size();
-            boolean using = false;
-            while (N-- > 0) {
-                ProcessRecord r = mPidsSelfLocked.get(N);
-                if (r.vpid == vpid && r.is64bit == is64bit) {
-                    using = true;
-                    break;
+    public int queryFreeStubProcess(boolean is64bit) {
+        synchronized (mProcessLock) {
+            for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
+                int N = mPidsSelfLocked.size();
+                boolean using = false;
+                while (N-- > 0) {
+                    ProcessRecord r = mPidsSelfLocked.get(N);
+                    if (r.vpid == vpid && r.is64bit == is64bit) {
+                        using = true;
+                        break;
+                    }
                 }
+                if (using) {
+                    continue;
+                }
+                return vpid;
             }
-            if (using) {
-                continue;
-            }
-            return vpid;
         }
         return -1;
     }
