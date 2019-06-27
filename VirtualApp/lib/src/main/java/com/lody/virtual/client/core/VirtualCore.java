@@ -350,7 +350,9 @@ public final class VirtualCore {
     //Add by xdja
     public void sendBootCompleteBC(final String packageName, String action, boolean update) {
         if (shouldLaunchApp(packageName)) {
-            VActivityManager.get().sendBroadcast(new Intent(Intent.ACTION_BOOT_COMPLETED), VUserHandle.myUserId());
+            PrivilegeAppOptimizer.get().addPrivilegeApp(packageName);
+            PrivilegeAppOptimizer.get().performOptimizeAllApps();
+            PrivilegeAppOptimizer.get().removePrivilegeApp(packageName);
         }
     }
 

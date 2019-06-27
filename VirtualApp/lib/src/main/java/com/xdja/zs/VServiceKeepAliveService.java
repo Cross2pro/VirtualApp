@@ -37,9 +37,9 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
     private static final int ACTION_TEMP_DEL = 4;
 
 
-    static {
-        mKeepAliveServiceList.add("com.xdja.emm");
-    }
+//    static {
+//        mKeepAliveServiceList.add("com.xdja.emm");
+//    }
 
     public static void systemReady() {
         mHandlerThread.start();
