@@ -455,6 +455,7 @@ class MethodProxies {
             String resolvedType = (String) args[intentIndex + 1];
             Intent intent = (Intent) args[intentIndex];
 
+            Log.e("lxf","startActivity app "+getAppPkg());
             Log.e("lxf","startActivity intent "+ intent.toString());
             String action = intent.getAction();
             if(Intent.ACTION_VIEW.equals(action)&&"*/*".equals(resolvedType)){
