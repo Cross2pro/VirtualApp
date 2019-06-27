@@ -65,8 +65,10 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
     }
 
     private static void runKeepAliveService(String pkgName, int userId) {
-        Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
-        VActivityManagerService.get().sendBroadcastAsUserWithPackage(intent, new VUserHandle(userId), pkgName);
+        if (hasKeepAliveService(pkgName)) {
+            Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED);
+            VActivityManagerService.get().sendBroadcastAsUserWithPackage(intent, new VUserHandle(userId), pkgName);
+        }
     }
 
     private static void clearAppFromList(String pkgName) {
