@@ -33,6 +33,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.ProviderCall;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
@@ -542,10 +543,11 @@ public class VActivityManagerService extends IActivityManager.Stub {
             app = new ProcessRecord(info, processName, vuid, vpid, callingUid, is64bit);
             mProcessNames.put(app.processName, app.vuid, app);
             mPidsSelfLocked.add(app);
-            if (initProcess(app, type)) {
-                return app;
-            } else {
-                return null;
+            if (!initProcess(app)) {
+                //init process fail
+                mProcessNames.remove(app.processName, app.vuid);
+                mPidsSelfLocked.remove(app);
+                app = null;
             }
         }
         if(app != null){
@@ -653,23 +655,21 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    public int queryFreeStubProcess(boolean is64bit) {
-        synchronized (mProcessLock) {
-            for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
-                int N = mPidsSelfLocked.size();
-                boolean using = false;
-                while (N-- > 0) {
-                    ProcessRecord r = mPidsSelfLocked.get(N);
-                    if (r.vpid == vpid && r.is64bit == is64bit) {
-                        using = true;
-                        break;
-                    }
+    private int queryFreeStubProcessLocked(boolean is64bit) {
+        for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
+            int N = mPidsSelfLocked.size();
+            boolean using = false;
+            while (N-- > 0) {
+                ProcessRecord r = mPidsSelfLocked.get(N);
+                if (r.vpid == vpid && r.is64bit == is64bit) {
+                    using = true;
+                    break;
                 }
-                if (using) {
-                    continue;
-                }
-                return vpid;
             }
+            if (using) {
+                continue;
+            }
+            return vpid;
         }
         return -1;
     }
