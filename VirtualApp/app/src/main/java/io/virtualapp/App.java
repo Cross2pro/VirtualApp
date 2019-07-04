@@ -64,11 +64,12 @@ public class App extends Application {
 
         @Override
         public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
-            if(Intent.ACTION_BOOT_COMPLETED.equals(action)){
-                return "com.example.demo2".equals(packageName) ||
-                        VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
+            if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+                return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
+            } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
+                return "com.android.providers.media".equals(packageName);
             }
-            return "com.example.demo2".equals(packageName) || "com.tencent.mm".equals(packageName) || "com.android.providers.media".equals(packageName);
+            return false;
         }
 
         @Override

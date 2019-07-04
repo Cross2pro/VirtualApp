@@ -1111,10 +1111,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private boolean isStartProcessForBroadcast(String packageName, int userId, String action) {
-        if (isAppRunning(packageName, userId, false)) {
-            //应用已经启动
-            return true;
-        }
         //是否允许因静态广播而启动进程
         return VirtualCore.getConfig().isAllowStartByReceiver(packageName, userId, action);
     }
