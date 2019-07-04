@@ -32,7 +32,8 @@ public class VAppPermissionManager {
     /**
      * 禁用应用界面水印功能；默认显示
      */
-    public static final String PROHIBIT_WATER_MARK = "禁用水印功能";
+    //后台于终端策略默认值不统一，后台为启用水印功能 而终端为 禁用水印功能
+    public static final String PROHIBIT_WATER_MARK = "启用水印功能";
     /**
      * 禁止调用蓝牙功能
      */

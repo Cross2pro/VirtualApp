@@ -54,9 +54,7 @@ class Relayout extends BaseMethodProxy{
     }
 
     private void updateContent(){
-        if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
-            return;
-        }
+
         mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
         infos.clear();
         infos.add(mImei);
@@ -104,6 +102,11 @@ class Relayout extends BaseMethodProxy{
 
     @Override
     public Object call(Object who, Method method, Object... args) throws Throwable {
+
+        if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
+            Log.e("lxf-Relayout","禁止启用水印");
+            return super.call(who, method, args);
+        }
 
         //args[0] IWindow  ViewRootImpl.W extends IWindow.stub
         //args[2] WindowManager.LayoutParams attrs,

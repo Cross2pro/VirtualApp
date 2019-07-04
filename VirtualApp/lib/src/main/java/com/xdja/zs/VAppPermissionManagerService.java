@@ -97,6 +97,10 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
         if (VAppPermissionManager.PROHIBIT_NETWORK.equals(appPermissionName) && isPermissionOpen) {
             VLog.e(TAG, "close long socket packageName: " + packageName);
             VActivityManager.get().closeAllLongSocket(packageName, 0);
+        }else if(VAppPermissionManager.PROHIBIT_WATER_MARK.equalsIgnoreCase(appPermissionName)){
+            //后台于终端策略默认值不统一，后台为启用水印功能 而终端为 禁用水印功能
+            functionMaps.put(buildKey(packageName, appPermissionName),!isPermissionOpen);
+            return;
         }
         functionMaps.put(buildKey(packageName, appPermissionName), isPermissionOpen);
     }
