@@ -1124,4 +1124,11 @@ public class VActivityManagerService extends IActivityManager.Stub {
         BroadcastSystem.get().broadcastFinish(res, userId);
     }
 
+    public Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, IBinder resultTo, ActivityInfo info) {
+        synchronized (this) {
+            ActivityRecord targetRecord = mActivityStack.newActivityRecord(intent, info, resultTo);
+            return mActivityStack.getStartStubActivityIntentInner(intent, is64bit, vpid, userId, targetRecord, info);
+        }
+    }
+
 }
