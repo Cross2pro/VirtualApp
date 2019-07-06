@@ -455,8 +455,13 @@ public class VAppManagerService extends IAppManager.Stub {
         if(oldLink != null){
             FileUtils.deleteDir(oldLink);
         }
-        String token = MD5Utils.hashBase64((pkg.mVersionCode + pkg.mVersionName + packageFile.lastModified() + packageFile.length()).getBytes())
-                .trim();
+        String token = MD5Utils.hashBase64((pkg.mVersionCode + pkg.mVersionName + packageFile.lastModified() + packageFile.length()).getBytes());
+        if (token == null) {
+            token = "" + System.currentTimeMillis();
+        } else {
+            token = token.replace("\r", "").replace("\n", "").replace("//", "_")
+                    .replace("\\", "_").replace("\0", "");
+        }
         File newLink = VEnvironment.makePackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess(), token);
         try {
             FileUtils.createSymlink(packageFile.getPath(), newLink.getPath());
