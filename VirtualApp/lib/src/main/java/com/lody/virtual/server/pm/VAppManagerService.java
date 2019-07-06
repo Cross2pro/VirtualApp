@@ -9,9 +9,11 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
@@ -23,6 +25,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.MD5Utils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -349,6 +352,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if(!loadingApp) {
             BroadcastSystem.get().stopApp(pkg.packageName);
         }
+        VActivityManagerService.get().killAppByPkg(pkg.packageName, -1);
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
         // PackageCache holds all packages, try to check if we need to update.
@@ -447,6 +451,19 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
+        File oldLink = VEnvironment.getPackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess());
+        if(oldLink != null){
+            FileUtils.deleteDir(oldLink);
+        }
+        String token = MD5Utils.hashBase64((pkg.mVersionCode + pkg.mVersionName + packageFile.lastModified() + packageFile.length()).getBytes())
+                .trim();
+        File newLink = VEnvironment.makePackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess(), token);
+        try {
+            FileUtils.createSymlink(packageFile.getPath(), newLink.getPath());
+            VLog.d(TAG, "make link %s", newLink.getPath());
+        } catch (Exception e) {
+            Log.w(TAG, "make link failed " + token, e);
+        }
         mPersistenceLayer.save();
         if (support32bit && !useSourceLocationApk) {
             try {
