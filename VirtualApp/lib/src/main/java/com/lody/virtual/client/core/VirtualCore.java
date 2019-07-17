@@ -488,6 +488,8 @@ public final class VirtualCore {
         switch (processType) {
             case Main:
                 initializer.onMainProcess();
+                //启动时清零主进程计数器，有可能在进程崩溃时导致计数器残留计数
+                ActivityCounterManager.get().cleanPackage(VirtualCore.get().getHostPkg());
                 break;
             case VAppClient:
                 initializer.onVirtualProcess();

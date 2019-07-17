@@ -6,7 +6,9 @@ import android.util.Log;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -85,6 +87,20 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
     synchronized public void cleanProcess(int pid){
         mActivityCounter.remove(pid);
         mProcessesMap.remove(pid);
+    }
+    //clean count about of packagename
+    synchronized public void cleanPackage(String pkg){
+        //get pid s
+        List<Integer> pids  = new ArrayList<>();
+        for (int id: mProcessesMap.keySet()){
+            if(mProcessesMap.get(id)!=null&&mProcessesMap.get(id).equalsIgnoreCase(pkg)){
+                pids.add(id);
+            }
+        }
+        for (int id:pids){
+            //put id 0
+            cleanProcess(id);
+        }
     }
     synchronized private void activityCounter(String pkg,String name,int pid, int mode){
         int num;

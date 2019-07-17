@@ -7,6 +7,7 @@ interface IActivityCounterService {
     void activityCountAdd(String pkg,String name,int pid);
     void activityCountReduce(String pkg,String name,int pid);
     void cleanProcess(int pid);
+    void cleanPackage(String pkg);
     boolean isForeGroundApp(String pkg);
     boolean isForeGround();
     void registerCallback(IForegroundInterface vsCallback);
