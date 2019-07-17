@@ -92,8 +92,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
-    private HandlerThread mWorkThread = new HandlerThread("_VA_ams_work");
-    private final Handler mWorkHandler;
     private boolean mResult;
 
     //xdja
@@ -102,11 +100,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     public static VActivityManagerService get() {
         return sService.get();
-    }
-
-    private VActivityManagerService(){
-        mWorkThread.start();
-        mWorkHandler = new Handler(mWorkThread.getLooper());
     }
 
     @Override
@@ -1069,14 +1062,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     void scheduleStaticBroadcast(final BroadcastIntentData data, final int appId, final ActivityInfo info, final BroadcastReceiver.PendingResult result) {
-        mWorkHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (!handleStaticBroadcast(data, appId, info, result)) {
-                    result.finish();
-                }
-            }
-        });
+        if (!handleStaticBroadcast(data, appId, info, result)) {
+            result.finish();
+        }
     }
 
     private boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
@@ -1105,6 +1093,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
             if (r != null && r.appThread != null) {
                 send = true;
                 performScheduleReceiver(r.client, vuid, info, data.intent, new PendingResultData(result));
+            } else {
+                VLog.w(BroadcastSystem.TAG, "handleStaticBroadcastAsUser %s not running, ignore %s", info.name, data.intent.getAction());
             }
         }
         return send;
@@ -1119,7 +1109,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                          PendingResultData result) {
         int userId = VUserHandle.getUserId(vuid);
         ComponentName componentName = ComponentUtils.toComponentName(info);
-        BroadcastSystem.get().broadcastSent(vuid, info, result);
+        BroadcastSystem.get().broadcastSent(vuid, info, result, intent);
         try {
             client.scheduleReceiver(info.processName, componentName, intent, result);
         } catch (Throwable e) {

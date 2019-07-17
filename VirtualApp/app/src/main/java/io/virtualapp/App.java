@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatDelegate;
 
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.VServiceKeepAliveManager;
 
@@ -66,10 +67,8 @@ public class App extends Application {
         public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
             if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
                 return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
-            } else if (Intent.ACTION_MEDIA_SCANNER_SCAN_FILE.equals(action)) {
-                return "com.android.providers.media".equals(packageName);
             }
-            return false;
+            return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName);// || "com.tencent.mm".equals(packageName);
         }
 
         @Override

@@ -159,6 +159,8 @@ public class ComponentUtils {
         if (component != null) {
             String componentAction = getComponentAction(component);
             newIntent.setAction(componentAction);
+            //指定组件的时候不能含有uri
+            newIntent.setDataAndType(null, null);
             if (targetPackage == null) {
                 targetPackage = component.getPackageName();
             }

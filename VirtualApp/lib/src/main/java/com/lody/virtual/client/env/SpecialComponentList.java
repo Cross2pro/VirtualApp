@@ -91,9 +91,9 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_ADDED, Constants.ACTION_USER_ADDED);
         PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_REMOVED, Constants.ACTION_USER_REMOVED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_BOOT_COMPLETED, Constants.ACTION_BOOT_COMPLETED);
-        //TODO 是否需要改为仅内部媒体存储收到
+        //改为仅内部媒体存储收到
         //update images/videos by media provider
-        PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Constants.ACTION_MEDIA_SCANNER_SCAN_FILE);
         //xdja
         PROTECTED_ACTION_MAP.put("com.xdja.safety.action.enter", "com.xdja.safety.action.enter");
         PROTECTED_ACTION_MAP.put("com.xdja.safety.action.exit", "com.xdja.safety.action.exit");

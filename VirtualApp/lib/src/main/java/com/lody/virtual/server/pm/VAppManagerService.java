@@ -455,14 +455,14 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
-        if(!loadingApp) {
-            BroadcastSystem.get().startApp(pkg);
-        }
         if (options.notify) {
             notifyAppInstalled(ps, -1);
             if(res.isUpdate){
                 notifyAppUpdate(ps, -1);
             }
+        }
+        if(!loadingApp) {
+            BroadcastSystem.get().startApp(pkg);
         }
         res.isSuccess = true;
         VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_ADD);
