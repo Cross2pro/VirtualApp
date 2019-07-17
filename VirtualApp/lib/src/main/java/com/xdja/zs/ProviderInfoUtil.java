@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.lody.virtual.client.core.VirtualCore;
+
 /**
  * @Date 19-6-27 11
  * @Author lxf@xdja.com
@@ -14,9 +16,9 @@ import android.util.Log;
 public class ProviderInfoUtil {
 
     private static final String TAG = ProviderInfoUtil.class.getName();
-    private static final String PROVIDER_KEY = "com.xdja.engine.provider";
     public static String  getProviderInfo(@NonNull Context context){
         try {
+            String PROVIDER_KEY = VirtualCore.get().getHostPkg();
             PackageManager pm = context.getPackageManager();
             ApplicationInfo appinfo =  pm.getApplicationInfo(PROVIDER_KEY, PackageManager.GET_META_DATA);
             if(appinfo==null)
