@@ -85,8 +85,12 @@ public class FileUtils {
 
     public static void createSymlink(String oldPath, String newPath) throws Exception {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Os.link(oldPath, newPath);
-            return;
+            try {
+                Os.link(oldPath, newPath);
+                return;
+            }catch (Throwable e){
+                //ignore
+            }
         }
         Runtime.getRuntime().exec("ln -s " + oldPath + " " + newPath).waitFor();
     }

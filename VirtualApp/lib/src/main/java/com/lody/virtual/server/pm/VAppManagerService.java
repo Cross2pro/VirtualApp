@@ -233,7 +233,6 @@ public class VAppManagerService extends IAppManager.Stub {
                 return false;
             }
         }
-        File cacheFile = VEnvironment.getPackageCacheFile(ps.packageName);
         VPackage pkg = null;
         try {
             pkg = PackageParserEx.readPackageCache(ps.packageName);
@@ -243,7 +242,6 @@ public class VAppManagerService extends IAppManager.Stub {
         if (pkg == null || pkg.packageName == null) {
             return false;
         }
-        VEnvironment.chmodPackageDictionary(cacheFile);
         PackageCacheManager.put(pkg, ps);
         if (modeUseOutsideApk) {
             try {
@@ -257,7 +255,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
                 return false;
             }
-
+        } else {
+            VEnvironment.chmodPackageDictionary(new File(ps.getApkPath(ps.isRunOn64BitProcess())));
         }
 
         BroadcastSystem.get().startApp(pkg);
