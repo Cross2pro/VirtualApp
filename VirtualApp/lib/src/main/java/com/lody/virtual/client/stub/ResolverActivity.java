@@ -22,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PatternMatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,6 +42,8 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ClientConfig;
+import com.lody.virtual.server.am.VActivityManagerService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -278,6 +279,9 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
             mLastSelected = checkedPos;
         } else {
             startSelected(position, false);
+            if(!isFinishing()) {
+                finish();
+            }
         }
     }
 
@@ -288,7 +292,6 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         ResolveInfo ri = mAdapter.resolveInfoForPosition(which);
         Intent intent = mAdapter.intentForPosition(which);
         onIntentSelected(ri, intent, always);
-        finish();
     }
 
     protected void onIntentSelected(ResolveInfo ri, Intent intent, boolean alwaysCheck) {
@@ -398,14 +401,34 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         }
 
         if (intent != null) {
-            ActivityInfo info = VirtualCore.get().resolveActivityInfo(intent, mLaunchedFromUid);
+            final int userId = mLaunchedFromUid;
+            ActivityInfo info = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (info == null) {
                 startActivity(intent);
             } else {
-                intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-                int res = VActivityManager.get().startActivity(intent, info, mResultTo, mOptions, mResultWho, mRequestCode, mLaunchedFromUid);
-                if (res != 0 && mResultTo != null && mRequestCode > 0) {
-                    VActivityManager.get().sendCancelActivityResult(mResultTo, mResultWho, mRequestCode);
+//                intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+//                int res = VActivityManagerService.get().startActivity(intent, info, null, mOptions, null, -1, mLaunchedFromUid);
+//                if (res != 0 && mResultTo != null && mRequestCode > 0) {
+//                    setResult(RESULT_CANCELED, null);
+//                }
+                //查找/启动目标activity的进程
+                ClientConfig clientConfig = VActivityManagerService.get().initProcess(info.packageName,
+                        ComponentUtils.getProcessName(info), userId, VActivityManager.PROCESS_TYPE_ACTIVITY);
+                if (clientConfig != null) {
+                    Intent targetIntent = VActivityManagerService.get().getStartStubActivityIntentInner(intent, false, clientConfig.vpid, mLaunchedFromUid, mResultTo, info);
+                    //在intentForPosition已经设置了
+                    targetIntent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+                    targetIntent.addFlags(Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP);
+                    //添加上面2个flag，不需要用startActivityForResult
+                    try {
+                        if (mOptions != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                            startActivity(targetIntent, mOptions);
+                        } else {
+                            startActivity(targetIntent);
+                        }
+                    } catch (Throwable e) {
+                        //ignore
+                    }
                 }
             }
         }
@@ -500,9 +523,9 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 currentResolveList = mBaseResolveList;
                 mOrigResolveList = null;
             } else {
-                /*currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
-                        mIntent, PackageManager.MATCH_DEFAULT_ONLY
-                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));*/
+//                currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
+//                        mIntent, PackageManager.MATCH_DEFAULT_ONLY
+//                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));
 
                 currentResolveList = mOrigResolveList = VPackageManager.get().queryIntentActivities(
                         mIntent, mIntent.resolveType(mContext), PackageManager.MATCH_DEFAULT_ONLY

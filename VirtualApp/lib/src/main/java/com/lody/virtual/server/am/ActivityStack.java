@@ -399,7 +399,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    private ActivityRecord newActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
+    ActivityRecord newActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
         ActivityRecord targetRecord = new ActivityRecord(intent, info, resultTo);
         synchronized (mLaunchingActivities) {
             mLaunchingActivities.add(targetRecord);
@@ -564,7 +564,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         return getStartStubActivityIntentInner(intent, targetApp.is64bit, targetApp.vpid, userId, targetRecord, info);
     }
 
-    private Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, ActivityRecord targetRecord, ActivityInfo info) {
+    Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, ActivityRecord targetRecord, ActivityInfo info) {
         intent = new Intent(intent);
         Intent targetIntent = new Intent();
         targetIntent.setClassName(StubManifest.getStubPackageName(is64bit), fetchStubActivity(vpid, info));
