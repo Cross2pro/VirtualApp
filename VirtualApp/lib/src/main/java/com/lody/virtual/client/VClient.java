@@ -59,6 +59,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
@@ -71,6 +72,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -778,6 +780,16 @@ public final class VClient extends IVClient.Stub {
     }
 
     private void forbidHost() {
+        final List<String> hostProcesses;
+        if (StubManifest.PACKAGE_NAME_64BIT != null) {
+            hostProcesses = Arrays.asList(StubManifest.PACKAGE_NAME,
+                    StubManifest.PACKAGE_NAME_64BIT,
+                    StubManifest.PACKAGE_NAME + ":x",
+                    StubManifest.PACKAGE_NAME_64BIT + ":x");
+        } else {
+            hostProcesses = Arrays.asList(StubManifest.PACKAGE_NAME,
+                    StubManifest.PACKAGE_NAME + ":x");
+        }
         ActivityManager am = (ActivityManager) VirtualCore.get().getContext().getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningAppProcessInfo info : am.getRunningAppProcesses()) {
             if (info.pid == Process.myPid()) {
@@ -786,12 +798,9 @@ public final class VClient extends IVClient.Stub {
             if (info.uid != VirtualCore.get().myUid()) {
                 continue;
             }
-            if (VActivityManager.get().isAppPid(info.pid)) {
-                continue;
-            }
-            if (info.processName.startsWith(StubManifest.PACKAGE_NAME)
-                    || StubManifest.PACKAGE_NAME_64BIT != null
-                    && info.processName.startsWith(StubManifest.PACKAGE_NAME_64BIT)) {
+            if(hostProcesses.contains(info.processName)){
+                //is host
+                NativeEngine.forbid("/proc/" + info.pid, false);//直接不允许读取host的任何proc信息
                 NativeEngine.forbid("/proc/" + info.pid + "/maps", true);
                 NativeEngine.forbid("/proc/" + info.pid + "/cmdline", true);
             }
