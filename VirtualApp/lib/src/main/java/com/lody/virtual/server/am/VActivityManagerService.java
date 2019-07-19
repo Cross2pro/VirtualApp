@@ -1148,6 +1148,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             info.pkgList.add(r.info.packageName);
         }
         return info;
+    }
 
     public Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, IBinder resultTo, ActivityInfo info) {
         synchronized (this) {
