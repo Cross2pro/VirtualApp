@@ -18,6 +18,7 @@ import android.support.annotation.IntDef;
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.hook.secondary.VAContentProviderProxy;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
@@ -319,7 +320,7 @@ public class VActivityManager {
     public IInterface acquireProviderClient(int userId, ProviderInfo info) throws RemoteException {
         IBinder binder = getService().acquireProviderClient(userId, info);
         if (binder != null) {
-            return ContentProviderNative.asInterface.call(binder);
+            return VAContentProviderProxy.wrapper(ContentProviderNative.asInterface.call(binder));
         }
         return null;
     }
