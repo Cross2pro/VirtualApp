@@ -129,6 +129,7 @@ public final class VClient extends IVClient.Stub {
     private int mTargetSdkVersion;
     private ConditionVariable mBindingApplicationLock;
     private boolean mEnvironmentPrepared = false;
+    private int systemPid;
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -160,6 +161,13 @@ public final class VClient extends IVClient.Stub {
                 mBoundApplication.appInfo.packageName : VPackageManager.get().getNameForUid(getVUid());
     }
 
+    public String getCurrentPackageNotNull() {
+        if (this.clientConfig != null) {
+            return this.clientConfig.packageName;
+        }
+        return VirtualCore.get().getHostPkg();
+    }
+
     public ApplicationInfo getCurrentApplicationInfo() {
         return mBoundApplication != null ? mBoundApplication.appInfo : null;
     }
@@ -176,6 +184,10 @@ public final class VClient extends IVClient.Stub {
 
     public void setCrashHandler(CrashHandler crashHandler) {
         this.crashHandler = crashHandler;
+    }
+
+    public int getSystemPid() {
+        return systemPid;
     }
 
     public int getVUid() {
@@ -316,6 +328,7 @@ public final class VClient extends IVClient.Stub {
         if (processName == null) {
             processName = packageName;
         }
+        systemPid = VActivityManager.get().getSystemPid();
         try {
             setupUncaughtHandler();
         } catch (Throwable e) {
@@ -854,12 +867,7 @@ public final class VClient extends IVClient.Stub {
         }
         IBinder binder = provider != null ? provider.asBinder() : null;
         if (binder != null) {
-            if (binder instanceof Binder) {
-                return new FakeIdentityBinder((Binder) binder);
-            } else {
-                VLog.e(TAG, "binder not instanceof Binder.");
-                return binder;
-            }
+            return binder;
         }
         return null;
     }

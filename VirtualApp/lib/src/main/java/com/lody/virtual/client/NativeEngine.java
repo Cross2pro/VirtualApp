@@ -15,6 +15,7 @@ import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
@@ -281,8 +282,16 @@ public class NativeEngine {
             return originUid;
         }
         int callingPid = Binder.getCallingPid();
-        if (callingPid == Process.myUid()) {
+        if (callingPid == Process.myPid()) {
             return VClient.get().getVUid();
+        }
+        if (callingPid == VClient.get().getSystemPid()) {
+            return VActivityManager.get().getCallingUid();
+        }
+        int appId = VUserHandle.getAppId(originUid);
+        if(appId > 0 && appId < Process.FIRST_APPLICATION_UID){
+            //说明originUid要么系统应用，要么va内部应用,
+            return originUid;
         }
         return VActivityManager.get().getUidByPid(callingPid);
     }
