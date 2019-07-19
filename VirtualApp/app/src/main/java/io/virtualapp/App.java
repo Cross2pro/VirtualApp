@@ -68,7 +68,7 @@ public class App extends Application {
             if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
                 return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
             }
-            return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName);// || "com.tencent.mm".equals(packageName);
+            return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName) || "com.tencent.mm".equals(packageName);
         }
 
         @Override

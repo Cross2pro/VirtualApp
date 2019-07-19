@@ -24,6 +24,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.ClientConfig;
@@ -629,6 +630,14 @@ public class VActivityManager {
             case PROCESS_TYPE_OTHER:
             default:
                 return "other";
+        }
+    }
+
+    public List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId) {
+        try {
+            return getService().getRunningAppProcesses(packageName, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
         }
     }
 }

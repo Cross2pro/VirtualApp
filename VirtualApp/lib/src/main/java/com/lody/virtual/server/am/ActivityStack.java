@@ -587,7 +587,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             optimizeTasksLocked();
             TaskRecord task = mHistory.get(taskId);
             if (task == null) {
-                task = new TaskRecord(taskId, targetApp.userId, ComponentUtils.getTaskAffinity(record.info), record.intent);
+                task = new TaskRecord(taskId, record.userId, ComponentUtils.getTaskAffinity(record.info), record.intent);
                 mHistory.put(taskId, task);
                 Intent intent = new Intent(Constants.ACTION_NEW_TASK_CREATED);
                 intent.putExtra(Constants.EXTRA_USER_HANDLE, record.userId);

@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.Debug;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -46,6 +45,7 @@ import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.BroadcastIntentData;
@@ -69,8 +69,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.lody.virtual.client.ipc.VActivityManager.PROCESS_TYPE_ACTIVITY;
 
 /**
  * @author Lody
@@ -1123,6 +1121,33 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public void broadcastFinish(PendingResultData res, int userId) {
         BroadcastSystem.get().broadcastFinish(res, userId);
     }
+
+    @Override
+    public List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId) {
+        List<AppRunningProcessInfo> list = new ArrayList<>();
+        synchronized (mProcessLock) {
+            for (ProcessRecord r : mPidsSelfLocked) {
+                if (r.info.packageName.equals(packageName) && r.userId == userId) {
+                    list.add(toAppRunningProcess(r));
+                }
+            }
+        }
+        return list;
+    }
+
+    private AppRunningProcessInfo toAppRunningProcess(ProcessRecord r){
+        AppRunningProcessInfo info = new AppRunningProcessInfo();
+        info.pid = r.pid;
+        info.vuid = r.vuid;
+        info.vpid = r.vpid;
+        info.packageName = r.info.packageName;
+        info.processName = r.processName;
+        if (r.pkgList != null && r.pkgList.size() > 0) {
+            info.pkgList.addAll(r.pkgList);
+        } else {
+            info.pkgList.add(r.info.packageName);
+        }
+        return info;
 
     public Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, IBinder resultTo, ActivityInfo info) {
         synchronized (this) {
