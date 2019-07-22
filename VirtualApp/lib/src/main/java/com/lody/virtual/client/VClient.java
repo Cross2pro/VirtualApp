@@ -67,6 +67,7 @@ import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.zs.exceptionRecorder;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -776,6 +777,10 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
+
+        //xdja 放开异记录路径
+        NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
+
         NativeEngine.enableIORedirect();
     }
 
@@ -1075,6 +1080,11 @@ public final class VClient extends IVClient.Stub {
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {
+
+            VLog.e(TAG, "uncaughtException !!!!!!");
+            //将异常记录在本地
+            exceptionRecorder.recordException(e);
+
             Thread.UncaughtExceptionHandler threadHandler = null;
             try {
                 //当前线程的handler
@@ -1111,6 +1121,7 @@ public final class VClient extends IVClient.Stub {
             if (handler != null) {
                 handler.uncaughtException(t, e);
             }
+
             //如果上面方法退出进程，则下面不会执行
             //主进程异常后，是无法响应后续事件，只能杀死
             if (isMainThread) {
