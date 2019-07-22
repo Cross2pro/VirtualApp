@@ -27,7 +27,7 @@ public class VAContentProviderProxy {
                     if (uid == 0) {
                         uid = Process.myUid();
                     }
-                    if (args.length > 0 && args[0] instanceof String) {
+                    if (args != null && args.length > 0 && args[0] instanceof String) {
                         String pkg = (String) args[0];
                         if (VirtualCore.get().getHostPkg().equals(pkg)) {
                             args[0] = VClient.get().getCurrentPackageNotNull();
