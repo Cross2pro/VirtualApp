@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.AndroidRuntimeException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.compat.BundleCompat;
@@ -49,12 +50,15 @@ public class ServiceManagerNative {
     private static IServiceFetcher getServiceFetcher() {
         if (sFetcher == null || !sFetcher.asBinder().isBinderAlive()) {
             synchronized (ServiceManagerNative.class) {
-                Context context = VirtualCore.get().getContext();
-                Bundle response = new ProviderCall.Builder(context, getAuthority()).methodName("@").callSafely();
-                if (response != null) {
-                    IBinder binder = BundleCompat.getBinder(response, "_VA_|_binder_");
-                    linkBinderDied(binder);
-                    sFetcher = IServiceFetcher.Stub.asInterface(binder);
+                if (sFetcher == null || !sFetcher.asBinder().isBinderAlive()) {
+                    Context context = VirtualCore.get().getContext();
+                    Bundle response = new ProviderCall.Builder(context, getAuthority()).methodName("@").callSafely();
+                    if (response != null) {
+                        IBinder binder = BundleCompat.getBinder(response, "_VA_|_binder_");
+                        linkBinderDied(binder);
+                        sFetcher = IServiceFetcher.Stub.asInterface(binder);
+                    }
+
                 }
             }
         }
@@ -70,18 +74,34 @@ public class ServiceManagerNative {
     }
 
     private static void linkBinderDied(final IBinder binder) {
+
         IBinder.DeathRecipient deathRecipient = new IBinder.DeathRecipient() {
             @Override
             public void binderDied() {
-                binder.unlinkToDeath(this, 0);
+                try {
+                    binder.unlinkToDeath(this, 0);
+                }catch (Throwable e){
+                    //ignore
+                }
+                
+                onServerDied();
             }
         };
+
         try {
             binder.linkToDeath(deathRecipient, 0);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
+
+    private static void onServerDied() {
+
+        //不做任何判断，直接抛出’AndroidRuntimeException'
+        throw new AndroidRuntimeException("X进程崩溃，所有进程退出！");
+
+    }
+
 
     public static IBinder getService(String name) {
         if (VirtualCore.get().isServerProcess()) {
