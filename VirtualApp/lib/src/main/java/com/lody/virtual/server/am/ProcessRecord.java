@@ -5,6 +5,7 @@ import android.os.Binder;
 import android.os.ConditionVariable;
 import android.os.IInterface;
 import android.os.Process;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.client.stub.StubManifest;
@@ -12,6 +13,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.server.bit64.V64BitHelper;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,12 +49,20 @@ final class ProcessRecord extends Binder {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        ProcessRecord record = (ProcessRecord) o;
-        return processName != null ? processName.equals(record.processName) : record.processName == null;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProcessRecord that = (ProcessRecord) o;
+        return pid == that.pid &&
+                vuid == that.vuid &&
+                vpid == that.vpid &&
+                is64bit == that.is64bit &&
+                userId == that.userId &&
+                TextUtils.equals(processName, that.processName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(new Object[]{processName, pid, vuid, vpid, is64bit, userId});
     }
 
     public String getProviderAuthority() {
