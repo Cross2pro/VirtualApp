@@ -439,6 +439,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private void onProcessDied(ProcessRecord record) {
         synchronized (mProcessLock) {
             mProcessNames.remove(record.processName, record.vuid);
+            //bug：ProcessRecord#equals 根据processName判断，这样会移除多开的相同进程名的对象
             mPidsSelfLocked.remove(record);
         }
         //xdja
