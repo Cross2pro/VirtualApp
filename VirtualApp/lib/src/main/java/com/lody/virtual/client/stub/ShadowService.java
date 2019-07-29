@@ -7,7 +7,9 @@ import android.os.IBinder;
 import android.os.Process;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.service.ServiceManager;
+import com.lody.virtual.helper.utils.VLog;
 
 /**
  * @author Lody
@@ -15,22 +17,30 @@ import com.lody.virtual.client.service.ServiceManager;
 public abstract class ShadowService extends Service {
     private static final ServiceManager sServiceManager = ServiceManager.get();
 
-    private static void checkProcessStatus() {
+    private boolean checkProcessStatus() {
         if (VClient.get().getClientConfig() == null) {
-            System.exit(0);
-            Process.killProcess(Process.myPid());
+            stopSelf();
+            VLog.w("ServiceManager", "checkProcessStatus:false, clientConfig=null");
+            //Process.killProcess(Process.myPid());
+            //杀死会让reject init process错误出现概率变高
+            return false;
         }
+        return true;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        checkProcessStatus();
+        if(!checkProcessStatus()){
+            return null;
+        }
         return sServiceManager.onBind(intent);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        checkProcessStatus();
+        if(!checkProcessStatus()){
+            return START_NOT_STICKY;
+        }
         try {
             sServiceManager.onStartCommand(intent, flags);
         } catch (Exception e) {
@@ -41,7 +51,9 @@ public abstract class ShadowService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        checkProcessStatus();
+        if(!checkProcessStatus()){
+            return false;
+        }
         sServiceManager.onUnbind(intent);
         return false;
     }

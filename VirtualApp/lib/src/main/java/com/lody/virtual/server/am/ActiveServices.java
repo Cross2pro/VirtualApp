@@ -156,6 +156,7 @@ public class ActiveServices {
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
         proxyIntent.putExtra("_VA_|_intent_", intent);
+        proxyIntent.putExtra("_VA_|_user_id_", userId);
         VirtualRuntime.getUIHandler().post(new Runnable() {
             @Override
             public void run() {
@@ -213,6 +214,7 @@ public class ActiveServices {
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
         proxyIntent.putExtra("_VA_|_intent_", intent);
+        proxyIntent.putExtra("_VA_|_user_id_", userId);
         return proxyIntent;
     }
 
