@@ -21,6 +21,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.xdja.utils.Stirrer;
 
 public class CallLogObserver extends android.database.ContentObserver {
@@ -73,11 +74,14 @@ public class CallLogObserver extends android.database.ContentObserver {
                         }
                     }
                 }
-                try {
-                    Stirrer.getConentProvider(CallLog.AUTHORITY).insert(CallLog.Calls.CONTENT_URI, contentValues);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                {
+                    getContext().getContentResolver().insert(ContentProviderProxy.buildProxyUri(0, false, CallLog.AUTHORITY, CallLog.Calls.CONTENT_URI), contentValues);
                 }
+//                try {
+//                    Stirrer.getConentProvider(CallLog.AUTHORITY).insert(CallLog.Calls.CONTENT_URI, contentValues);
+//                } catch (RemoteException e) {
+//                    e.printStackTrace();
+//                }
                 int id = cursor.getInt(cursor.getColumnIndex(CallLog.Calls._ID));
                 cursor.close();
                 if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
