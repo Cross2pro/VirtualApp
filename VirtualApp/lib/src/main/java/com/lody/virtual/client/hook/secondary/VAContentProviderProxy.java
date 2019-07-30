@@ -13,8 +13,9 @@ import java.lang.reflect.Proxy;
 
 public class VAContentProviderProxy {
 
-    public static IInterface wrapper(final IInterface contentProviderProxy) {
+    public static IInterface wrapper(final IInterface contentProviderProxy, final int uid, final int pid, final String appPkg) {
         Class[] classes = contentProviderProxy.getClass().getInterfaces();
+        final long fakeIdentity = (long) uid << 32 | pid;
         return (IInterface) Proxy.newProxyInstance(contentProviderProxy.getClass().getClassLoader(), classes, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -23,17 +24,12 @@ public class VAContentProviderProxy {
                 }
                 long clearCallingIdentity = Binder.clearCallingIdentity();
                 try {
-                    int uid = VClient.get().getVUid();
-                    if (uid == 0) {
-                        uid = Process.myUid();
-                    }
                     if (args != null && args.length > 0 && args[0] instanceof String) {
                         String pkg = (String) args[0];
                         if (VirtualCore.get().getHostPkg().equals(pkg)) {
-                            args[0] = VClient.get().getCurrentPackageNotNull();
+                            args[0] = appPkg;
                         }
                     }
-                    final long fakeIdentity = (long) uid << 32 | Process.myPid();
                     Binder.restoreCallingIdentity(fakeIdentity);
                     return method.invoke(contentProviderProxy, args);
                 } finally {
