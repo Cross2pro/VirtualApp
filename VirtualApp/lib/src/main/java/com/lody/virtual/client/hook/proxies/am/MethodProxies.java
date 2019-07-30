@@ -1773,7 +1773,7 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     if (provider != null) {
-                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                        provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
                         VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);
@@ -1784,7 +1784,7 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     if (provider != null) {
-                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                        provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
                         VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);

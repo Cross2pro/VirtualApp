@@ -14,6 +14,8 @@ import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
 import android.support.annotation.IntDef;
+import android.support.v4.text.TextUtilsCompat;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -319,9 +321,17 @@ public class VActivityManager {
     }
 
     public IInterface acquireProviderClient(int userId, ProviderInfo info) throws RemoteException {
+        return acquireProviderClient(userId, info, 0,0, null);
+    }
+
+    public IInterface acquireProviderClient(int userId, ProviderInfo info, int uid, int pid, String pkg) throws RemoteException {
         IBinder binder = getService().acquireProviderClient(userId, info);
         if (binder != null) {
-            return VAContentProviderProxy.wrapper(ContentProviderNative.asInterface.call(binder));
+            IInterface contentProvider = ContentProviderNative.asInterface.call(binder);
+            if (uid == 0 || pid == 0 || TextUtils.isEmpty(pkg)) {
+                return contentProvider;
+            }
+            return VAContentProviderProxy.wrapper(contentProvider, uid, pid, pkg);
         }
         return null;
     }

@@ -164,13 +164,6 @@ public final class VClient extends IVClient.Stub {
                 mBoundApplication.appInfo.packageName : VPackageManager.get().getNameForUid(getVUid());
     }
 
-    public String getCurrentPackageNotNull() {
-        if (this.clientConfig != null) {
-            return this.clientConfig.packageName;
-        }
-        return VirtualCore.get().getHostPkg();
-    }
-
     public ApplicationInfo getCurrentApplicationInfo() {
         return mBoundApplication != null ? mBoundApplication.appInfo : null;
     }
