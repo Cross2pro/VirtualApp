@@ -375,8 +375,7 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:process="@string/engine_process_name"
-            android:screenOrientation="portrait" />
+            android:process="@string/engine_process_name" />
 
         <activity
             android:name=".client.stub.ChooseTypeAndAccountActivity"
@@ -384,8 +383,7 @@
             android:excludeFromRecents="true"
             android:exported="false"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
-            android:process="@string/engine_process_name"
-            android:screenOrientation="portrait" />
+            android:process="@string/engine_process_name" />
 
         <activity
             android:name=".client.stub.ChooserActivity"
@@ -395,7 +393,6 @@
             android:finishOnCloseSystemDialogs="true"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name"
-            android:screenOrientation="portrait"
             android:taskAffinity="com.lody.virtual.choose"
             android:theme="@style/VAAlertTheme" />
 
@@ -407,7 +404,6 @@
             android:finishOnCloseSystemDialogs="true"
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
             android:process="@string/engine_process_name"
-            android:screenOrientation="portrait"
             android:taskAffinity="com.lody.virtual.choose"
             android:theme="@style/VAAlertTheme" />
 
@@ -419,7 +415,6 @@
             android:finishOnCloseSystemDialogs="true"
             android:process="@string/engine_process_name"
             android:taskAffinity="com.xdja.safety.Installer"
-            android:screenOrientation="portrait"
             android:theme="@style/InstallerTheme" >
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
@@ -432,7 +427,6 @@
             android:finishOnCloseSystemDialogs="true"
             android:process="@string/engine_process_name"
             android:taskAffinity="com.xdja.safety.Installer"
-            android:screenOrientation="portrait"
             android:theme="@style/InstallerTheme" >
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
