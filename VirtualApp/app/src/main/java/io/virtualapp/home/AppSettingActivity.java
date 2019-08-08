@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.xdja.zs.DataCleanManager;
 
 import io.virtualapp.R;
 import io.virtualapp.abs.ui.VActivity;
@@ -50,16 +51,20 @@ public class AppSettingActivity extends VActivity {
         setContentView(R.layout.activity_app_setting);
         ImageView iconView = (ImageView) findViewById(R.id.app_icon);
         TextView nameView = (TextView) findViewById(R.id.app_name);
+        TextView labelView = (TextView) findViewById(R.id.app_label);
 
+        labelView.setText(getString(R.string.label_app_data_szie, DataCleanManager.getPackageFolderSize(0, pkg, DataCleanManager.FOLDER_TYPE_DATA)));
         iconView.setImageDrawable(mData.icon);
         nameView.setText(mData.name);
         findViewById(R.id.btn_clean_data).setOnClickListener(v -> {
             cleanAppData();
+            labelView.setText(getString(R.string.label_app_data_szie, DataCleanManager.getPackageFolderSize(0, pkg, DataCleanManager.FOLDER_TYPE_DATA)));
         });
     }
 
     private void cleanAppData() {
         boolean res = VirtualCore.get().cleanPackageData(mPkgInfo.packageName, mUserId);
         Toast.makeText(this, "clean app data " + (res ? "success." : "failed."), Toast.LENGTH_SHORT).show();
+
     }
 }

@@ -1,6 +1,9 @@
 package com.xdja.zs;
 
 import android.util.Log;
+
+import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import java.io.File;
 import java.math.BigDecimal;
@@ -53,22 +56,34 @@ public class DataCleanManager {
     }
 
 
-    public static boolean clearPackageFolder(int useId, String packageName, int type){
+    public static boolean clearPackageFolder(int userId, String packageName, int type){
         boolean status = true;
         try {
             if (type == FOLDER_TYPE_DATA) {
-                File file_data = VEnvironment.getDataUserPackageDirectory(useId, packageName);
-                File file_data_storage = VEnvironment.getExternalStorageAppDataDir(useId, packageName);
-                if(file_data.exists() && !deleteDir(file_data)){
-                    return false;
+                File file_data = VEnvironment.getDataUserPackageDirectory(userId, packageName);
+                File file_data_storage = VEnvironment.getExternalStorageAppDataDir(userId, packageName);
+                if(file_data.exists()){
+                    if(!deleteDir(file_data)){
+                        return false;
+                    }
+                    String libPath = VEnvironment.getAppLibDirectory(packageName).getAbsolutePath();
+                    File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
+                    if(!userLibDir.exists()){
+                        try {
+                            FileUtils.createSymlink(libPath, userLibDir.getPath());
+                        } catch (Exception e) {
+                            //ignore
+                        }
+                    }
+                    VLog.i(TAG, "clearPackageFolder check lib=" + userLibDir.exists());
                 }
-                if(file_data_storage.exists() && !deleteDir(file_data_storage)){
+                if (file_data_storage.exists() && !deleteDir(file_data_storage)) {
                     return false;
                 }
                 Log.i(TAG, " clearPackageFolder FOLDER_TYPE_DATA");
             }else if (type == FOLDER_TYPE_CACHE) {
-                File file_cache = new File(VEnvironment.getDataUserPackageDirectory(useId, packageName), "cache");
-                File file_cache_storage = new File(VEnvironment.getExternalStorageAppDataDir(useId, packageName), "cache");
+                File file_cache = new File(VEnvironment.getDataUserPackageDirectory(userId, packageName), "cache");
+                File file_cache_storage = new File(VEnvironment.getExternalStorageAppDataDir(userId, packageName), "cache");
                 if(file_cache.exists() && !deleteDir(file_cache)){
                    return false;
                 }
@@ -88,13 +103,24 @@ public class DataCleanManager {
     }
 
     private static boolean deleteDir(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                boolean success = deleteDir(new File(dir, children[i]));
-                if (!success) {
-                    Log.e(TAG, " deleteDir error" + dir.getAbsolutePath());
-                    return false;
+        if(dir == null){
+            return true;
+        }
+        if (dir.isDirectory()) {
+            boolean link = false;
+            try {
+                link = FileUtils.isSymlink(dir);
+            } catch (Exception e) {
+                //ignore
+            }
+            if(!link) {
+                String[] children = dir.list();
+                for (String child : children) {
+                    boolean success = deleteDir(new File(dir, child));
+                    if (!success) {
+                        Log.e(TAG, " deleteDir error" + dir.getAbsolutePath());
+                        return false;
+                    }
                 }
             }
         }
@@ -109,10 +135,19 @@ public class DataCleanManager {
                 return 0;
             }
             for (int i = 0; i < fileList.length; i++) {
-                if (fileList[i].isDirectory()) {
-                    size = size + getFolderSize(fileList[i]);
+                File sub = fileList[i];
+                if (sub.isDirectory()) {
+                    boolean link = false;
+                    try {
+                        link = FileUtils.isSymlink(sub);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                    if(!link) {
+                        size = size + getFolderSize(sub);
+                    }
                 } else {
-                    size = size + fileList[i].length();
+                    size = size + sub.length();
                 }
             }
         } catch (Exception e) {

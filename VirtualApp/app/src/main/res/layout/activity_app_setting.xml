@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="top"
@@ -18,21 +19,38 @@
             android:layout_height="60dp"
             android:layout_centerVertical="true"
             android:layout_marginStart="64dp"
-            android:layout_marginLeft="64dp" />
+            tools:src="@android:drawable/sym_def_app_icon"/>
 
 
-        <TextView
-            android:id="@+id/app_name"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/app_icon"
+            android:layout_centerVertical="true"
             android:layout_marginStart="20dp"
-            android:layout_marginLeft="20dp"
             android:layout_toEndOf="@id/app_icon"
-            android:layout_toRightOf="@id/app_icon"
-            android:gravity="center"
-            android:paddingBottom="25dp"
-            android:textColor="@android:color/black" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/app_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"
+                tools:text="123456789"
+                android:textSize="16sp"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:id="@+id/app_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:paddingStart="10dp"
+                android:gravity="center"
+                android:textSize="12sp"
+                tools:text="123456789"
+                android:textColor="@android:color/black" />
+        </LinearLayout>
     </RelativeLayout>
 
     <LinearLayout
