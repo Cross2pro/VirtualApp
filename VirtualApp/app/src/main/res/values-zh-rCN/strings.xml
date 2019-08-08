@@ -78,4 +78,5 @@
     <string name="kill_all_app">加速</string>
     <string name="app_settings">App设置</string>
     <string name="clean_data">清除数据</string>
+    <string name="label_app_data_szie">数据：%1$s</string>
 </resources>

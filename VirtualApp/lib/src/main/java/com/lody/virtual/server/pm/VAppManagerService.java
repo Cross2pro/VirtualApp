@@ -14,6 +14,7 @@ import android.os.RemoteException;
 import android.os.ResultReceiver;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.stub.StubManifest;
@@ -547,11 +548,21 @@ public class VAppManagerService extends IAppManager.Stub {
 
     private void deletePackageDataAsUser(int userId, PackageSetting ps) {
         if (isPackageSupport32Bit(ps)) {
+            String libPath = VEnvironment.getAppLibDirectory(ps.packageName).getAbsolutePath();
             if (userId == -1) {
                 List<VUserInfo> userInfos = VUserManager.get().getUsers();
                 if (userInfos != null) {
                     for (VUserInfo info : userInfos) {
                         FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(info.id, ps.packageName));
+                        File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                        if(!userLibDir.exists()){
+                            try {
+                                FileUtils.createSymlink(libPath, userLibDir.getPath());
+                                VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                            } catch (Exception e) {
+                                //ignore
+                            }
+                        }
                         // add by lml@xdja.com
                         {
                             FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(info.id, ps.packageName));
@@ -560,6 +571,15 @@ public class VAppManagerService extends IAppManager.Stub {
                 }
             } else {
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+                File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                if(!userLibDir.exists()){
+                    try {
+                        FileUtils.createSymlink(libPath, userLibDir.getPath());
+                        VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                }
                 // add by lml@xdja.com
                 {
                     FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(userId, ps.packageName));
