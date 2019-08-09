@@ -106,7 +106,7 @@ public class BroadcastSystem {
             if (packageInfo != null) {
                 Object receiverResource = LoadedApkHuaWei.mReceiverResource.get(packageInfo);
                 if (receiverResource != null) {
-                    if (BuildCompat.isPie()) {
+                    if (BuildCompat.isPie() || BuildCompat.isOreo()) {
                         //AMS进程判断, 非白名单每进程最多1000个receiver对象
                         //最差情况，一个月应用100个静态广播接收者，va里面能装10个这样的，多开同一个应用还是按一个计算
                         if (HwSysResImplP.mWhiteListMap != null) {
@@ -115,17 +115,6 @@ public class BroadcastSystem {
                             if (null == list) {
                                 list = new ArrayList<>();
                                 whiteMap.put(0, list);
-                            }
-                            list.add(mContext.getPackageName());
-                        }
-                    } else if (BuildCompat.isOreo()) {
-                        if (ReceiverResourceO.mWhiteListMap != null) {
-                            Map<Integer, List<String>> whiteMap = ReceiverResourceO.mWhiteListMap.get(receiverResource);
-                            List<String> list = whiteMap.get(0);
-                            if (null == list) {
-                                list = new ArrayList<>();
-                                whiteMap.put(0, list);
-
                             }
                             list.add(mContext.getPackageName());
                         }
