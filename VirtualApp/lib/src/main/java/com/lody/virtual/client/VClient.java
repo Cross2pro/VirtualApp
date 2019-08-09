@@ -32,6 +32,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.CrashHandler;
@@ -67,6 +68,7 @@ import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.zs.VAppPermissionManager;
 import com.xdja.zs.exceptionRecorder;
 
 import java.io.File;
@@ -554,7 +556,18 @@ public final class VClient extends IVClient.Stub {
         }
         mInitialApplication.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
-            public void onActivityCreated(Activity activity, Bundle bundle) { }
+            public void onActivityCreated(Activity activity, Bundle bundle) {
+                //检测截屏权限
+                boolean screenShort = VAppPermissionManager.get().getAppPermissionEnable(
+                        activity.getPackageName(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+                Log.e(TAG, "screenShort: " + screenShort);
+                if (screenShort) {
+                    activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE
+                            , WindowManager.LayoutParams.FLAG_SECURE);
+                } else {
+                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                }
+            }
             @Override
             public void onActivityStarted(Activity activity) {
                 ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getLocalClassName(), android.os.Process.myPid());
