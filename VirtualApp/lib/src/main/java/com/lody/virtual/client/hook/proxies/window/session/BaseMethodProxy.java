@@ -100,13 +100,9 @@ class Relayout extends BaseMethodProxy{
         return super.beforeCall(who, method, args);
     }
 
+    @SuppressLint("NewApi")
     @Override
     public Object call(Object who, Method method, Object... args) throws Throwable {
-
-        if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
-            Log.e("lxf-Relayout","禁止启用水印");
-            return super.call(who, method, args);
-        }
 
         //args[0] IWindow  ViewRootImpl.W extends IWindow.stub
         //args[2] WindowManager.LayoutParams attrs,
@@ -121,32 +117,39 @@ class Relayout extends BaseMethodProxy{
         mView.setAccessible(true);
         View omView = (View)mView.get(VRI.get());
 
-        if(omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                //横竖屏切换时会出现未绘制
-                //omView.setForeground(null);
-                WindowInsets inset = omView.getRootWindowInsets();
-                int top = inset.getSystemWindowInsetBottom();
+        // 先清除水印，防止页面不刷新导致的水印残留
+        if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
+            omView.setForeground(null);
+        }
 
-                int screenWidth = omView.getMeasuredWidth();
-                int screenHeight = omView.getMeasuredHeight();
-                Log.e("lxf","relayout "+screenWidth +":"+ screenHeight);
+        if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
+            Log.e("lxf-Relayout","禁止启用水印");
+            return super.call(who, method, args);
+        }
+        if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
+            //横竖屏切换时会出现未绘制
+            //omView.setForeground(null);
+            WindowInsets inset = omView.getRootWindowInsets();
+            int top = inset.getSystemWindowInsetBottom();
 
-                //长宽比例适配，去除小窗口水印绘制
-                Configuration configuration = VirtualCore.get().getContext().getResources().getConfiguration();
-                if(configuration.orientation==configuration.ORIENTATION_PORTRAIT){
-                    Log.e("lxf-orient","h/w "+(((float)screenHeight/screenWidth)>1.5));
-                }else {
-                    Log.e("lxf-orient","w/h "+(((float)screenWidth/screenHeight)>1.5));
-                }
-                if((((float)screenHeight/screenWidth)>1.5 && (configuration.orientation==configuration.ORIENTATION_PORTRAIT))
-                        || (((float)screenWidth/screenHeight)>1.5 && (configuration.orientation==configuration.ORIENTATION_LANDSCAPE))){
-                    Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
-                    Canvas canvas = new Canvas(mBackgroundBitmap);
-                    drawWaterMark(canvas,screenWidth,screenHeight);
-                    Bitmap mDestBitmap = drawDestBitmap(mBackgroundBitmap,top,screenWidth,screenHeight);
-                    omView.setForeground(new BitmapDrawable(mDestBitmap));
-                }
+            int screenWidth = omView.getMeasuredWidth();
+            int screenHeight = omView.getMeasuredHeight();
+            Log.e("lxf","relayout "+screenWidth +":"+ screenHeight);
+
+            //长宽比例适配，去除小窗口水印绘制
+            Configuration configuration = VirtualCore.get().getContext().getResources().getConfiguration();
+            if(configuration.orientation==configuration.ORIENTATION_PORTRAIT){
+                Log.e("lxf-orient","h/w "+(((float)screenHeight/screenWidth)>1.5));
+            }else {
+                Log.e("lxf-orient","w/h "+(((float)screenWidth/screenHeight)>1.5));
+            }
+            if((((float)screenHeight/screenWidth)>1.5 && (configuration.orientation==configuration.ORIENTATION_PORTRAIT))
+                    || (((float)screenWidth/screenHeight)>1.5 && (configuration.orientation==configuration.ORIENTATION_LANDSCAPE))){
+                Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(mBackgroundBitmap);
+                drawWaterMark(canvas,screenWidth,screenHeight);
+                Bitmap mDestBitmap = drawDestBitmap(mBackgroundBitmap,top,screenWidth,screenHeight);
+                omView.setForeground(new BitmapDrawable(mDestBitmap));
             }
         }
 
