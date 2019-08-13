@@ -87,4 +87,24 @@ public class PackagePermissionManager {
         }
         return list;
     }
+    public static void setInstallSourceSignature(Bundle bundle) {
+        ArrayList<String> apps = bundle.getStringArrayList("installSourceSignature");
+        Log.e("lxf-PackagePermission","setInstallSourceSignature "+apps);
+        List<String> list = new ArrayList<>(apps);
+        try {
+            VAppPermissionManager.get().getService().setInstallSourceSignature(list);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+    public static ArrayList<String> getInstallSourceSignature(){
+        ArrayList<String> list = new ArrayList<>();
+        try {
+            list.addAll(VAppPermissionManager.get().getService().getInstallSourceSignature());
+            Log.e("lxf-PackagePermission","getInstallSourceSignature "+list);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

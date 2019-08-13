@@ -25,4 +25,7 @@ interface IAppPermission {
     List<String> getEnableInstallationSource();
     void setEnableInstallationSource(in List<String> list);
     boolean getThirdAppInstallationEnable();
+
+    void setInstallSourceSignature(in List<String> list);
+    List<String> getInstallSourceSignature();
 }

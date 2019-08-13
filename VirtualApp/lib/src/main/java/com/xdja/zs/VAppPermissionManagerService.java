@@ -8,6 +8,7 @@ import android.util.Log;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
+import com.xdja.utils.SignatureVerify;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -241,16 +242,34 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
             if (list != null && !list.isEmpty()) {
                 EnabledInstallationSource.clear();
                 EnabledInstallationSource.addAll(list);
-                isAllowThirdAppInstallion = true;
+                SignatureVerify.isEnable = true;
             } else {
                 EnabledInstallationSource.clear();
-                isAllowThirdAppInstallion = false;
+                SignatureVerify.isEnable = false;
             }
         }
     }
     public ArrayList<String> getEnableInstallationSource(){
         Log.e("lxf-PackagePermission","EnabledInstallationSource "+EnabledInstallationSource);
         return EnabledInstallationSource;
+    }
+    /**
+     * 安全域内安装源签名设置
+     */
+    private static ArrayList<String> InstallSourceSignature = new ArrayList<>();
+    public void setInstallSourceSignature(List<String> list){
+        Log.e("lxf-PackagePermission","setInstallSourceSignature "+list);
+        synchronized (InstallSourceSignature){
+            if (list != null && !list.isEmpty()) {
+                InstallSourceSignature.clear();
+                InstallSourceSignature.addAll(list);
+            } else {
+                InstallSourceSignature.clear();
+            }
+        }
+    }
+    public ArrayList<String> getInstallSourceSignature(){
+        return InstallSourceSignature;
     }
 
     /**
