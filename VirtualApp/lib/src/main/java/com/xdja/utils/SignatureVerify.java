@@ -11,6 +11,7 @@ import com.lody.virtual.client.ipc.VPackageManager;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Locale;
 
 /**
@@ -19,7 +20,7 @@ import java.util.Locale;
  * @Descrip:
  */
 public class SignatureVerify {
-    private static String TAG = SignatureVerify.class.getName();
+    private static String TAG = "lxf-"+SignatureVerify.class.getName();
     private String[] keystores ={"43:BD:02:6B:9D:53:D7:F5:00:B2:BC:BD:BB:34:5B:F1:CD:EF:7F:C0"};
 
     public static boolean isEnable = true;
@@ -30,9 +31,13 @@ public class SignatureVerify {
         if(TextUtils.isEmpty(SHA1)){
             return false;
         }
-        for (String key: keystores){
-            if(SHA1.equals(key)){
-                return true;
+        ArrayList<String> keystores = PackagePermissionManager.getInstallSourceSignature();
+        Log.e(TAG,"getInstallSourceSignature "+keystores);
+        if(keystores!=null){
+            for (String key: keystores){
+                if(SHA1.equals(key)){
+                    return true;
+                }
             }
         }
         return false;
