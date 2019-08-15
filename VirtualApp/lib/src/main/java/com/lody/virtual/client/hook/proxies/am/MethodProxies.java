@@ -85,9 +85,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.WeakHashMap;
 
 import mirror.android.app.IActivityManager;
@@ -670,7 +672,7 @@ class MethodProxies {
             }else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
                 InputStream inputStream = null;
                 OutputStream outputStream = null;
-                File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
+                File sharedFileCopy = new File(getHostContext().getCacheDir(), new Random().nextInt()+".apk");
                 try {
                     inputStream = getHostContext().getContentResolver().openInputStream(packageUri);
                     outputStream = new FileOutputStream(sharedFileCopy);

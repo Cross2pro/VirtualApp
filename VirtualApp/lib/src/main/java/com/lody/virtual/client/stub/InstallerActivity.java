@@ -138,6 +138,9 @@ public class InstallerActivity extends Activity {
             @Override
             public void onClick(View view) {
                 finish();
+                if(apkinfo!=null) {
+                    deleteCachePackage(apkinfo.path);
+                }
             }
         });
         tv_ckc.setOnClickListener(new View.OnClickListener() {
@@ -325,6 +328,7 @@ public class InstallerActivity extends Activity {
                 }else {
                     btn_open.setText("打开");
                 }
+                deleteCachePackage(apkinfo.path);
                 break;
             case STATE_OPENNING:
                 ll_openning.setVisibility(View.VISIBLE);
@@ -422,6 +426,22 @@ public class InstallerActivity extends Activity {
 
             }
         }
+    }
+
+    /**
+     * 删除临时目录安装文件
+     * @param path
+     */
+    private void deleteCachePackage(String path){
+        Log.e(TAG,"deleteCachePackage "+ path);
+        if(!TextUtils.isEmpty(path)&&path.startsWith("/data/user/0/"+this.getPackageName()+"/cache")){
+            File file = new File(path);
+            boolean apkexit = file.exists();
+            if(apkexit){
+                FileUtils.deleteDir(path);
+            }
+        }
+
     }
     private void showDelDialog(final boolean open){
 
