@@ -556,7 +556,14 @@ public final class VClient extends IVClient.Stub {
         }
         mInitialApplication.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
-            public void onActivityCreated(Activity activity, Bundle bundle) {
+            public void onActivityCreated(Activity activity, Bundle bundle) { }
+            @Override
+            public void onActivityStarted(Activity activity) {
+                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getLocalClassName(), android.os.Process.myPid());
+                countOfActivity++;
+            }
+            @Override
+            public void onActivityResumed(Activity activity) {
                 //检测截屏权限
                 boolean screenShort = VAppPermissionManager.get().getAppPermissionEnable(
                         activity.getPackageName(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
@@ -568,13 +575,6 @@ public final class VClient extends IVClient.Stub {
                     activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 }
             }
-            @Override
-            public void onActivityStarted(Activity activity) {
-                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getLocalClassName(), android.os.Process.myPid());
-                countOfActivity++;
-            }
-            @Override
-            public void onActivityResumed(Activity activity) { }
             @Override
             public void onActivityPaused(Activity activity) { }
             @Override
