@@ -637,6 +637,12 @@ class MethodProxies {
                     intent.setData(Uri.parse("package:" + getHostPkg()));
                 }
             }
+
+            //xdja fix_64768
+            if("android.intent.action.OPEN_DOCUMENT_TREE".equals(intent.getAction())){
+                return method.invoke(who, args);
+            }
+
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
                 VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
@@ -1762,7 +1768,8 @@ class MethodProxies {
             }
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
-            if (info != null && info.enabled && isAppPkg(info.packageName)) {
+            if (info != null && info.enabled && isAppPkg(info.packageName)
+                    /* xdja fix_64768 */ && (!("com.android.externalstorage.documents").equals(name))) {
                 ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId, VActivityManager.PROCESS_TYPE_PROVIDER);
                 if (config == null) {
                     return null;
