@@ -8,6 +8,9 @@ import android.os.Parcelable;
 
 public class IntentSenderData implements Parcelable {
 
+    /**
+     * packageName
+     */
     public String creator;
     public IBinder token;
     public Intent intent;

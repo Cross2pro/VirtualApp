@@ -9,9 +9,8 @@ import mirror.RefClass;
 import mirror.RefConstructor;
 import mirror.RefMethod;
 
-public class PendingIntentJBMR2 {
-    public static Class Class = RefClass.load(PendingIntentJBMR2.class, PendingIntent.class);
-    @MethodParams({IBinder.class})
+public class PendingIntentO {
+    public static Class Class = RefClass.load(PendingIntentO.class, PendingIntent.class);
+    @MethodParams({IBinder.class, Object.class})
     public static RefConstructor<PendingIntent> ctor;
-    public static RefMethod<Intent> getIntent;
 }

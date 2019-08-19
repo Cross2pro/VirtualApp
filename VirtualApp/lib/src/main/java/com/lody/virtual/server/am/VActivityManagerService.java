@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.IStopUserCallback;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -69,6 +70,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import mirror.android.app.PendingIntentJBMR2;
+import mirror.android.app.PendingIntentO;
 
 /**
  * @author Lody
@@ -296,6 +300,30 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return null;
     }
 
+    private void cleanAllIntentSender(String packageName, int userId) {
+        synchronized (mIntentSenderMap) {
+            for (Map.Entry<IBinder, IntentSenderData> e : mIntentSenderMap.entrySet()) {
+                IBinder sender = e.getKey();
+                IntentSenderData data = e.getValue();
+                if ((userId < 0 || data.userId == userId) && TextUtils.equals(packageName, data.creator)) {
+                    //该应用的全部IntentSender
+                    PendingIntent pendingIntent = null;
+                    if (PendingIntentO.ctor != null) {
+                        pendingIntent = PendingIntentO.ctor.newInstance(sender, null);
+                    } else if (PendingIntentJBMR2.ctor != null) {
+                        pendingIntent = PendingIntentJBMR2.ctor.newInstance(sender);
+                    }
+                    if (pendingIntent != null) {
+                        try {
+                            pendingIntent.cancel();
+                        } catch (Throwable ignore) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public ComponentName getCallingActivity(int userId, IBinder token) {
         return mActivityStack.getCallingActivity(userId, token);
@@ -449,6 +477,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         //xdja
         VLog.d(TAG, "onProcessDied:" + record.info.packageName);
         VServiceKeepAliveService.get().scheduleRunKeepAliveService(record.info.packageName, VUserHandle.myUserId());
+        //应用死了后，取消全部PendingIntent
+//        if(!isAppRunning(record.info.packageName, record.userId, false)){
+//            cleanAllIntentSender(record.info.packageName, record.userId);
+//        }
     }
 
     @Override
@@ -797,7 +829,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                break;
+                if(foreground) {
+                    //foreground=true是只找主进程，false是全部进程任意一个存在
+                    break;
+                }
             }
             return running;
         }

@@ -3,6 +3,8 @@ package io.virtualapp.home;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +37,8 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
+import com.lody.virtual.client.stub.InstallerActivity;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.oem.OemPermissionHelper;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -47,6 +51,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import io.virtualapp.R;
@@ -129,7 +134,42 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         } else {
             MediaObserver.observe(this);
         }
+
+        IntentFilter alarmFilter = new IntentFilter("com.android.deskclock.ALARM_ALERT");
+        VirtualCore.get().registerReceiver(this, alarmReceiver, alarmFilter);
     }
+
+
+    private VirtualCore.Receiver alarmReceiver = new VirtualCore.Receiver() {
+        @SuppressLint("DefaultLocale")
+        @Override
+        public void onReceive(Context context, Intent intent, int userId) {
+            long time = System.currentTimeMillis();
+            if ("com.android.deskclock.ALARM_ALERT".equals(intent.getAction())) {
+                if(intent.hasExtra("showUI")){
+                    Intent activity = intent.getParcelableExtra("showUI");
+                    activity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    VActivityManager.get().startActivity(activity, 0);
+                    return;
+                }
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(time);
+                //clock没适配的情况，最好是弹activity
+                new AlertDialog.Builder(context, R.style.Theme_AppCompat_Dialog_Alert)
+                        .setMessage(String.format("闹钟：%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE)))
+                        .setNegativeButton("继续睡会", (dlg, id) -> {
+                            VActivityManager.get().sendBroadcast(
+                                    new Intent("com.android.deskclock.ALARM_SNOOZE")
+                                            .setPackage(InstallerSetting.CLOCK_PKG), 0);
+                        }).setPositiveButton("取消", (dlg, id) -> {
+                            VActivityManager.get().sendBroadcast(
+                                    new Intent("com.android.deskclock.ALARM_DISMISS")
+                                            .setPackage(InstallerSetting.CLOCK_PKG), 0);
+                        })
+                        .show();
+            }
+        }
+    };
 
     private boolean checkPermission() {
         int result = ContextCompat.checkSelfPermission(HomeActivity.this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -217,6 +257,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(alarmReceiver);
         unregisterReceiver(receiver);
         super.onDestroy();
     }

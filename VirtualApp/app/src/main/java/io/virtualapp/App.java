@@ -66,7 +66,8 @@ public class App extends Application {
         @Override
         public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
             if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
-                return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName);
+                return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName)
+                        || "com.android.providers.media".equals(packageName);//扫描铃声
             }
             return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName) || "com.tencent.mm".equals(packageName);
         }
