@@ -87,6 +87,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -407,6 +408,7 @@ class MethodProxies {
                 args[5] = new Intent[]{targetIntent};
                 args[6] = new String[]{null};
                 //xdja add FLAG_CANCEL_CURRENT cancle cache
+                //如果应用全部进程死了，PendIngIntent应该全部取消
                 args[7] = (flags | PendingIntent.FLAG_UPDATE_CURRENT) & ~fillInFlags;
                 IInterface sender = (IInterface) method.invoke(who, args);
                 if (sender != null) {
@@ -425,6 +427,29 @@ class MethodProxies {
             return isAppProcess();
         }
 
+    }
+
+    static class CancelIntentSender extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "cancelIntentSender";
+        }
+
+        @Override
+        public boolean beforeCall(Object who, Method method, Object... args) {
+            try {
+                IInterface sender = (IInterface) args[0];
+                VActivityManager.get().removeIntentSender(sender.asBinder());
+            }catch (Throwable ignore){
+
+            }
+            return super.beforeCall(who, method, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
     }
 
 
@@ -1012,12 +1037,9 @@ class MethodProxies {
         public Object afterCall(Object who, Method method, Object[] args, Object result) {
             Intent intent = (Intent) result;
             if (intent != null) {
-                Intent selector = intent.getSelector();
-                if (selector != null) {
-                    Intent targetIntent = selector.getParcelableExtra("_VA_|_intent_");
-                    if (targetIntent != null) {
-                        return targetIntent;
-                    }
+                Intent targetIntent = ComponentUtils.getIntentForIntentSender(intent);
+                if (targetIntent != null) {
+                    return targetIntent;
                 }
             }
             return intent;
@@ -1953,7 +1975,7 @@ class MethodProxies {
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
-                Log.i("kk", "send broadcast " + intent + "=>" + newIntent);
+                Log.v("kk", "send broadcast " + intent + "=>" + newIntent);
             } else {
                 return 0;
             }

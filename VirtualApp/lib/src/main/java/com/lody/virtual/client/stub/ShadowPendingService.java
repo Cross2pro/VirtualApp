@@ -7,6 +7,7 @@ import android.os.IBinder;
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.IntentCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.IntentSenderExtData;
 
@@ -23,16 +24,9 @@ public class ShadowPendingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Intent selector = intent.getSelector();
-        if (selector == null) {
-            if (BuildConfig.DEBUG) {
-                throw new RuntimeException("selector = null");
-            }
-            return START_NOT_STICKY;
-        }
-        selector.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
-        Intent finalIntent = selector.getParcelableExtra("_VA_|_intent_");
-        int userId = selector.getIntExtra("_VA_|_userId_", -1);
+        intent.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
+        Intent finalIntent = ComponentUtils.getIntentForIntentSender(intent);
+        int userId = ComponentUtils.getUserIdForIntentSender(intent);
         if (finalIntent == null || userId == -1) {
             if (BuildConfig.DEBUG) {
                 throw new RuntimeException("targetIntent = null");

@@ -3,6 +3,7 @@ package com.lody.virtual.client.stub;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -19,16 +20,9 @@ public class ShadowPendingReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Intent selector = intent.getSelector();
-        if (selector == null) {
-            if (BuildConfig.DEBUG) {
-                throw new RuntimeException("selector = null");
-            }
-            return;
-        }
-        selector.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
-        Intent finalIntent = selector.getParcelableExtra("_VA_|_intent_");
-        int userId = selector.getIntExtra("_VA_|_userId_", -1);
+        intent.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
+        Intent finalIntent = ComponentUtils.getIntentForIntentSender(intent);
+        int userId = ComponentUtils.getUserIdForIntentSender(intent);
         if (finalIntent == null || userId == -1) {
             if (BuildConfig.DEBUG) {
                 throw new RuntimeException("targetIntent = null");

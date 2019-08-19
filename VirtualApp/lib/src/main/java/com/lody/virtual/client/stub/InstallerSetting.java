@@ -20,6 +20,11 @@ import java.util.Set;
 public class InstallerSetting {
 
     /**
+     *
+     */
+    public static final String CLOCK_PKG = "com.xdja.deskclock";
+
+    /**
      * MDMService包名
      */
     public static final String MDM_SERVICE_PKG = "com.xdja.mdmservice";
@@ -109,6 +114,7 @@ public class InstallerSetting {
 
         privApps.add(MDM_CLIENT_PKG);
         privApps.add(MDM_SERVICE_PKG);
+        privApps.add(CLOCK_PKG);
         privApps.add(DIALER_PKG);
         privApps.add("com.android.providers.media");
         privApps.add("com.android.providers.contacts");
