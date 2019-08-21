@@ -9,9 +9,11 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
@@ -24,6 +26,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.MD5Utils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -349,6 +352,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if(!loadingApp) {
             BroadcastSystem.get().stopApp(pkg.packageName);
         }
+        VActivityManagerService.get().killAppByPkg(pkg.packageName, -1);
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
         // PackageCache holds all packages, try to check if we need to update.
@@ -447,6 +451,24 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
+        File oldLink = VEnvironment.getPackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess());
+        if(oldLink != null){
+            FileUtils.deleteDir(oldLink);
+        }
+        String token = MD5Utils.hashBase64((pkg.mVersionCode + pkg.mVersionName + packageFile.lastModified() + packageFile.length()).getBytes());
+        if (token == null) {
+            token = "" + System.currentTimeMillis();
+        } else {
+            token = token.replace("\r", "").replace("\n", "").replace("//", "_")
+                    .replace("\\", "_").replace("\0", "");
+        }
+        File newLink = VEnvironment.makePackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess(), token);
+        try {
+            FileUtils.createSymlink(packageFile.getPath(), newLink.getPath());
+            VLog.d(TAG, "make link %s", newLink.getPath());
+        } catch (Exception e) {
+            Log.w(TAG, "make link failed " + token, e);
+        }
         mPersistenceLayer.save();
         if (support32bit && !useSourceLocationApk) {
             try {
@@ -528,7 +550,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 VActivityManagerService.get().killAppByPkg(packageName, userId);
                 ps.setInstalled(userId, false);
                 mPersistenceLayer.save();
-                deletePackageDataAsUser(userId, ps);
+                deletePackageDataAsUser(userId, ps, false);
                 notifyAppUninstalled(ps, userId);
             }
             return true;
@@ -546,7 +568,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 || ps.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT;
     }
 
-    private void deletePackageDataAsUser(int userId, PackageSetting ps) {
+    private void deletePackageDataAsUser(int userId, PackageSetting ps, boolean linkLib) {
         if (isPackageSupport32Bit(ps)) {
             String libPath = VEnvironment.getAppLibDirectory(ps.packageName).getAbsolutePath();
             if (userId == -1) {
@@ -554,13 +576,15 @@ public class VAppManagerService extends IAppManager.Stub {
                 if (userInfos != null) {
                     for (VUserInfo info : userInfos) {
                         FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(info.id, ps.packageName));
-                        File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
-                        if(!userLibDir.exists()){
-                            try {
-                                FileUtils.createSymlink(libPath, userLibDir.getPath());
-                                VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
-                            } catch (Exception e) {
-                                //ignore
+                        if(linkLib) {
+                            File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                            if (!userLibDir.exists()) {
+                                try {
+                                    FileUtils.createSymlink(libPath, userLibDir.getPath());
+                                    VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                                } catch (Exception e) {
+                                    //ignore
+                                }
                             }
                         }
                         // add by lml@xdja.com
@@ -571,13 +595,15 @@ public class VAppManagerService extends IAppManager.Stub {
                 }
             } else {
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
-                File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
-                if(!userLibDir.exists()){
-                    try {
-                        FileUtils.createSymlink(libPath, userLibDir.getPath());
-                        VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
-                    } catch (Exception e) {
-                        //ignore
+                if(linkLib) {
+                    File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                    if (!userLibDir.exists()) {
+                        try {
+                            FileUtils.createSymlink(libPath, userLibDir.getPath());
+                            VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                        } catch (Exception e) {
+                            //ignore
+                        }
                     }
                 }
                 // add by lml@xdja.com
@@ -598,7 +624,7 @@ public class VAppManagerService extends IAppManager.Stub {
             return false;
         }
         VActivityManagerService.get().killAppByPkg(pkg, userId);
-        deletePackageDataAsUser(userId, ps);
+        deletePackageDataAsUser(userId, ps, true);
         return true;
     }
 
@@ -613,7 +639,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory(packageName));
                 VEnvironment.getOdexFile(packageName).delete();
                 for (int id : VUserManagerService.get().getUserIds()) {
-                    deletePackageDataAsUser(id, ps);
+                    deletePackageDataAsUser(id, ps, false);
                 }
             }
             if (isPackageSupport64Bit(ps)) {

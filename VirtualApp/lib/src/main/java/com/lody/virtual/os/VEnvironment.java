@@ -1,5 +1,6 @@
 package com.lody.virtual.os;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 
@@ -10,6 +11,7 @@ import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 
 import java.io.File;
+import java.io.FilenameFilter;
 
 /**
  * @author Lody
@@ -386,6 +388,7 @@ public class VEnvironment {
      * get all of data dir of current context
      * @return
      */
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     public static File[] getTFRoots(){
         return getContext().getExternalFilesDirs(null);
     }
@@ -435,5 +438,42 @@ public class VEnvironment {
 
     public static File getExternalStorageAppDataDir(int userId, String packageName) {
         return buildPath(getExternalStorageDirectory(userId), "Android", "data", packageName);
+    }
+
+
+    public static File getPackageResourcePathPublic(String packageName, boolean is64Bit) {
+        File dir;
+        if (is64Bit) {
+            dir = new File(getDataAppPackageDirectory64(packageName), "public");
+        } else {
+            dir = new File(getDataAppPackageDirectory(packageName), "public");
+        }
+        if (dir.exists()) {
+            File[] files = dir.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".apk");
+                }
+            });
+            if(files != null && files.length>0){
+                return files[0];
+            }
+        }
+        return null;
+    }
+
+
+    public static File makePackageResourcePathPublic(String packageName, boolean is64Bit, String token) {
+        File dir;
+        if (is64Bit) {
+            dir = new File(getDataAppPackageDirectory64(packageName), "public");
+        } else {
+            dir = new File(getDataAppPackageDirectory(packageName), "public");
+        }
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        File apk = new File(dir, token + ".apk");
+        return apk;
     }
 }
