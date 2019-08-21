@@ -35,6 +35,10 @@
             android:name="TencentMapSDK"
             android:value="4HPBZ-2QWC6-H47SR-M6PZY-MTZB5-N2F4F" />
 
+        <meta-data
+            android:name="com.xdja.engine.provider"
+            android:value="content://${PACKAGE_NAME_32BIT}" />
+
         <activity
             android:name=".splash.SplashActivity"
             android:screenOrientation="portrait"

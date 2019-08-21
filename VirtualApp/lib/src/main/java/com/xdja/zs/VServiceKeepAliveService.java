@@ -113,9 +113,9 @@ public class VServiceKeepAliveService extends IServiceKeepAlive.Stub {
                     } else if (msg.arg1 == ACTION_TEMP_DEL) {
                         if (hasKeepAliveService(pkg)) {
                             clearAppFromList(pkg);
+                            mTemporaryCacheList.add(pkg);
+                            VLog.d(TAG, "Update temporary add List:" + mKeepAliveServiceList);
                         }
-                        mTemporaryCacheList.add(pkg);
-                        VLog.d(TAG, "Update temporary add List:" + mKeepAliveServiceList);
                     } else if (msg.arg1 == ACTION_TEMP_ADD) {
                         if (mTemporaryCacheList.contains(pkg)) {
                             synchronized (mKeepAliveServiceList) {

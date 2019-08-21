@@ -14,15 +14,19 @@ import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
 import android.support.annotation.IntDef;
+import android.support.v4.text.TextUtilsCompat;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.hook.secondary.VAContentProviderProxy;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.ClientConfig;
@@ -317,9 +321,17 @@ public class VActivityManager {
     }
 
     public IInterface acquireProviderClient(int userId, ProviderInfo info) throws RemoteException {
+        return acquireProviderClient(userId, info, 0,0, null);
+    }
+
+    public IInterface acquireProviderClient(int userId, ProviderInfo info, int uid, int pid, String pkg) throws RemoteException {
         IBinder binder = getService().acquireProviderClient(userId, info);
         if (binder != null) {
-            return ContentProviderNative.asInterface.call(binder);
+            IInterface contentProvider = ContentProviderNative.asInterface.call(binder);
+            if (uid == 0 || pid == 0 || TextUtils.isEmpty(pkg)) {
+                return contentProvider;
+            }
+            return VAContentProviderProxy.wrapper(contentProvider, uid, pid, pkg);
         }
         return null;
     }
@@ -628,6 +640,14 @@ public class VActivityManager {
             case PROCESS_TYPE_OTHER:
             default:
                 return "other";
+        }
+    }
+
+    public List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId) {
+        try {
+            return getService().getRunningAppProcesses(packageName, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
         }
     }
 }

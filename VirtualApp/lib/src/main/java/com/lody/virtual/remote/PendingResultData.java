@@ -34,6 +34,7 @@ public class PendingResultData implements Parcelable {
     public Bundle mResultExtras;
     public boolean mAbortBroadcast;
     public boolean mFinished;
+    public String mKey;
 
     public PendingResultData(BroadcastReceiver.PendingResult result) {
         if (mirror.android.content.BroadcastReceiver.PendingResultMNC.ctor != null) {
@@ -70,6 +71,7 @@ public class PendingResultData implements Parcelable {
             mAbortBroadcast = mirror.android.content.BroadcastReceiver.PendingResult.mAbortBroadcast.get(result);
             mFinished = mirror.android.content.BroadcastReceiver.PendingResult.mFinished.get(result);
         }
+        mKey = Integer.toHexString(hashCode()) + "_" + System.currentTimeMillis();
     }
 
 
@@ -85,6 +87,7 @@ public class PendingResultData implements Parcelable {
         this.mResultExtras = in.readBundle();
         this.mAbortBroadcast = in.readByte() != 0;
         this.mFinished = in.readByte() != 0;
+        this.mKey = in.readString();
     }
 
     public BroadcastReceiver.PendingResult build() {
@@ -95,6 +98,10 @@ public class PendingResultData implements Parcelable {
             return mirror.android.content.BroadcastReceiver.PendingResultJBMR1.ctor.newInstance(mResultCode, mResultData, mResultExtras, mType, mOrderedHint, mInitialStickyHint, mToken, mSendingUser);
         }
         return mirror.android.content.BroadcastReceiver.PendingResult.ctor.newInstance(mResultCode, mResultData, mResultExtras, mType, mOrderedHint, mInitialStickyHint, mToken);
+    }
+
+    public String getKey() {
+        return mKey;
     }
 
     @Override
@@ -115,6 +122,7 @@ public class PendingResultData implements Parcelable {
         dest.writeBundle(this.mResultExtras);
         dest.writeByte(this.mAbortBroadcast ? (byte) 1 : (byte) 0);
         dest.writeByte(this.mFinished ? (byte) 1 : (byte) 0);
+        dest.writeString(this.mKey);
     }
 
     public void finish() {

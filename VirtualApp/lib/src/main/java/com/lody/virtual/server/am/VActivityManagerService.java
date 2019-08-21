@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.IStopUserCallback;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -21,7 +22,6 @@ import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.os.Debug;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
@@ -46,6 +46,7 @@ import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.BroadcastIntentData;
@@ -70,7 +71,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.lody.virtual.client.ipc.VActivityManager.PROCESS_TYPE_ACTIVITY;
+import mirror.android.app.PendingIntentJBMR2;
+import mirror.android.app.PendingIntentO;
 
 /**
  * @author Lody
@@ -92,8 +94,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
             .getSystemService(Context.NOTIFICATION_SERVICE);
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
-    private HandlerThread mWorkThread = new HandlerThread("_VA_ams_work");
-    private final Handler mWorkHandler;
     private boolean mResult;
 
     //xdja
@@ -102,11 +102,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     public static VActivityManagerService get() {
         return sService.get();
-    }
-
-    private VActivityManagerService(){
-        mWorkThread.start();
-        mWorkHandler = new Handler(mWorkThread.getLooper());
     }
 
     @Override
@@ -305,6 +300,30 @@ public class VActivityManagerService extends IActivityManager.Stub {
         return null;
     }
 
+    private void cleanAllIntentSender(String packageName, int userId) {
+        synchronized (mIntentSenderMap) {
+            for (Map.Entry<IBinder, IntentSenderData> e : mIntentSenderMap.entrySet()) {
+                IBinder sender = e.getKey();
+                IntentSenderData data = e.getValue();
+                if ((userId < 0 || data.userId == userId) && TextUtils.equals(packageName, data.creator)) {
+                    //该应用的全部IntentSender
+                    PendingIntent pendingIntent = null;
+                    if (PendingIntentO.ctor != null) {
+                        pendingIntent = PendingIntentO.ctor.newInstance(sender, null);
+                    } else if (PendingIntentJBMR2.ctor != null) {
+                        pendingIntent = PendingIntentJBMR2.ctor.newInstance(sender);
+                    }
+                    if (pendingIntent != null) {
+                        try {
+                            pendingIntent.cancel();
+                        } catch (Throwable ignore) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public ComponentName getCallingActivity(int userId, IBinder token) {
         return mActivityStack.getCallingActivity(userId, token);
@@ -448,6 +467,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private void onProcessDied(ProcessRecord record) {
         synchronized (mProcessLock) {
             mProcessNames.remove(record.processName, record.vuid);
+            //bug：ProcessRecord#equals 根据processName判断，这样会移除多开的相同进程名的对象
             mPidsSelfLocked.remove(record);
         }
         //xdja
@@ -457,6 +477,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         //xdja
         VLog.d(TAG, "onProcessDied:" + record.info.packageName);
         VServiceKeepAliveService.get().scheduleRunKeepAliveService(record.info.packageName, VUserHandle.myUserId());
+        //应用死了后，取消全部PendingIntent
+//        if(!isAppRunning(record.info.packageName, record.userId, false)){
+//            cleanAllIntentSender(record.info.packageName, record.userId);
+//        }
     }
 
     @Override
@@ -805,7 +829,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                break;
+                if(foreground) {
+                    //foreground=true是只找主进程，false是全部进程任意一个存在
+                    break;
+                }
             }
             return running;
         }
@@ -1069,14 +1096,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     void scheduleStaticBroadcast(final BroadcastIntentData data, final int appId, final ActivityInfo info, final BroadcastReceiver.PendingResult result) {
-        mWorkHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (!handleStaticBroadcast(data, appId, info, result)) {
-                    result.finish();
-                }
-            }
-        });
+        if (!handleStaticBroadcast(data, appId, info, result)) {
+            result.finish();
+        }
     }
 
     private boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
@@ -1105,6 +1127,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
             if (r != null && r.appThread != null) {
                 send = true;
                 performScheduleReceiver(r.client, vuid, info, data.intent, new PendingResultData(result));
+            } else {
+                VLog.w(BroadcastSystem.TAG, "handleStaticBroadcastAsUser %s not running, ignore %s", info.name, data.intent.getAction());
             }
         }
         return send;
@@ -1119,7 +1143,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                          PendingResultData result) {
         int userId = VUserHandle.getUserId(vuid);
         ComponentName componentName = ComponentUtils.toComponentName(info);
-        BroadcastSystem.get().broadcastSent(vuid, info, result);
+        BroadcastSystem.get().broadcastSent(vuid, info, result, intent);
         try {
             client.scheduleReceiver(info.processName, componentName, intent, result);
         } catch (Throwable e) {
@@ -1132,6 +1156,41 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public void broadcastFinish(PendingResultData res, int userId) {
         BroadcastSystem.get().broadcastFinish(res, userId);
+    }
+
+    @Override
+    public List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId) {
+        List<AppRunningProcessInfo> list = new ArrayList<>();
+        synchronized (mProcessLock) {
+            for (ProcessRecord r : mPidsSelfLocked) {
+                if (r.info.packageName.equals(packageName) && r.userId == userId) {
+                    list.add(toAppRunningProcess(r));
+                }
+            }
+        }
+        return list;
+    }
+
+    private AppRunningProcessInfo toAppRunningProcess(ProcessRecord r){
+        AppRunningProcessInfo info = new AppRunningProcessInfo();
+        info.pid = r.pid;
+        info.vuid = r.vuid;
+        info.vpid = r.vpid;
+        info.packageName = r.info.packageName;
+        info.processName = r.processName;
+        if (r.pkgList != null && r.pkgList.size() > 0) {
+            info.pkgList.addAll(r.pkgList);
+        } else {
+            info.pkgList.add(r.info.packageName);
+        }
+        return info;
+    }
+
+    public Intent getStartStubActivityIntentInner(Intent intent, boolean is64bit, int vpid, int userId, IBinder resultTo, ActivityInfo info) {
+        synchronized (this) {
+            ActivityRecord targetRecord = mActivityStack.newActivityRecord(intent, info, resultTo);
+            return mActivityStack.getStartStubActivityIntentInner(intent, is64bit, vpid, userId, targetRecord, info);
+        }
     }
 
 }

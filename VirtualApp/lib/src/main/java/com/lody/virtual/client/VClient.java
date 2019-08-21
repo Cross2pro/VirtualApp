@@ -32,6 +32,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.CrashHandler;
@@ -59,6 +60,7 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
@@ -66,11 +68,14 @@ import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
+import com.xdja.zs.VAppPermissionManager;
+import com.xdja.zs.exceptionRecorder;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -129,6 +134,7 @@ public final class VClient extends IVClient.Stub {
     private int mTargetSdkVersion;
     private ConditionVariable mBindingApplicationLock;
     private boolean mEnvironmentPrepared = false;
+    private int systemPid;
 
     public InstalledAppInfo getAppInfo() {
         return mAppInfo;
@@ -176,6 +182,10 @@ public final class VClient extends IVClient.Stub {
 
     public void setCrashHandler(CrashHandler crashHandler) {
         this.crashHandler = crashHandler;
+    }
+
+    public int getSystemPid() {
+        return systemPid;
     }
 
     public int getVUid() {
@@ -316,6 +326,7 @@ public final class VClient extends IVClient.Stub {
         if (processName == null) {
             processName = packageName;
         }
+        systemPid = VActivityManager.get().getSystemPid();
         try {
             setupUncaughtHandler();
         } catch (Throwable e) {
@@ -552,7 +563,18 @@ public final class VClient extends IVClient.Stub {
                 countOfActivity++;
             }
             @Override
-            public void onActivityResumed(Activity activity) { }
+            public void onActivityResumed(Activity activity) {
+                //检测截屏权限
+                boolean screenShort = VAppPermissionManager.get().getAppPermissionEnable(
+                        activity.getPackageName(), VAppPermissionManager.PROHIBIT_SCREEN_SHORT_RECORDER);
+                Log.e(TAG, "screenShort: " + screenShort);
+                if (screenShort) {
+                    activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE
+                            , WindowManager.LayoutParams.FLAG_SECURE);
+                } else {
+                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                }
+            }
             @Override
             public void onActivityPaused(Activity activity) { }
             @Override
@@ -761,10 +783,24 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
+
+        //xdja 放开异记录路径
+        NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
+
         NativeEngine.enableIORedirect();
     }
 
     private void forbidHost() {
+        final List<String> hostProcesses;
+        if (StubManifest.PACKAGE_NAME_64BIT != null) {
+            hostProcesses = Arrays.asList(StubManifest.PACKAGE_NAME,
+                    StubManifest.PACKAGE_NAME_64BIT,
+                    StubManifest.PACKAGE_NAME + ":x",
+                    StubManifest.PACKAGE_NAME_64BIT + ":x");
+        } else {
+            hostProcesses = Arrays.asList(StubManifest.PACKAGE_NAME,
+                    StubManifest.PACKAGE_NAME + ":x");
+        }
         ActivityManager am = (ActivityManager) VirtualCore.get().getContext().getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningAppProcessInfo info : am.getRunningAppProcesses()) {
             if (info.pid == Process.myPid()) {
@@ -773,12 +809,9 @@ public final class VClient extends IVClient.Stub {
             if (info.uid != VirtualCore.get().myUid()) {
                 continue;
             }
-            if (VActivityManager.get().isAppPid(info.pid)) {
-                continue;
-            }
-            if (info.processName.startsWith(StubManifest.PACKAGE_NAME)
-                    || StubManifest.PACKAGE_NAME_64BIT != null
-                    && info.processName.startsWith(StubManifest.PACKAGE_NAME_64BIT)) {
+            if(hostProcesses.contains(info.processName)){
+                //is host
+                NativeEngine.forbid("/proc/" + info.pid, false);//直接不允许读取host的任何proc信息
                 NativeEngine.forbid("/proc/" + info.pid + "/maps", true);
                 NativeEngine.forbid("/proc/" + info.pid + "/cmdline", true);
             }
@@ -854,12 +887,7 @@ public final class VClient extends IVClient.Stub {
         }
         IBinder binder = provider != null ? provider.asBinder() : null;
         if (binder != null) {
-            if (binder instanceof Binder) {
-                return new FakeIdentityBinder((Binder) binder);
-            } else {
-                VLog.e(TAG, "binder not instanceof Binder.");
-                return binder;
-            }
+            return binder;
         }
         return null;
     }
@@ -1058,6 +1086,11 @@ public final class VClient extends IVClient.Stub {
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {
+
+            VLog.e(TAG, "uncaughtException !!!!!!");
+            //将异常记录在本地
+            exceptionRecorder.recordException(e);
+
             Thread.UncaughtExceptionHandler threadHandler = null;
             try {
                 //当前线程的handler
@@ -1094,6 +1127,7 @@ public final class VClient extends IVClient.Stub {
             if (handler != null) {
                 handler.uncaughtException(t, e);
             }
+
             //如果上面方法退出进程，则下面不会执行
             //主进程异常后，是无法响应后续事件，只能杀死
             if (isMainThread) {

@@ -225,6 +225,9 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                     visitSafeKeyErrorCallback();
                 }
             }
+            if(ret < 0){
+                visitSafeKeyErrorCallback();
+            }
             VLog.e(TAG, "VS encryptKey ret "+ ret);
             return seckey;
         }catch (Exception e){
@@ -250,6 +253,9 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                     visitSafeKeyErrorCallback();
                 }
             }
+            if(ret < 0){
+                visitSafeKeyErrorCallback();
+            }
             VLog.e(TAG, "VS decryptKey ret "+ ret);
             return key;
         }catch (Exception e){
@@ -270,9 +276,9 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
             int ret = -1;
             if(jniProxy != null) {
                 ret = jniProxy.GenRandom(len, random);
-                if(ret < 0){
-                    visitSafeKeyErrorCallback();
-                }
+            }
+            if(ret < 0){
+                visitSafeKeyErrorCallback();
             }
             VLog.e(TAG, "VS getRandom ret "+ ret);
             return random;

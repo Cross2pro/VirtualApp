@@ -20,6 +20,11 @@ import java.util.Set;
 public class InstallerSetting {
 
     /**
+     *
+     */
+    public static final String CLOCK_PKG = "com.xdja.deskclock";
+
+    /**
      * MDMService包名
      */
     public static final String MDM_SERVICE_PKG = "com.xdja.mdmservice";
@@ -73,6 +78,8 @@ public class InstallerSetting {
     static public Set<String> systemApps = new HashSet<>(); //系统应用
     static public Set<String> protectApps = new HashSet<>();//保护应用
 
+    static public Set<String> privApps = new HashSet<>();
+
     static{
 
         safeApps.add("com.tencent.mm");         //微信
@@ -105,6 +112,12 @@ public class InstallerSetting {
         systemApps.add(WPS_PKG);
         systemApps.add(SAFE_CLIENT_PKG);
 
+        privApps.add(MDM_CLIENT_PKG);
+        privApps.add(MDM_SERVICE_PKG);
+        privApps.add(CLOCK_PKG);
+        privApps.add(DIALER_PKG);
+        privApps.add("com.android.providers.media");
+        privApps.add("com.android.providers.contacts");
     }
     public static void addProtectApps(String packageName){
         if(!protectApps.contains(packageName))

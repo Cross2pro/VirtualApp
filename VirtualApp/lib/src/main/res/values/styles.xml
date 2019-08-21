@@ -1,5 +1,6 @@
 <resources>
     <style name="InstallerTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:screenOrientation">portrait</item>
     </style>
     <style name="notification_layout">
         <item name="android:layout_width">match_parent</item>
@@ -39,7 +40,9 @@
         <item name="android:taskToBackExitAnimation">@null</item>
     </style>
 
-    <style name="VAAlertTheme" parent="android:Theme.DeviceDefault.Dialog" />
+    <style name="VAAlertTheme" parent="android:Theme.DeviceDefault.Dialog" >
+        <item name="android:screenOrientation">portrait</item>
+    </style>
 
     <style name="BottomDialog" parent="android:Theme.DeviceDefault.Dialog">
         <item name="android:windowNoTitle">true</item>

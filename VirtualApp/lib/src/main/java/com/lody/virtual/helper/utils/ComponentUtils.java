@@ -1,5 +1,6 @@
 package com.lody.virtual.helper.utils;
 
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Process;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
@@ -30,6 +32,8 @@ import com.lody.virtual.remote.BroadcastIntentData;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static android.content.ContentResolver.SCHEME_CONTENT;
@@ -159,6 +163,8 @@ public class ComponentUtils {
         if (component != null) {
             String componentAction = getComponentAction(component);
             newIntent.setAction(componentAction);
+            //指定组件的时候不能含有uri
+            newIntent.setDataAndType(null, null);
             if (targetPackage == null) {
                 targetPackage = component.getPackageName();
             }
@@ -191,6 +197,20 @@ public class ComponentUtils {
         if (component != null) {
             newType = newType + ":" + component.flattenToString();
         }
+        if (intent.getAction() != null) {
+            newIntent.setAction(intent.getAction());
+        }
+        if (intent.getCategories() != null) {
+            for (String g : intent.getCategories()) {
+                newIntent.addCategory(g);
+            }
+        }
+        //PendingIntent的send方法，最终是低矮用PMS的下面几个方法，cmp是优先查询，
+        // 所以action，category，data这些任意设置都可以找到组件
+        //queryIntentReceiversInternal
+        //queryIntentServicesInternal
+        //resolveIntentInternal
+        //queryIntentActivitiesInternal
         newIntent.setDataAndType(newIntent.getData(), newType);
 
         String packageName32bit = VirtualCore.getConfig().getHostPackageName();
@@ -211,11 +231,17 @@ public class ComponentUtils {
             default:
                 return null;
         }
-        Intent selector = new Intent();
-        selector.putExtra("_VA_|_intent_", intent);
-        selector.putExtra("_VA_|_userId_", VUserHandle.myUserId());
-        newIntent.setSelector(selector);
+        newIntent.putExtra("_VA_|_intent_", intent);
+        newIntent.putExtra("_VA_|_userId_", VUserHandle.myUserId());
         return newIntent;
+    }
+
+    public static Intent getIntentForIntentSender(Intent sender){
+        return sender.getParcelableExtra("_VA_|_intent_");
+    }
+
+    public static int getUserIdForIntentSender(Intent sender){
+        return sender.getIntExtra("_VA_|_userId_", -1);
     }
 
     public static Intent processOutsideIntent(int userId, boolean is64bit, Intent intent) {

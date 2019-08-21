@@ -52,6 +52,13 @@ public class ActivityCounterManager {
             VirtualRuntime.crash(e);
         }
     }
+    public void cleanPackage(String pkg){
+        try{
+            getRemote().cleanPackage(pkg);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
     public boolean isForeGroundApp(String pkg){
         try {
             return getRemote().isForeGroundApp(pkg);

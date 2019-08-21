@@ -47,6 +47,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -67,7 +68,6 @@ import com.lody.virtual.helper.utils.DrawableUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -85,10 +85,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.sql.Time;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.WeakHashMap;
 
 import mirror.android.app.IActivityManager;
@@ -98,8 +100,6 @@ import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.ParceledListSlice;
 import mirror.android.content.pm.UserInfo;
 import mirror.android.widget.Toast;
-
-import static android.content.ContentResolver.SCHEME_FILE;
 
 /**
  * @author Lody
@@ -408,6 +408,7 @@ class MethodProxies {
                 args[5] = new Intent[]{targetIntent};
                 args[6] = new String[]{null};
                 //xdja add FLAG_CANCEL_CURRENT cancle cache
+                //如果应用全部进程死了，PendIngIntent应该全部取消
                 args[7] = (flags | PendingIntent.FLAG_UPDATE_CURRENT) & ~fillInFlags;
                 IInterface sender = (IInterface) method.invoke(who, args);
                 if (sender != null) {
@@ -426,6 +427,29 @@ class MethodProxies {
             return isAppProcess();
         }
 
+    }
+
+    static class CancelIntentSender extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "cancelIntentSender";
+        }
+
+        @Override
+        public boolean beforeCall(Object who, Method method, Object... args) {
+            try {
+                IInterface sender = (IInterface) args[0];
+                VActivityManager.get().removeIntentSender(sender.asBinder());
+            }catch (Throwable ignore){
+
+            }
+            return super.beforeCall(who, method, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
+        }
     }
 
 
@@ -673,7 +697,7 @@ class MethodProxies {
             }else if (SCHEME_CONTENT.equals(packageUri.getScheme())) {
                 InputStream inputStream = null;
                 OutputStream outputStream = null;
-                File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
+                File sharedFileCopy = new File(getHostContext().getCacheDir(), new Random().nextInt()+".apk");
                 try {
                     inputStream = getHostContext().getContentResolver().openInputStream(packageUri);
                     outputStream = new FileOutputStream(sharedFileCopy);
@@ -1013,12 +1037,9 @@ class MethodProxies {
         public Object afterCall(Object who, Method method, Object[] args, Object result) {
             Intent intent = (Intent) result;
             if (intent != null) {
-                Intent selector = intent.getSelector();
-                if (selector != null) {
-                    Intent targetIntent = selector.getParcelableExtra("_VA_|_intent_");
-                    if (targetIntent != null) {
-                        return targetIntent;
-                    }
+                Intent targetIntent = ComponentUtils.getIntentForIntentSender(intent);
+                if (targetIntent != null) {
+                    return targetIntent;
                 }
             }
             return intent;
@@ -1296,20 +1317,23 @@ class MethodProxies {
             if (_infoList == null) {
                 return null;
             }
+            List<AppRunningProcessInfo> appProcessList = VActivityManager.get().getRunningAppProcesses(getAppPkg(), getAppUserId());
+//            VLog.d("VActivityManager", "getRunningAppProcesses:%s", appProcessList);
             List<ActivityManager.RunningAppProcessInfo> infoList = new ArrayList<>(_infoList);
             Iterator<ActivityManager.RunningAppProcessInfo> it = infoList.iterator();
             while (it.hasNext()) {
                 ActivityManager.RunningAppProcessInfo info = it.next();
                 if (info.uid == getRealUid()) {
-                    if (VActivityManager.get().isAppPid(info.pid)) {
-                        int vuid = VActivityManager.get().getUidByPid(info.pid);
-                        int userId = VUserHandle.getUserId(vuid);
-                        if (userId != getAppUserId()) {
-                            it.remove();
-                            continue;
+                    AppRunningProcessInfo target = null;
+                    for (AppRunningProcessInfo process : appProcessList) {
+                        if (process.pid == info.pid) {
+                            target = process;
+                            break;
                         }
-                        List<String> pkgList = VActivityManager.get().getProcessPkgList(info.pid);
-                        String processName = VActivityManager.get().getAppProcessName(info.pid);
+                    }
+                    if (target != null) {
+                        List<String> pkgList = target.pkgList;
+                        String processName = target.processName;
                         if (processName != null) {
                             info.importanceReasonCode = 0;
                             info.importanceReasonPid = 0;
@@ -1317,12 +1341,9 @@ class MethodProxies {
                             info.processName = processName;
                         }
                         info.pkgList = pkgList.toArray(new String[0]);
-                        info.uid = vuid;
+                        info.uid = target.vuid;
                     } else {
-                        if (info.processName.startsWith(getConfig().getHostPackageName())
-                                || info.processName.startsWith(getConfig().get64bitEnginePackageName())) {
-                            it.remove();
-                        }
+                        it.remove();
                     }
                 }
             }
@@ -1776,7 +1797,7 @@ class MethodProxies {
                 if (BuildCompat.isOreo()) {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     if (provider != null) {
-                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                        provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
                         VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);
@@ -1787,7 +1808,7 @@ class MethodProxies {
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     if (provider != null) {
-                        provider = VActivityManager.get().acquireProviderClient(userId, info);
+                        provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
                         VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);
@@ -1954,7 +1975,7 @@ class MethodProxies {
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
-                Log.i("kk", "send broadcast " + intent + "=>" + newIntent);
+                Log.v("kk", "send broadcast " + intent + "=>" + newIntent);
             } else {
                 return 0;
             }

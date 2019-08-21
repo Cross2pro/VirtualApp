@@ -16,6 +16,7 @@ import android.os.ResultReceiver;
 import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.stub.StubManifest;
@@ -236,7 +237,6 @@ public class VAppManagerService extends IAppManager.Stub {
                 return false;
             }
         }
-        File cacheFile = VEnvironment.getPackageCacheFile(ps.packageName);
         VPackage pkg = null;
         try {
             pkg = PackageParserEx.readPackageCache(ps.packageName);
@@ -246,7 +246,6 @@ public class VAppManagerService extends IAppManager.Stub {
         if (pkg == null || pkg.packageName == null) {
             return false;
         }
-        VEnvironment.chmodPackageDictionary(cacheFile);
         PackageCacheManager.put(pkg, ps);
         if (modeUseOutsideApk) {
             try {
@@ -260,7 +259,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
                 return false;
             }
-
+        } else {
+            VEnvironment.chmodPackageDictionary(new File(ps.getApkPath(ps.isRunOn64BitProcess())));
         }
 
         BroadcastSystem.get().startApp(pkg);
@@ -477,14 +477,14 @@ public class VAppManagerService extends IAppManager.Stub {
                 e.printStackTrace();
             }
         }
-        if(!loadingApp) {
-            BroadcastSystem.get().startApp(pkg);
-        }
         if (options.notify) {
             notifyAppInstalled(ps, -1);
             if(res.isUpdate){
                 notifyAppUpdate(ps, -1);
             }
+        }
+        if(!loadingApp) {
+            BroadcastSystem.get().startApp(pkg);
         }
         res.isSuccess = true;
         VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_ADD);
@@ -570,11 +570,21 @@ public class VAppManagerService extends IAppManager.Stub {
 
     private void deletePackageDataAsUser(int userId, PackageSetting ps) {
         if (isPackageSupport32Bit(ps)) {
+            String libPath = VEnvironment.getAppLibDirectory(ps.packageName).getAbsolutePath();
             if (userId == -1) {
                 List<VUserInfo> userInfos = VUserManager.get().getUsers();
                 if (userInfos != null) {
                     for (VUserInfo info : userInfos) {
                         FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(info.id, ps.packageName));
+                        File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                        if(!userLibDir.exists()){
+                            try {
+                                FileUtils.createSymlink(libPath, userLibDir.getPath());
+                                VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                            } catch (Exception e) {
+                                //ignore
+                            }
+                        }
                         // add by lml@xdja.com
                         {
                             FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(info.id, ps.packageName));
@@ -583,6 +593,15 @@ public class VAppManagerService extends IAppManager.Stub {
                 }
             } else {
                 FileUtils.deleteDir(VEnvironment.getDataUserPackageDirectory(userId, ps.packageName));
+                File userLibDir = VEnvironment.getUserAppLibDirectory(userId, ps.packageName);
+                if(!userLibDir.exists()){
+                    try {
+                        FileUtils.createSymlink(libPath, userLibDir.getPath());
+                        VLog.d(TAG, "createSymlink %s@%d's lib", ps.packageName, userId);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                }
                 // add by lml@xdja.com
                 {
                     FileUtils.deleteDir(VEnvironment.getExternalStorageAppDataDir(userId, ps.packageName));

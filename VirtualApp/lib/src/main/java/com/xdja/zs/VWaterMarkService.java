@@ -22,7 +22,6 @@ public class VWaterMarkService extends IWaterMark.Stub {
         Log.e(TAG, "set water mark");
         if (waterMark == null) {
             Log.e(TAG, "set water mark params is null return");
-            return;
         }
         waterMarkInfo = waterMark;
     }

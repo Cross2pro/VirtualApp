@@ -88,7 +88,7 @@ public class FileUtils {
             try {
                 Os.link(oldPath, newPath);
                 return;
-            } catch (Throwable e) {
+            }catch (Throwable e){
                 //ignore
             }
         }

@@ -8,7 +8,9 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
@@ -16,6 +18,7 @@ import android.util.Log;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -52,28 +55,35 @@ import static android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY;
 
 public class BroadcastSystem {
 
-    private static final String TAG = BroadcastSystem.class.getSimpleName();
+    static final String TAG = BroadcastSystem.class.getSimpleName();
     /**
      * MUST < 10000.
      */
-    private static final int BROADCAST_TIME_OUT = 9000;
+    private static final int BROADCAST_TIME_OUT = 8500;
     private static BroadcastSystem gDefault;
 
     private final Map<String, Boolean> mReceiverStatus = new ArrayMap<>();
     private final ArrayMap<String, List<StaticBroadcastReceiver>> mReceivers = new ArrayMap<>();
-    private final Map<Key, BroadcastRecord> mBroadcastRecords = new HashMap<>();
+    private final Map<String, BroadcastRecord> mBroadcastRecords = new HashMap<>();
     private final Context mContext;
     private final StaticScheduler mScheduler;
     private final TimeoutHandler mTimeoutHandler;
     private final VActivityManagerService mAMS;
     private final VAppManagerService mApp;
 
+    private final HandlerThread mWorkThread;
+    private final HandlerThread mTimeoutThread;
+
     private BroadcastSystem(Context context, VActivityManagerService ams, VAppManagerService app) {
         this.mContext = context;
         this.mApp = app;
         this.mAMS = ams;
-        mScheduler = new StaticScheduler();
-        mTimeoutHandler = new TimeoutHandler();
+        mWorkThread = new HandlerThread("_VA_ams_bs_work");
+        mTimeoutThread = new HandlerThread("_VA_ams_bs_timeout");
+        mWorkThread.start();
+        mTimeoutThread.start();
+        mScheduler = new StaticScheduler(mWorkThread.getLooper());
+        mTimeoutHandler = new TimeoutHandler(mTimeoutThread.getLooper());
         fuckHuaWeiVerifier();
     }
 
@@ -96,7 +106,7 @@ public class BroadcastSystem {
             if (packageInfo != null) {
                 Object receiverResource = LoadedApkHuaWei.mReceiverResource.get(packageInfo);
                 if (receiverResource != null) {
-                    if (BuildCompat.isPie()) {
+                    if (BuildCompat.isPie() || BuildCompat.isOreo()) {
                         //AMS进程判断, 非白名单每进程最多1000个receiver对象
                         //最差情况，一个月应用100个静态广播接收者，va里面能装10个这样的，多开同一个应用还是按一个计算
                         if (HwSysResImplP.mWhiteListMap != null) {
@@ -105,17 +115,6 @@ public class BroadcastSystem {
                             if (null == list) {
                                 list = new ArrayList<>();
                                 whiteMap.put(0, list);
-                            }
-                            list.add(mContext.getPackageName());
-                        }
-                    } else if (BuildCompat.isOreo()) {
-                        if (ReceiverResourceO.mWhiteListMap != null) {
-                            Map<Integer, List<String>> whiteMap = ReceiverResourceO.mWhiteListMap.get(receiverResource);
-                            List<String> list = whiteMap.get(0);
-                            if (null == list) {
-                                list = new ArrayList<>();
-                                whiteMap.put(0, list);
-
                             }
                             list.add(mContext.getPackageName());
                         }
@@ -189,9 +188,7 @@ public class BroadcastSystem {
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
-                StaticBroadcastReceiver r2 = new StaticBroadcastReceiver(setting.appId, info);
-                mContext.registerReceiver(r2, cloneFilter, null, mScheduler);
-                receivers.add(r2);
+                mContext.registerReceiver(r, cloneFilter, null, mScheduler);
             }
         }
     }
@@ -205,9 +202,9 @@ public class BroadcastSystem {
             return;
         }
         synchronized (mBroadcastRecords) {
-            Iterator<Map.Entry<Key, BroadcastRecord>> iterator = mBroadcastRecords.entrySet().iterator();
+            Iterator<Map.Entry<String, BroadcastRecord>> iterator = mBroadcastRecords.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<Key, BroadcastRecord> entry = iterator.next();
+                Map.Entry<?, BroadcastRecord> entry = iterator.next();
                 BroadcastRecord record = entry.getValue();
                 if (record.receiverInfo.packageName.equals(packageName)) {
                     record.pendingResult.finish();
@@ -233,39 +230,48 @@ public class BroadcastSystem {
     }
 
     void broadcastFinish(PendingResultData res, int userId) {
+        BroadcastRecord record;
         synchronized (mBroadcastRecords) {
-            BroadcastRecord record = mBroadcastRecords.remove(new Key(res.mToken, userId));
-            if (record == null) {
-                VLog.e(TAG, "Unable to find the BroadcastRecord by token: %s@%d", res.mToken, userId);
-            } else {
-                VLog.v(TAG, "broadcastFinish token: %s", res.mToken);
-            }
+            record = mBroadcastRecords.remove(res.getKey());
         }
-        mTimeoutHandler.removeMessages(BROADCAST_TIME_OUT);
-        res.finish();
+        if (record == null) {
+            VLog.e(TAG, "Unable to find the BroadcastRecord: [%s@%d]", res.getKey(), userId);
+            return;
+        } else {
+            VLog.v(TAG, "broadcastFinish token: [%s] %s", record.receiverInfo.name, res.getKey());
+        }
+        mTimeoutHandler.removeMessages(BROADCAST_TIME_OUT, res.getKey());
+        if(!record.timeout) {
+            record.finished = true;
+            res.finish();
+        }
     }
 
-    void broadcastSent(int vuid, ActivityInfo receiverInfo, PendingResultData res) {
-        int userId = VUserHandle.getUserId(vuid);
-        VLog.v(TAG, "broadcastSent token: %s@%d", res.mToken, userId);
+    void broadcastSent(int vuid, ActivityInfo receiverInfo, PendingResultData res, Intent intent) {
+        VLog.v(TAG, "broadcastSent token: [%s@%s] %s", receiverInfo.name, res.getKey(), intent.getAction());
         BroadcastRecord record = new BroadcastRecord(vuid, receiverInfo, res);
+        record.action = intent.getAction();
         synchronized (mBroadcastRecords) {
-            mBroadcastRecords.put(new Key(res.mToken, userId), record);
+            mBroadcastRecords.put(res.getKey(), record);
         }
         Message msg = new Message();
-        msg.obj = res.mToken;
-        msg.arg1 = userId;
+        msg.obj = res.getKey();
         mTimeoutHandler.sendMessageDelayed(msg, BROADCAST_TIME_OUT);
     }
 
     private static final class StaticScheduler extends Handler {
-
+        public StaticScheduler(Looper looper) {
+            super(looper);
+        }
     }
 
     private static final class BroadcastRecord {
         int vuid;
         ActivityInfo receiverInfo;
         PendingResultData pendingResult;
+        String action;
+        boolean finished;
+        boolean timeout;
 
         BroadcastRecord(int vuid, ActivityInfo receiverInfo, PendingResultData pendingResult) {
             this.vuid = vuid;
@@ -274,43 +280,32 @@ public class BroadcastSystem {
         }
     }
 
-    private final class Key {
-        private IBinder token;
-        private int userId;
-
-        Key(IBinder token, int userId) {
-            this.token = token;
-            this.userId = userId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            return userId == key.userId && ((token == key.token) || (token != null && token.equals(key.token)));
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(new Object[]{token, userId});
-        }
-    }
-
     private final class TimeoutHandler extends Handler {
+        public TimeoutHandler(Looper looper) {
+            super(looper);
+        }
+
         @Override
         public void handleMessage(Message msg) {
-            IBinder token = (IBinder) msg.obj;
-            int userId = msg.arg1;
-            BroadcastRecord r = mBroadcastRecords.remove(new Key(token, userId));
+            String key = (String) msg.obj;
+            BroadcastRecord r;
+            synchronized (mBroadcastRecords) {
+                r = mBroadcastRecords.remove(key);
+            }
             if (r != null) {
-                VLog.w(TAG, "Broadcast timeout, cancel to dispatch it %s@%d", token, userId);
-                r.pendingResult.finish();
+                if(!r.finished) {
+                    r.timeout = true;
+                    VLog.w(TAG, "Broadcast timeout, cancel to dispatch it [%s@%d] %s", r.receiverInfo.name, r.vuid, r.action);
+                    r.pendingResult.finish();
+                }
             }
         }
     }
 
     private final class StaticBroadcastReceiver extends BroadcastReceiver {
+        private static final int FLAG_RECEIVER_INCLUDE_BACKGROUND = 0x01000000;
+        private static final int FLAG_RECEIVER_EXCLUDE_BACKGROUND = 0x00800000;
+        private static final int FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT = 0x04000000;
         private int appId;
         private ActivityInfo info;
         private ComponentName componentName;
@@ -321,18 +316,29 @@ public class BroadcastSystem {
             this.componentName = ComponentUtils.toComponentName(info);
         }
 
+        private boolean isBackgroundAction(String action) {
+            //8.0 下面广播是无法通过静态广播接收
+            return Intent.ACTION_PACKAGE_ADDED.equals(action)
+                    || Intent.ACTION_PACKAGE_REPLACED.equals(action)
+                    || Intent.ACTION_PACKAGE_REMOVED.equals(action);
+        }
+
         @Override
         public void onReceive(Context context, Intent intent) {
             if (mApp.isBooting()) {
                 return;
             }
+            if ((intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT) != 0) {
+                VLog.w(TAG, "StaticBroadcastReceiver:%s ignore by FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT:%s", info.name, intent.getAction());
+                return;
+            }
             if ((intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY) != 0 || isInitialStickyBroadcast()) {
-                VLog.w(TAG, "StaticBroadcastReceiver:ignore by FLAG_RECEIVER_REGISTERED_ONLY:%s", intent.getAction());
+                VLog.w(TAG, "StaticBroadcastReceiver:%s ignore by FLAG_RECEIVER_REGISTERED_ONLY:%s", info.name, intent.getAction());
                 return;
             }
             String targetPackage = intent.getStringExtra("_VA_|_privilege_pkg_");
             if(!TextUtils.isEmpty(targetPackage) && !TextUtils.equals(info.packageName, targetPackage)){
-                VLog.w(TAG, "StaticBroadcastReceiver:ignore by targetPackage:%s", intent.getAction());
+                VLog.w(TAG, "StaticBroadcastReceiver:%s ignore by targetPackage:%s", info.packageName, intent.getAction());
                 return;
             }
             BroadcastIntentData data = null;
@@ -348,20 +354,36 @@ public class BroadcastSystem {
                 //系统
                 intent.setPackage(null);
                 data = new BroadcastIntentData(VUserHandle.USER_ALL, intent, null, true);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && info.applicationInfo.targetSdkVersion >= Build.VERSION_CODES.O) {
-                //8.0的静态广播限制，需要setComponent
-                //非系统发送的广播
-                if (data.fromSystem
-                        || info.packageName.equals(data.intent.getPackage())
-                        || componentName.equals(data.intent.getComponent())) {
-                    //允许
-                } else {
-                    //不响应
-                    VLog.d(TAG, "StaticBroadcastReceiver:component is null. %s", data.intent.getAction());
+            } else {
+                //广播本身的限制条件过滤
+                if(data.intent.getPackage() != null && !TextUtils.equals(info.packageName, data.intent.getPackage())){
+                    //该广播是指定包名
+                    VLog.d(TAG, "StaticBroadcastReceiver:%s ignore by package. %s", info.packageName, data.intent.getPackage());
                     return;
                 }
+                if(data.intent.getComponent() != null && !componentName.equals(data.intent.getComponent())){
+                    //该广播是指定组件名
+                    VLog.d(TAG, "StaticBroadcastReceiver:ignore by component. %s", data.intent.getAction());
+                    return;
+                }
+                //8.0的静态广播限制
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && info.applicationInfo.targetSdkVersion >= Build.VERSION_CODES.O) {
+                    //非系统发送的广播
+                    if (InstallerSetting.privApps.contains(info.packageName)//provider
+                            || (data.fromSystem && !isBackgroundAction(data.intent.getAction()))) {
+                        // 允许系统应用接收隐式广播
+                        // 允许来自服务进程的广播（除了应用安装/卸载/替换广播
+                        // MDM在InstallerSetting.privApps名单，允许被收到全部静态广播
+                    } else if (data.intent.getComponent() == null
+                            && data.intent.getPackage() == null
+                            && ((data.intent.getFlags() & FLAG_RECEIVER_INCLUDE_BACKGROUND) == 0)) {
+                        //该广播未指定组件/应用
+                        VLog.d(TAG, "StaticBroadcastReceiver:package and component is null or FLAG_RECEIVER_INCLUDE_BACKGROUND %s", data.intent.getAction());
+                        return;
+                    }
+                }
             }
-            VLog.d(TAG, "StaticBroadcastReceiver:onReceive:%s", data.intent.getAction());
+            VLog.d(TAG, "StaticBroadcastReceiver:[%s] onReceive:%s", info.name, data.intent.getAction());
             mAMS.scheduleStaticBroadcast(data, this.appId, info, goAsync());
         }
     }

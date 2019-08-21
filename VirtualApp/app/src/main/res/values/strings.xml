@@ -69,6 +69,7 @@
     <string name="any_apps">Apps</string>
     <string name="tip_add_apps">Please wait for add app</string>
     <string name="clean_data">Clean Data</string>
+    <string name="label_app_data_szie">Data：%1$s</string>
     <string-array name="weeks">
         <item>Sun</item>
         <item>Mon</item>

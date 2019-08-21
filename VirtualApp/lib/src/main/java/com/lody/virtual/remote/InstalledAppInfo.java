@@ -111,6 +111,11 @@ public final class InstalledAppInfo implements Parcelable {
         return VirtualCore.get().isPackageLaunched(userId, packageName);
     }
 
+    public boolean isRunning64Process(){
+        //TODO flag
+        return false;
+    }
+
     @Override
     public int describeContents() {
         return 0;

@@ -6,13 +6,16 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.os.IBinder;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ClientConfig;
 
 import java.util.Map;
 
@@ -48,6 +51,24 @@ public class ServiceManager {
         return serviceRecord;
     }
 
+    private boolean isSameAppProcess(ServiceInfo serviceInfo, int userId){
+        String processName = ComponentUtils.getProcessName(serviceInfo);
+        ClientConfig clientConfig = VClient.get().getClientConfig();
+        if (clientConfig == null) {
+            //未调用initProcess，ShadowService重启
+            VLog.w("ServiceManager", "isSameAppProcess:false, clientConfig=null");
+            return false;
+        }
+        int clientUserId = VUserHandle.getUserId(clientConfig.vuid);
+        if (TextUtils.equals(serviceInfo.packageName, clientConfig.packageName)
+                && TextUtils.equals(processName, clientConfig.processName) && clientUserId == userId) {
+            return true;
+        }
+        VLog.w("ServiceManager", "isSameAppProcess:false, cur=%s/%s@%d, new=%s/%s@%d",
+                clientConfig.packageName, clientConfig.processName, clientUserId, serviceInfo.packageName, processName, userId);
+        return false;
+    }
+
     public int onStartCommand(Intent proxyIntent, int flags) {
         if (proxyIntent == null) {
             return Service.START_NOT_STICKY;
@@ -55,7 +76,11 @@ public class ServiceManager {
         ServiceInfo serviceInfo = proxyIntent.getParcelableExtra("_VA_|_service_info_");
         Intent intent = proxyIntent.getParcelableExtra("_VA_|_intent_");
         int startId = proxyIntent.getIntExtra("_VA_|_start_id_", -1);
-        if (serviceInfo == null || intent == null || startId == -1) {
+        int userId = proxyIntent.getIntExtra("_VA_|_user_id_", -1);
+        if (serviceInfo == null || intent == null || startId == -1 || userId == -1) {
+            return Service.START_NOT_STICKY;
+        }
+        if(!isSameAppProcess(serviceInfo, userId)){
             return Service.START_NOT_STICKY;
         }
         ComponentName component = ComponentUtils.toComponentName(serviceInfo);
@@ -98,12 +123,11 @@ public class ServiceManager {
     public IBinder onBind(Intent proxyIntent) {
         Intent intent = proxyIntent.getParcelableExtra("_VA_|_intent_");
         ServiceInfo serviceInfo = proxyIntent.getParcelableExtra("_VA_|_service_info_");
-
-        if (intent == null || serviceInfo == null) {
+        int userId = proxyIntent.getIntExtra("_VA_|_user_id_", -1);
+        if (intent == null || serviceInfo == null || userId == -1) {
             return null;
         }
-
-        if (!serviceInfo.packageName.equals(VClient.get().getCurrentPackage())) {
+        if(!isSameAppProcess(serviceInfo, userId)){
             return null;
         }
 

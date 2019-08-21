@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import com.lody.virtual.remote.ClientConfig;
 
+import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.IntentSenderData;
@@ -123,4 +124,6 @@ interface IActivityManager{
     void closeAllLongSocket(String packageName, int userId);
 
     void broadcastFinish(in PendingResultData res, int userId);
+
+    List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId);
 }
