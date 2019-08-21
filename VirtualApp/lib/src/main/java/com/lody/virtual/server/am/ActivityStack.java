@@ -378,7 +378,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 return 0;
             }
         }
-        ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo);
+        ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo, userId);
         Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
 
         if (destIntent != null) {
@@ -399,8 +399,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    ActivityRecord newActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
-        ActivityRecord targetRecord = new ActivityRecord(intent, info, resultTo);
+    ActivityRecord newActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo, int userId) {
+        ActivityRecord targetRecord = new ActivityRecord(intent, info, resultTo, userId);
         synchronized (mLaunchingActivities) {
             mLaunchingActivities.add(targetRecord);
         }
@@ -409,7 +409,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
 
     private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid) {
-        ActivityRecord targetRecord = newActivityRecord(intent, info, null);
+        ActivityRecord targetRecord = newActivityRecord(intent, info, null, userId);
         final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
         if (destIntent != null) {
             destIntent.addFlags(launcherFlags);

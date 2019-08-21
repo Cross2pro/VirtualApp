@@ -23,7 +23,7 @@ import android.os.IBinder;
     public boolean marked;
 
 
-    public ActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo) {
+    public ActivityRecord(Intent intent, ActivityInfo info, IBinder resultTo, int userId) {
         this.intent = intent;
         this.info = info;
         if (info.targetActivity != null) {
@@ -32,6 +32,7 @@ import android.os.IBinder;
             this.component = new ComponentName(info.packageName, info.name);
         }
         this.resultTo = resultTo;
+        this.userId = userId;
     }
 
     public void init(TaskRecord task, ProcessRecord process, IBinder token) {
