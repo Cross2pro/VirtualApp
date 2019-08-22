@@ -70,7 +70,11 @@ public class MethodParameterUtils {
     }
 
 	public static int getIndex(Object[] args, Class<?> type) {
-		for (int i = 0; i < args.length; i++) {
+		return getIndex(args, type, 0);
+	}
+
+	public static int getIndex(Object[] args, Class<?> type, int start) {
+		for (int i = start; i < args.length; i++) {
 			Object obj = args[i];
 			if (obj != null && obj.getClass() == type) {
 				return i;

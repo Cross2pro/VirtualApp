@@ -405,7 +405,7 @@ public class VActivityManager {
     }
 
     public void sendBroadcast(Intent intent, int userId) {
-        Intent newIntent = ComponentUtils.redirectBroadcastIntent(intent, userId);
+        Intent newIntent = ComponentUtils.redirectBroadcastIntent(intent, userId, true);
         if (newIntent != null) {
             VirtualCore.get().getContext().sendBroadcast(newIntent);
         }

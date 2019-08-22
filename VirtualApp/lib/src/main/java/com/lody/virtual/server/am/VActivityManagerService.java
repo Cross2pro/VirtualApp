@@ -1126,7 +1126,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             }
             if (r != null && r.appThread != null) {
                 send = true;
-                performScheduleReceiver(r.client, vuid, info, data.intent, new PendingResultData(result));
+                performScheduleReceiver(r.client, vuid, info, data.intent, new PendingResultData(result, data.intent));
             } else {
                 VLog.w(BroadcastSystem.TAG, "handleStaticBroadcastAsUser %s not running, ignore %s", info.name, data.intent.getAction());
             }
