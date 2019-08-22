@@ -53,14 +53,12 @@ import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
-import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
@@ -68,6 +66,7 @@ import com.lody.virtual.server.pm.PrivilegeAppOptimizer;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.call.CallLogObserver;
 import com.xdja.call.PhoneCallService;
+import com.xdja.mms.SmsObserver;
 import com.xdja.utils.PackagePermissionManager;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
@@ -293,6 +292,7 @@ public final class VirtualCore {
             detectProcessType();
             if (isMainProcess()) {
                 CallLogObserver.observe();
+                SmsObserver.observe();
             }
             if (isServerProcess() || isVAppProcess()) {
                 mainThread = ActivityThread.currentActivityThread.call();

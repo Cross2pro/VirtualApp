@@ -73,6 +73,7 @@ public class InstallerSetting {
      */
     public static final String SAFE_CLIENT_PKG = "com.xdja.safeclient";
 
+    public static final String MESSAGING_PKG = "com.xdja.mms";
 
     static public Set<String> safeApps = new HashSet<>();   //认证应用
     static public Set<String> systemApps = new HashSet<>(); //系统应用
@@ -112,12 +113,14 @@ public class InstallerSetting {
         systemApps.add(WPS_PKG);
         systemApps.add(SAFE_CLIENT_PKG);
 
+        privApps.add(MESSAGING_PKG);
         privApps.add(MDM_CLIENT_PKG);
         privApps.add(MDM_SERVICE_PKG);
         privApps.add(CLOCK_PKG);
         privApps.add(DIALER_PKG);
         privApps.add("com.android.providers.media");
         privApps.add("com.android.providers.contacts");
+		privApps.add("com.android.providers.telephony");
     }
     public static void addProtectApps(String packageName){
         if(!protectApps.contains(packageName))

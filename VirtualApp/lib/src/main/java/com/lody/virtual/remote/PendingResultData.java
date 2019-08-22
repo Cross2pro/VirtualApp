@@ -1,10 +1,13 @@
 package com.lody.virtual.remote;
 
 import android.content.BroadcastReceiver;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.lody.virtual.client.env.SpecialComponentList;
 
 
 /**
@@ -36,7 +39,7 @@ public class PendingResultData implements Parcelable {
     public boolean mFinished;
     public String mKey;
 
-    public PendingResultData(BroadcastReceiver.PendingResult result) {
+    public PendingResultData(BroadcastReceiver.PendingResult result, Intent intent) {
         if (mirror.android.content.BroadcastReceiver.PendingResultMNC.ctor != null) {
             mType = mirror.android.content.BroadcastReceiver.PendingResultMNC.mType.get(result);
             mOrderedHint = mirror.android.content.BroadcastReceiver.PendingResultMNC.mOrderedHint.get(result);
@@ -72,6 +75,10 @@ public class PendingResultData implements Parcelable {
             mFinished = mirror.android.content.BroadcastReceiver.PendingResult.mFinished.get(result);
         }
         mKey = Integer.toHexString(hashCode()) + "_" + System.currentTimeMillis();
+
+        if(SpecialComponentList.isOrderAction(intent.getAction())){
+            mOrderedHint = true;
+        }
     }
 
 

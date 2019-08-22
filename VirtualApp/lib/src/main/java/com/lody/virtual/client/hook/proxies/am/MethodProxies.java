@@ -29,6 +29,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.provider.MediaStore;
+import android.provider.Telephony;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -491,6 +492,15 @@ class MethodProxies {
                 }
             }else if("android.media.action.IMAGE_CAPTURE".equals(action)){
                 intent.putExtra("IS_DECRYPT", NativeEngine.nativeGetDecryptState());
+            }
+
+            if (Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT.equals(action)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, getHostPkg());
+                } else {
+                    intent.putExtra("package", getHostPkg());
+                }
+                return method.invoke(who, args);
             }
 
             intent.setDataAndType(intent.getData(), resolvedType);
@@ -1489,6 +1499,18 @@ class MethodProxies {
             String permission = (String) args[0];
             int pid = (int) args[1];
             int uid = (int) args[2];
+            
+            if ("com.android.providers.telephony".equals(getAppPkg())) {
+                if ("android.permission.WRITE_APN_SETTINGS".equals(permission)) {
+                    //
+                    String pkg = VPackageManager.get().getNameForUid(uid);
+                    if (pkg != null && (InstallerSetting.DIALER_PKG.equals(pkg)
+                            || InstallerSetting.MESSAGING_PKG.equals(pkg)
+                            || InstallerSetting.systemApps.contains(pkg))) {
+                        return PackageManager.PERMISSION_GRANTED;
+                    }
+                }
+            }
             return VActivityManager.get().checkPermission(permission, pid, uid);
         }
 
@@ -1632,11 +1654,6 @@ class MethodProxies {
                 return method.invoke(who, args);
             }
             filter = new IntentFilter(filter);
-            if (filter.hasCategory("__VA__|_static_receiver_")) {
-                List<String> categories = mirror.android.content.IntentFilter.mCategories.get(filter);
-                categories.remove("__VA__|_static_receiver_");
-                return method.invoke(who, args);
-            }
             SpecialComponentList.protectIntentFilter(filter);
             args[IDX_IntentFilter] = filter;
             if (args.length > IDX_IIntentReceiver && IIntentReceiver.class.isInstance(args[IDX_IIntentReceiver])) {
@@ -1697,6 +1714,11 @@ class MethodProxies {
                 if (extraData != null) {
                     extraData.setClassLoader(BroadcastIntentData.class.getClassLoader());
                     intentData = extraData.getParcelable("_VA_|_data_");
+                    if(extraData.containsKey("_hasResult_")) {
+                        resultCode = extraData.getInt("_VA_|_resultCode_", resultCode);
+                        data = extraData.getString("_VA_|_resultData_", data);
+                        extras = extraData.getBundle("_VA_|_resultExtras_");
+                    }
                 }
                 if (intentData != null) {
                     if (intentData.userId >= 0 && intentData.userId != VUserHandle.myUserId()) {
@@ -1975,7 +1997,7 @@ class MethodProxies {
             Intent newIntent = handleIntent(intent);
             if (newIntent != null) {
                 args[1] = newIntent;
-                Log.v("kk", "send broadcast " + intent + "=>" + newIntent);
+                VLog.v("kk", "send broadcast " + intent + "=>" + newIntent);
             } else {
                 return 0;
             }

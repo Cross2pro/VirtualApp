@@ -8,6 +8,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
 import android.content.pm.ProviderInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -112,6 +113,19 @@ public class ComponentUtils {
 
     public static ComponentName toComponentName(ComponentInfo componentInfo) {
         return new ComponentName(componentInfo.packageName, componentInfo.name);
+    }
+
+    public static boolean isSystemApp(String pkgName) {
+        ApplicationInfo applicationInfo = null;
+        try {
+            applicationInfo = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(pkgName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (applicationInfo == null) {
+            return false;
+        }
+        return pkgName.equals("android") || (applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }
 
     public static boolean isSystemApp(ApplicationInfo applicationInfo) {

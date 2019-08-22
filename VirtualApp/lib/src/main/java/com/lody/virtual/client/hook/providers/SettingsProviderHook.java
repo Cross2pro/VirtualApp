@@ -2,9 +2,12 @@ package com.lody.virtual.client.hook.providers;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodBox;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.remote.VDeviceConfig;
 
 import java.lang.reflect.InvocationTargetException;
@@ -66,6 +69,14 @@ public class SettingsProviderHook extends ExternalProviderHook {
                 if (config.enable && config.androidId != null) {
                     return wrapBundle("android_id", config.androidId);
                 }
+            } else if ("sms_default_application".equals(arg)) {
+                //default sms app
+                Bundle res = methodBox.call();
+                String pkg = getValue(res, "sms_default_application");
+                if(VirtualCore.get().getHostPkg().equals(pkg)){
+                    return wrapBundle("sms_default_application", InstallerSetting.MESSAGING_PKG);
+                }
+                return res;
             }
         }
         if (METHOD_PUT == methodType) {
@@ -92,6 +103,17 @@ public class SettingsProviderHook extends ExternalProviderHook {
             bundle.putString(name, value);
         }
         return bundle;
+    }
+
+    private String getValue(Bundle bundle, String key) {
+        if (bundle == null) {
+            return null;
+        }
+        if (Build.VERSION.SDK_INT >= 24) {
+            return bundle.getString("value");
+        } else {
+            return bundle.getString(key);
+        }
     }
 
     @Override

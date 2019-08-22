@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -57,8 +58,8 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_POWER_CONNECTED);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_POWER_DISCONNECTED);
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_USER_PRESENT);
-        SYSTEM_BROADCAST_ACTION.add("android.provider.Telephony.SMS_RECEIVED");
-        SYSTEM_BROADCAST_ACTION.add("android.provider.Telephony.SMS_DELIVER");
+//        SYSTEM_BROADCAST_ACTION.add("android.provider.Telephony.SMS_RECEIVED");
+//        SYSTEM_BROADCAST_ACTION.add("android.provider.Telephony.SMS_DELIVER");
         SYSTEM_BROADCAST_ACTION.add("android.net.wifi.STATE_CHANGE");
         SYSTEM_BROADCAST_ACTION.add("android.net.wifi.SCAN_RESULTS");
         SYSTEM_BROADCAST_ACTION.add("android.net.wifi.WIFI_STATE_CHANGED");
@@ -75,6 +76,7 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add("com.xdja.dialer.removecall");
 		//图标广播
         SYSTEM_BROADCAST_ACTION.add(Constants.ACTION_BADGER_CHANGE);
+        SYSTEM_BROADCAST_ACTION.add("com.android.mms.PROGRESS_STATUS");
 
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE);
@@ -84,6 +86,10 @@ public final class SpecialComponentList {
         WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
         WHITE_PERMISSION.add(Manifest.permission.ACCOUNT_MANAGER);
 
+        PROTECTED_ACTION_MAP.put("android.provider.Telephony.MMS_DOWNLOADED", "virtual.android.provider.Telephony.MMS_DOWNLOADED");
+        PROTECTED_ACTION_MAP.put("android.provider.Telephony.SMS_RECEIVED", "virtual.android.provider.Telephony.SMS_RECEIVED");
+        PROTECTED_ACTION_MAP.put("android.provider.Telephony.WAP_PUSH_DELIVER", "virtual.android.provider.Telephony.WAP_PUSH_DELIVER");
+        PROTECTED_ACTION_MAP.put("android.provider.Telephony.SMS_DELIVER", "virtual.android.provider.Telephony.SMS_DELIVER");
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_ADDED, Constants.ACTION_PACKAGE_ADDED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REMOVED, Constants.ACTION_PACKAGE_REMOVED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REPLACED, Constants.ACTION_PACKAGE_REPLACED);
@@ -155,11 +161,16 @@ public final class SpecialComponentList {
         ACTION_BLACK_LIST.add(action);
     }
 
-    public static void protectIntentFilter(IntentFilter filter) {
-        protectIntentFilter(filter, false);
+    public static boolean protectIntentFilter(IntentFilter filter) {
+        return protectIntentFilter(filter, false);
     }
 
-    public static void protectIntentFilter(IntentFilter filter, boolean ignoreBlack) {
+    /**
+     *
+     * @param filter
+     * @param ignoreBlack 忽略黑名单，默认false
+     */
+    public static boolean protectIntentFilter(IntentFilter filter, boolean ignoreBlack) {
         if (filter != null) {
             List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
             ListIterator<String> iterator = actions.listIterator();
@@ -169,13 +180,16 @@ public final class SpecialComponentList {
                     iterator.remove();
                     continue;
                 }
+
                 String newAction = SpecialComponentList.protectAction(action);
                 if (newAction != null) {
                     iterator.set(newAction);
                 }
                 VLog.d("lxf", action + "->" + newAction);
             }
+            return actions.size() > 0;
         }
+        return false;
     }
 
     public static void protectIntent(Intent intent) {
@@ -249,5 +263,15 @@ public final class SpecialComponentList {
 
     public static boolean allowedStartFromBroadcast(String str) {
         return BROADCAST_START_WHITE_LIST.contains(str);
+    }
+
+    public static boolean isOrderAction(String action) {
+        String act = unprotectAction(action);
+        if (act != null) {
+            return "android.provider.Telephony.WAP_PUSH_DELIVER".equals(act)
+                    || "android.provider.Telephony.SMS_DELIVER".equals(act);
+        }
+        return "android.provider.Telephony.WAP_PUSH_DELIVER".equals(action)
+                || "android.provider.Telephony.SMS_DELIVER".equals(action);
     }
 }

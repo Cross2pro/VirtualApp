@@ -3,12 +3,14 @@ package com.lody.virtual.client.stub;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.IntentCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.IntentSenderExtData;
 
@@ -42,7 +44,15 @@ public class ShadowPendingReceiver extends BroadcastReceiver {
             flagsValues &= flagsMask;
             finalIntent.setFlags((finalIntent.getFlags() & ~flagsMask) | flagsValues);
         }
-        Intent redirectIntent = ComponentUtils.redirectBroadcastIntent(finalIntent, userId);
+        int resultCode = getResultCode();
+        String resultData = getResultData();
+        Bundle result = getResultExtras(true);
+        VLog.d("BroadcastSystem", "ShadowPendingReceiver::sendBroadcast:resultCode=%d, resultData=%s, %s", resultCode, resultData, finalIntent);
+        Intent redirectIntent = ComponentUtils.redirectBroadcastIntent(finalIntent, userId, true);
+        redirectIntent.putExtra("_VA_|_hasResult_", true);
+        redirectIntent.putExtra("_VA_|_resultCode_", resultCode);
+        redirectIntent.putExtra("_VA_|_resultData_", resultData);
+        redirectIntent.putExtra("_VA_|_resultExtras_", result);
         context.sendBroadcast(redirectIntent);
     }
 }
