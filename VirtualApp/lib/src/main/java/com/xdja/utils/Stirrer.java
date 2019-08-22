@@ -1,11 +1,11 @@
 package com.xdja.utils;
 
 import android.content.ContentProviderClient;
+import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.os.Build;
 import android.os.IInterface;
 import android.os.RemoteException;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -16,9 +16,22 @@ import mirror.android.content.ContentProviderClientICS;
 import mirror.android.content.ContentProviderClientJB;
 
 public class Stirrer {
+
+    private static final String TAG = "xela-" + new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+
     public static void preInit() {
         {
             getConentProvider("media");
+        }
+    }
+
+    public static void kickOff(String packageName) {
+        if (packageName != null && VirtualCore.get().isAppInstalled(packageName)) {
+            Intent intent = new Intent(Intent.ACTION_BOOT_COMPLETED).setPackage(packageName);
+            VActivityManager.get().sendBroadcast(intent, 0);
+        } else {
+            Log.d(TAG, "failed to kick-off " + packageName);
         }
     }
 
@@ -39,7 +52,7 @@ public class Stirrer {
                 e.printStackTrace();
             }
         } else {
-            Log.d("xela", "no provider info of \"" + authority + "\" found");
+            Log.d(TAG, "no provider info of \"" + authority + "\" found");
         }
 
         return contentProviderClient;
