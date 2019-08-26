@@ -75,6 +75,12 @@ public class InstallerSetting {
 
     public static final String MESSAGING_PKG = "com.xdja.mms";
 
+    public static final String PROVIDER_TELEPHONY_PKG = "com.android.providers.telephony";
+
+    public static final String PROVIDER_CONTACTS_PKG = "com.android.providers.contacts";
+
+    public static final String PROVIDER_MEDIA_PKG = "com.android.providers.media";
+
     static public Set<String> safeApps = new HashSet<>();   //认证应用
     static public Set<String> systemApps = new HashSet<>(); //系统应用
     static public Set<String> protectApps = new HashSet<>();//保护应用
@@ -118,9 +124,9 @@ public class InstallerSetting {
         privApps.add(MDM_SERVICE_PKG);
         privApps.add(CLOCK_PKG);
         privApps.add(DIALER_PKG);
-        privApps.add("com.android.providers.media");
-        privApps.add("com.android.providers.contacts");
-		privApps.add("com.android.providers.telephony");
+        privApps.add(PROVIDER_MEDIA_PKG);
+        privApps.add(PROVIDER_CONTACTS_PKG);
+		privApps.add(PROVIDER_TELEPHONY_PKG);
     }
     public static void addProtectApps(String packageName){
         if(!protectApps.contains(packageName))

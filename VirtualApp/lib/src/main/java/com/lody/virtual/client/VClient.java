@@ -50,6 +50,7 @@ import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.service.ServiceManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -846,8 +847,24 @@ public final class VClient extends IVClient.Stub {
     private void installContentProviders(Context app, List<ProviderInfo> providers) {
         long origId = Binder.clearCallingIdentity();
         Object mainThread = VirtualCore.mainThread();
+        boolean needDisabled = VirtualCore.get().isAppInstalled(InstallerSetting.PROVIDER_TELEPHONY_PKG);
         try {
             for (ProviderInfo cpi : providers) {
+                //安卓版本适配
+                if (needDisabled) {
+                    if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(cpi.packageName)) {
+                        if (Build.VERSION.SDK_INT < 26) {
+                            if (cpi.name.endsWith("ServiceStateProvider")) {
+                                continue;
+                            }
+                        }
+                        if (Build.VERSION.SDK_INT < 28) {
+                            if (cpi.name.endsWith("CarrierIdProvider") || cpi.name.endsWith("CarrierProvider")) {
+                                continue;
+                            }
+                        }
+                    }
+                }
                 try {
                     ActivityThread.installProvider(mainThread, app, cpi, null);
                 } catch (Throwable e) {

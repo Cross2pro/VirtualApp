@@ -1,6 +1,7 @@
 package com.lody.virtual.server.pm;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -8,6 +9,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.RemoteCallbackList;
@@ -19,6 +21,8 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.DexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
@@ -483,6 +487,10 @@ public class VAppManagerService extends IAppManager.Stub {
                 notifyAppUpdate(ps, -1);
             }
         }
+        //版本差异适配
+        if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(pkg)) {
+            supportTelephony(0);
+        }
         if(!loadingApp) {
             BroadcastSystem.get().startApp(pkg);
         }
@@ -491,6 +499,19 @@ public class VAppManagerService extends IAppManager.Stub {
         return res;
     }
 
+    private void supportTelephony(int userId) {
+        if (Build.VERSION.SDK_INT < 28) {
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierProvider"), userId);
+        }
+        if (Build.VERSION.SDK_INT < 26) {
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
+        }
+    }
+
+    private void disableComponent(ComponentName componentName, int userId){
+        VPackageManager.get().setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP, userId);
+    }
 
     @Override
     public synchronized boolean installPackageAsUser(int userId, String packageName) {
@@ -501,6 +522,10 @@ public class VAppManagerService extends IAppManager.Stub {
                     ps.setInstalled(userId, true);
                     notifyAppInstalled(ps, userId);
                     mPersistenceLayer.save();
+                    //版本差异适配
+                    if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(packageName)) {
+                        supportTelephony(userId);
+                    }
                     return true;
                 }
             }
