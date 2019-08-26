@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
@@ -210,6 +211,10 @@ public class VAppManagerService extends IAppManager.Stub {
                 这个不明白 ***
              */
             PrivilegeAppOptimizer.get().performOptimizeAllApps();
+            //适配旧版本va，或者系统升级
+            if(isAppInstalled(InstallerSetting.PROVIDER_TELEPHONY_PKG)){
+                supportTelephony(0);
+            }
 
             mBooting = false;
         }
@@ -488,7 +493,7 @@ public class VAppManagerService extends IAppManager.Stub {
             }
         }
         //版本差异适配
-        if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(pkg)) {
+        if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(pkg.packageName)) {
             supportTelephony(0);
         }
         if(!loadingApp) {
@@ -503,14 +508,23 @@ public class VAppManagerService extends IAppManager.Stub {
         if (Build.VERSION.SDK_INT < 28) {
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierProvider"), userId);
+        } else {
+            setDefaultComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
+            setDefaultComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierProvider"), userId);
         }
         if (Build.VERSION.SDK_INT < 26) {
-            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.ServiceStateProvider"), userId);
+        } else {
+            setDefaultComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.ServiceStateProvider"), userId);
         }
     }
 
     private void disableComponent(ComponentName componentName, int userId){
-        VPackageManager.get().setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP, userId);
+        VPackageManagerService.get().setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP, userId);
+    }
+
+    private void setDefaultComponent(ComponentName componentName, int userId){
+        VPackageManagerService.get().setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP, userId);
     }
 
     @Override
