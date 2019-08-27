@@ -847,24 +847,8 @@ public final class VClient extends IVClient.Stub {
     private void installContentProviders(Context app, List<ProviderInfo> providers) {
         long origId = Binder.clearCallingIdentity();
         Object mainThread = VirtualCore.mainThread();
-        boolean needDisabled = VirtualCore.get().isAppInstalled(InstallerSetting.PROVIDER_TELEPHONY_PKG);
         try {
             for (ProviderInfo cpi : providers) {
-                //安卓版本适配
-                if (needDisabled) {
-                    if (InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(cpi.packageName)) {
-                        if (Build.VERSION.SDK_INT < 26) {
-                            if (cpi.name.endsWith("ServiceStateProvider")) {
-                                continue;
-                            }
-                        }
-                        if (Build.VERSION.SDK_INT < 28) {
-                            if (cpi.name.endsWith("CarrierIdProvider") || cpi.name.endsWith("CarrierProvider")) {
-                                continue;
-                            }
-                        }
-                    }
-                }
                 try {
                     ActivityThread.installProvider(mainThread, app, cpi, null);
                 } catch (Throwable e) {
