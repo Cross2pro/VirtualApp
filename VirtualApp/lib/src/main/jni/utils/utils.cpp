@@ -60,8 +60,8 @@ bool getPathFromFd(int fd, zString & path) {
 
 const char * TED_packageVector[] =
         {
-//                "com.tencent.mm",
-//                "cn.wps.moffice",
+                "com.tencent.mm",
+                "cn.wps.moffice",
 //                "com.android.gallery3d",
 //                "com.xdja.decrypt",
 //                "android.process.media",
@@ -73,31 +73,31 @@ const char * TED_packageVector[] =
 
 bool is_TED_Enable()
 {
-    return false;
-//    static int temp_result = -1;
-//    zString pname;
-//
-//    if(!getSelfProcessName(pname))
-//    {
-//        slog("getSelfProcessName fail !");
-//        return false;
-//    }
-//
-//    if(temp_result == -1)
-//    {
-//        temp_result = 0;
-//
-//        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
-//            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
-//                temp_result = 1;
-//                break;
-//            }
-//        }
-//
-//        slog("%s is_TED_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
-//    }
-//
-//    return temp_result == 1;
+//    return false;
+    static int temp_result = -1;
+    zString pname;
+
+    if(!getSelfProcessName(pname))
+    {
+        slog("getSelfProcessName fail !");
+        return false;
+    }
+
+    if(temp_result == -1)
+    {
+        temp_result = 0;
+
+        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
+            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
+                temp_result = 1;
+                break;
+            }
+        }
+
+        slog("%s is_TED_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
+    }
+
+    return temp_result == 1;
 }
 static bool decryptState = false;
 bool changeDecryptState(bool state,int mode){
@@ -182,6 +182,10 @@ const char* EncryptPathMap[] =
                 "/data/user/0/io.busniess.va/virtual/storage/emulated",
                 "/data/data/com.xdja.safetybox/virtual/storage",
                 "/data/user/0/com.xdja.safetybox/virtual/storage/emulated",
+                "/data/data/com.xdja.safetysandbox/virtual/storage",
+                "/data/user/0/com.xdja.safetysandbox/virtual/storage/emulated",
+                "/data/data/com.xdja.safetysandbox.system/virtual/storage",
+                "/data/user/0/com.xdja.safetysandbox.system/virtual/storage/emulated",
                 "/storage",
                 "/mnt"
         };
@@ -204,7 +208,9 @@ bool isEncryptPath(const char *_path) {
 
 const char * magicPath[] = {
         "/data/user/0/io.busniess.va/files/magic.mgc",
-        "/data/user/0/com.xdja.safetybox/files/magic.mgc"
+        "/data/user/0/com.xdja.safetybox/files/magic.mgc",
+        "/data/user/0/com.xdja.safetysandbox/files/magic.mgc",
+        "/data/user/0/com.xdja.safetysandbox.system/files/magic.mgc"
 };
 
 const char * getMagicPath()
