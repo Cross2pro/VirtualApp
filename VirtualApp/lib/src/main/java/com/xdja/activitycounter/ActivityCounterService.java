@@ -71,7 +71,7 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
         return getFroundCount() > 0;
     }
 
-    private int getFroundCount(){
+    public int getFroundCount(){
         int count = 0;
         //get all count of pid
         for(int id:mActivityCounter.keySet()){
@@ -125,27 +125,19 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
             mProcessesMap.remove(pid);
         }
         //回调上层
-        floatIconBallManager.nofityFroundChange(getFroundCount(), mode,name);
-        screenLockManager.nofityFroundChange(getFroundCount(),mode,name);
-
+        CounterCallbackManager.get().nofityFroundChange(getFroundCount(), mode,name);
     }
-
-    //悬浮球
-    private FloatIconBallManager floatIconBallManager = new FloatIconBallManager();
-    private ScreenLockManager screenLockManager = new ScreenLockManager();
 
     @Override
     public void registerCallback(IForegroundInterface fibCallback) throws RemoteException {
         if(fibCallback != null){
-            floatIconBallManager.mForegroundInterface = fibCallback;
-            screenLockManager.mForegroundInterface = fibCallback;
+            CounterCallbackManager.get().registerCallback(fibCallback);
         }else {
             VLog.e(TAG, "ActivityCounterService csCallback is null, registerCallback failed");
         }
     }
     @Override
     public void unregisterCallback() throws RemoteException {
-        floatIconBallManager.mForegroundInterface = null;
-        screenLockManager.mForegroundInterface = null;
+        CounterCallbackManager.get().unregisterCallback();
     }
 }

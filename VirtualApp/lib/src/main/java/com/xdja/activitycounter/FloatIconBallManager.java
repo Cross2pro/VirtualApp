@@ -19,18 +19,10 @@ public class FloatIconBallManager extends BaseCounterManager{
             return;
         }
 
-        if(!show){
-            try {
-                mForegroundInterface.isForeground(false);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }else{
-            try {
-                mForegroundInterface.isForeground(true);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+        try {
+            mForegroundInterface.isForeground(show);
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
 }
