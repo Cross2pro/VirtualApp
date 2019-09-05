@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -28,24 +29,24 @@ public class ScreenLockManager extends BaseCounterManager{
     public ScreenLockManager(){
 
         IntentFilter slFilter = new IntentFilter();
-        slFilter.addAction(Intent.ACTION_SCREEN_ON);
         slFilter.addAction(Intent.ACTION_SCREEN_OFF);
         VirtualCore.get().getContext().registerReceiver(new ScreenLockReceiver(),slFilter);
     }
 
     @Override
-    void changeState(int mode, boolean on,String name) {
-        Log.e(TAG,"isScreenOn " + on);
+    synchronized void changeState(int mode, boolean on,String name) {
         Log.e(TAG,"name " + name);
         if ("com.xdja.incallui.InCallActivity".equals(name)){
             screenLock(4);
             return;
         }
-        if(isScreenOn){
+        Log.e(TAG,"isScreenOn " + isScreenOn);
+        if(!isScreenOn  && on){
             screenLock(UNLOCK);
-            isScreenOn = false; // 进入安全盒后清除锁屏状态
+            isScreenOn = true; // 进入安全盒后清除锁屏状态
+        }else {
+            screenLock(on?SHOW:HIDE);
         }
-        screenLock(on?SHOW:HIDE);
     }
 
     private void screenLock(int on) {
@@ -68,12 +69,16 @@ public class ScreenLockManager extends BaseCounterManager{
 
             Log.e(TAG,"onReceive " + intent.getAction());
            if(Intent.ACTION_SCREEN_OFF.equals(intent.getAction())){
+               //快速锁定解锁，锁屏广播发送的慢
                isScreenOn = false;
-               screenLock(LOCK);
-            }else if(Intent.ACTION_SCREEN_ON.equals(intent.getAction())){
-//               screenLock(UNLOCK);
-               isScreenOn = true;
-           }
+               PowerManager pm =(PowerManager)context.getSystemService(Context.POWER_SERVICE);
+               if(!pm.isScreenOn()){ //如果灭屏了通知锁屏状态
+                   screenLock(LOCK);
+               }else{ //如果没有锁屏（很快解锁了）主动调用生命周期相关的状态切换，//不记录状态
+                   changeState(ActivityCounterService.ADD,ActivityCounterService.get().getFroundCount()>0,null);
+               }
+
+            }
         }
     }
 }
