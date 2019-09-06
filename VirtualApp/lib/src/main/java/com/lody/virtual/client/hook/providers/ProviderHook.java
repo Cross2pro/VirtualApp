@@ -63,6 +63,12 @@ public class ProviderHook implements InvocationHandler {
                 return new BadgeProviderHook(provider);
             }
         });
+        PROVIDER_MAP.put("com.android.externalstorage.documents", new HookFetcher() {
+            @Override
+            public ProviderHook fetch(boolean external, IInterface provider) {
+                return new DocumentHook(provider);
+            }
+        });
     }
 
     protected final Object mBase;
