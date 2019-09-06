@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.Telephony;
 import android.text.TextUtils;
@@ -43,6 +44,7 @@ import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.delegate.TaskDescriptionDelegate;
+import com.lody.virtual.client.hook.providers.DocumentHook;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
@@ -91,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.WeakHashMap;
 
@@ -501,6 +504,16 @@ class MethodProxies {
                     intent.putExtra("package", getHostPkg());
                 }
                 return method.invoke(who, args);
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                if(Intent.ACTION_VIEW.equals(action) && DocumentsContract.isDocumentUri(VirtualCore.get().getContext(),
+                        intent.getData())) {
+                    String docId = FileUtils.getFilePathByUri(VirtualCore.get().getContext(), Objects.requireNonNull(intent.getData()));
+                    
+                    File file = new File(docId);
+                    intent.setData(Uri.fromFile(file));
+                }
             }
 
             intent.setDataAndType(intent.getData(), resolvedType);
@@ -1806,7 +1819,9 @@ class MethodProxies {
             }
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
-            if (info != null && info.enabled && isAppPkg(info.packageName)) {
+
+            if (info != null && info.enabled && isAppPkg(info.packageName)
+                    &&!name.equals("com.android.externalstorage.documents")) {
                 ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId, VActivityManager.PROCESS_TYPE_PROVIDER);
                 if (config == null) {
                     return null;
@@ -1841,7 +1856,7 @@ class MethodProxies {
                 }
                 return holder;
             }
-            VLog.w("ActivityManger", "getContentProvider:%s", name);
+            VLog.w("VActivityManger", "getContentProvider:%s", name);
             Object holder = method.invoke(who, args);
             if (holder != null) {
                 if (BuildCompat.isOreo()) {
@@ -2274,4 +2289,21 @@ class MethodProxies {
         }
     }
     //xdja
+
+    static class TakePersistableUriPermission extends MethodProxy {
+        @Override
+        public String getMethodName() {
+            return "takePersistableUriPermission";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            Uri uri = (Uri) args[0];
+            Uri newUri = DocumentHook.getOutsideUri(uri);
+            if (uri != newUri) {
+                args[0] = newUri;
+            }
+            return super.call(who, method, args);
+        }
+    }
 }

@@ -3,6 +3,8 @@ package com.lody.virtual.client.hook.proxies.am;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.IInterface;
 
@@ -15,6 +17,8 @@ import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
+import com.lody.virtual.client.hook.providers.DocumentHook;
+import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -112,6 +116,24 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                             if (o instanceof Intent) {
                                 Intent intent = (Intent)o;
                                 ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
+                            }
+                        }
+                    }
+
+                    int intentIndex = MethodParameterUtils.getIndex(args, Intent.class);
+                    if (intentIndex >= 0) {
+                        Intent intent = (Intent) args[intentIndex];
+                        if (intent != null && intent.getData() != null) {
+                            Uri uri = intent.getData();
+                            Uri newUri = DocumentHook.getOutsideUri(uri);
+                            if (uri != newUri) {
+                                intent.setDataAndType(newUri, intent.getType());
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION |
+                                            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+                                }
                             }
                         }
                     }
