@@ -184,8 +184,6 @@ const char* EncryptPathMap[] =
                 "/data/user/0/com.xdja.safetybox/virtual/storage/emulated",
                 "/data/data/com.xdja.safetysandbox/virtual/storage",
                 "/data/user/0/com.xdja.safetysandbox/virtual/storage/emulated",
-                "/data/data/com.xdja.safetysandbox.system/virtual/storage",
-                "/data/user/0/com.xdja.safetysandbox.system/virtual/storage/emulated",
                 "/storage",
                 "/mnt"
         };
@@ -209,8 +207,7 @@ bool isEncryptPath(const char *_path) {
 const char * magicPath[] = {
         "/data/user/0/io.busniess.va/files/magic.mgc",
         "/data/user/0/com.xdja.safetybox/files/magic.mgc",
-        "/data/user/0/com.xdja.safetysandbox/files/magic.mgc",
-        "/data/user/0/com.xdja.safetysandbox.system/files/magic.mgc"
+        "/data/user/0/com.xdja.safetysandbox/files/magic.mgc"
 };
 
 const char * getMagicPath()
