@@ -117,7 +117,6 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
-        VActivityManagerService.get().sendBroadcastAsUser(new Intent(Intent.ACTION_BOOT_COMPLETED, null), VUserHandle.ALL);
 
         new Thread() {
             @Override
