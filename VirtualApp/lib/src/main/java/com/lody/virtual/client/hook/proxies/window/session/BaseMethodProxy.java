@@ -108,7 +108,17 @@ class Relayout extends BaseMethodProxy{
         //args[2] WindowManager.LayoutParams attrs,
 
         Class<?> IWindow = getPM().getClass().getClassLoader().loadClass(args[0].getClass().getName());
-        Field ViewRootImpl = IWindow.getDeclaredField("mViewAncestor");
+        Class<?> IWindowPerant = IWindow.getSuperclass();
+        Field ViewRootImpl = null;
+        if("android.view.ViewRootImpl$W".equals(IWindow.getName())){
+            ViewRootImpl = IWindow.getDeclaredField("mViewAncestor");
+        } else if(IWindowPerant!=null && "android.view.ViewRootImpl$W".equals(IWindowPerant.getName())){
+            ViewRootImpl = IWindowPerant.getDeclaredField("mViewAncestor");
+        }
+        if(ViewRootImpl==null){
+            Log.e("lxf","error ViewRootImpl is null!");
+            return super.call(who, method, args);
+        }
         ViewRootImpl.setAccessible(true);
         WeakReference VRI = (WeakReference)ViewRootImpl.get(args[0]);
         @SuppressLint("PrivateApi")
