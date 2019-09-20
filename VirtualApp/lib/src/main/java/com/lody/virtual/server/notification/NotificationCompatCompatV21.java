@@ -38,7 +38,12 @@ import mirror.android.app.NotificationO;
             if (VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
                 if (TextUtils.isEmpty(notification.getChannelId())) {
                     if (NotificationO.mChannelId != null) {
-                        NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
+                        //安通＋, 短信呼吸灯
+                        if(packageName.equals("com.xdja.actoma") || packageName.equals("com.xdja.mms")) {
+                            NotificationO.mChannelId.set(notification, NotificationChannelCompat.LIGHT_ID);
+                        }else {
+                            NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
+                        }
                     }
                 } else {
                     String channel = VNotificationManager.get().dealNotificationChannel(notification.getChannelId(), packageName, userId);

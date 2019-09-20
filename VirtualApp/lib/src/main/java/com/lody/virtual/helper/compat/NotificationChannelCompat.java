@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Build;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -13,6 +14,7 @@ import com.lody.virtual.client.env.Constants;
 public class NotificationChannelCompat {
     public static final String DAEMON_ID = Constants.NOTIFICATION_DAEMON_CHANNEL;
     public static final String DEFAULT_ID = Constants.NOTIFICATION_CHANNEL;
+    public static final String LIGHT_ID = Constants.NOTIFICATION_LIGHT_CHANNEL;
 
     public static boolean enable(){
         if(android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.O){
@@ -32,6 +34,11 @@ public class NotificationChannelCompat {
                 channel.setDescription("Compatibility of old versions");
                 channel.setSound(null, null);
                 channel.setShowBadge(false);
+                if(channelId.equals(LIGHT_ID)){
+                    channel.enableVibration(true);
+                    channel.enableLights(true);
+                    channel.setLightColor(Color.GREEN);
+                }
                 try {
                     manager.createNotificationChannel(channel);
                 }catch (Throwable e){
