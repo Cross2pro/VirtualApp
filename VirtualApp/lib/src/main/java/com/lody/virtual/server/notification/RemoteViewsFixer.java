@@ -41,18 +41,12 @@ import java.util.HashMap;
     View toView(final Context context, RemoteViews remoteViews, boolean isBig) {
         View mCache = null;
         try {
-            mCache = createView(context, remoteViews, isBig);
+            //创建通知栏的根View
+            View layout = LayoutInflater.from(context).inflate(remoteViews.getLayoutId(), null);
+            mCache = layout;//如果下个步骤出错，就显示这个
+            mCache = createView(context, remoteViews, layout, isBig);
         } catch (Throwable throwable) {
-            if(DEBUG){
-                VLog.w(TAG, "toView 1", throwable);
-            }
-            try {
-                mCache = LayoutInflater.from(context).inflate(remoteViews.getLayoutId(), null);
-            } catch (Throwable e) {
-                if(DEBUG){
-                    VLog.w(TAG, "toView 2", e);
-                }
-            }
+            VLog.w(TAG, "toView", throwable);
         }
         return mCache;
     }
@@ -66,37 +60,36 @@ import java.util.HashMap;
         return mCache.getDrawingCache();
     }
 
-    private View apply(Context context, RemoteViews remoteViews) {
-        View view = null;
+    private void apply(Context context, View view, RemoteViews remoteViews) {
         try {
-            view = LayoutInflater.from(context).inflate(remoteViews.getLayoutId(), null, false);
-            try {
-                Reflect.on(view).call("setTagInternal", Reflect.on("com.android.internal.R$id").get("widget_frame"), remoteViews.getLayoutId());
-            } catch (Exception e2) {
-                VLog.w(TAG, "setTagInternal", e2);
-            }
-        } catch (Exception e) {
-            VLog.w(TAG, "inflate", e);
+            Reflect.on(view).call("setTagInternal", Reflect.on("com.android.internal.R$id").get("widget_frame"), remoteViews.getLayoutId());
+        } catch (Exception e2) {
+            VLog.w(TAG, "setTagInternal", e2);
         }
-        if (view != null) {
-            ArrayList<Object> mActions = Reflect.on(remoteViews).get("mActions");
-            if (mActions != null) {
-                VLog.d(TAG, "apply actions:"+mActions.size());
-                for (Object action : mActions) {
-                    try {
-                        Reflect.on(action).call("apply", view, null, null);
-                    } catch (Exception e) {
-                        VLog.w(TAG, "apply action", e);
+        ArrayList<Object> mActions = Reflect.on(remoteViews).get("mActions");
+        if (mActions != null) {
+            if (DEBUG) {
+                VLog.d(TAG, "apply actions:" + mActions.size());
+            }
+            for (Object action : mActions) {
+                try {
+                    //把action应用到view上面
+                    Reflect.on(action).call("apply", view, null, null);
+                    if (DEBUG) {
+                        if (action.getClass().getName().contains("ReflectionAction")) {
+                            VLog.d(TAG, "apply action:%s, methodName=%s", action, Reflect.on(action).get("methodName"));
+                        } else {
+                            VLog.d(TAG, "apply action:%s", action);
+                        }
                     }
+                } catch (Exception e) {
+                    VLog.w(TAG, "apply action", e);
                 }
             }
-        } else if(DEBUG){
-            VLog.e(TAG, "create views");
         }
-        return view;
     }
 
-    private View createView(final Context context, RemoteViews remoteViews, boolean isBig) {
+    private View createView(final Context context, RemoteViews remoteViews, View layout, boolean isBig) {
         if (remoteViews == null)
             return null;
         Context base = mNotificationCompat.getHostContext();
@@ -105,26 +98,32 @@ import java.util.HashMap;
             VLog.v(TAG, "createView:big=" + isBig);
         }
 
+        //通知栏高度适配
         int height = isBig ? notification_max_height : notification_min_height;
+        //宽度
         int width = mWidthCompat.getNotificationWidth(base, notification_panel_width, height,
                 notification_side_padding);
         if(DEBUG){
             VLog.v(TAG, "createView:getNotificationWidth=" + width);
         }
+        //放置通知栏的容器
         ViewGroup frameLayout = new FrameLayout(context);
         if(DEBUG){
             VLog.v(TAG, "createView:apply");
         }
+        //应用RemoteViews的mActions
+        apply(context, layout, remoteViews);
 
-        View view1 = apply(context, remoteViews);
-
+        //通知栏view的宽高处理
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT);
         params.gravity = Gravity.CENTER_VERTICAL;
-        frameLayout.addView(view1, params);
-        if (view1 instanceof ViewGroup) {
-            VLog.v(TAG, "createView:fixTextView");
-            fixTextView((ViewGroup) view1);
+        frameLayout.addView(layout, params);
+        if (layout instanceof ViewGroup) {
+            if (DEBUG) {
+                VLog.v(TAG, "createView:fixTextView");
+            }
+            fixTextView((ViewGroup) layout);
         }
         int mode = View.MeasureSpec.AT_MOST;
         //TODO need adaptation
@@ -178,9 +177,11 @@ import java.util.HashMap;
         if (contentView == null) {
             return null;
         }
+        //获取全部点击事件，VA是添加32个透明按钮，把某个view的区域计算出来占几个按钮，这些按钮都触发这个view的点击事件
         final PendIntentCompat pendIntentCompat = new PendIntentCompat(contentView);
         final int layoutId;
         if (!click || pendIntentCompat.findPendIntents() <= 0) {
+            //没点击事件
             layoutId = R.layout.custom_notification_lite;
         } else {
             layoutId = R.layout.custom_notification;
@@ -188,16 +189,18 @@ import java.util.HashMap;
         if(DEBUG){
             VLog.v(TAG, "createviews id = " + layoutId);
         }
-        //make a remoteViews
+        //VA的静态通知栏
         RemoteViews remoteViews = new RemoteViews(mNotificationCompat.getHostContext().getPackageName(), layoutId);
         if(DEBUG){
             VLog.v(TAG, "remoteViews to view");
         }
+        //把目标通知栏生成View对象
         View cache = toView(pluginContext, contentView, isBig);
         // remoteViews to bitmap
         if(DEBUG){
             VLog.v(TAG, "start createBitmap");
         }
+        //把View对象绘制成bitmap
         final Bitmap bmp = createBitmap(cache);
         if(DEBUG){
             if (bmp == null) {

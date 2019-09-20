@@ -88,9 +88,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -972,9 +970,12 @@ class MethodProxies {
             }
 
             fixSmallIcon(notification, component);
-            if (!VNotificationManager.get().dealNotification(id, notification, getAppPkg(), getAppUserId())) {
+            VNotificationManager.Result result = VNotificationManager.get().dealNotification(id, notification, getAppPkg(), getAppUserId());
+            if (result.mode == VNotificationManager.MODE_NONE) {
                 notification = new Notification();
                 notification.icon = getHostContext().getApplicationInfo().icon;
+            } else if (result.mode == VNotificationManager.MODE_REPLACED) {
+                notification = result.notification;
             }
             /**
              * `BaseStatusBar#updateNotification` aosp will use use
