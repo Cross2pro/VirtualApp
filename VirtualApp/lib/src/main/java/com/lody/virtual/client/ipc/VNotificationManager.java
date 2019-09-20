@@ -14,6 +14,19 @@ import com.xdja.zs.INotificationCallback;
  * Fake notification manager
  */
 public class VNotificationManager {
+    /**
+     * 无法处理notification
+     */
+    public static final int MODE_NONE = 0;
+    /**
+     * 不替换notification对象
+     */
+    public static final int MODE_USE_OLD = 1;
+    /**
+     * 需要替换notification对象
+     */
+    public static final int MODE_REPLACED = 2;
+
     private static final VNotificationManager sInstance = new VNotificationManager();
     private final NotificationCompat mNotificationCompat;
     private INotificationManager mService;
@@ -41,10 +54,12 @@ public class VNotificationManager {
         return sInstance;
     }
 
-    public boolean dealNotification(int id, Notification notification, String packageName, int userId) {
-        if (notification == null) return false;
-        return VirtualCore.get().getHostPkg().equals(packageName)
-                || mNotificationCompat.dealNotification(id, notification, packageName, userId);
+    public Result dealNotification(int id, Notification notification, String packageName, int userId) {
+        if (notification == null) return Result.USE_OLD;
+        if(VirtualCore.get().getHostPkg().equals(packageName)){
+            return Result.USE_OLD;
+        }
+        return mNotificationCompat.dealNotification(id, notification, packageName, userId);
     }
 
     public int dealNotificationId(int id, String packageName, String tag, int userId) {
@@ -178,6 +193,17 @@ public class VNotificationManager {
             return getService().getRealNotificationGroup(tag, packageName, userId);
         } catch (RemoteException e) {
             return tag;
+        }
+    }
+
+    public static class Result {
+        public static final Result NONE = new Result(MODE_NONE);
+        public static final Result USE_OLD = new Result(MODE_USE_OLD);
+        public int mode;
+        public Notification notification;
+
+        public Result(int mode) {
+            this.mode = mode;
         }
     }
 }

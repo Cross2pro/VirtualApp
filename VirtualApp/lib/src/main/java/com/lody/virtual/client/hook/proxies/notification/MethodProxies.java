@@ -240,9 +240,14 @@ class MethodProxies {
             id = VNotificationManager.get().dealNotificationId(id, pkg, null, getAppUserId());
             args[idIndex] = id;
             Notification notification = (Notification) args[notificationIndex];
-            if (!VNotificationManager.get().dealNotification(id, notification, pkg, getAppUserId())) {
+
+            VNotificationManager.Result result = VNotificationManager.get().dealNotification(id, notification, pkg, getAppUserId());
+            if (result.mode == VNotificationManager.MODE_NONE) {
                 return 0;
+            } else if (result.mode == VNotificationManager.MODE_REPLACED) {
+                args[notificationIndex] = result.notification;
             }
+
             VNotificationManager.get().addNotification(id, null, pkg, getAppUserId());
             args[0] = getHostPkg();
             return method.invoke(who, args);
@@ -275,9 +280,13 @@ class MethodProxies {
             args[tagIndex] = tag;
             //key(tag,id)
             Notification notification = (Notification) args[notificationIndex];
-            if (!VNotificationManager.get().dealNotification(id, notification, pkg, getAppUserId())) {
+            VNotificationManager.Result result = VNotificationManager.get().dealNotification(id, notification, pkg, getAppUserId());
+            if (result.mode == VNotificationManager.MODE_NONE) {
                 return 0;
+            } else if (result.mode == VNotificationManager.MODE_REPLACED) {
+                args[notificationIndex] = result.notification;
             }
+
             VNotificationManager.get().addNotification(id, tag, pkg, getAppUserId());
             args[0] = getHostPkg();
             if (Build.VERSION.SDK_INT >= 18 && args[1] instanceof String) {

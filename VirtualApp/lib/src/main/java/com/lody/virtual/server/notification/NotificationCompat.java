@@ -8,6 +8,7 @@ import android.os.Build;
 import android.widget.RemoteViews;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VNotificationManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -86,5 +87,6 @@ public abstract class NotificationCompat {
         return null;
     }
 
-    public abstract boolean dealNotification(int id, Notification notification, String packageName, int userId);
+    public abstract VNotificationManager.Result dealNotification(int id, Notification notification, String packageName, int userId);
+
 }

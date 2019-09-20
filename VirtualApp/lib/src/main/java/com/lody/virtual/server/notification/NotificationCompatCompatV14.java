@@ -7,6 +7,7 @@ import android.os.Build;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VNotificationManager;
 
 /**
  * @author 247321543
@@ -25,10 +26,10 @@ class NotificationCompatCompatV14 extends NotificationCompat {
     }
 
     @Override
-    public boolean dealNotification(int id, Notification notification, final String packageName, int userId) {
+    public VNotificationManager.Result dealNotification(int id, Notification notification, final String packageName, int userId) {
         Context appContext = getAppContext(packageName);
         if (appContext == null) {
-            return false;
+            return VNotificationManager.Result.NONE;
         }
         if (VClient.get().isAppUseOutsideAPK() && VirtualCore.get().isOutsideInstalled(packageName)) {
             if(notification.icon != 0) {
@@ -38,22 +39,27 @@ class NotificationCompatCompatV14 extends NotificationCompat {
                 }
                 notification.icon = getHostContext().getApplicationInfo().icon;
             }
-            return true;
+            return VNotificationManager.Result.USE_OLD;
         }
-        remakeRemoteViews(id, notification, appContext);
-        if(notification.icon != 0) {
+        remakeRemoteViews(id, notification, appContext, notification);
+        if (notification.icon != 0) {
             notification.icon = getHostContext().getApplicationInfo().icon;
         }
-        return true;
+        return VNotificationManager.Result.USE_OLD;
     }
 
-    protected void remakeRemoteViews(int id, Notification notification, Context appContext) {
+    protected void remakeRemoteViews(int id, Notification notification, Context appContext, Notification result) {
         if (notification.tickerView != null) {
 
             if (isSystemLayout(notification.tickerView)) {
+                //系统布局
                 getNotificationFixer().fixRemoteViewActions(appContext, false, notification.tickerView);
+                if(result != notification) {
+                    result.tickerView = notification.tickerView;
+                }
             } else {
-                notification.tickerView = getRemoteViewsFixer().makeRemoteViews(id + ":tickerView", appContext,
+                //把通知栏的内容提前绘制好，再展示
+                result.tickerView = getRemoteViewsFixer().makeRemoteViews(id + ":tickerView", appContext,
                         notification.tickerView, false, false);
             }
         }
@@ -61,8 +67,11 @@ class NotificationCompatCompatV14 extends NotificationCompat {
             if (isSystemLayout(notification.contentView)) {
                 boolean hasIconBitmap = getNotificationFixer().fixRemoteViewActions(appContext, false, notification.contentView);
                 getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, hasIconBitmap, notification);
+                if(result != notification) {
+                    result.contentView = notification.contentView;
+                }
             } else {
-                notification.contentView = getRemoteViewsFixer().makeRemoteViews(id + ":contentView", appContext,
+                result.contentView = getRemoteViewsFixer().makeRemoteViews(id + ":contentView", appContext,
                         notification.contentView, false, true);
             }
         }
@@ -70,8 +79,11 @@ class NotificationCompatCompatV14 extends NotificationCompat {
             if (notification.bigContentView != null) {
                 if (isSystemLayout(notification.bigContentView)) {
                     getNotificationFixer().fixRemoteViewActions(appContext, false, notification.bigContentView);
+                    if(result != notification) {
+                        result.bigContentView = notification.bigContentView;
+                    }
                 } else {
-                    notification.bigContentView = getRemoteViewsFixer().makeRemoteViews(id + ":bigContentView", appContext,
+                    result.bigContentView = getRemoteViewsFixer().makeRemoteViews(id + ":bigContentView", appContext,
                             notification.bigContentView, true, true);
                 }
             }
@@ -81,8 +93,11 @@ class NotificationCompatCompatV14 extends NotificationCompat {
                 if (isSystemLayout(notification.headsUpContentView)) {
                     boolean hasIconBitmap = getNotificationFixer().fixRemoteViewActions(appContext, false, notification.headsUpContentView);
                     getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, hasIconBitmap, notification);
+                    if(result != notification) {
+                        result.headsUpContentView = notification.headsUpContentView;
+                    }
                 } else {
-                    notification.headsUpContentView = getRemoteViewsFixer().makeRemoteViews(id + ":headsUpContentView", appContext,
+                    result.headsUpContentView = getRemoteViewsFixer().makeRemoteViews(id + ":headsUpContentView", appContext,
                             notification.headsUpContentView, false, false);
                 }
             }

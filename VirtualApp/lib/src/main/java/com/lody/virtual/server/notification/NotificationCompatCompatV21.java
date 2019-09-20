@@ -32,7 +32,10 @@ import mirror.android.app.NotificationO;
     }
 
     @Override
-    public boolean dealNotification(int id, Notification notification, String packageName,int userId) {
+    public VNotificationManager.Result dealNotification(int id, Notification notification, String packageName, int userId) {
+        if (notification == null) {
+            return VNotificationManager.Result.NONE;
+        }
         Context appContext = getAppContext(packageName);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
@@ -54,8 +57,56 @@ import mirror.android.app.NotificationO;
                 }
             }
         }
-        return resolveRemoteViews(appContext, id, packageName, notification)
-                || resolveRemoteViews(appContext, id, packageName, notification.publicVersion);
+        ApplicationInfo host = getHostContext().getApplicationInfo();
+        PackageInfo outside = getOutSidePackageInfo(packageName);
+        PackageInfo inside = VPackageManager.get().getPackageInfo(packageName,
+                PackageManager.GET_SHARED_LIBRARY_FILES, 0);
+
+        //check outside and inside's version
+        boolean isInstalled = outside != null && outside.versionCode == inside.versionCode;
+
+        //修复Icon
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, isInstalled);
+            getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, isInstalled);
+        } else {
+            getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
+        }
+        notification.icon = host.icon;
+
+        //5.0-6.0，通过修改RemoteViews的mApplication的apk路径，就解决通知栏资源的问题
+        //Fix RemoteViews
+        getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !isInstalled) {
+            //7.0之后，SystemUI是通过createApplicationContext获取资源，只能采用4.4之前的静态绘制方法
+            VNotificationManager.Result result = new VNotificationManager.Result(VNotificationManager.MODE_REPLACED);
+            //克隆对象
+            result.notification = notification.clone();
+            if(result.notification == null){
+                return VNotificationManager.Result.NONE;
+            }
+            remakeRemoteViews(id, notification, appContext, result.notification);
+            if(notification.publicVersion != null){
+                result.notification.publicVersion = notification.publicVersion.clone();
+                remakeRemoteViews(id, notification.publicVersion, appContext, result.notification.publicVersion);
+            }
+            if (result.notification.icon != 0) {
+                result.notification.icon = getHostContext().getApplicationInfo().icon;
+            }
+            return result;
+        }
+        //fix apk path
+        ApplicationInfo proxyApplicationInfo;
+        if (isInstalled) {
+            proxyApplicationInfo = outside.applicationInfo;
+        } else {
+            proxyApplicationInfo = inside.applicationInfo;
+        }
+        //5.0-6.0的通知栏适配，替换mApplication的apk路径即可
+        resolveRemoteViews(notification, proxyApplicationInfo);
+        resolveRemoteViews(notification.publicVersion, proxyApplicationInfo);
+        return VNotificationManager.Result.USE_OLD;
     }
 
     private PackageInfo getOutSidePackageInfo(String packageName){
@@ -66,35 +117,7 @@ import mirror.android.app.NotificationO;
         }
     }
 
-    private boolean resolveRemoteViews(Context appContext,int id, String packageName, Notification notification) {
-        if (notification == null) {
-            return false;
-        }
-        ApplicationInfo host = getHostContext().getApplicationInfo();
-        PackageInfo outside = getOutSidePackageInfo(packageName);
-        PackageInfo inside = VPackageManager.get().getPackageInfo(packageName,
-                PackageManager.GET_SHARED_LIBRARY_FILES, 0);
-
-        //check outside and inside's version
-        boolean isInstalled = outside != null && outside.versionCode == inside.versionCode;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, isInstalled);
-            getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, isInstalled);
-        } else {
-            getNotificationFixer().fixIconImage(appContext.getResources(), notification.contentView, false, notification);
-        }
-        notification.icon = host.icon;
-        //Fix RemoteViews
-        getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
-
-        //fix apk path
-        ApplicationInfo proxyApplicationInfo;
-        if(isInstalled){
-            proxyApplicationInfo = outside.applicationInfo;
-        }else{
-            proxyApplicationInfo = inside.applicationInfo;
-        }
+    private void resolveRemoteViews(Notification notification, ApplicationInfo proxyApplicationInfo) {
         proxyApplicationInfo.targetSdkVersion = 22;
         fixApplicationInfo(notification.tickerView, proxyApplicationInfo);
         fixApplicationInfo(notification.contentView, proxyApplicationInfo);
@@ -104,11 +127,6 @@ import mirror.android.app.NotificationO;
         if (bundle != null) {
             bundle.putParcelable(EXTRA_BUILDER_APPLICATION_INFO, proxyApplicationInfo);
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isInstalled) {
-            remakeRemoteViews(id, notification, appContext);
-        }
-        return true;
     }
 
     private ApplicationInfo getApplicationInfo(Notification notification) {
