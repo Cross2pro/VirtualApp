@@ -91,6 +91,7 @@ public class NotificationListener extends NotificationListenerService {
             if ((packageManager.getPackageInfo(pkgName, 0).applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
                 ret = true;
             }
+            Log.d(Tag,"ret:" + ret);
             return ret;
         } catch (Exception e) {
             return false;
