@@ -70,6 +70,7 @@ public final class BinderProvider extends ContentProvider {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
+                NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.LIGHT_ID, "light");
             }
             try {
                 context.startService(new Intent(context, KeepAliveService.class));

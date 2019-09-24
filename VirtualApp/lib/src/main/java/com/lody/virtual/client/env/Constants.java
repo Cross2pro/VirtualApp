@@ -58,4 +58,6 @@ public class Constants {
 	public static String NOTIFICATION_CHANNEL = "virtual_default";
 
     public static String NOTIFICATION_DAEMON_CHANNEL = "virtual_daemon";
+
+	public static String NOTIFICATION_LIGHT_CHANNEL = "virtual_light";
 }
