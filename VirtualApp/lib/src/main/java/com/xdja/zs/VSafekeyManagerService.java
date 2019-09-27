@@ -6,8 +6,10 @@ import android.util.Pair;
 
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.SafeKey.JNIAPI;
+import com.xdja.multi.unitepin.jar.MultiChipUnitePinManager;
 import com.xdja.multichip.jniapi.JarJniApiProxy;
 import com.xdja.multichip.jniapi.JarMultiJniApiManager;
+import com.xdja.multichip.jniapi.JarMultiJniApiVhsmManager;
 import com.xdja.multichip.param.JniApiParam;
 
 import com.xdja.zs.IVSCallback;
@@ -27,17 +29,24 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
     private static JarMultiJniApiManager jniApiManager = null;
     private static Pair<Integer, List<JniApiParam>> all = null;
     private static JarJniApiProxy jniProxy = null;
+    private static JarMultiJniApiVhsmManager jniApiVhsmManager = null;
+    private static MultiChipUnitePinManager multiChipUnitePinManager = null;
     private static String cardId = null;
     private static Pair<Integer, JarJniApiProxy> jniProxyPair = null;
-
+    private static int pinRole = 0x11;
     private static boolean cardFlag = false;
 
     private IVSCallback mvsCallback = null;
 
+    private static final int INIT_OK = 0;
+    private static final int VERIFY_PIN_FAIL = -1;
+    private static final int CHECK_CARD_EXCEPTION = -2;
+
+
     public static void systemReady(Context context) {
         mContext = context;
         sInstance = new VSafekeyManagerService();
-        initSafekeyLib();
+        multiChipUnitePinManager = MultiChipUnitePinManager.getInstance();
     }
 
     public static VSafekeyManagerService get() {
@@ -69,6 +78,15 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                 VLog.e(TAG, "jniProxy is null ");
                 return false;
             }
+            if (jniProxy.getCardType() == JniApiParam.TYPE_VHSM ||
+                    jniProxy.getCardType() == JniApiParam.TYPE_VHSM_NET) {
+                String pin = "111111";
+                int ret = jniProxy.VerifyPIN(pinRole, pin.getBytes(), pin.length());
+                if (ret != 0) {
+                    VLog.e(TAG, "VerifyPIN fail:" + ret);
+                    return false;
+                }
+            }
             return true;
 
         }catch (Exception e){
@@ -99,6 +117,12 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                     cardIdStr = jap.cardId;
                 } else if (jap.chipType == JniApiParam.TYPE_COVERED) {
                     cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_VHSM) {
+                    cardIdStr = jap.cardId;
+                    jniApiVhsmManager = JarMultiJniApiVhsmManager.getInstance();
+                } else if (jap.chipType == JniApiParam.TYPE_VHSM_NET) {
+                    cardIdStr = jap.cardId;
+                    jniApiVhsmManager = JarMultiJniApiVhsmManager.getInstance();
                 }
                 if(cardIdStr != null){
                     cardFlag = true;
@@ -110,6 +134,55 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
             VLog.e(TAG,"List<JniApiParam> is null, Get card id failed ! ");
         }
         return null;
+    }
+
+    @Override
+    public int initSafekeyCard() {
+        int ret = INIT_OK;
+        try {
+            VLog.e(TAG, "VS initSafekeyCard");
+            jniApiManager = JarMultiJniApiManager.getInstance();
+            if(jniApiManager == null) {
+                VLog.e(TAG, "jniApiManager is null ");
+                return CHECK_CARD_EXCEPTION;
+            }
+
+            //如果芯片管家为未启动，此处崩溃。
+            all = jniApiManager.getAll(mContext);
+            if(all == null) {
+                VLog.e(TAG, "List<JniApiParam> is null ");
+                return CHECK_CARD_EXCEPTION;
+            }
+            cardId = getCardIdStatic();
+            if(cardId == null) {
+                VLog.e(TAG, "cardId is null ");
+                return CHECK_CARD_EXCEPTION;
+            }
+            jniProxy = getJniProxy(mContext, cardId);
+            if(jniProxy == null) {
+                VLog.e(TAG, "jniProxy is null ");
+                return CHECK_CARD_EXCEPTION;
+            }
+            if (jniProxy.getCardType() == JniApiParam.TYPE_VHSM ||
+                    jniProxy.getCardType() == JniApiParam.TYPE_VHSM_NET) {
+                Pair<Integer, String> pin = multiChipUnitePinManager.getPin(mContext, cardId, pinRole);
+                if (pin.first == 0) {
+                    ret = jniProxy.VerifyPIN(pinRole, pin.second.getBytes(), pin.second.length());
+                    if (ret != 0) {
+                        VLog.e(TAG, "VerifyPIN fail:" + ret);
+                        return VERIFY_PIN_FAIL;
+                    }
+                } else {
+                    return VERIFY_PIN_FAIL;
+                }
+            }
+            return ret;
+
+        }catch (Exception e){
+            VLog.e(TAG, "checkCard exception ");
+            e.printStackTrace();
+            return CHECK_CARD_EXCEPTION;
+        }
     }
 
     @Override
@@ -131,6 +204,10 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                 } else if (jap.chipType == JniApiParam.TYPE_BLUETOOTH) {
                     cardIdStr = jap.cardId;
                 } else if (jap.chipType == JniApiParam.TYPE_COVERED) {
+                    cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_VHSM) {
+                    cardIdStr = jap.cardId;
+                } else if (jap.chipType == JniApiParam.TYPE_VHSM_NET) {
                     cardIdStr = jap.cardId;
                 }
                 if(cardIdStr != null){
@@ -220,18 +297,23 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
             byte encrypt_kID = 0x08;
             int ret = -1;
             if(jniProxy != null) {
-                ret = jniProxy.SM1(key, keylen, JNIAPI.ECB_ENCRYPT, seckey, encrypt_kID, null);
+                if (jniProxy.getCardType() == JniApiParam.TYPE_VHSM ||
+                        jniProxy.getCardType() == JniApiParam.TYPE_VHSM_NET) {
+                    ret = jniApiVhsmManager.SM4(jniProxy, key, keylen, JNIAPI.ECB_ENCRYPT, seckey, encrypt_kID, null);
+                } else {
+                    ret = jniProxy.SM1(key, keylen, JNIAPI.ECB_ENCRYPT, seckey, encrypt_kID, null);
+                }
                 if(ret < 0){
-                    visitSafeKeyErrorCallback();
+                    visitSafeKeyErrorCallback(ret);
                 }
             }
             if(ret < 0){
-                visitSafeKeyErrorCallback();
+                visitSafeKeyErrorCallback(ret);
             }
             VLog.e(TAG, "VS encryptKey ret "+ ret);
             return seckey;
         }catch (Exception e){
-            visitSafeKeyErrorCallback();
+            visitSafeKeyErrorCallback(-1);
             e.printStackTrace();
             return seckey;
         }
@@ -248,18 +330,23 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
             byte decrypt_kID = 0x09;
             int ret = -1;
             if(jniProxy != null) {
-                ret = jniProxy.SM1(seckey, seckeylen, JNIAPI.ECB_DECRYPT, key, decrypt_kID, null);
+                if (jniProxy.getCardType() == JniApiParam.TYPE_VHSM ||
+                jniProxy.getCardType() == JniApiParam.TYPE_VHSM_NET) {
+                    ret = jniApiVhsmManager.SM4(jniProxy, seckey, seckeylen, JNIAPI.ECB_DECRYPT, key, decrypt_kID, null);
+                } else {
+                    ret = jniProxy.SM1(seckey, seckeylen, JNIAPI.ECB_DECRYPT, key, decrypt_kID, null);
+                }
                 if(ret < 0){
-                    visitSafeKeyErrorCallback();
+                    visitSafeKeyErrorCallback(ret);
                 }
             }
             if(ret < 0){
-                visitSafeKeyErrorCallback();
+                visitSafeKeyErrorCallback(ret);
             }
             VLog.e(TAG, "VS decryptKey ret "+ ret);
             return key;
         }catch (Exception e){
-            visitSafeKeyErrorCallback();
+            visitSafeKeyErrorCallback(-1);
             e.printStackTrace();
             return key;
         }
@@ -278,12 +365,12 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                 ret = jniProxy.GenRandom(len, random);
             }
             if(ret < 0){
-                visitSafeKeyErrorCallback();
+                visitSafeKeyErrorCallback(ret);
             }
             VLog.e(TAG, "VS getRandom ret "+ ret);
             return random;
         }catch (Exception e){
-            visitSafeKeyErrorCallback();
+            visitSafeKeyErrorCallback(-1);
             e.printStackTrace();
             return random;
         }
@@ -305,10 +392,10 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
         mvsCallback = null;
     }
 
-    private void visitSafeKeyErrorCallback(){
+    private void visitSafeKeyErrorCallback(int error){
         try {
             if (mvsCallback != null) {
-                mvsCallback.visitSafeKeyError();
+                mvsCallback.visitSafeKeyError(error);
                 VLog.e(TAG, "VS getRandom visitSafeKeyError ");
             } else {
                 VLog.e(TAG, "VS mvsCallback is null ");
