@@ -75,6 +75,15 @@ public class VSafekeyManager {
         }
     }
 
+    public int initSafekeyCard() {
+        try {
+            return getService().initSafekeyCard();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+            return -1;
+        }
+    }
+
 
     public static byte[] encryptKey(byte[] key, int keylen) {
         try {

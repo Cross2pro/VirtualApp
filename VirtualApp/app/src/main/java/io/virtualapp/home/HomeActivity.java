@@ -43,6 +43,9 @@ import com.lody.virtual.oem.OemPermissionHelper;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
 import com.xdja.monitor.MediaObserver;
+import com.xdja.safekeyservice.jarv2.SecuritySDKManager;
+import com.xdja.safekeyservice.jarv2.bean.IVerifyPinResult;
+import com.xdja.zs.VSafekeyManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -137,6 +140,15 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
         IntentFilter alarmFilter = new IntentFilter("com.android.deskclock.ALARM_ALERT");
         VirtualCore.get().registerReceiver(this, alarmReceiver, alarmFilter);
+        int ret = VSafekeyManager.get().initSafekeyCard();
+        if (ret == -1) {
+            SecuritySDKManager.getInstance().startVerifyPinActivity(this, new IVerifyPinResult() {
+                @Override
+                public void onResult(int i, String s) {
+                    Log.d(TAG, " result value:" + i);
+                }
+            });
+        }
     }
 
 
