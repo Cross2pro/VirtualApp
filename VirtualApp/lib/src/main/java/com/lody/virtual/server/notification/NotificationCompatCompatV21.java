@@ -127,13 +127,15 @@ import mirror.android.app.NotificationO;
 
     private void resolveRemoteViews(Notification notification, ApplicationInfo proxyApplicationInfo) {
         proxyApplicationInfo.targetSdkVersion = 22;
-        fixApplicationInfo(notification.tickerView, proxyApplicationInfo);
-        fixApplicationInfo(notification.contentView, proxyApplicationInfo);
-        fixApplicationInfo(notification.bigContentView, proxyApplicationInfo);
-        fixApplicationInfo(notification.headsUpContentView, proxyApplicationInfo);
-        Bundle bundle = Reflect.on(notification).get("extras");
-        if (bundle != null) {
-            bundle.putParcelable(EXTRA_BUILDER_APPLICATION_INFO, proxyApplicationInfo);
+        if(notification != null) {
+            fixApplicationInfo(notification.tickerView, proxyApplicationInfo);
+            fixApplicationInfo(notification.contentView, proxyApplicationInfo);
+            fixApplicationInfo(notification.bigContentView, proxyApplicationInfo);
+            fixApplicationInfo(notification.headsUpContentView, proxyApplicationInfo);
+            Bundle bundle = Reflect.on(notification).get("extras");
+            if (bundle != null) {
+                bundle.putParcelable(EXTRA_BUILDER_APPLICATION_INFO, proxyApplicationInfo);
+            }
         }
     }
 
