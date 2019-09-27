@@ -3,6 +3,7 @@ package com.lody.virtual.os;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.StubManifest;
@@ -161,10 +162,6 @@ public class VEnvironment {
         return ensureCreated(new File(getUserDeDataDirectory64(userId), packageName));
     }
 
-    public static File getPackageResourcePath(String packageName) {
-        return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
-    }
-
     public static File getPackageResourcePath64(String packageName) {
         return new File(getDataAppPackageDirectory64(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
@@ -242,10 +239,6 @@ public class VEnvironment {
 
     public static File getDalvikCacheDirectory64() {
         return DALVIK_CACHE_DIRECTORY64;
-    }
-
-    public static File getOdexFile(String packageName) {
-        return new File(DALVIK_CACHE_DIRECTORY, "data@app@" + packageName + "-1@base.apk@classes.dex");
     }
 
     public static File getOdexFile64(String packageName) {
@@ -441,39 +434,51 @@ public class VEnvironment {
     }
 
 
-    public static File getPackageResourcePathPublic(String packageName, boolean is64Bit) {
-        File dir;
-        if (is64Bit) {
-            dir = new File(getDataAppPackageDirectory64(packageName), "public");
-        } else {
-            dir = new File(getDataAppPackageDirectory(packageName), "public");
-        }
-        if (dir.exists()) {
-            File[] files = dir.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".apk");
-                }
-            });
-            if(files != null && files.length>0){
-                return files[0];
+    public static File getPackageResourcePath(String packageName) {
+        File file;
+        for (int i = 1; i <= 10; i++) {
+            //1-10
+            file = new File(getDataAppPackageDirectory(packageName), "base-" + i + ".apk");
+            if (file.exists()) {
+                return file;
             }
         }
-        return null;
+        //适配老版本
+        return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
 
+    public static File getOdexFile(String packageName) {
+        File file;
+        //整个遍历过程就0-2ms
+        for (int i = 1; i <= 10; i++) {
+            //1-10
+            file = new File(getDataAppPackageDirectory(packageName), "base-" + i + ".apk");
+            if (file.exists()) {
+                return new File(DALVIK_CACHE_DIRECTORY, "data@app@" + packageName + "@base-" + i + ".apk@classes.dex");
+            }
+        }
+        //适配老版本
+        return new File(DALVIK_CACHE_DIRECTORY, "data@app@" + packageName + "-1@base.apk@classes.dex");
+    }
 
-    public static File makePackageResourcePathPublic(String packageName, boolean is64Bit, String token) {
-        File dir;
-        if (is64Bit) {
-            dir = new File(getDataAppPackageDirectory64(packageName), "public");
-        } else {
-            dir = new File(getDataAppPackageDirectory(packageName), "public");
+    public static File getPackageResourcePathNext(String packageName) {
+        File file;
+        for (int i = 1; i <= 10; i++) {
+            //1-9
+            file = new File(getDataAppPackageDirectory(packageName), "base-" + i + ".apk");
+            if (!file.exists()) {
+                return file;
+            }
         }
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        File apk = new File(dir, token + ".apk");
-        return apk;
+        //如果走了这里，说明旧文件没删除（base-1.apk存在）
+        return new File(getDataAppPackageDirectory(packageName), "base-2.apk");
+    }
+
+    public static File getPublicResourcePath(String packageName){
+        return new File(getDataAppPackageDirectory(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
+    }
+
+    public static File getPublicResourcePath64(String packageName){
+        return new File(getDataAppPackageDirectory64(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
 }

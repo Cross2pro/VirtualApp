@@ -42,6 +42,7 @@ import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.accounts.VAccountManagerService;
+import com.lody.virtual.server.am.AttributeCache;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -361,6 +362,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if(!loadingApp) {
             BroadcastSystem.get().stopApp(pkg.packageName);
         }
+        AttributeCache.instance().removePackage(pkg.packageName);
         VActivityManagerService.get().killAppByPkg(pkg.packageName, -1);
         InstallResult res = new InstallResult();
         res.packageName = pkg.packageName;
@@ -430,12 +432,44 @@ public class VAppManagerService extends IAppManager.Stub {
         NativeLibraryHelperCompat.copyNativeBinaries(packageFile, VEnvironment.getAppLibDirectory(pkg.packageName));
 
         if (!useSourceLocationApk) {
-            File privatePackageFile = VEnvironment.getPackageResourcePath(pkg.packageName);
+            //old apk
+            File oldPackageFile = VEnvironment.getPackageResourcePath(pkg.packageName);
+            //new apk
+            File privatePackageFile = VEnvironment.getPackageResourcePathNext(pkg.packageName);
+            //base.apk
+            File baseApkFile = VEnvironment.getPublicResourcePath(pkg.packageName);
             try {
+                //delete old odex
+                FileUtils.deleteDir(VEnvironment.getOdexFile(pkg.packageName));
+                //delete old apk
+                FileUtils.deleteDir(oldPackageFile);
+                //copy apk -> new apk
                 FileUtils.copyFile(packageFile, privatePackageFile);
-            } catch (IOException e) {
+                VLog.d(TAG, "copyFile:%s->%s", packageFile.getPath(), privatePackageFile.getPath());
+            } catch (Exception e) {
                 privatePackageFile.delete();
                 return InstallResult.makeFailure("Unable to copy the package file.");
+            }
+            try{
+                String realPath = privatePackageFile.getPath();
+                String linkPath = baseApkFile.getPath();
+                if(!TextUtils.equals(realPath, linkPath)) {
+                    //delete base.apk
+                    FileUtils.deleteDir(baseApkFile);
+                    //new apk->base.apk
+                    FileUtils.createSymlink(realPath, linkPath);
+                    VLog.d(TAG, "createSymlink:%s->%s", realPath, linkPath);
+                }else{
+                    VLog.d(TAG, "use base don't need link %s", realPath);
+                }
+            } catch (Exception e) {
+                try {
+                    //copy new apk->base.apk
+                    FileUtils.copyFile(privatePackageFile, baseApkFile);
+                } catch (IOException ex) {
+                    baseApkFile.delete();
+                    return InstallResult.makeFailure("Unable to copy the package file.");
+                }
             }
             packageFile = privatePackageFile;
             VEnvironment.chmodPackageDictionary(packageFile);
@@ -460,24 +494,6 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
-        File oldLink = VEnvironment.getPackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess());
-        if(oldLink != null){
-            FileUtils.deleteDir(oldLink);
-        }
-        String token = MD5Utils.hashBase64((pkg.mVersionCode + pkg.mVersionName + packageFile.lastModified() + packageFile.length()).getBytes());
-        if (token == null) {
-            token = "" + System.currentTimeMillis();
-        } else {
-            token = token.replace("\r", "").replace("\n", "").replace("//", "_")
-                    .replace("\\", "_").replace("\0", "");
-        }
-        File newLink = VEnvironment.makePackageResourcePathPublic(pkg.packageName, ps.isRunOn64BitProcess(), token);
-        try {
-            FileUtils.createSymlink(packageFile.getPath(), newLink.getPath());
-            VLog.d(TAG, "make link %s", newLink.getPath());
-        } catch (Exception e) {
-            Log.w(TAG, "make link failed " + token, e);
-        }
         mPersistenceLayer.save();
         if (support32bit && !useSourceLocationApk) {
             try {
@@ -670,11 +686,13 @@ public class VAppManagerService extends IAppManager.Stub {
     private void uninstallPackageFully(PackageSetting ps, boolean notify) {
         String packageName = ps.packageName;
         try {
+            AttributeCache.instance().removePackage(packageName);
             BroadcastSystem.get().stopApp(packageName);
             VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
-                VEnvironment.getPackageResourcePath(packageName).delete();
+                FileUtils.deleteDir(VEnvironment.getPackageResourcePath(packageName));
+                FileUtils.deleteDir(VEnvironment.getPublicResourcePath(packageName));
                 FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory(packageName));
                 VEnvironment.getOdexFile(packageName).delete();
                 for (int id : VUserManagerService.get().getUserIds()) {

@@ -16,6 +16,7 @@ import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.os.VEnvironment;
 
 import mirror.android.app.NotificationO;
 
@@ -107,6 +108,8 @@ import mirror.android.app.NotificationO;
             proxyApplicationInfo = outside.applicationInfo;
         } else {
             proxyApplicationInfo = inside.applicationInfo;
+            //base.apk
+            proxyApplicationInfo.publicSourceDir = VEnvironment.getPublicResourcePath(packageName).getPath();
         }
         //5.0-6.0的通知栏适配，替换mApplication的apk路径即可
         resolveRemoteViews(notification, proxyApplicationInfo);
