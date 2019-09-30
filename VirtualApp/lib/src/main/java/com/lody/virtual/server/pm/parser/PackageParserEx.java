@@ -59,6 +59,9 @@ public class PackageParserEx {
 
     public static VPackage parsePackage(File packageFile) throws Throwable {
         PackageParser parser = PackageParserCompat.createParser(packageFile);
+        if (BuildCompat.isQ()) {
+            parser.setCallback(new PackageParser.CallbackImpl(VirtualCore.getPM()));
+        }
         PackageParser.Package p = PackageParserCompat.parsePackage(parser, packageFile, 0);
         if (p.requestedPermissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")
                 && p.mAppMetaData != null
