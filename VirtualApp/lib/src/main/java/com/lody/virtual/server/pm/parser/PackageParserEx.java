@@ -67,7 +67,7 @@ public class PackageParserEx {
                 && p.mAppMetaData != null
                 && p.mAppMetaData.containsKey("fake-signature")) {
             String sig = p.mAppMetaData.getString("fake-signature");
-            p.mSignatures = new Signature[]{new Signature(sig)};
+            buildSignature(p, new Signature[]{new Signature(sig)});
             VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
         } else {
             try {
@@ -83,6 +83,16 @@ public class PackageParserEx {
             }
         }
         return buildPackageCache(p);
+    }
+
+    private static void buildSignature(PackageParser.Package p, Signature[] signatures) {
+        if (BuildCompat.isQ()) {
+            Object signingDetails = mirror.android.content.pm.PackageParser.Package.mSigningDetails.get(p);
+            mirror.android.content.pm.PackageParser.SigningDetails.pastSigningCertificates.set(signingDetails, signatures);
+            mirror.android.content.pm.PackageParser.SigningDetails.signatures.set(signingDetails, signatures);
+        } else {
+            p.mSignatures = signatures;
+        }
     }
 
     public static VPackage readPackageCache(String packageName) {
