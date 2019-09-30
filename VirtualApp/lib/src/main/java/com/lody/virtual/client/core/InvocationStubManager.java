@@ -14,6 +14,7 @@ import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appops.FlymePermissionServiceStub;
 import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
+import com.lody.virtual.client.hook.proxies.am.ActivityTaskManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
 import com.lody.virtual.client.hook.proxies.backup.BackupManagerStub;
 import com.lody.virtual.client.hook.proxies.battery_stats.BatteryStatsHub;
@@ -216,6 +217,9 @@ public final class InvocationStubManager {
             }
             if (mirror.oem.IFlymePermissionService.TYPE != null) {
                 addInjector(new FlymePermissionServiceStub());
+            }
+            if (BuildCompat.isQ()) {
+                addInjector(new ActivityTaskManagerStub());
             }
         }
     }
