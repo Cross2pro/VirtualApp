@@ -3,6 +3,7 @@ package com.lody.virtual.helper;
 import android.os.Build;
 
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,10 +61,18 @@ public class DexOptimizer {
         commandAndParams.add("--dex-file=" + dexFilePath);
         commandAndParams.add("--oat-file=" + oatFilePath);
         commandAndParams.add("--instruction-set=" + VMRuntime.getCurrentInstructionSet.call());
+        commandAndParams.add("--compiler-filter=everything");
+        if (Build.VERSION.SDK_INT >= 22 && !BuildCompat.isQ()) {
+            commandAndParams.add("--compile-pic");
+        }
         if (Build.VERSION.SDK_INT > 25) {
-            commandAndParams.add("--compiler-filter=quicken");
+//            commandAndParams.add("--compiler-filter=quicken");
+            commandAndParams.add("--inline-max-code-units=0");
         } else {
-            commandAndParams.add("--compiler-filter=interpret-only");
+//            commandAndParams.add("--compiler-filter=interpret-only");
+            if (Build.VERSION.SDK_INT >= 23) {
+                commandAndParams.add("--inline-depth-limit=0");
+            }
         }
 
         final ProcessBuilder pb = new ProcessBuilder(commandAndParams);
