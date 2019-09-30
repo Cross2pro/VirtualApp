@@ -101,7 +101,7 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.ParceledListSlice;
 import mirror.android.content.pm.UserInfo;
-import mirror.android.widget.Toast;
+import android.widget.Toast;
 
 /**
  * @author Lody
@@ -637,7 +637,7 @@ class MethodProxies {
                     pkg = packageUri.getSchemeSpecificPart();
                 }
                 if(InstallerSetting.systemApps.contains(pkg)){
-                    InstallerSetting.showToast(getHostContext(),"自带应用不可卸载",Toast.LENGTH_LONG);
+                    InstallerSetting.showToast(getHostContext(),"自带应用不可卸载", Toast.LENGTH_LONG);
                     intent.setData(null);
                     return method.invoke(who, args);
                 }else if(VAppPermissionManager.get().getAppPermissionEnable(pkg,VAppPermissionManager.PROHIBIT_APP_UNINSTALL)){
@@ -2207,10 +2207,11 @@ class MethodProxies {
                             }
                         }
                     } else {
-                        return 0;
+                        //return 0;
                     }
                 }
             }
+			MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
         }
 

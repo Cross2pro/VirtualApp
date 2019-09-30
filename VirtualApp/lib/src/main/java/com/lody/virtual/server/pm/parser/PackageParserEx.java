@@ -308,6 +308,9 @@ public class PackageParserEx {
             if (libConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
                 libConfig = SettingConfig.AppLibConfig.UseOwnLib;
             }
+            if (GmsSupport.isGoogleAppOrService(ai.packageName)) {
+                libConfig = SettingConfig.AppLibConfig.UseOwnLib;
+            }
             if (outside != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     ai.splitNames = outside.splitNames;

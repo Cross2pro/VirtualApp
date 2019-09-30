@@ -29,7 +29,8 @@
 #define  __STDC_FORMAT_MACROS
 
 #if defined(__aarch64__)
-include <cassert>
+
+#include <cassert>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -405,11 +406,6 @@ static void __fix_instructions(uint32_t *__restrict inp, int32_t count, uint32_t
     memset(ctx.dat, 0, sizeof(ctx.dat));
     static_assert(sizeof(ctx.dat) / sizeof(ctx.dat[0]) == A64_MAX_INSTRUCTIONS,
                   "please use A64_MAX_INSTRUCTIONS!");
-#ifndef NDEBUG
-    if (count > A64_MAX_INSTRUCTIONS) {
-        A64_LOGE("too many fixing instructions!");
-    } //if
-#endif // NDEBUG
 
     uint32_t *const outp_base = outp;
 

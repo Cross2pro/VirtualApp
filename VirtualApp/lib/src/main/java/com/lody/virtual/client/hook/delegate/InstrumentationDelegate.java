@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 import com.lody.virtual.helper.Keep;
 import com.lody.virtual.helper.MultiAvoidRecursive;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -511,58 +512,126 @@ public class InstrumentationDelegate extends Instrumentation {
         return root.getUiAutomation();
     }
 
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle});
+            if (avoidRecursive.beginCall(20)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(20);
         }
     }
 
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, String.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, str, intent, i, bundle});
+            if (avoidRecursive.beginCall(21)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, String.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, str, intent, i, bundle});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, String.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, str, intent, i, bundle});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(21);
         }
     }
 
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i});
+            if (avoidRecursive.beginCall(22)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(22);
         }
     }
 
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i});
+            if (avoidRecursive.beginCall(23)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(23);
         }
+
     }
 
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i, bundle});
+            if (avoidRecursive.beginCall(24)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i, bundle});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, Fragment.class, Intent.class, Integer.TYPE, Bundle.class).invoke(base, new Object[]{context, iBinder, iBinder2, fragment, intent, i, bundle});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(24);
         }
+
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) throws Throwable {
         try {
-            return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class, UserHandle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle, userHandle});
+            if (avoidRecursive.beginCall(25)) {
+                return (ActivityResult) findDeclaredMethod(base, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class, UserHandle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle, userHandle});
+            } else {
+                return (ActivityResult) findDeclaredMethod(root, "execStartActivity", Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, Integer.TYPE, Bundle.class, UserHandle.class).invoke(base, new Object[]{context, iBinder, iBinder2, activity, intent, i, bundle, userHandle});
+            }
+        } catch (InvocationTargetException e) {
+            if (e.getCause() != null) {
+                throw e.getCause();
+            }
+            return null;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            avoidRecursive.finishCall(25);
         }
     }
 

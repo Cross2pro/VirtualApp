@@ -75,6 +75,7 @@ import com.xdja.zs.exceptionRecorder;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.security.KeyStore;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,6 +99,7 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.res.CompatibilityInfo;
 import mirror.android.providers.Settings;
 import mirror.android.renderscript.RenderScriptCacheDir;
+import mirror.android.security.net.config.NetworkSecurityConfigProvider;
 import mirror.android.view.CompatibilityInfoHolder;
 import mirror.android.view.DisplayAdjustments;
 import mirror.android.view.HardwareRenderer;
@@ -503,6 +505,12 @@ public final class VClient extends IVClient.Stub {
                 CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
             }
         }
+		//ssl适配
+		if (NetworkSecurityConfigProvider.install != null) {
+            Security.removeProvider("AndroidNSSP");
+            NetworkSecurityConfigProvider.install.call(context);
+        }
+		
         VirtualCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
 
         if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)

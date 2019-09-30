@@ -5,6 +5,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         minSdkVersion 15
+        //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 22
 
         buildConfigField 'String', 'VA_VERSION_NAME', '"V' + rootProject.ext.VERSION + '"'
@@ -70,7 +71,13 @@ gradle.taskGraph.afterTask { task ->
                 if (soFile.name.endsWith("_64.so")) {
                     for (String abi : COPY_ABI_LIST) {
                         def toFile = new File(numberDir, abi + soFile.name)
-                        GFileUtils.copyFile(soFile, toFile)
+                        if (!toFile.getParentFile().exists()) {
+                            continue
+                        }
+			copy {
+                            from soFile
+                            into toFile.getParentFile()
+                        }
                     }
                     for (String abi : COPY_FOR_HOUDINI_ABI_LIST) {
                         def toFile = new File(numberDir, abi + soFile.name)
