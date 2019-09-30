@@ -9,11 +9,14 @@ import android.os.Build;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.ipc.VJobScheduler;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.JobWorkItemCompat;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import mirror.android.app.job.IJobScheduler;
+import mirror.android.content.pm.ParceledListSlice;
 
 /**
  * @author Lody
@@ -65,7 +68,14 @@ public class JobServiceStub extends BinderInvocationProxy {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            return VJobScheduler.get().getAllPendingJobs();
+            List res = VJobScheduler.get().getAllPendingJobs();
+            if (res == null)
+                return null;
+            if (BuildCompat.isQ()) {
+                return ParceledListSlice.ctorQ.newInstance(res);
+            } else {
+                return res;
+            }
         }
     }
 
