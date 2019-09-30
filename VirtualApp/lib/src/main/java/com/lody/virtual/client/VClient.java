@@ -87,6 +87,7 @@ import java.util.Map;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
+import mirror.android.app.ActivityThreadQ;
 import mirror.android.app.ContextImpl;
 import mirror.android.app.ContextImplKitkat;
 import mirror.android.app.IActivityManager;
@@ -277,12 +278,14 @@ public final class VClient extends IVClient.Stub {
                     data.token,
                     Collections.singletonList(intent)
             );
-        } else {
+        } else if (ActivityThreadNMR1.performNewIntents != null){
             ActivityThreadNMR1.performNewIntents.call(
                     VirtualCore.mainThread(),
                     data.token,
                     Collections.singletonList(intent),
                     true);
+        } else if(ActivityThreadQ.handleNewIntent != null){
+            ActivityThreadQ.handleNewIntent.call(VirtualCore.mainThread(), data.token, Collections.singletonList(intent));
         }
     }
 
