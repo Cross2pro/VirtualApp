@@ -29,7 +29,7 @@
 #define  __STDC_FORMAT_MACROS
 
 #if defined(__aarch64__)
-
+include <cassert>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -560,7 +560,7 @@ A64_JNIEXPORT void A64HookFunction(void *const symbol, void *const replace, void
         *result = trampoline;
         if (trampoline == NULL) return;
     } //if
-
+    assert(__make_rwx(symbol, 4096) == 0);
     trampoline = A64HookFunctionV(symbol, replace, trampoline, A64_MAX_INSTRUCTIONS * 10u);
     if (trampoline == NULL && result != NULL) {
         *result = NULL;
