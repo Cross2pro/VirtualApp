@@ -164,7 +164,12 @@ public class ProviderHook implements InvocationHandler {
             e.printStackTrace();
         }
         MethodBox methodBox = new MethodBox(method, mBase, args);
-        int start = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 ? 1 : 0;
+        int start = 0;
+        if (BuildCompat.isQ()) {
+            start = 2;
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            start = 1;
+        }
         try {
             String name = method.getName();
             if ("call".equals(name)) {

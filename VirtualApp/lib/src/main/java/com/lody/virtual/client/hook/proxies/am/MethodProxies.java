@@ -277,6 +277,9 @@ class MethodProxies {
 
         @Override
         public int getProviderNameIndex() {
+            if (BuildCompat.isQ()) {
+                return 1;
+            }
             return 0;
         }
 
@@ -1818,6 +1821,12 @@ class MethodProxies {
                     || name.equals(getConfig().getBinderProviderAuthority())) {
                 return method.invoke(who, args);
             }
+            if (BuildCompat.isQ()) {
+                int pkgIdx = nameIdx - 1;
+                if (args[pkgIdx] instanceof String) {
+                    args[pkgIdx] = getHostPkg();
+                }
+            }
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
 
@@ -1882,6 +1891,9 @@ class MethodProxies {
 
 
         public int getProviderNameIndex() {
+            if (BuildCompat.isQ()) {
+                return 2;
+            }
             return 1;
         }
 
