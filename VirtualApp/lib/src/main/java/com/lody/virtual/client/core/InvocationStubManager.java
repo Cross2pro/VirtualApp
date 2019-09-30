@@ -23,6 +23,7 @@ import com.lody.virtual.client.hook.proxies.clipboard.ClipBoardStub;
 import com.lody.virtual.client.hook.proxies.connectivity.ConnectivityStub;
 import com.lody.virtual.client.hook.proxies.content.ContentServiceStub;
 import com.lody.virtual.client.hook.proxies.context_hub.ContextHubServiceStub;
+import com.lody.virtual.client.hook.proxies.dev_identifiers_policy.DeviceIdentifiersPolicyServiceHub;
 import com.lody.virtual.client.hook.proxies.devicepolicy.DevicePolicyManagerStub;
 import com.lody.virtual.client.hook.proxies.display.DisplayStub;
 import com.lody.virtual.client.hook.proxies.dropbox.DropBoxManagerStub;
@@ -220,6 +221,7 @@ public final class InvocationStubManager {
             }
             if (BuildCompat.isQ()) {
                 addInjector(new ActivityTaskManagerStub());
+                addInjector(new DeviceIdentifiersPolicyServiceHub());
             }
         }
     }
