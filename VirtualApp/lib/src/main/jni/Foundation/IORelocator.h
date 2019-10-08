@@ -18,8 +18,8 @@
 
 #include "Jni/Helper.h"
 
-
 #define HOOK_SYMBOL(handle, func) hook_function(handle, #func, (void*) new_##func, (void**) &orig_##func)
+#define HOOK_SYMBOL2(handle, func, new_func, orig_func) hook_function(handle, #func, (void*) new_func, (void**) &orig_func)
 #define HOOK_DEF(ret, func, ...) \
   ret (*orig_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)
