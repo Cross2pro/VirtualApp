@@ -35,15 +35,6 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    Substrate/SubstrateHook.cpp \
                    Substrate/SubstratePosixMemory.cpp \
                    Substrate/And64InlineHook.cpp \
-                   syscall/sysnum.cpp \
-                   syscall/tracer/tracer.cpp \
-                   syscall/tracer/reg.cpp \
-                   syscall/tracer/event.cpp \
-                   syscall/tracer/syscall.cpp \
-                   syscall/tracer/mem.cpp \
-                   syscall/tracer/enter.cpp \
-                   syscall/tracer/exit.cpp \
-                   syscall/tracer/path.cpp \
                    transparentED/ff_Recognizer.cpp \
                    transparentED/EncryptFile.cpp \
                    transparentED/originalInterface.cpp \

@@ -23,7 +23,6 @@ android {
         ]
         externalNativeBuild {
             ndkBuild {
-                arguments "APP_PLATFORM=android-23"
                 abiFilters "armeabi","armeabi-v7a"
             }
         }
@@ -95,6 +94,7 @@ gradle.taskGraph.afterTask { task ->
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "me.weishu:free_reflection:2.1.0"
     provided 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
     provided 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.50'
     provided 'com.xdja.safekeyservice:jar_multi_unitepin:3.9.24'
