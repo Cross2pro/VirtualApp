@@ -1178,10 +1178,13 @@ class MethodProxies {
             if (args[permissionIndex] instanceof String) {
                 args[permissionIndex] = null;
             }
-            IntentSenderExtData ext = new IntentSenderExtData(sender.asBinder(), fillIn, null, null, 0, options, 0, 0);
-            Intent newFillIn = new Intent();
-            newFillIn.putExtra("_VA_|_ext_", ext);
-            args[intentIndex] = newFillIn;
+            if (fillIn != null) {
+                IntentSenderExtData ext = new IntentSenderExtData(sender.asBinder(), fillIn, null, null, 0, options, 0, 0);
+                Intent newFillIn = new Intent();
+                newFillIn.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
+                newFillIn.putExtra("_VA_|_ext_", ext);
+                args[intentIndex] = newFillIn;
+            }
             return super.call(who, method, args);
         }
     }
