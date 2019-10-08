@@ -1934,7 +1934,10 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, sendfile64);
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
+#if defined(__i386__) || defined(__x86_64__)
+#else
         HOOK_SYMBOL(handle, connect);
+#endif
         HOOK_SYMBOL(handle, msync);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
