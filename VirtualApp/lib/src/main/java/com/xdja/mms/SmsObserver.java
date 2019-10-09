@@ -62,7 +62,7 @@ public class SmsObserver {
     private void observeInner() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             final Context context = getContext();
-            context.getContentResolver().registerContentObserver(Settings.Secure.CONTENT_URI, true, new ContentObserver(getAsyncHandler()) {
+            context.getContentResolver().registerContentObserver(Settings.Secure.getUriFor(SmsConstants.DEFAULT_SMS_APP_SETTING), true, new ContentObserver(getAsyncHandler()) {
                 @Override
                 public void onChange(boolean selfChange) {
                     super.onChange(selfChange);
