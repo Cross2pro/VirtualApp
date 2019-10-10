@@ -1723,9 +1723,11 @@ HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
     return syscall(__NR_dup3, oldfd, newfd, flags);
 }
 
-int (*orig_connect)(int sd, struct sockaddr *addr, socklen_t socklen);
+#if defined(__i386__) || defined(__x86_64__)
 
-int new_connect(int sd, struct sockaddr *addr, socklen_t socklen) {
+int (*orig_connect2)(int sd, struct sockaddr *addr, socklen_t socklen);
+
+int new_connect2(int sd, struct sockaddr *addr, socklen_t socklen) {
     int ret = -1;
     if(addr->sa_family == AF_INET || addr->sa_family == AF_INET6){
         //debug
@@ -1737,6 +1739,20 @@ int new_connect(int sd, struct sockaddr *addr, socklen_t socklen) {
     ret = orig_connect(sd, addr, socklen);
     return ret;
 }
+
+#else
+
+HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
+    int ret = -1;
+    if(!controllerManagerNative::isNetworkEnable()){
+        errno = ENETUNREACH;//无法传送数据包至指定的主机.
+        return -1;
+    }
+
+    ret = syscall(__NR_connect, sd, addr, socklen);
+    return ret;
+}
+#endif
 
 HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
 {
@@ -1938,7 +1954,11 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, sendfile64);
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
-        HOOK_SYMBOL2(handle, connect, new_connect, orig_connect);
+#if defined(__i386__) || defined(__x86_64__)
+        HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
+#else
+        HOOK_SYMBOL(handle, connect);
+#endif
         HOOK_SYMBOL(handle, msync);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
