@@ -31,6 +31,7 @@ import android.os.IInterface;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.Telephony;
+import android.telecom.TelecomManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -688,13 +689,28 @@ class MethodProxies {
             }
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
-                VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
+                VLog.d("VActivityManager", "Unable to resolve activityInfo : %s", intent);
                 if (intent.getPackage() != null && isAppPkg(intent.getPackage())) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
                 args[intentIndex] = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
                 ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
                 if (resolveInfo == null || resolveInfo.activityInfo == null) {
+                    //fix google phone 安通拨号的设置默认电话
+                    if (InstallerSetting.DIALER_PKG.equals(getAppPkg())) {
+                        if (intent.getComponent() != null && "com.android.settings".equals(intent.getComponent().getPackageName())) {
+                            if (intent.getComponent().getClassName().contains("PreferredListSettingsActivity")
+                                    || intent.getComponent().getClassName().contains("HomeSettingsActivity")) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                    intent.setAction(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
+                                    intent.putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getHostPkg());
+                                    intent.setComponent(null);
+                                    return method.invoke(who, args);
+                                }
+                            }
+                        }
+                    }
+                    VLog.e("VActivityManager", "Unable to resolve activityInfo : %s in outside", intent);
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
                 if (!Intent.ACTION_VIEW.equals(intent.getAction())
