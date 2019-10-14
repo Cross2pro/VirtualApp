@@ -272,8 +272,17 @@ public class PackageParserEx {
             }
             if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion < 28) {
                 String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
-                if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR)) {
-                    sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
+                if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR) && !sharedLibraryFileList.contains(APACHE_LEGACY_JAR_Q)) {
+                    if (BuildCompat.isQ()) {
+                        if (!FileUtils.isExist(APACHE_LEGACY_JAR_Q)) {
+                            sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                        } else {
+                            sharedLibraryFileList.add(APACHE_LEGACY_JAR_Q);
+                        }
+                    } else {
+                        sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                    }
                 }
             }
             sharedLibraryFiles = sharedLibraryFileList.toArray(new String[0]);
