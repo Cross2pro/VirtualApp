@@ -291,13 +291,16 @@ public class PackageParserEx {
         ai.sharedLibraryFiles = sharedLibraryFiles;
     }
 
-    private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
+    private static boolean initApplicationAsUser(ApplicationInfo ai, int userId) {
         PackageSetting ps = PackageCacheManager.getSetting(ai.packageName);
         if (ps == null) {
-            throw new IllegalStateException();
+            return false;
         }
         boolean is64bit = ps.isRunOn64BitProcess();
         String apkPath = ps.getApkPath(is64bit);
+        if(apkPath == null){
+            return false;
+        }
         ai.publicSourceDir = apkPath;
         ai.sourceDir = apkPath;
         SettingConfig config = VirtualCore.getConfig();
@@ -391,6 +394,7 @@ public class PackageParserEx {
                 ai.nativeLibraryDir = "/data/data/" + ai.packageName + "/lib/";
             }
         }
+        return true;
     }
 
     private static String chooseOutsideNativeLib(ApplicationInfo ai, boolean is64bit) {
@@ -474,6 +478,9 @@ public class PackageParserEx {
         pi.versionName = p.mVersionName;
         pi.sharedUserId = p.mSharedUserId;
         pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
+        if(pi.applicationInfo == null){
+            return null;
+        }
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
         if (p.requestedPermissions != null && !p.requestedPermissions.isEmpty()) {
@@ -603,7 +610,9 @@ public class PackageParserEx {
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }
-        initApplicationAsUser(ai, userId);
+        if(!initApplicationAsUser(ai, userId)){
+            return null;
+        }
         return ai;
     }
 
@@ -621,6 +630,9 @@ public class PackageParserEx {
             ai.metaData = a.metaData;
         }
         ai.applicationInfo = generateApplicationInfo(a.owner, flags, state, userId);
+        if(ai.applicationInfo == null){
+            return null;
+        }
         return ai;
     }
 
@@ -636,6 +648,9 @@ public class PackageParserEx {
             si.metaData = s.metaData;
         }
         si.applicationInfo = generateApplicationInfo(s.owner, flags, state, userId);
+        if(si.applicationInfo == null){
+            return null;
+        }
         return si;
     }
 
@@ -656,6 +671,9 @@ public class PackageParserEx {
             pi.uriPermissionPatterns = null;
         }
         pi.applicationInfo = generateApplicationInfo(p.owner, flags, state, userId);
+        if(pi.applicationInfo == null){
+            return null;
+        }
         return pi;
     }
 
