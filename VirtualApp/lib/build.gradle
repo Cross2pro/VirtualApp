@@ -70,13 +70,7 @@ gradle.taskGraph.afterTask { task ->
                 if (soFile.name.endsWith("_64.so")) {
                     for (String abi : COPY_ABI_LIST) {
                         def toFile = new File(numberDir, abi + soFile.name)
-                        if (!toFile.getParentFile().exists()) {
-                            continue
-                        }
-			copy {
-                            from soFile
-                            into toFile.getParentFile()
-                        }
+                        GFileUtils.copyFile(soFile, toFile)
                     }
                     for (String abi : COPY_FOR_HOUDINI_ABI_LIST) {
                         def toFile = new File(numberDir, abi + soFile.name)
@@ -94,7 +88,6 @@ gradle.taskGraph.afterTask { task ->
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "me.weishu:free_reflection:2.1.0"
     provided 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
     provided 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.50'
     provided 'com.xdja.safekeyservice:jar_multi_unitepin:3.9.24'
