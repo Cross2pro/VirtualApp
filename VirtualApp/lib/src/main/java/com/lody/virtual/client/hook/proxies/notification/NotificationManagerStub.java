@@ -52,6 +52,7 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
             addMethodProxy(new MethodProxies.GetNotificationChannels());
             addMethodProxy(new MethodProxies.DeleteNotificationChannel());
             addMethodProxy(new MethodProxies.GetNotificationChannel());
+            addMethodProxy(new MethodProxies.GetNotificationChannelGroup());
         }
         addMethodProxy(new ReplaceCallingPkgMethodProxy("setInterruptionFilter"));
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getPackageImportance"));

@@ -117,6 +117,8 @@ interface IActivityManager{
 
     int onServiceUnBind(int userId, in ComponentName component);
 
+    void setServiceForeground(in ComponentName component, int userId, int id, String tag, boolean cancel);
+
     void handleDownloadCompleteIntent(in Intent intent);
 
     int getRunningAppMemorySize(String packageName, int userId);

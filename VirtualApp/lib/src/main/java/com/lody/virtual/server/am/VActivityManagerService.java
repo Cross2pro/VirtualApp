@@ -3,7 +3,6 @@ package com.lody.virtual.server.am;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.IStopUserCallback;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -33,7 +32,6 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.ProviderCall;
 import com.lody.virtual.client.ipc.VActivityManager;
-import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
@@ -56,6 +54,7 @@ import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
+import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.VAppManagerService;
@@ -95,6 +94,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             .getSystemService(Context.NOTIFICATION_SERVICE);
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
     private boolean mResult;
+    private static boolean CANCEL_ALL_NOTIFICATION_BY_KILL_APP = false;
 
     //xdja
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
@@ -339,23 +339,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public VParceledListSlice<ActivityManager.RunningServiceInfo> getServices(int maxNum, int flags, int userId) {
         List<ActivityManager.RunningServiceInfo> infos = mServices.getServices(userId);
         return new VParceledListSlice<>(infos);
-    }
-
-    private void cancelNotification(int userId, int id, String pkg) {
-        id = VNotificationManager.get().dealNotificationId(id, pkg, null, userId);
-        String tag = VNotificationManager.get().dealNotificationTag(id, pkg, null, userId);
-        nm.cancel(tag, id);
-    }
-
-    private void postNotification(int userId, int id, String pkg, Notification notification) {
-        id = VNotificationManager.get().dealNotificationId(id, pkg, null, userId);
-        String tag = VNotificationManager.get().dealNotificationTag(id, pkg, null, userId);
-        VNotificationManager.get().addNotification(id, tag, pkg, userId);
-        try {
-            nm.notify(tag, id, notification);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -736,6 +719,12 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public void killAllApps() {
+        List<String> pkgList;
+        if (CANCEL_ALL_NOTIFICATION_BY_KILL_APP) {
+            pkgList = new ArrayList<>();
+        } else {
+            pkgList = null;
+        }
         synchronized (mProcessLock) {
             for (int i = 0; i < mPidsSelfLocked.size(); i++) {
                 ProcessRecord r = mPidsSelfLocked.get(i);
@@ -757,12 +746,25 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 finishAllActivity(r);
                 */
                 r.kill();
+                if(pkgList != null) {
+                    if (!pkgList.contains(r.info.packageName)) {
+                        pkgList.add(r.info.packageName);
+                    }
+                }
+            }
+        }
+        if(pkgList != null) {
+            for (String pkg : pkgList) {
+                VNotificationManagerService.get().cancelAllNotification(pkg, -1);
             }
         }
     }
 
     @Override
     public void killAppByPkg(final String pkg, int userId) {
+        if(CANCEL_ALL_NOTIFICATION_BY_KILL_APP) {
+            VNotificationManagerService.get().cancelAllNotification(pkg, userId);
+        }
         synchronized (mProcessLock) {
             ArrayMap<String, SparseArray<ProcessRecord>> map = mProcessNames.getMap();
             int N = map.size();
@@ -1065,6 +1067,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public int onServiceStop(int userId, ComponentName component, int targetStartId) {
         synchronized (mServices) {
+            mServices.setServiceForeground(component, userId, 0, null, true);
             return mServices.stopService(userId, component, targetStartId);
         }
     }
@@ -1080,6 +1083,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public int onServiceUnBind(int userId, ComponentName component) {
         synchronized (mServices) {
             return mServices.onUnbind(userId, component);
+        }
+    }
+
+    @Override
+    public void setServiceForeground(ComponentName component, int userId, int id, String tag, boolean cancel){
+        synchronized (mServices) {
+            mServices.setServiceForeground(component, userId, id, tag, cancel);
         }
     }
 
