@@ -14,11 +14,9 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
-import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
-import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -34,10 +32,7 @@ import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
 import com.xdja.activitycounter.ActivityCounterService;
-import com.xdja.call.PhoneCallService;
-import com.xdja.zs.VSafekeyCkmsManagerService;
 import com.xdja.zs.VSafekeyManagerService;
-import com.xdja.zs.VServiceKeepAliveManager;
 import com.xdja.zs.VServiceKeepAliveService;
 import com.xdja.zs.VWaterMarkService;
 import com.xdja.zs.controllerService;
@@ -68,7 +63,12 @@ public final class BinderProvider extends ContentProvider {
         Context context = getContext();
         if (context != null) {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                NotificationChannelCompat.checkOrCreateGroup(context, NotificationChannelCompat.GROUP_DAEMON, "daemon");
+                NotificationChannelCompat.checkOrCreateGroup(context, NotificationChannelCompat.GROUP_SYSTEM, "system");
+                NotificationChannelCompat.checkOrCreateGroup(context, NotificationChannelCompat.GROUP_APP, "app");
+                NotificationChannelCompat.checkOrCreateGroup(context, NotificationChannelCompat.GROUP_PHONE, "phone");
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DAEMON_ID, "daemon");
+                NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.SYSTEM_ID, "system");
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.DEFAULT_ID, "default");
                 NotificationChannelCompat.checkOrCreateChannel(context, NotificationChannelCompat.LIGHT_ID, "light");
             }

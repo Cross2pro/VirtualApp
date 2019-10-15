@@ -102,7 +102,7 @@ public class VNotificationManagerService extends INotificationManager.Stub {
     }
 
     @Override
-    public void addNotification(int id, String tag, String packageName, int userId) throws RemoteException {
+    public void addNotification(int id, String tag, String packageName, int userId) {
         Log.e(TAG, "addNotification id: " + id);
         Log.e(TAG, "addNotification tag: " + tag);
         Log.e(TAG, "addNotification packageName: " + packageName);
@@ -124,7 +124,11 @@ public class VNotificationManagerService extends INotificationManager.Stub {
         List<NotificationInfo> notificationInfos = mNotifications.get(packageName);
         int size = notificationInfos == null ? 0 : notificationInfos.size();
         Log.e(TAG, "addNotification size: " + size);
-        iNotificationCallback.addNotification(packageName, size);
+        try {
+            iNotificationCallback.addNotification(packageName, size);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -138,7 +142,7 @@ public class VNotificationManagerService extends INotificationManager.Stub {
                 int count = list.size();
                 for (int i = count - 1; i >= 0; i--) {
                     NotificationInfo info = list.get(i);
-                    if (info.userId == userId) {
+                    if (userId < 0 || info.userId == userId) {
                         infos.add(info);
                         list.remove(i);
                     }
@@ -154,8 +158,9 @@ public class VNotificationManagerService extends INotificationManager.Stub {
         }
         try {
             iNotificationCallback.cancelAllNotification(packageName);
-        } catch (Exception e)
-        {}
+        } catch (Exception e){
+
+        }
     }
 
     public void cancelNotification(String pkg, String tag, int id, int userId) throws RemoteException {

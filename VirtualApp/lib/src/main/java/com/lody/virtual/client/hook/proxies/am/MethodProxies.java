@@ -89,8 +89,10 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.WeakHashMap;
@@ -952,10 +954,13 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            ComponentName component = (ComponentName) args[0];
+            if(getHostPkg().equals(component.getPackageName())){
+                return method.invoke(who, args);
+            }
             if (!getConfig().isAllowServiceStartForeground()) {
                 return 0;
             }
-            ComponentName component = (ComponentName) args[0];
             IBinder token = (IBinder) args[1];
             int id = (int) args[2];
             Notification notification = (Notification) args[3];
@@ -967,6 +972,11 @@ class MethodProxies {
                 removeNotification = (flags & Service.STOP_FOREGROUND_REMOVE) != 0;
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
+                removeNotification = (id == 0);
+            }
+            if (removeNotification) {
+                VActivityManager.get().setServiceForeground(component, getAppUserId(), 0, null, true);
+                return 0;
             }
 
             fixSmallIcon(notification, component);
@@ -993,7 +1003,8 @@ class MethodProxies {
             }
             id = VNotificationManager.get().dealNotificationId(id, component.getPackageName(), null, 0);
             String tag = VNotificationManager.get().dealNotificationTag(id, component.getPackageName(), null, 0);
-            VNotificationManager.get().addNotification(id, tag, component.getPackageName(), 0);
+            VNotificationManager.get().addNotification(id, tag, component.getPackageName(), getAppUserId());
+            VActivityManager.get().setServiceForeground(component, getAppUserId(), id, tag, false);
             try {
                 NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
                         .getSystemService(Context.NOTIFICATION_SERVICE);
