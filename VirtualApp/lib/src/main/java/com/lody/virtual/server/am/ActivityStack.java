@@ -237,7 +237,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 }
                 case LAUNCH_SINGLE_TASK:
                     //xdja 安通拨号首界面多个实例
-                    if("com.xdja.dialer".equals(affinity) && "android.intent.action.MAIN".equals(intent.getAction())){
+                    if(("com.xdja.dialer".equals(affinity) ||
+                            "com.xdja.HDSafeEMailClient".equals(affinity)) &&
+                            "android.intent.action.MAIN".equals(intent.getAction())){
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
                         break;
                     }
