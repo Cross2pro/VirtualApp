@@ -51,6 +51,7 @@ import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.remote.AppRunningProcessInfo;
+import com.lody.virtual.remote.StubActivityRecord;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -141,14 +142,23 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Object _infos = method.invoke(who, args);
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             //noinspection unchecked
-            List<ActivityManager.RecentTaskInfo> infos =
-                    ParceledListSliceCompat.isReturnParceledListSlice(method)
-                            ? ParceledListSlice.getList.call(_infos)
-                            : (List) _infos;
-            for (ActivityManager.RecentTaskInfo info : infos) {
+            List<ActivityManager.RecentTaskInfo> infos = slice ? ParceledListSlice.getList.call(_infos)
+                    : (List) _infos;
+            Iterator<ActivityManager.RecentTaskInfo> it = infos.iterator();
+            while (it.hasNext()){
+                ActivityManager.RecentTaskInfo info = it.next();
                 AppTaskInfo taskInfo = VActivityManager.get().getTaskInfo(info.id);
                 if (taskInfo == null) {
+                    ComponentName cmp = ComponentUtils.getAppComponent(info.baseIntent);
+                    if(cmp == null){
+                        it.remove();
+                    }
+                    continue;
+                }
+                if (taskInfo.excludeRecent) {
+                    it.remove();
                     continue;
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -165,6 +175,9 @@ class MethodProxies {
                 } catch (Throwable e) {
                     // ignore
                 }
+            }
+            if(slice){
+                return ParceledListSliceCompat.create(infos);
             }
             return _infos;
         }

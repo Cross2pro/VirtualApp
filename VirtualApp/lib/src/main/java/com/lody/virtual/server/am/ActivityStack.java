@@ -15,6 +15,7 @@ import android.util.Log;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -22,13 +23,16 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.com.android.internal.R_Hide;
@@ -52,6 +56,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
      */
     private final SparseArray<TaskRecord> mHistory = new SparseArray<>();
     private final List<ActivityRecord> mLaunchingActivities = new ArrayList<>();
+    private final Map<ActivityInfo, IBinder> mExcludeRecentActivityRecord = new HashMap<>();
 
 
     ActivityStack(VActivityManagerService mService) {
@@ -213,7 +218,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0
                 || containFlags(intent, Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)) {
-            mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
+            if (info.packageName.equals(InstallerSetting.MDM_CLIENT_PKG) &&
+            info.name.contains("ForceControlActivity")) {
+                synchronized (mExcludeRecentActivityRecord) {
+                    if (!mExcludeRecentActivityRecord.containsKey(info)) {
+                        mExcludeRecentActivityRecord.put(info, null);
+                    }
+                }
+            } else {
+                mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
+            }
         }
 
         boolean notStartToFront = false;
@@ -589,14 +603,24 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             optimizeTasksLocked();
             TaskRecord task = mHistory.get(taskId);
             if (task == null) {
-                task = new TaskRecord(taskId, record.userId, ComponentUtils.getTaskAffinity(record.info), record.intent);
+                boolean excludeRecent = (record.info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0;
+                task = new TaskRecord(taskId, record.userId, ComponentUtils.getTaskAffinity(record.info), record.intent, excludeRecent);
                 mHistory.put(taskId, task);
                 Intent intent = new Intent(Constants.ACTION_NEW_TASK_CREATED);
                 intent.putExtra(Constants.EXTRA_USER_HANDLE, record.userId);
                 intent.putExtra(Constants.EXTRA_PACKAGE_NAME, record.info.packageName);
                 VirtualCore.get().getContext().sendBroadcast(intent);
             }
+
+
             record.init(task, targetApp, token);
+
+            synchronized (mExcludeRecentActivityRecord) {
+                if (mExcludeRecentActivityRecord.containsKey(record.info)) {
+                    mExcludeRecentActivityRecord.put(record.info, token);
+                }
+            }
+
             synchronized (task.activities) {
                 task.activities.add(record);
             }
@@ -713,4 +737,20 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return null;
         }
     }
+
+    boolean includeExcludeFromRecentsFlag(IBinder token){
+        synchronized (mExcludeRecentActivityRecord) {
+            Iterator<Map.Entry<ActivityInfo, IBinder>> entries = mExcludeRecentActivityRecord.entrySet().iterator();
+            while(entries.hasNext()) {
+                Map.Entry<ActivityInfo, IBinder> entry = entries.next();
+                if (entry.getValue() != null && entry.getValue().equals(token)) {
+                    VLog.d("VActivityManagerService", entry.getKey().taskAffinity + " has excludeFromRecentTask flag");
+                    entries.remove();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

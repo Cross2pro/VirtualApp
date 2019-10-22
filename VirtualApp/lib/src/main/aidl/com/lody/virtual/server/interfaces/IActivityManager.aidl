@@ -128,4 +128,6 @@ interface IActivityManager{
     void broadcastFinish(in PendingResultData res, int userId);
 
     List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId);
+
+    boolean includeExcludeFromRecentsFlag(in IBinder token);
 }

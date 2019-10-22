@@ -30,6 +30,9 @@ public class StubManifest {
     public static String[] PRIVILEGE_APPS = new String[]{
     };
 
+    public static boolean isStubActivity(String clazz) {
+        return clazz != null && clazz.startsWith(STUB_ACTIVITY + "$P");
+    }
 
     public static String getStubActivityName(int index) {
         return String.format(Locale.ENGLISH, "%s$P%d", STUB_ACTIVITY, index);

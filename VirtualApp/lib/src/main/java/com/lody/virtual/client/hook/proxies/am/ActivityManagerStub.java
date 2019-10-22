@@ -150,6 +150,10 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     IBinder token = (IBinder) args[0];
                     VActivityManager.get().onFinishActivity(token);
+                    if (VActivityManager.get().includeExcludeFromRecentsFlag(token)) {
+                        //FINISH_TASK_WITH_ROOT_ACTIVITY
+                        args[3] = 1;
+                    }
                     return super.call(who, method, args);
                 }
 
