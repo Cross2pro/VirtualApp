@@ -25,13 +25,15 @@ public class AppTaskInfo implements Parcelable {
 	public Intent baseIntent;
 	public ComponentName baseActivity;
 	public ComponentName topActivity;
+	public boolean excludeRecent;
 
 
-	public AppTaskInfo(int taskId, Intent baseIntent, ComponentName baseActivity, ComponentName topActivity) {
+	public AppTaskInfo(int taskId, Intent baseIntent, ComponentName baseActivity, ComponentName topActivity, boolean excludeRecent) {
 		this.taskId = taskId;
 		this.baseIntent = baseIntent;
 		this.baseActivity = baseActivity;
 		this.topActivity = topActivity;
+		this.excludeRecent = excludeRecent;
 	}
 
 	protected AppTaskInfo(Parcel in) {
@@ -39,6 +41,7 @@ public class AppTaskInfo implements Parcelable {
 		baseIntent = in.readParcelable(Intent.class.getClassLoader());
 		baseActivity = in.readParcelable(ComponentName.class.getClassLoader());
 		topActivity = in.readParcelable(ComponentName.class.getClassLoader());
+		excludeRecent = in.readByte() > 0;
 	}
 
 	@Override
@@ -52,5 +55,6 @@ public class AppTaskInfo implements Parcelable {
 		dest.writeParcelable(baseIntent, flags);
 		dest.writeParcelable(baseActivity, flags);
 		dest.writeParcelable(topActivity, flags);
+		dest.writeByte((byte) (excludeRecent ? 1 : 0));
 	}
 }

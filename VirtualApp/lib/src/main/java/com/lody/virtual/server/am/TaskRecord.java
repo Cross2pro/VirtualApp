@@ -18,12 +18,14 @@ class TaskRecord {
     public int userId;
     public String affinity;
     public Intent taskRoot;
+    public boolean excludeRecent;
 
-    TaskRecord(int taskId, int userId, String affinity, Intent intent) {
+    TaskRecord(int taskId, int userId, String affinity, Intent intent, boolean excludeRecent) {
         this.taskId = taskId;
         this.userId = userId;
         this.affinity = affinity;
         this.taskRoot = intent;
+        this.excludeRecent = excludeRecent;
     }
 
     ActivityRecord getRootActivityRecord() {
@@ -64,7 +66,7 @@ class TaskRecord {
             return null;
         }
         ComponentName top = activities.get(len - 1).component;
-        return new AppTaskInfo(taskId, taskRoot, taskRoot.getComponent(), top);
+        return new AppTaskInfo(taskId, taskRoot, taskRoot.getComponent(), top, excludeRecent);
     }
 
     public boolean isFinishing() {

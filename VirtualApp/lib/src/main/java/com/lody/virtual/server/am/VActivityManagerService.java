@@ -1203,4 +1203,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
+    @Override
+    public boolean includeExcludeFromRecentsFlag(IBinder token) {
+        return mActivityStack.includeExcludeFromRecentsFlag(token);
+    }
 }
