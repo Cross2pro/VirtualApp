@@ -73,31 +73,31 @@ const char * TED_packageVector[] =
 
 bool is_TED_Enable()
 {
-//    return false;
-    static int temp_result = -1;
-    zString pname;
-
-    if(!getSelfProcessName(pname))
-    {
-        slog("getSelfProcessName fail !");
-        return false;
-    }
-
-    if(temp_result == -1)
-    {
-        temp_result = 0;
-
-        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
-            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
-                temp_result = 1;
-                break;
-            }
-        }
-
-        slog("%s is_TED_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
-    }
-
-    return temp_result == 1;
+    return false;
+//    static int temp_result = -1;
+//    zString pname;
+//
+//    if(!getSelfProcessName(pname))
+//    {
+//        slog("getSelfProcessName fail !");
+//        return false;
+//    }
+//
+//    if(temp_result == -1)
+//    {
+//        temp_result = 0;
+//
+//        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
+//            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
+//                temp_result = 1;
+//                break;
+//            }
+//        }
+//
+//        slog("%s is_TED_Enable %s", pname.toString(), temp_result == 1 ? "true" : "false");
+//    }
+//
+//    return temp_result == 1;
 }
 static bool decryptState = false;
 bool changeDecryptState(bool state,int mode){

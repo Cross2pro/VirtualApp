@@ -88,8 +88,8 @@ gradle.taskGraph.afterTask { task ->
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    provided 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
-    provided 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.50'
-    provided 'com.xdja.safekeyservice:jar_multi_unitepin:3.9.24'
+    compileOnly 'com.xdja.safekeyservice:xdjacrypto:1.0.3'
+    compileOnly 'com.xdja.safekeyservice:jar_multi_jniapi:3.9.50'
+    compileOnly 'com.xdja.safekeyservice:jar_multi_unitepin:3.9.24'
     implementation 'com.android.support:appcompat-v7:26.1.0'
 }
