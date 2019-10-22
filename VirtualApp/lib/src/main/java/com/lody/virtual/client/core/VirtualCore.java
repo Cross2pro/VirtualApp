@@ -424,20 +424,24 @@ public final class VirtualCore {
             list = new ArrayList<>(am.getAppTasks());
             List<ActivityManager.RecentTaskInfo> recentTaskInfoList = new ArrayList<>();
             for (ActivityManager.AppTask task : list) {
-                ActivityManager.RecentTaskInfo info = task.getTaskInfo();
-                if (info == null) {
-                    continue;
-                }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
-                    //過濾其他App
-                    String pkg = ActivityManagerCompat.getPackageName(info);
-                    if (!(TextUtils.equals(VirtualCore.getConfig().getHostPackageName(), pkg)
-                            || TextUtils.equals(VirtualCore.getConfig().get64bitEnginePackageName(), pkg)
-                    )) {
+                try {
+                    ActivityManager.RecentTaskInfo info = task.getTaskInfo();
+                    if (info == null) {
                         continue;
                     }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
+                        //過濾其他App
+                        String pkg = ActivityManagerCompat.getPackageName(info);
+                        if (!(TextUtils.equals(VirtualCore.getConfig().getHostPackageName(), pkg)
+                                || TextUtils.equals(VirtualCore.getConfig().get64bitEnginePackageName(), pkg)
+                        )) {
+                            continue;
+                        }
+                    }
+                    recentTaskInfoList.add(info);
+                }catch (Exception e){
+                    continue;
                 }
-                recentTaskInfoList.add(info);
             }
             return recentTaskInfoList;
         } else {
