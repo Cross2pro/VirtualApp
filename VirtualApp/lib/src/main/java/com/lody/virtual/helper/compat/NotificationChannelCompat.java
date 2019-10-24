@@ -7,6 +7,8 @@ import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -105,6 +107,9 @@ public class NotificationChannelCompat {
                 channel.setSound(null, null);
                 channel.setShowBadge(false);
                 if (channelId.equals(LIGHT_ID)) {
+                    //通知栏使用默认铃声
+                    Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    channel.setSound(sound, Notification.AUDIO_ATTRIBUTES_DEFAULT);
                     channel.enableVibration(true);
                     channel.enableLights(true);
                     channel.setLightColor(Color.GREEN);
