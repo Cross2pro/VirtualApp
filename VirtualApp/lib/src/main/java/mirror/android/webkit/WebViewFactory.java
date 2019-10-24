@@ -2,6 +2,7 @@ package mirror.android.webkit;
 
 import mirror.RefClass;
 import mirror.RefStaticMethod;
+import mirror.RefStaticObject;
 
 /**
  * @author CodeHz
@@ -10,4 +11,5 @@ import mirror.RefStaticMethod;
 public class WebViewFactory {
 	public static Class<?> TYPE = RefClass.load(WebViewFactory.class, "android.webkit.WebViewFactory");
 	public static RefStaticMethod<Object> getUpdateService;
+	public static RefStaticObject<Boolean> sWebViewSupported;
 }
