@@ -64,6 +64,10 @@ import mirror.com.android.internal.R_Hide;
         }
         int type = mirror.android.graphics.drawable.Icon.mType.get(icon);
         if (type == mirror.android.graphics.drawable.Icon.TYPE_RESOURCE) {
+            String pkg = mirror.android.graphics.drawable.Icon.mString1.get(icon);
+            if(VirtualCore.get().getHostPkg().equals(pkg)){
+                return;
+            }
             if (installed) {
                 mirror.android.graphics.drawable.Icon.mObj1.set(icon, appContext.getResources());
                 mirror.android.graphics.drawable.Icon.mString1.set(icon, appContext.getPackageName());

@@ -13,10 +13,8 @@ import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VNotificationManager;
-import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
-import com.lody.virtual.helper.utils.Reflect;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -68,6 +66,31 @@ class MethodProxies {
                 args[1] = VNotificationManager.get().dealNotificationGroup((String) args[1], getAppPkg(), getAppUserId());
             }
             return super.beforeCall(who, method, args);
+        }
+    }
+
+    @SkipInject
+    @TargetApi(Build.VERSION_CODES.O)
+    static class GetNotificationChannelGroup extends ReplaceCallingPkgMethodProxy{
+        public GetNotificationChannelGroup() {
+            super("getNotificationChannelGroup");
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            String pkg = (String) args[0];
+            if (!isAppPkg(pkg)) {
+                return super.call(who, method, args);
+            }
+            args[0] = getHostPkg();
+            if (args.length > 1 && args[1] instanceof String) {
+                args[1] = VNotificationManager.get().dealNotificationGroup((String) args[1], getAppPkg(), getAppUserId());
+            }
+            Object res = super.call(who, method, args);
+            if(res instanceof NotificationChannelGroup) {
+                fixRealNotificationChannelGroup((NotificationChannelGroup)res, getAppPkg(), getAppUserId());
+            }
+            return res;
         }
     }
 

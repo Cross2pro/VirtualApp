@@ -607,6 +607,7 @@ public class VAppManagerService extends IAppManager.Stub {
             } else {
                 VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
                 // Just hidden it
+                VNotificationManagerService.get().cancelAllNotification(packageName, userId);
                 VActivityManagerService.get().killAppByPkg(packageName, userId);
                 ps.setInstalled(userId, false);
                 mPersistenceLayer.save();
@@ -694,6 +695,7 @@ public class VAppManagerService extends IAppManager.Stub {
             AttributeCache.instance().removePackage(packageName);
             BroadcastSystem.get().stopApp(packageName);
             VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
+            VNotificationManagerService.get().cancelAllNotification(packageName, VUserHandle.USER_ALL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {
                 FileUtils.deleteDir(VEnvironment.getPackageResourcePath(packageName));

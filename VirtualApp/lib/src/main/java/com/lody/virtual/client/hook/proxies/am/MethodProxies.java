@@ -52,6 +52,7 @@ import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.remote.AppRunningProcessInfo;
+import com.lody.virtual.remote.StubActivityRecord;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -90,8 +91,10 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.WeakHashMap;
@@ -140,14 +143,23 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Object _infos = method.invoke(who, args);
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             //noinspection unchecked
-            List<ActivityManager.RecentTaskInfo> infos =
-                    ParceledListSliceCompat.isReturnParceledListSlice(method)
-                            ? ParceledListSlice.getList.call(_infos)
-                            : (List) _infos;
-            for (ActivityManager.RecentTaskInfo info : infos) {
+            List<ActivityManager.RecentTaskInfo> infos = slice ? ParceledListSlice.getList.call(_infos)
+                    : (List) _infos;
+            Iterator<ActivityManager.RecentTaskInfo> it = infos.iterator();
+            while (it.hasNext()){
+                ActivityManager.RecentTaskInfo info = it.next();
                 AppTaskInfo taskInfo = VActivityManager.get().getTaskInfo(info.id);
                 if (taskInfo == null) {
+                    ComponentName cmp = ComponentUtils.getAppComponent(info.baseIntent);
+                    if(cmp == null){
+                        it.remove();
+                    }
+                    continue;
+                }
+                if (taskInfo.excludeRecent) {
+                    it.remove();
                     continue;
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -164,6 +176,9 @@ class MethodProxies {
                 } catch (Throwable e) {
                     // ignore
                 }
+            }
+            if(slice){
+                return ParceledListSliceCompat.create(infos);
             }
             return _infos;
         }
@@ -971,10 +986,13 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            ComponentName component = (ComponentName) args[0];
+            if(getHostPkg().equals(component.getPackageName())){
+                return method.invoke(who, args);
+            }
             if (!getConfig().isAllowServiceStartForeground()) {
                 return 0;
             }
-            ComponentName component = (ComponentName) args[0];
             IBinder token = (IBinder) args[1];
             int id = (int) args[2];
             Notification notification = (Notification) args[3];
@@ -986,6 +1004,11 @@ class MethodProxies {
                 removeNotification = (flags & Service.STOP_FOREGROUND_REMOVE) != 0;
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
+                removeNotification = (id == 0);
+            }
+            if (removeNotification) {
+                VActivityManager.get().setServiceForeground(component, getAppUserId(), 0, null, true);
+                return 0;
             }
 
             fixSmallIcon(notification, component);
@@ -1012,7 +1035,8 @@ class MethodProxies {
             }
             id = VNotificationManager.get().dealNotificationId(id, component.getPackageName(), null, 0);
             String tag = VNotificationManager.get().dealNotificationTag(id, component.getPackageName(), null, 0);
-            VNotificationManager.get().addNotification(id, tag, component.getPackageName(), 0);
+            VNotificationManager.get().addNotification(id, tag, component.getPackageName(), getAppUserId());
+            VActivityManager.get().setServiceForeground(component, getAppUserId(), id, tag, false);
             try {
                 NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
                         .getSystemService(Context.NOTIFICATION_SERVICE);

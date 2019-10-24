@@ -19,6 +19,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.server.notification.VNotificationManagerService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +41,16 @@ public class ActiveServices {
     private final VActivityManagerService mAms;
     private final Context mContext = VirtualCore.get().getContext();
     private final SparseArray<UserSpace> mUserSpaces = new SparseArray<>();
+    private static class NotificationId {
+        String tag;
+        int id;
+
+        public NotificationId(String tag, int id) {
+            this.tag = tag;
+            this.id = id;
+        }
+    }
+    private final Map<ComponentName, NotificationId> mServiceIds = new HashMap<>();
 
     private class UserSpace {
         int userId;
@@ -356,6 +367,31 @@ public class ActiveServices {
                 infos.add(info);
             }
             return infos;
+        }
+    }
+
+    public void setServiceForeground(ComponentName component, int userId, int id, String tag, boolean cancel) {
+        NotificationId notificationId;
+        synchronized (mServiceIds) {
+            notificationId = mServiceIds.get(component);
+        }
+        if (cancel) {
+            if (notificationId == null) {
+                return;
+            }
+            id = notificationId.id;
+            tag = notificationId.tag;
+            VLog.d("kk", "setServiceForeground cancel %s %d[%s]", component, id, tag);
+            try {
+                VNotificationManagerService.get().cancelNotification(component.getPackageName(), tag, id, userId);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            VLog.d("kk", "setServiceForeground add %s %d[%s]", component, id, tag);
+            synchronized (mServiceIds) {
+                mServiceIds.put(component, new NotificationId(tag, id));
+            }
         }
     }
 }

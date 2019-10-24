@@ -60,4 +60,15 @@ public class Constants {
     public static String NOTIFICATION_DAEMON_CHANNEL = "virtual_daemon";
 
 	public static String NOTIFICATION_LIGHT_CHANNEL = "virtual_light";
+
+	public static String NOTIFICATION_SYSTEM_CHANNEL = "virtual_system";
+
+	public static String NOTIFICATION_GROUP_DAEMON = "virtual_group_daemon";
+
+	public static String NOTIFICATION_GROUP_APP = "virtual_group_app";
+
+	public static String NOTIFICATION_GROUP_SYSTEM = "virtual_group_system";
+
+	public static String NOTIFICATION_GROUP_PHONE = "virtual_group_phone";
+
 }

@@ -117,6 +117,8 @@ interface IActivityManager{
 
     int onServiceUnBind(int userId, in ComponentName component);
 
+    void setServiceForeground(in ComponentName component, int userId, int id, String tag, boolean cancel);
+
     void handleDownloadCompleteIntent(in Intent intent);
 
     int getRunningAppMemorySize(String packageName, int userId);
@@ -126,4 +128,6 @@ interface IActivityManager{
     void broadcastFinish(in PendingResultData res, int userId);
 
     List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId);
+
+    boolean includeExcludeFromRecentsFlag(in IBinder token);
 }

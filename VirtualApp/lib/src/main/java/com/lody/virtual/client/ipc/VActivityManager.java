@@ -650,4 +650,21 @@ public class VActivityManager {
             return VirtualRuntime.crash(e);
         }
     }
+
+    public void setServiceForeground(ComponentName component, int userId, int id, String tag, boolean cancel){
+        try {
+            getService().setServiceForeground(component, userId, id, tag, cancel);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public boolean includeExcludeFromRecentsFlag(IBinder token) {
+        try {
+            return getService().includeExcludeFromRecentsFlag(token);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
 }

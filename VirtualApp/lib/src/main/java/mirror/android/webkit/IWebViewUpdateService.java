@@ -11,6 +11,5 @@ public class IWebViewUpdateService {
     public static Class<?> TYPE = RefClass.load(IWebViewUpdateService.class, "android.webkit.IWebViewUpdateService");
 
     public static RefMethod<String> getCurrentWebViewPackageName;
-	
-	public static RefMethod<Object> waitForAndGetProvider;
+    public static RefMethod<Object> waitForAndGetProvider;
 }

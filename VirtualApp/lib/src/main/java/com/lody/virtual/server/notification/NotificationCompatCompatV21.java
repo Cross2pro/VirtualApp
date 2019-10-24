@@ -14,6 +14,7 @@ import android.widget.RemoteViews;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.os.VEnvironment;
@@ -42,10 +43,14 @@ import mirror.android.app.NotificationO;
             if (VirtualCore.get().getTargetSdkVersion() >= android.os.Build.VERSION_CODES.O) {
                 if (TextUtils.isEmpty(notification.getChannelId())) {
                     if (NotificationO.mChannelId != null) {
-                        //安通＋, 短信呼吸灯
-                        if(packageName.equals("com.xdja.actoma") || packageName.equals("com.xdja.mms")) {
+                        //安通＋, 安全邮件, 短信, 使用声音和呼吸灯
+                        if (packageName.equals("com.xdja.actoma")
+                                || packageName.equals("com.xdja.HDSafeEMailClient")
+                                || packageName.equals(InstallerSetting.MESSAGING_PKG/*"com.xdja.mms"*/)) {
                             NotificationO.mChannelId.set(notification, NotificationChannelCompat.LIGHT_ID);
-                        }else {
+                        } else if (packageName.equals(InstallerSetting.CLOCK_PKG)) {
+                            NotificationO.mChannelId.set(notification, NotificationChannelCompat.SYSTEM_ID);
+                        } else {
                             NotificationO.mChannelId.set(notification, NotificationChannelCompat.DEFAULT_ID);
                         }
                     }

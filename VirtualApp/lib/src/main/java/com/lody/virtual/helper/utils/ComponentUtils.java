@@ -362,4 +362,17 @@ public class ComponentUtils {
         uri = ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
         return uri;
     }
+
+    public static ComponentName getAppComponent(Intent realIntent){
+        if(realIntent == null || realIntent.getComponent() == null){
+            return null;
+        }
+        String pkg = realIntent.getComponent().getPackageName();
+        String type = realIntent.getType();
+        if(TextUtils.equals(pkg, StubManifest.PACKAGE_NAME) && type != null && type.contains("/")){
+            String[] ws = type.split("/");
+            return new ComponentName(ws[0], ws[1]);
+        }
+        return null;
+    }
 }
