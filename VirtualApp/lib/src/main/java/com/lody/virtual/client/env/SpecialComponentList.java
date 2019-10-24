@@ -5,10 +5,12 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserManager;
 
@@ -20,6 +22,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+
+import mirror.android.webkit.IWebViewUpdateService;
+import mirror.android.webkit.WebViewFactory;
 
 /**
  * @author Lody
@@ -110,6 +115,18 @@ public final class SpecialComponentList {
 
         SPEC_SYSTEM_APP_LIST.add("android");
         SPEC_SYSTEM_APP_LIST.add("com.google.android.webview");
+        try {
+            if (WebViewFactory.sWebViewSupported != null) {
+                WebViewFactory.sWebViewSupported.set(true);
+            }
+            Object service = WebViewFactory.getUpdateService.call();
+            Object res = IWebViewUpdateService.waitForAndGetProvider.call(service);
+            PackageInfo info = Reflect.on(res).get("packageInfo");
+            VLog.i("WebView", "Load WebView provider: " + info.packageName);
+            SPEC_SYSTEM_APP_LIST.add(info.packageName);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         //PRE_INSTALL_PACKAGES.add("com.huawei.hwid");
     }
 
