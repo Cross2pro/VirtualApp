@@ -34,10 +34,13 @@ public class NotificationChannelCompat {
                 channel.setDescription("Compatibility of old versions");
                 channel.setSound(null, null);
                 channel.setShowBadge(false);
-                if(channelId.equals(LIGHT_ID)){
+                if (channelId.equals(LIGHT_ID)) {
                     channel.enableVibration(true);
                     channel.enableLights(true);
                     channel.setLightColor(Color.GREEN);
+                } else if (channelId.equals(DAEMON_ID)) {
+                    channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+                    channel.setImportance(NotificationManager.IMPORTANCE_LOW);
                 }
                 try {
                     manager.createNotificationChannel(channel);
