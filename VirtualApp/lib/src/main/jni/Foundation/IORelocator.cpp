@@ -24,6 +24,8 @@
 #include "canonicalize_md.h"
 #include "Symbol.h"
 #include "Log.h"
+#include "sandhook/sandhook_native.h"
+#include "elf.h"
 
 #if defined(__LP64__)
 #define LINKER_PATH "/system/bin/linker64"
@@ -136,6 +138,16 @@ hook_function(void *handle, const char *symbol, void *new_func, void **old_func)
         return;
     }
     MSHookFunction(addr, new_func, old_func);
+}
+
+static inline void
+sandhook_function(const char *handle, const char *symbol, void *new_func, void **old_func) {
+    void* origin = SandInlineHookSym(handle, symbol, new_func);
+    if (origin == nullptr) {
+        LOGE("no hook %s", symbol);
+        return;
+    }
+    *old_func = origin;
 }
 
 void onSoLoaded(const char *name, void *handle);
@@ -1723,25 +1735,6 @@ HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
     return syscall(__NR_dup3, oldfd, newfd, flags);
 }
 
-#if defined(__i386__) || defined(__x86_64__)
-
-int (*orig_connect2)(int sd, struct sockaddr *addr, socklen_t socklen);
-
-int new_connect2(int sd, struct sockaddr *addr, socklen_t socklen) {
-    int ret = -1;
-    if(addr->sa_family == AF_INET || addr->sa_family == AF_INET6){
-        //debug
-        if (!controllerManagerNative::isNetworkEnable()) {
-            errno = ENETUNREACH;//无法传送数据包至指定的主机.
-            return -1;
-        }
-    }
-    ret = orig_connect(sd, addr, socklen);
-    return ret;
-}
-
-#else
-
 HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     int ret = -1;
     if(!controllerManagerNative::isNetworkEnable()){
@@ -1752,7 +1745,6 @@ HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     ret = syscall(__NR_connect, sd, addr, socklen);
     return ret;
 }
-#endif
 
 HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
 {
@@ -1891,8 +1883,9 @@ bool on_found_linker_syscall_arm(const char *path, int num, void *func) {
 #endif
 
 void startIOHook(int api_level) {
-    void *handle = dlopen("libc.so", RTLD_NOW);
-    if (handle) {
+    if(api_level < 29) {
+        void *handle = dlopen("libc.so", RTLD_NOW);
+        if (handle) {
 #if defined(__aarch64__)
         HOOK_SYMBOL(handle, fchownat);
         HOOK_SYMBOL(handle, renameat);
@@ -1913,74 +1906,166 @@ void startIOHook(int api_level) {
         findSyscalls("/system/lib64/libc.so", on_found_syscall_aarch64);
         findSyscalls("/system/bin/linker64", on_found_linker_syscall_arch64);
 #else
-        HOOK_SYMBOL(handle, faccessat);
-        HOOK_SYMBOL(handle, __openat);
-        HOOK_SYMBOL(handle, fchmodat);
-        HOOK_SYMBOL(handle, fchownat);
-        HOOK_SYMBOL(handle, renameat);
-        HOOK_SYMBOL(handle, fstatat64);
-        HOOK_SYMBOL(handle, __statfs);
-        HOOK_SYMBOL(handle, __statfs64);
-        HOOK_SYMBOL(handle, mkdirat);
-        HOOK_SYMBOL(handle, mknodat);
-        HOOK_SYMBOL(handle, truncate);
-        HOOK_SYMBOL(handle, linkat);
-        HOOK_SYMBOL(handle, readlinkat);
-        HOOK_SYMBOL(handle, unlinkat);
-        HOOK_SYMBOL(handle, symlinkat);
-        HOOK_SYMBOL(handle, utimensat);
-        HOOK_SYMBOL(handle, __getcwd);
-        HOOK_SYMBOL(handle, chdir);
-        HOOK_SYMBOL(handle, execve);
-        HOOK_SYMBOL(handle, kill);
-        HOOK_SYMBOL(handle, vfork);
-        HOOK_SYMBOL(handle, access);
-        HOOK_SYMBOL(handle, stat);
-        HOOK_SYMBOL(handle, lstat);
-        HOOK_SYMBOL(handle, fstatat);
-//        HOOK_SYMBOL(handle, __getdents64);
-        HOOK_SYMBOL(handle, close);
-        HOOK_SYMBOL(handle, read);
-        HOOK_SYMBOL(handle, write);
-        HOOK_SYMBOL(handle, __mmap2);
-        HOOK_SYMBOL(handle, munmap);
-        HOOK_SYMBOL(handle, pread64);
-        HOOK_SYMBOL(handle, pwrite64);
-        HOOK_SYMBOL(handle, fstat);
-        HOOK_SYMBOL(handle, __llseek);
-        HOOK_SYMBOL(handle, lseek);
-        HOOK_SYMBOL(handle, ftruncate64);
-        HOOK_SYMBOL(handle, sendfile);
-        HOOK_SYMBOL(handle, sendfile64);
-        HOOK_SYMBOL(handle, dup);
-        HOOK_SYMBOL(handle, dup3);
-#if defined(__i386__) || defined(__x86_64__)
-        HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
-#else
-        HOOK_SYMBOL(handle, connect);
-#endif
-        HOOK_SYMBOL(handle, msync);
-        if (api_level <= 20) {
+            HOOK_SYMBOL(handle, faccessat);
+            HOOK_SYMBOL(handle, __openat);
+            HOOK_SYMBOL(handle, fchmodat);
+            HOOK_SYMBOL(handle, fchownat);
+            HOOK_SYMBOL(handle, renameat);
+            HOOK_SYMBOL(handle, fstatat64);
+            HOOK_SYMBOL(handle, __statfs);
+            HOOK_SYMBOL(handle, __statfs64);
+            HOOK_SYMBOL(handle, mkdirat);
+            HOOK_SYMBOL(handle, mknodat);
+            HOOK_SYMBOL(handle, truncate);
+            HOOK_SYMBOL(handle, linkat);
+            HOOK_SYMBOL(handle, readlinkat);
+            HOOK_SYMBOL(handle, unlinkat);
+            HOOK_SYMBOL(handle, symlinkat);
+            HOOK_SYMBOL(handle, utimensat);
+            HOOK_SYMBOL(handle, __getcwd);
+            HOOK_SYMBOL(handle, chdir);
+            HOOK_SYMBOL(handle, execve);
+            HOOK_SYMBOL(handle, kill);
+            HOOK_SYMBOL(handle, vfork);
             HOOK_SYMBOL(handle, access);
-            HOOK_SYMBOL(handle, __open);
-            HOOK_SYMBOL(handle, chmod);
-            HOOK_SYMBOL(handle, chown);
-            HOOK_SYMBOL(handle, rename);
-            HOOK_SYMBOL(handle, rmdir);
-            HOOK_SYMBOL(handle, mkdir);
-            HOOK_SYMBOL(handle, mknod);
-            HOOK_SYMBOL(handle, link);
-            HOOK_SYMBOL(handle, unlink);
-            HOOK_SYMBOL(handle, readlink);
-            HOOK_SYMBOL(handle, symlink);
-        }
+            HOOK_SYMBOL(handle, stat);
+            HOOK_SYMBOL(handle, lstat);
+            HOOK_SYMBOL(handle, fstatat);
+//        HOOK_SYMBOL(handle, __getdents64);
+            HOOK_SYMBOL(handle, close);
+            HOOK_SYMBOL(handle, read);
+            HOOK_SYMBOL(handle, write);
+            HOOK_SYMBOL(handle, __mmap2);
+            HOOK_SYMBOL(handle, munmap);
+            HOOK_SYMBOL(handle, pread64);
+            HOOK_SYMBOL(handle, pwrite64);
+            HOOK_SYMBOL(handle, fstat);
+            HOOK_SYMBOL(handle, __llseek);
+            HOOK_SYMBOL(handle, lseek);
+            HOOK_SYMBOL(handle, ftruncate64);
+            HOOK_SYMBOL(handle, sendfile);
+            HOOK_SYMBOL(handle, sendfile64);
+            HOOK_SYMBOL(handle, dup);
+            HOOK_SYMBOL(handle, dup3);
+#if defined(__i386__) || defined(__x86_64__)
+            HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
+#else
+            HOOK_SYMBOL(handle, connect);
+#endif
+            HOOK_SYMBOL(handle, msync);
+            if (api_level <= 20) {
+                HOOK_SYMBOL(handle, access);
+                HOOK_SYMBOL(handle, __open);
+                HOOK_SYMBOL(handle, chmod);
+                HOOK_SYMBOL(handle, chown);
+                HOOK_SYMBOL(handle, rename);
+                HOOK_SYMBOL(handle, rmdir);
+                HOOK_SYMBOL(handle, mkdir);
+                HOOK_SYMBOL(handle, mknod);
+                HOOK_SYMBOL(handle, link);
+                HOOK_SYMBOL(handle, unlink);
+                HOOK_SYMBOL(handle, readlink);
+                HOOK_SYMBOL(handle, symlink);
+            }
 #ifdef __arm__
-        if (!relocate_linker()) {
-            findSyscalls("/system/bin/linker", on_found_linker_syscall_arm);
+            if (!relocate_linker()) {
+                findSyscalls("/system/bin/linker", on_found_linker_syscall_arm);
+            }
+#endif
+#endif
+            dlclose(handle);
         }
+    } else {
+        const char *handle = "libc.so";
+        if (handle) {
+#if defined(__aarch64__)
+            SANDHOOK_SYMBOL(handle, fchownat);
+            SANDHOOK_SYMBOL(handle, renameat);
+            SANDHOOK_SYMBOL(handle, mkdirat);
+            SANDHOOK_SYMBOL(handle, mknodat);
+            SANDHOOK_SYMBOL(handle, truncate);
+            SANDHOOK_SYMBOL(handle, linkat);
+            SANDHOOK_SYMBOL(handle, readlinkat);
+            SANDHOOK_SYMBOL(handle, unlinkat);
+            SANDHOOK_SYMBOL(handle, symlinkat);
+            SANDHOOK_SYMBOL(handle, utimensat);
+            SANDHOOK_SYMBOL(handle, chdir);
+            SANDHOOK_SYMBOL(handle, execve);
+            SANDHOOK_SYMBOL(handle, statfs64);
+            SANDHOOK_SYMBOL(handle, kill);
+            SANDHOOK_SYMBOL(handle, vfork);
+            SANDHOOK_SYMBOL(handle, fstatat64);
+            findSyscalls("/system/lib64/libc.so", on_found_syscall_aarch64);
+            findSyscalls("/system/bin/linker64", on_found_linker_syscall_arch64);
+#else
+            SANDHOOK_SYMBOL(handle, faccessat);
+            SANDHOOK_SYMBOL(handle, __openat);
+            SANDHOOK_SYMBOL(handle, fchmodat);
+            SANDHOOK_SYMBOL(handle, fchownat);
+            SANDHOOK_SYMBOL(handle, renameat);
+            SANDHOOK_SYMBOL(handle, fstatat64);
+            SANDHOOK_SYMBOL(handle, __statfs);
+            SANDHOOK_SYMBOL(handle, __statfs64);
+            SANDHOOK_SYMBOL(handle, mkdirat);
+            SANDHOOK_SYMBOL(handle, mknodat);
+            SANDHOOK_SYMBOL(handle, truncate);
+            SANDHOOK_SYMBOL(handle, linkat);
+            SANDHOOK_SYMBOL(handle, readlinkat);
+            SANDHOOK_SYMBOL(handle, unlinkat);
+            SANDHOOK_SYMBOL(handle, symlinkat);
+            SANDHOOK_SYMBOL(handle, utimensat);
+            SANDHOOK_SYMBOL(handle, __getcwd);
+            SANDHOOK_SYMBOL(handle, chdir);
+            SANDHOOK_SYMBOL(handle, execve);
+            SANDHOOK_SYMBOL(handle, kill);
+            SANDHOOK_SYMBOL(handle, vfork);
+            SANDHOOK_SYMBOL(handle, access);
+            SANDHOOK_SYMBOL(handle, stat);
+            SANDHOOK_SYMBOL(handle, lstat);
+            SANDHOOK_SYMBOL(handle, fstatat);
+//        HOOK_SYMBOL(handle, __getdents64);
+            SANDHOOK_SYMBOL(handle, close);
+            SANDHOOK_SYMBOL(handle, read);
+            SANDHOOK_SYMBOL(handle, write);
+            SANDHOOK_SYMBOL(handle, __mmap2);
+            SANDHOOK_SYMBOL(handle, munmap);
+            SANDHOOK_SYMBOL(handle, pread64);
+            SANDHOOK_SYMBOL(handle, pwrite64);
+            SANDHOOK_SYMBOL(handle, fstat);
+            SANDHOOK_SYMBOL(handle, __llseek);
+            SANDHOOK_SYMBOL(handle, lseek);
+            SANDHOOK_SYMBOL(handle, ftruncate64);
+            SANDHOOK_SYMBOL(handle, sendfile);
+            SANDHOOK_SYMBOL(handle, sendfile64);
+            SANDHOOK_SYMBOL(handle, dup);
+            SANDHOOK_SYMBOL(handle, dup3);
+#if defined(__i386__) || defined(__x86_64__)
+#else
+            SANDHOOK_SYMBOL(handle, connect);
+#endif
+            SANDHOOK_SYMBOL(handle, msync);
+            if (api_level <= 20) {
+                SANDHOOK_SYMBOL(handle, access);
+                SANDHOOK_SYMBOL(handle, __open);
+                SANDHOOK_SYMBOL(handle, chmod);
+                SANDHOOK_SYMBOL(handle, chown);
+                SANDHOOK_SYMBOL(handle, rename);
+                SANDHOOK_SYMBOL(handle, rmdir);
+                SANDHOOK_SYMBOL(handle, mkdir);
+                SANDHOOK_SYMBOL(handle, mknod);
+                SANDHOOK_SYMBOL(handle, link);
+                SANDHOOK_SYMBOL(handle, unlink);
+                SANDHOOK_SYMBOL(handle, readlink);
+                SANDHOOK_SYMBOL(handle, symlink);
+            }
+#ifdef __arm__
+            if (!relocate_linker()) {
+                findSyscalls("/system/bin/linker", on_found_linker_syscall_arm);
+            }
 #endif
 #endif
-        dlclose(handle);
+            //dlclose(handle);
+        }
     }
     originalInterface::original_lseek = orig_lseek;
     originalInterface::original_llseek = orig___llseek;

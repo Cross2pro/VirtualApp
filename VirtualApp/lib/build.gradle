@@ -4,7 +4,7 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion 26
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 19
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 22
 
@@ -23,7 +23,7 @@ android {
         ]
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi","armeabi-v7a"
+                abiFilters "armeabi-v7a"
             }
         }
     }
