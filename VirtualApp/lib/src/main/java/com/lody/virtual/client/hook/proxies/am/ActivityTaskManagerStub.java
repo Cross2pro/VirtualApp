@@ -30,12 +30,55 @@ public class ActivityTaskManagerStub extends BinderInvocationProxy {
     protected void onBindMethods() {
         super.onBindMethods();
         addMethodProxy(new MethodProxies.StartActivity());
+        addMethodProxy(new MethodProxies.GetCallingActivity());
+        addMethodProxy(new MethodProxies.StartActivities());
+        addMethodProxy(new MethodProxies.StartActivityAndWait());
+        addMethodProxy(new MethodProxies.StartActivityAsUser());
+        addMethodProxy(new MethodProxies.SetTaskDescription());
+        addMethodProxy(new MethodProxies.StartActivityWithConfig());
+        addMethodProxy(new MethodProxies.StartActivityIntentSender());
+        addMethodProxy(new MethodProxies.GetTasks());
+        addMethodProxy(new MethodProxies.GetCallingPackage());
+
         addMethodProxy(new StaticMethodProxy("activityDestroyed") {
             @Override
             public Object call(Object who, Method method, Object... args) throws Throwable {
                 IBinder token = (IBinder) args[0];
                 VActivityManager.get().onActivityDestroy(token);
                 return super.call(who, method, args);
+            }
+        });
+        addMethodProxy(new StaticMethodProxy("activityResumed") {
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                IBinder token = (IBinder) args[0];
+                VActivityManager.get().onActivityResumed(token);
+                return super.call(who, method, args);
+            }
+        });
+        addMethodProxy(new StaticMethodProxy("finishActivity") {
+            @Override
+            public Object call(Object who, Method method, Object... args) throws Throwable {
+                IBinder token = (IBinder) args[0];
+                VActivityManager.get().onFinishActivity(token);
+                return super.call(who, method, args);
+            }
+
+            @Override
+            public boolean isEnable() {
+                return isAppProcess();
+            }
+        });
+        addMethodProxy(new StaticMethodProxy("finishActivityAffinity") {
+            @Override
+            public Object call(Object who, Method method, Object... args) {
+                IBinder token = (IBinder) args[0];
+                return VActivityManager.get().finishActivityAffinity(getAppUserId(), token);
+            }
+
+            @Override
+            public boolean isEnable() {
+                return isAppProcess();
             }
         });
     }

@@ -81,4 +81,9 @@ public class MethodProxies {
         return method.invoke(who, args);
     }
 
+    //Android Q
+    public static Object checkOperationRaw(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 2);
+        return method.invoke(who, args);
+    }
 }
