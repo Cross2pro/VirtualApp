@@ -19,8 +19,7 @@
 #include "Jni/Helper.h"
 
 #define HOOK_SYMBOL(handle, func) hook_function(handle, #func, (void*) new_##func, (void**) &orig_##func)
-#define SANDHOOK_SYMBOL(so, func) sandhook_function(so, #func, (void*) new_##func, (void**) &orig_##func)
-
+//#define HOOK_SYMBOL2(handle, func, new_func, old_func) hook_function(handle, #func, (void*) new_func, (void**)old_func)
 #define HOOK_DEF(ret, func, ...) \
   ret (*orig_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)
