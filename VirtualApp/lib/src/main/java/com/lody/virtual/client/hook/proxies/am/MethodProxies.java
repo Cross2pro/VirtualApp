@@ -1726,6 +1726,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+            replaceFirstUserId(args);
             args[IDX_RequiredPermission] = null;
             IntentFilter filter = (IntentFilter) args[IDX_IntentFilter];
             if (filter == null) {
