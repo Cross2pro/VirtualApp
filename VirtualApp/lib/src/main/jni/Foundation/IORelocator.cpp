@@ -772,7 +772,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
                     if ((flags & O_APPEND) == O_APPEND) {
                         vf->vlseek(oldVfd.get(), 0, SEEK_END);
                     } else {
-                        vf->vlseek(oldVfd.get(), 0, SEEK_SET);
+                        vf->vlseek(oldVfd.get(), 0, SEEK_CUR);
                     }
                     return ret;
                 }
