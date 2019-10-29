@@ -758,16 +758,24 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
             isEncryptPath(relocated_path)) {
 
 
-            virtualFileDescribe *old = virtualFileDescribeSet::getVFDSet().get(ret);
-            if(old){
-                xdja::zs::sp<virtualFile> vf = old->_vf->get();
-                LOGE("judge : reopen vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, old);
-                if ((flags & O_APPEND) == O_APPEND) {
-                    vf->vlseek(old, 0, SEEK_END);
-                } else {
-                    vf->vlseek(old, 0, SEEK_SET);
+            xdja::zs::sp<virtualFileDescribe> oldVfd(virtualFileDescribeSet::getVFDSet().get(ret));
+            if (oldVfd.get() == nullptr) {
+                if (virtualFileDescribeSet::getVFDSet().getFlag(fd)) {
+                    log("__openat fd[%d] flag is closing", fd);
+                    return -1;
                 }
-                return ret;
+            } else {
+                xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+                if (vf.get() != nullptr) {
+                    log("judge : reopen vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(),
+                         vf->getVFS(), ret, oldVfd.get());
+                    if ((flags & O_APPEND) == O_APPEND) {
+                        vf->vlseek(oldVfd.get(), 0, SEEK_END);
+                    } else {
+                        vf->vlseek(oldVfd.get(), 0, SEEK_SET);
+                    }
+                    return ret;
+                }
             }
 
             /*******************only here**********************/
