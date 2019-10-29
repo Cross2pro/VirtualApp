@@ -758,6 +758,18 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
             isEncryptPath(relocated_path)) {
 
 
+            virtualFileDescribe *old = virtualFileDescribeSet::getVFDSet().get(ret);
+            if(old){
+                xdja::zs::sp<virtualFile> vf = old->_vf->get();
+                LOGE("judge : reopen vf [PATH %s] [VFS %d] [FD %d] [VFD %p]", vf->getPath(), vf->getVFS(), ret, old);
+                if ((flags & O_APPEND) == O_APPEND) {
+                    vf->vlseek(old, 0, SEEK_END);
+                } else {
+                    vf->vlseek(old, 0, SEEK_SET);
+                }
+                return ret;
+            }
+
             /*******************only here**********************/
             virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
             pvfd->incStrong(0);
@@ -806,6 +818,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
 HOOK_DEF(int, close, int __fd) {
     int ret;
+    LOGE("close fd[%d]", __fd);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if (vfd.get() == nullptr) {
         if (virtualFileDescribeSet::getVFDSet().getFlag(__fd)) {
