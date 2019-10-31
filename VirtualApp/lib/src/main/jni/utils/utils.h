@@ -20,4 +20,5 @@ bool closeAllSockets();
 bool hasAppendFlag(int fd);
 void delAppendFlag(int fd);
 void addAppendFlag(int fd);
+int getApiLevel();
 #endif //VIRTUALAPP_UTILS_H
