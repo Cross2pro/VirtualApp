@@ -788,8 +788,12 @@ public final class VClient extends IVClient.Stub {
                 for (String mountPoint : mountPoints) {
                     //xdja
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
-                            continue;
+                        try {
+                            if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
+                                continue;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            VLog.d(TAG, e.toString());
                         }
                     }
 
@@ -798,8 +802,11 @@ public final class VClient extends IVClient.Stub {
             }
         }
 
-        //xdja 放开异记录路径
-        NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
+        //适配华为Q版本,此处有异常,无法获取到存储路径
+        if (Build.VERSION.SDK_INT < 29) {
+            //xdja 放开异记录路径
+            NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
+        }
 
         NativeEngine.enableIORedirect();
     }
