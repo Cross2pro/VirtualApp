@@ -9,7 +9,7 @@ android {
         externalNativeBuild {
             ndkBuild {
 //                arguments "-DCMAKE_BUILD_TYPE=Release"
-                abiFilters "armeabi", "armeabi-v7a"
+                abiFilters "armeabi-v7a"
             }
         }
     }
