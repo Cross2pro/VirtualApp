@@ -23,7 +23,7 @@ android {
         ]
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi-v7a"
+                abiFilters "armeabi", "armeabi-v7a"
             }
         }
     }
