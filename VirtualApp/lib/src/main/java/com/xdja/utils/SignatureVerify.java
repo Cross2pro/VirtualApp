@@ -73,6 +73,39 @@ public class SignatureVerify {
         }
         return null;
     }
+
+    /**
+     * 获取安全盒应用签名 SHA1
+     * @return
+     */
+    public static String getHostSHA1Signature() {
+        try {
+            PackageInfo info = VirtualCore.get().getUnHookPackageManager().getPackageInfo(VirtualCore.get().getHostPkg(), PackageManager.GET_SIGNATURES);
+            if (info == null)
+                return null;
+            byte[] cert = info.signatures[0].toByteArray();
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+            byte[] publicKey = md.digest(cert);
+            StringBuilder hexString = new StringBuilder();
+            for (int i = 0; i < publicKey.length; i++) {
+                String appendString = Integer.toHexString(0xFF & publicKey[i])
+                        .toUpperCase(Locale.US);
+                if (appendString.length() == 1)
+                    hexString.append("0");
+                hexString.append(appendString);
+                if(i < (publicKey.length-1))
+                    hexString.append(":");
+            }
+            return hexString.toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
     /**
      * 获取应用签名 SHA1
      * @param packagename

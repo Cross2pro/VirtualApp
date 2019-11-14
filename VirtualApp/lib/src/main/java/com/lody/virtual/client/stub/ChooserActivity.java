@@ -32,6 +32,13 @@ public class ChooserActivity extends ResolverActivity {
             return false;
         }
         try {
+
+            if(Intent.ACTION_VIEW.equals(intent.getAction())
+                    && intent.getData().toString().startsWith("scheme:")){
+                return false;
+
+            }
+
             return TextUtils.equals(ACTION, intent.getAction())
                     ||TextUtils.equals(Intent.ACTION_CHOOSER, intent.getAction())
                     ||TextUtils.equals(Intent.ACTION_VIEW,intent.getAction());
