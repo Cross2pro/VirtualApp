@@ -754,21 +754,21 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         /*zString op("openat fd = %d err = %s", ret, strerror(errno));
         doFileTrace(relocated_path, op.toString());*/
 
+        if (getApiLevel() >= 29) {
+            xdja::zs::sp<virtualFileDescribe> oldVfd(
+                    virtualFileDescribeSet::getVFDSet().get(ret));
+            if (oldVfd.get() != nullptr) {
+                virtualFileDescribeSet::getVFDSet().reset(ret);
+                xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+                if (vf.get() != nullptr) {
+                    virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
+                }
+                oldVfd.get()->decStrong(0);
+            }
+        }
+
         if (ret > 0 && (is_TED_Enable() || changeDecryptState(false, 1)) &&
             isEncryptPath(relocated_path)) {
-
-            if (getApiLevel() >= 29) {
-                xdja::zs::sp<virtualFileDescribe> oldVfd(
-                        virtualFileDescribeSet::getVFDSet().get(ret));
-                if (oldVfd.get() != nullptr) {
-                    virtualFileDescribeSet::getVFDSet().reset(ret);
-                    xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
-                    if (vf.get() != nullptr) {
-                        virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
-                    }
-                    oldVfd.get()->decStrong(0);
-                }
-            }
 
             /*******************only here**********************/
             virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
@@ -1686,6 +1686,19 @@ HOOK_DEF(int, dup, int oldfd)
     zString path, path2;
     getPathFromFd(oldfd, path);
     getPathFromFd(ret, path2);
+
+    if (getApiLevel() >= 29) {
+        xdja::zs::sp<virtualFileDescribe> oldVfd(
+                virtualFileDescribeSet::getVFDSet().get(ret));
+        if (oldVfd.get() != nullptr) {
+            virtualFileDescribeSet::getVFDSet().reset(ret);
+            xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+            if (vf.get() != nullptr) {
+                virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
+            }
+            oldVfd.get()->decStrong(0);
+        }
+    }
 
     if(ret > 0 && (is_TED_Enable()||changeDecryptState(false,1)) && isEncryptPath(path2.toString())) {
         /*******************only here**********************/
