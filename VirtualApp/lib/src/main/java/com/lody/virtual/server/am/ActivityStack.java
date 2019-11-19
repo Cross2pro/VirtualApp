@@ -188,12 +188,18 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    private boolean isAllowUseSourceTask(ActivityRecord source, ActivityInfo info) {
+    private boolean isAllowUseSourceTask(ActivityRecord source, ActivityInfo info, int userId, String affinity) {
         if (source == null) {
             return false;
         }
         if (source.info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
             return false;
+        }
+        //xdja LAUNCH_SINGLE_TASK模式需要对比taskAffinity，如果affinity不同需要newTask，例如wps编辑界面
+        if(info.launchMode == LAUNCH_SINGLE_TASK){
+            if(findTaskByAffinityLocked(userId, affinity) == null){
+                return false;
+            }
         }
         return true;
     }
@@ -250,26 +256,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                     break;
                 }
                 case LAUNCH_SINGLE_TASK:
-                    //xdja 安通拨号首界面多个实例
-                    if(("com.xdja.dialer".equals(affinity) ||
-                            "com.xdja.HDSafeEMailClient".equals(affinity)) &&
-                            "android.intent.action.MAIN".equals(intent.getAction())){
-                        reuseTask = findTaskByAffinityLocked(userId, affinity);
-                        break;
-                    }
-                    //xdja
-                    if(!isAllowUseSourceTask(sourceRecord, info)){
-                        //sourceRecord被LAUNCH_SINGLE_INSTANCE模式启动, 需要newTask
-                        break;
-                    }
-                    //LAUNCH_SINGLE_TASK模式需要对比taskAffinity，如果affinity不同需要newTask
-                    reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    break;
                 case LAUNCH_MULTIPLE:
                 case LAUNCH_SINGLE_TOP: {
                     if (newTask || sourceTask == null) {
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    } else if (isAllowUseSourceTask(sourceRecord, info)) {
+                    } else if (isAllowUseSourceTask(sourceRecord, info, userId, affinity)) {
                         reuseTask = sourceTask;
                     }
                     break;
