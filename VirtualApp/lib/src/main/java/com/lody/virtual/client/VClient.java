@@ -423,6 +423,17 @@ public final class VClient extends IVClient.Stub {
             System.setProperty("java.io.tmpdir",
                     new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache").getAbsolutePath());
         }
+
+        if (BuildCompat.isQ()) {
+            try {
+                Class clazz = Class.forName("android.common.HwFrameworkFactory", true, Context.class.getClassLoader());
+                Object HwApiCacheMangerEx = Reflect.on(clazz).call("getHwApiCacheManagerEx").get();
+                Reflect.on(HwApiCacheMangerEx).call("apiPreCache", VirtualCore.get().getPackageManager());
+            } catch (Throwable e) {
+                Log.e("kk", "fix hw", e);
+            }
+        }
+
         if (getConfig().isEnableIORedirect()) {
             if (VirtualCore.get().isIORelocateWork()) {
                 startIORelocater(info, is64Bit);
