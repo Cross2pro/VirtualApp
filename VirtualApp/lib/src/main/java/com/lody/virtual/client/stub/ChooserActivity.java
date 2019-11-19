@@ -13,6 +13,7 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
+import com.xdja.zs.UacProxyActivity;
 
 public class ChooserActivity extends ResolverActivity {
     public static final String EXTRA_DATA = "android.intent.extra.virtual.data";
@@ -34,7 +35,7 @@ public class ChooserActivity extends ResolverActivity {
         try {
 
             if(Intent.ACTION_VIEW.equals(intent.getAction())
-                    && intent.getData().toString().startsWith("scheme:")){
+                    && (intent.getData().toString().startsWith("scheme:") || intent.getData().toString().startsWith(UacProxyActivity.IAM_URI))){
                 return false;
 
             }
