@@ -813,11 +813,8 @@ public final class VClient extends IVClient.Stub {
             }
         }
 
-        //适配华为Q版本,此处有异常,无法获取到存储路径
-        if (Build.VERSION.SDK_INT < 29) {
-            //xdja 放开异记录路径
-            NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
-        }
+        //xdja 放开异常记录路径
+        NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
 
         NativeEngine.enableIORedirect();
     }
