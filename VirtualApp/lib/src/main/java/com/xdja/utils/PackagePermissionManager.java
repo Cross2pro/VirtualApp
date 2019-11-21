@@ -17,6 +17,8 @@ import java.util.List;
  */
 public class PackagePermissionManager {
 
+    static final String TAG = PackagePermissionManager.class.getName();
+
     static private final String ANTON_DIALER = "com.xdja.dialer";
     //keep alive
     private static ArrayList<String> mKeepLiveList = new ArrayList<>();
@@ -69,7 +71,7 @@ public class PackagePermissionManager {
      */
     public static void setEnableInstallationSource(Bundle bundle) {
         ArrayList<String> apps = bundle.getStringArrayList("installationSourceList");
-        Log.e("lxf-PackagePermission","setEnableInstallationSource "+apps);
+        Log.e(TAG,"setEnableInstallationSource "+apps);
         List<String> list = new ArrayList<>(apps);
         try {
             VAppPermissionManager.get().getService().setEnableInstallationSource(list);
@@ -81,7 +83,7 @@ public class PackagePermissionManager {
         ArrayList<String> list = new ArrayList<>();
         try {
             list.addAll(VAppPermissionManager.get().getService().getEnableInstallationSource());
-            Log.e("lxf-PackagePermission","EnabledInstallationSource "+list);
+            Log.e(TAG,"EnabledInstallationSource "+list);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -89,7 +91,7 @@ public class PackagePermissionManager {
     }
     public static void setInstallSourceSignature(Bundle bundle) {
         ArrayList<String> apps = bundle.getStringArrayList("installSourceSignature");
-        Log.e("lxf-PackagePermission","setInstallSourceSignature "+apps);
+        Log.e(TAG,"setInstallSourceSignature "+apps);
         List<String> list = new ArrayList<>(apps);
         try {
             VAppPermissionManager.get().getService().setInstallSourceSignature(list);
@@ -101,7 +103,7 @@ public class PackagePermissionManager {
         ArrayList<String> list = new ArrayList<>();
         try {
             list.addAll(VAppPermissionManager.get().getService().getInstallSourceSignature());
-            Log.e("lxf-PackagePermission","getInstallSourceSignature "+list);
+            Log.e(TAG,"getInstallSourceSignature "+list);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

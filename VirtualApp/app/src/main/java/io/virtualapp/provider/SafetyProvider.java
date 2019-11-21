@@ -23,7 +23,6 @@ import static android.os.Binder.getCallingUid;
 
 public class SafetyProvider extends ContentProvider {
     private static final String TAG = SafetyProvider.class.getSimpleName();
-    private static final String TAG_LXF = "lxf " + SafetyProvider.class.getSimpleName();
     /**
      * Uri
      */
@@ -51,9 +50,9 @@ public class SafetyProvider extends ContentProvider {
         if(packages!=null && packages.length>0) {
             packageName = packages[0];
         }
-        Log.e("lxf-SafetyProvider","CallingPackageName "+ packageName);
+        Log.e(TAG,"CallingPackageName "+ packageName);
         String sha1 = SignatureVerify.getSHA1Signature(packageName);
-        Log.e("lxf-SafetyProvider","SHA1 "+ sha1);
+        Log.e(TAG,"SHA1 "+ sha1);
 
         Bundle result = new Bundle();
         //校验调用方的合法性

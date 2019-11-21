@@ -233,7 +233,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 copyBigDataToSD(fileName);
             }
         } catch (IOException e) {
-            Log.e("lxf", "copy magicto sdcard is failed!");
+            Log.e("initMagic", "copy magicto sdcard is failed!");
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
