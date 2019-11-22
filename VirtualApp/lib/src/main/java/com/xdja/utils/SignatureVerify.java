@@ -20,7 +20,7 @@ import java.util.Locale;
  * @Descrip:
  */
 public class SignatureVerify {
-    private static String TAG = "lxf-"+SignatureVerify.class.getName();
+    private static String TAG = SignatureVerify.class.getName();
     private String[] keystores ={"43:BD:02:6B:9D:53:D7:F5:00:B2:BC:BD:BB:34:5B:F1:CD:EF:7F:C0"};
 
     public static boolean isEnable = true;

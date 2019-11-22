@@ -202,7 +202,7 @@ public final class SpecialComponentList {
                 if (newAction != null) {
                     iterator.set(newAction);
                 }
-                VLog.d("lxf", action + "->" + newAction);
+                VLog.d("SpecialCommponentList", action + "->" + newAction);
             }
             return actions.size() > 0;
         }
@@ -242,12 +242,12 @@ public final class SpecialComponentList {
             newAction = PROTECT_ACTION_PREFIX + originAction;
         }
         //处理C，目的是广播隔离？
-        VLog.e("lxf","protectAction "+newAction);
+        VLog.e("SpecialCommponentList","protectAction "+newAction);
         return VirtualCore.get().getHostPkg() + newAction;
     }
 
     public static String unprotectAction(String action) {
-        VLog.e("lxf","unprotectAction "+action);
+        VLog.e("SpecialCommponentList","unprotectAction "+action);
         if (action == null) {
             return null;
         }
@@ -267,7 +267,7 @@ public final class SpecialComponentList {
         for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
             String modifiedAction = next.getValue();
             if (modifiedAction.equals(action)) {
-                VLog.e("lxf","unprotectAction next.getKey() "+next.getKey());
+                VLog.e("SpecialCommponentList","unprotectAction next.getKey() "+next.getKey());
                 return next.getKey();
             }
         }

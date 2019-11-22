@@ -237,7 +237,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
 
     private static ArrayList<String> EnabledInstallationSource = new ArrayList<>();
     public void setEnableInstallationSource(List<String> list) {
-        Log.e("lxf-PackagePermission","setEnableInstallationSource "+list);
+        Log.e(TAG,"setEnableInstallationSource "+list);
         synchronized (EnabledInstallationSource){
             if (list != null && !list.isEmpty()) {
                 EnabledInstallationSource.clear();
@@ -250,7 +250,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
         }
     }
     public ArrayList<String> getEnableInstallationSource(){
-        Log.e("lxf-PackagePermission","EnabledInstallationSource "+EnabledInstallationSource);
+        Log.e(TAG,"EnabledInstallationSource "+EnabledInstallationSource);
         return EnabledInstallationSource;
     }
     /**
@@ -258,7 +258,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
      */
     private static ArrayList<String> InstallSourceSignature = new ArrayList<>();
     public void setInstallSourceSignature(List<String> list){
-        Log.e("lxf-PackagePermission","setInstallSourceSignature "+list);
+        Log.e(TAG,"setInstallSourceSignature "+list);
         synchronized (InstallSourceSignature){
             if (list != null && !list.isEmpty()) {
                 InstallSourceSignature.clear();
