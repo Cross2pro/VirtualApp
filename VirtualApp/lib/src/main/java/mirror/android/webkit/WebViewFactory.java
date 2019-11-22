@@ -1,5 +1,6 @@
 package mirror.android.webkit;
 
+import mirror.RefBoolean;
 import mirror.RefClass;
 import mirror.RefStaticMethod;
 import mirror.RefStaticObject;

@@ -116,6 +116,8 @@ public class NotificationChannelCompat {
                     channel.setGroup(GROUP_PHONE);
                 } else if (channelId.equals(DAEMON_ID)) {
                     channel.setGroup(GROUP_DAEMON);
+                    channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+                    channel.setImportance(NotificationManager.IMPORTANCE_LOW);
                 } else if (channelId.equals(DEFAULT_ID)) {
                     channel.setGroup(GROUP_APP);
                 } else if (channelId.equals(SYSTEM_ID)) {

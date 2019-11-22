@@ -457,6 +457,9 @@ class MethodProxies {
                                     vInstaller.setPermissionsResult(sessionId, accepted);
                                     return 0;
                                 }
+                                case "toString": {
+                                    return "VPackageInstaller";
+                                }
                             }
                             throw new RuntimeException("Not support PackageInstaller method : " + method.getName());
                         }
@@ -776,6 +779,8 @@ class MethodProxies {
          */
         private static final int MATCH_FACTORY_ONLY = 0x00200000;
 
+        private static final int MATCH_ANY_USER = 0x00400000;
+
         @Override
         public String getMethodName() {
             return "getPackageInfo";
@@ -791,6 +796,10 @@ class MethodProxies {
             String pkg = (String) args[0];
             int flags = (int) args[1];
             int userId = VUserHandle.myUserId();
+            if ((flags & MATCH_ANY_USER) != 0) {
+                flags &=~ MATCH_ANY_USER;
+                args[1] = flags;
+            }
             if ((flags & MATCH_FACTORY_ONLY) != 0) {
                 return method.invoke(who, args);
             }

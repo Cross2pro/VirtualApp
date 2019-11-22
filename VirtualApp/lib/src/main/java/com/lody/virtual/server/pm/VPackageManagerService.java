@@ -904,6 +904,8 @@ public class VPackageManagerService extends IPackageManager.Stub {
             PackageSetting ps = (PackageSetting) p.mExtras;
             ps.removeUser(userId);
         }
+        //clear component states
+        ComponentStateManager.get().clearAll(userId);
     }
 
 

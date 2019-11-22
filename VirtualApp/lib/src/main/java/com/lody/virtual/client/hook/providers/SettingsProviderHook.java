@@ -9,6 +9,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodBox;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.remote.VDeviceConfig;
+import com.xdja.mms.SmsConstants;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -69,12 +70,12 @@ public class SettingsProviderHook extends ExternalProviderHook {
                 if (config.enable && config.androidId != null) {
                     return wrapBundle("android_id", config.androidId);
                 }
-            } else if ("sms_default_application".equals(arg)) {
+            } else if (SmsConstants.DEFAULT_SMS_APP_SETTING.equals(arg)) {
                 //default sms app
                 Bundle res = methodBox.call();
-                String pkg = getValue(res, "sms_default_application");
-                if(VirtualCore.get().getHostPkg().equals(pkg)){
-                    return wrapBundle("sms_default_application", InstallerSetting.MESSAGING_PKG);
+                String pkg = getValue(res, SmsConstants.DEFAULT_SMS_APP_SETTING);
+                if (VirtualCore.get().getHostPkg().equals(pkg)) {
+                    return wrapBundle(SmsConstants.DEFAULT_SMS_APP_SETTING, InstallerSetting.MESSAGING_PKG);
                 }
                 return res;
             }
@@ -97,8 +98,8 @@ public class SettingsProviderHook extends ExternalProviderHook {
     private Bundle wrapBundle(String name, String value) {
         Bundle bundle = new Bundle();
         if (Build.VERSION.SDK_INT >= 24) {
-            bundle.putString("name", name);
-            bundle.putString("value", value);
+            bundle.putString(Settings.NameValueTable.NAME, name);
+            bundle.putString(Settings.NameValueTable.VALUE, value);
         } else {
             bundle.putString(name, value);
         }
@@ -110,7 +111,7 @@ public class SettingsProviderHook extends ExternalProviderHook {
             return null;
         }
         if (Build.VERSION.SDK_INT >= 24) {
-            return bundle.getString("value");
+            return bundle.getString(Settings.NameValueTable.VALUE);
         } else {
             return bundle.getString(key);
         }

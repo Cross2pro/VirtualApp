@@ -23,6 +23,21 @@ public class PackageParser {
     public static final int PARSE_ENFORCE_CODE = 1 << 6;
     // API 28 END
 
+    @TargetApi(29)
+    public interface Callback {
+    }
+
+    @TargetApi(29)
+    public static final class CallbackImpl implements Callback {
+        public CallbackImpl(PackageManager pm) {
+            throw new RuntimeException("Stub!");
+        }
+    }
+
+    @TargetApi(29)
+    public void setCallback(Callback cb) {
+        throw new RuntimeException("Stub!");
+    }
 
     @TargetApi(28)
     public static final class SigningDetails {

@@ -375,3 +375,8 @@ void addAppendFlag(int fd) {
         return;
     }
 }
+
+int getApiLevel() {
+    char * api = getenv("V_API_LEVEL");
+    return atoi(api);
+}

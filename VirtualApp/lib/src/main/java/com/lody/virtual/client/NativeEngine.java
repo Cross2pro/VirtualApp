@@ -365,8 +365,6 @@ public class NativeEngine {
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy();
 
-    public static native void nativeTraceProcess(int sdkVersion);
-
     public static int onGetUid(int uid) {
         if (!VClient.get().isAppRunning()) {
             return uid;

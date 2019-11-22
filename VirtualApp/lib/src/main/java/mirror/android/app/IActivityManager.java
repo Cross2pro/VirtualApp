@@ -27,4 +27,13 @@ public class IActivityManager {
         public static RefObject<IInterface> provider;
         public static RefBoolean noReleaseNeeded;
     }
+
+    public static class ContentProviderHolderMIUI {
+        public static Class<?> TYPE = RefClass.load(ContentProviderHolder.class, "android.app.IActivityManager$ContentProviderHolder");
+        public static RefObject<ProviderInfo> info;
+        public static RefObject<IInterface> provider;
+        public static RefBoolean noReleaseNeeded;
+        //https://github.com/imer-ua/framework.jar/blob/master/smali/android/app/ActivityThread.smali  :19961
+        public static RefBoolean waitProcessStart;
+    }
 }

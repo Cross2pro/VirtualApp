@@ -11,7 +11,6 @@ import com.lody.virtual.client.ipc.VContentManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.helper.Keep;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.server.content.VContentService;
 
 import java.lang.reflect.Method;
 
@@ -23,7 +22,7 @@ public class MethodProxies {
 
     private static boolean isAppUri(Uri uri) {
         ProviderInfo info = VPackageManager.get().resolveContentProvider(uri.getAuthority(), 0, VUserHandle.myUserId());
-        return info != null;
+        return info != null && info.enabled;
     }
 
     public static Object registerContentObserver(Object who, Method method, Object[] args) throws Throwable {

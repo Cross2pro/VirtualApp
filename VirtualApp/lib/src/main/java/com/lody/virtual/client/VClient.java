@@ -75,6 +75,7 @@ import com.xdja.zs.exceptionRecorder;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.security.KeyStore;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,6 +88,7 @@ import java.util.Map;
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ActivityThreadNMR1;
+import mirror.android.app.ActivityThreadQ;
 import mirror.android.app.ContextImpl;
 import mirror.android.app.ContextImplKitkat;
 import mirror.android.app.IActivityManager;
@@ -97,6 +99,7 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.res.CompatibilityInfo;
 import mirror.android.providers.Settings;
 import mirror.android.renderscript.RenderScriptCacheDir;
+import mirror.android.security.net.config.NetworkSecurityConfigProvider;
 import mirror.android.view.CompatibilityInfoHolder;
 import mirror.android.view.DisplayAdjustments;
 import mirror.android.view.HardwareRenderer;
@@ -277,12 +280,14 @@ public final class VClient extends IVClient.Stub {
                     data.token,
                     Collections.singletonList(intent)
             );
-        } else {
+        } else if (ActivityThreadNMR1.performNewIntents != null){
             ActivityThreadNMR1.performNewIntents.call(
                     VirtualCore.mainThread(),
                     data.token,
                     Collections.singletonList(intent),
                     true);
+        } else if(ActivityThreadQ.handleNewIntent != null){
+            ActivityThreadQ.handleNewIntent.call(VirtualCore.mainThread(), data.token, Collections.singletonList(intent));
         }
     }
 
@@ -418,6 +423,17 @@ public final class VClient extends IVClient.Stub {
             System.setProperty("java.io.tmpdir",
                     new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache").getAbsolutePath());
         }
+
+        if (BuildCompat.isQ()) {
+            try {
+                Class clazz = Class.forName("android.common.HwFrameworkFactory", true, Context.class.getClassLoader());
+                Object HwApiCacheMangerEx = Reflect.on(clazz).call("getHwApiCacheManagerEx").get();
+                Reflect.on(HwApiCacheMangerEx).call("apiPreCache", VirtualCore.get().getPackageManager());
+            } catch (Throwable e) {
+                Log.e("kk", "fix hw", e);
+            }
+        }
+
         if (getConfig().isEnableIORedirect()) {
             if (VirtualCore.get().isIORelocateWork()) {
                 startIORelocater(info, is64Bit);
@@ -500,6 +516,12 @@ public final class VClient extends IVClient.Stub {
                 CompatibilityInfoHolder.set.call(LoadedApkICS.mCompatibilityInfo.get(mBoundApplication.info), compatInfo);
             }
         }
+		//ssl适配
+		if (NetworkSecurityConfigProvider.install != null) {
+            Security.removeProvider("AndroidNSSP");
+            NetworkSecurityConfigProvider.install.call(context);
+        }
+		
         VirtualCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
 
         if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
@@ -718,12 +740,13 @@ public final class VClient extends IVClient.Stub {
         }
         LinuxCompat.forgeProcDriver(is64bit);
         forbidHost();
+        int realUserId = VUserHandle.realUserId();
         String cache = new File(dataDir, "cache").getAbsolutePath();
         NativeEngine.redirectDirectory("/tmp/", cache);
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
-        NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
+        NativeEngine.redirectDirectory("/data/user" + realUserId + "/" + packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, de_dataDir);
+            NativeEngine.redirectDirectory("/data/user_de/" + realUserId + "/" + packageName, de_dataDir);
         }
         SettingConfig.AppLibConfig appLibConfig = getConfig().getAppLibConfig(packageName);
 
@@ -734,10 +757,10 @@ public final class VClient extends IVClient.Stub {
             }
         }
         NativeEngine.whitelist(libPath);
-        NativeEngine.whitelist("/data/user/0/" + packageName + "/lib/");
+        NativeEngine.whitelist("/data/user/" + realUserId + "/" + packageName + "/lib/");
         if (appLibConfig == SettingConfig.AppLibConfig.UseOwnLib) {
             NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
-            NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
+            NativeEngine.redirectDirectory("/data/user/" + realUserId + "/" + packageName + "/lib/", libPath);
         }
         File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
         NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
@@ -749,13 +772,14 @@ public final class VClient extends IVClient.Stub {
             }
         }
         //xdja safekey adapter
-        String subPathData = "/Android/data/"+info.packageName;
+        String subPathData = "/Android/data/" + info.packageName;
+        String prefix = "/emulated/" + VUserHandle.realUserId() + "/";
         File[] efd = VEnvironment.getTFRoots();
-        for(File f:efd){
-            if(f==null)
+        for (File f : efd) {
+            if (f == null)
                 continue;
             String filename = f.getAbsolutePath();
-            if(filename.contains("/emulated/0/"))
+            if(filename.contains(prefix))
                 continue;
             String tfRoot = VEnvironment.getTFRoot(f.getAbsolutePath()).getAbsolutePath();
             NativeEngine.redirectDirectory(tfRoot+subPathData
@@ -775,8 +799,12 @@ public final class VClient extends IVClient.Stub {
                 for (String mountPoint : mountPoints) {
                     //xdja
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
-                            continue;
+                        try {
+                            if (Environment.isExternalStorageRemovable(new File(mountPoint))) {
+                                continue;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            VLog.d(TAG, e.toString());
                         }
                     }
 
@@ -785,7 +813,7 @@ public final class VClient extends IVClient.Stub {
             }
         }
 
-        //xdja 放开异记录路径
+        //xdja 放开异常记录路径
         NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
 
         NativeEngine.enableIORedirect();
@@ -824,7 +852,7 @@ public final class VClient extends IVClient.Stub {
         HashSet<String> mountPoints = new HashSet<>(3);
         mountPoints.add("/mnt/sdcard/");
         mountPoints.add("/sdcard/");
-        mountPoints.add("/storage/emulated/0/");
+        mountPoints.add("/storage/emulated/" + VUserHandle.realUserId() +"/");
         String[] points = StorageManagerCompat.getAllPoints(VirtualCore.get().getContext());
         if (points != null) {
             Collections.addAll(mountPoints, points);

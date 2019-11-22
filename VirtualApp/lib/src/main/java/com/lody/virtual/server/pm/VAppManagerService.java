@@ -521,6 +521,11 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private void supportTelephony(int userId) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            setDefaultComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.RcsProvider"), userId);
+        } else {
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.RcsProvider"), userId);
+        }
         if (Build.VERSION.SDK_INT < 28) {
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierProvider"), userId);

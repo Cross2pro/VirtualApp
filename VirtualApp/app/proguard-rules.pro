@@ -64,21 +64,21 @@
 }
 
 -keepattributes Exceptions, InnerClasses, ...
--keep class andhook.lib.xposed.XC_MethodHook
--keepclassmembers class andhook.lib.xposed.XC_MethodHook {
+-keep class andhook.lib.XC_MethodHook
+-keepclassmembers class andhook.lib.XC_MethodHook {
    *;
 }
--keep class andhook.lib.xposed.XC_MethodHook$*
--keepclassmembers class andhook.lib.xposed.XC_MethodHook$* {
+-keep class andhook.lib.XC_MethodHook$*
+-keepclassmembers class andhook.lib.XC_MethodHook$* {
    *;
 }
--keep class * extends andhook.lib.xposed.XC_MethodHook
--keepclassmembers class * extends andhook.lib.xposed.XC_MethodHook {
+-keep class * extends andhook.lib.XC_MethodHook
+-keepclassmembers class * extends andhook.lib.XC_MethodHook {
    public *;
    protected *;
 }
-#-keep class * extends andhook.lib.xposed.XC_MethodReplacement
-#-keepclassmembers class * extends andhook.lib.xposed.XC_MethodReplacement {
+#-keep class * extends andhook.lib.XC_MethodReplacement
+#-keepclassmembers class * extends andhook.lib.XC_MethodReplacement {
 #   *;
 #}
 

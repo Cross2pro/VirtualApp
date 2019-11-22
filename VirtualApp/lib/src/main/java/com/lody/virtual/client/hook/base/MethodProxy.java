@@ -64,6 +64,37 @@ public abstract class MethodProxy {
         return VUserHandle.getUserId(getVUid());
     }
 
+    public static int getRealUserId() {
+        return VUserHandle.realUserId();
+    }
+
+    public static void replaceLastUserId(Object[] args) {
+        if (getRealUserId() == 0)
+            return;
+        int pos = -1;
+        for (int i = 0;i < args.length; i++) {
+            Object o = args[i];
+            if (o instanceof Integer && o == Integer.valueOf(0)) {
+                pos = i;
+            }
+        }
+        if (pos >= 0) {
+            args[pos] = getRealUserId();
+        }
+    }
+
+    public static void replaceFirstUserId(Object[] args) {
+        if (getRealUserId() == 0)
+            return;
+        for (int i = 0;i < args.length; i++) {
+            Object o = args[i];
+            if (o == Integer.valueOf(0)) {
+                args[i] = getRealUserId();
+                return;
+            }
+        }
+    }
+
     protected static int getBaseVUid() {
         return VClient.get().getBaseVUid();
     }

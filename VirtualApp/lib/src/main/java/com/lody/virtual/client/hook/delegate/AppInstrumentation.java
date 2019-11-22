@@ -200,32 +200,40 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i, bundle);
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, String str, Intent intent, int i, Bundle bundle) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, str, intent, i, bundle);
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, fragment, intent, i);
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i);
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Fragment fragment, Intent intent, int i, Bundle bundle) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, fragment, intent, i, bundle);
     }
 
     @Override
-    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) {
+    public ActivityResult execStartActivity(Context context, IBinder iBinder, IBinder iBinder2, Activity activity, Intent intent, int i, Bundle bundle, UserHandle userHandle) throws Throwable {
         return super.execStartActivity(context, iBinder, iBinder2, activity, intent, i, bundle, userHandle);
+    }
+	
+	public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        try {
+            return super.newActivity(cl, className, intent);
+        } catch (ClassNotFoundException e) {
+            return root.newActivity(cl, className, intent);
+        }
     }
 }

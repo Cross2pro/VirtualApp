@@ -25,6 +25,7 @@ import mirror.android.app.ClientTransactionHandler;
 import mirror.android.app.IActivityManager;
 import mirror.android.app.servertransaction.ClientTransaction;
 import mirror.android.app.servertransaction.LaunchActivityItem;
+import mirror.android.app.servertransaction.TopResumedActivityChangeItem;
 
 /**
  * @author Lody
@@ -112,6 +113,17 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 return true;
             }
             return handleLaunchActivity(msg, item);
+        } else if (BuildCompat.isQ()) {
+            List<Object> activityCallbacks = ClientTransaction.mActivityCallbacks.get(transaction);
+            if (activityCallbacks != null && !activityCallbacks.isEmpty()) {
+                Object item = activityCallbacks.get(0);
+                if (item.getClass() == TopResumedActivityChangeItem.TYPE) {
+                    if (TopResumedActivityChangeItem.mOnTop.get(item) == ActivityThread.ActivityClientRecord.isTopResumedActivity.get(r)) {
+                        VLog.e("HCallbackStub", "Activity top position already set to onTop=" + TopResumedActivityChangeItem.mOnTop.get(item));
+                        return false;
+                    }
+                }
+            }
         }
         return true;
     }
