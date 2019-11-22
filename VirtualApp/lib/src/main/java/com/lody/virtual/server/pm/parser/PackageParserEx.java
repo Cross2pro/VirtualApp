@@ -21,7 +21,6 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
-import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -33,13 +32,13 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.PackageUserState;
+import com.xdja.zs.InstallerSettingManager;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -572,7 +571,7 @@ public class PackageParserEx {
         // Make shallow copy so we can store the metadata/libraries safely
         ApplicationInfo ai = new ApplicationInfo(p.applicationInfo);
         //
-        if(InstallerSetting.systemApps.contains(p.packageName)){
+        if(InstallerSettingManager.get().isSystemApp(p.packageName)){
             ai.flags = ai.flags | ApplicationInfo.FLAG_SYSTEM;
         }
         if ((flags & PackageManager.GET_META_DATA) != 0) {
