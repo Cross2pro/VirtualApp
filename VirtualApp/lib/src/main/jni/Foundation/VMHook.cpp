@@ -32,7 +32,7 @@ namespace FunctionDef {
 
     typedef jint (*JNI_audioRecordNativeCheckPermission)(JNIEnv *, jobject, jstring);
 
-    typedef jstring (*JNI_nativeLoad)(JNIEnv *env, jclass, jstring, jobject, jstring);
+    typedef jstring (*JNI_nativeLoad)(JNIEnv *env, jclass, jstring, jobject, jobject);
 
     typedef void (*JNI_mediaRecorderNativeSetupFunc)(JNIEnv *, jobject,
                                                      jobject, jstring, jstring);
@@ -113,7 +113,7 @@ jint new_getCallingUid(JNIEnv *env, jclass clazz) {
 }
 
 
-jstring new_nativeLoad(JNIEnv *env, jclass clazz, jstring _file, jobject classLoader, jstring _ld) {
+jstring new_nativeLoad(JNIEnv *env, jclass clazz, jstring _file, jobject classLoader, jobject _ld) {
     ScopeUtfString orig_path(_file);
     char buffer[PATH_MAX];
     const char *redirected_path = IOUniformer::query(orig_path.c_str(), buffer, sizeof(buffer));
@@ -431,6 +431,12 @@ void hookRuntimeNativeLoad(JNIEnv *env) {
         jmethodID nativeLoad = env->GetStaticMethodID(runtimeClass, "nativeLoad",
                                                       "(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/String;");
         env->ExceptionClear();
+        if (!nativeLoad) {
+            //for Android Q
+            nativeLoad = env->GetStaticMethodID(runtimeClass, "nativeLoad",
+                                                +"(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/Class;)Ljava/lang/String;");
+            env->ExceptionClear();
+        }
         if (!nativeLoad) {
             nativeLoad = env->GetStaticMethodID(runtimeClass, "nativeLoad",
                                                 "(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/String;");
