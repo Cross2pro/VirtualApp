@@ -270,7 +270,7 @@ public class PackageParserEx {
                     // ignore
                 }
             }
-            if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion < 28) {
+            if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion <= 29) {
                 String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
                 String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
                 if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR) && !sharedLibraryFileList.contains(APACHE_LEGACY_JAR_Q)) {
