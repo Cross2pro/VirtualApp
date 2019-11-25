@@ -2,6 +2,10 @@ package com.xdja.zs;
 
 import android.os.RemoteException;
 
+import com.lody.virtual.client.ipc.LocalProxyUtils;
+import com.lody.virtual.client.ipc.ServiceManagerNative;
+import com.lody.virtual.helper.utils.IInterfaceUtils;
+
 import java.util.List;
 
 /**
@@ -11,42 +15,66 @@ import java.util.List;
  */
 public class InstallerSettingManager {
 
-    public static List<String> getSystemApps() {
+    private static final InstallerSettingManager sInstance = new InstallerSettingManager();
+    IInstallerSetting mService;
+
+    private Object getRemoteInterface() {
+        return IInstallerSetting.Stub
+                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.INSTALLERSETTING));
+    }
+
+    public IInstallerSetting getService() {
+
+        if (mService == null || !IInterfaceUtils.isAlive(mService)) {
+            synchronized (this) {
+                Object binder = getRemoteInterface();
+                mService = LocalProxyUtils.genProxy(IInstallerSetting.class, binder);
+            }
+        }
+        return mService;
+    }
+
+    public static InstallerSettingManager get() {
+        return sInstance;
+    }
+
+
+    public  List<String> getSystemApps() {
         try {
-            return InstallerSettingService.get().getSystemApps();
+            return getService().getSystemApps();
         } catch (RemoteException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static void setSystemApps(List<String> list) {
+    public void setSystemApps(List<String> list) {
         try {
-            InstallerSettingService.get().setSystemApps(list);
+            getService().setSystemApps(list);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
-    public static void addSystemApp(String packagename){
+    public void addSystemApp(String packagename){
         try {
-            InstallerSettingService.get().addSystemApp(packagename);
+            getService().addSystemApp(packagename);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
-    public static void removeSystemApp(String packagename) {
+    public void removeSystemApp(String packagename) {
         try {
-            InstallerSettingService.get().removeSystemApp(packagename);
+            getService().removeSystemApp(packagename);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
-    public static boolean isSystemApp(String pkg) {
+    public boolean isSystemApp(String pkg) {
         try {
-            return InstallerSettingService.get().isSystemApp(pkg);
+            return getService().isSystemApp(pkg);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
