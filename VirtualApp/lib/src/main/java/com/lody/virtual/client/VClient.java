@@ -416,13 +416,16 @@ public final class VClient extends IVClient.Stub {
             }
         }
         //tmp dir
+        File tmpDir;
         if (is64Bit) {
-            System.setProperty("java.io.tmpdir",
-                    new File(VEnvironment.getDataUserPackageDirectory64(userId, info.packageName), "cache").getAbsolutePath());
+            tmpDir = new File(VEnvironment.getDataUserPackageDirectory64(userId, info.packageName), "cache");
         } else {
-            System.setProperty("java.io.tmpdir",
-                    new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache").getAbsolutePath());
+            tmpDir = new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache");
         }
+        if(!tmpDir.exists()){
+            tmpDir.mkdirs();
+        }
+        System.setProperty("java.io.tmpdir", tmpDir.getAbsolutePath());
 
         if (BuildCompat.isQ()) {
             try {
