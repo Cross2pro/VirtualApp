@@ -2,14 +2,33 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
+
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 28
+        externalNativeBuild {
+            ndkBuild {
+//                arguments "-DCMAKE_BUILD_TYPE=Release"
+                abiFilters "armeabi-v7a"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        ndkBuild {
+            path file("src/main/cpp/Android.mk")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3'
-    implementation 'com.swift.sandhook:hooklib:4.1.5'
 }
