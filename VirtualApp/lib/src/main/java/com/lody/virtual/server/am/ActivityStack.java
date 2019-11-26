@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import mirror.android.app.Activity;
 import mirror.android.app.ActivityManagerNative;
 import mirror.com.android.internal.R_Hide;
 
@@ -180,9 +181,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder resultTo, Bundle options, int callingUid) {
+    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder resultTo, Bundle options, int callingUid, int callingPid) {
         for (int i = 0; i < intents.length; i++) {
-            startActivityLocked(userId, intents[i], infos[i], resultTo, options, null, 0, callingUid);
+            startActivityLocked(userId, intents[i], infos[i], resultTo, options, null, 0, callingUid, callingPid);
         }
         return 0;
     }
@@ -205,7 +206,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     int startActivityLocked(int userId, Intent intent, ActivityInfo info, IBinder resultTo, Bundle options,
-                            String resultWho, int requestCode, int callingUid) {
+                            String resultWho, int requestCode, int callingUid, int callingPid) {
         synchronized (mHistory) {
             optimizeTasksLocked();
         }
@@ -249,7 +250,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
 
         TaskRecord reuseTask = null;
-        if (!multipleTask) {
+        if ((info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0) {
+            //same process
+        } else if (!multipleTask) {
             switch (info.launchMode) {
                 case LAUNCH_SINGLE_INSTANCE: {
                     reuseTask = findTaskByAffinityLocked(userId, affinity);
@@ -269,7 +272,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
         }
         if (reuseTask == null || reuseTask.isFinishing()) {
-            return startActivityInNewTaskLocked(mLauncherFlags, userId, intent, info, options, callingUid);
+            return startActivityInNewTaskLocked(mLauncherFlags, userId, intent, info, options, callingUid, callingPid);
         }
         mAM.moveTaskToFront(reuseTask.taskId, 0);
 
@@ -386,7 +389,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
         }
         ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo, userId);
-        Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
+        Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
 
         if (destIntent != null) {
             destIntent.addFlags(mLauncherFlags);
@@ -415,9 +418,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid) {
+    private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid, int callingPid) {
         ActivityRecord targetRecord = newActivityRecord(intent, info, null, userId);
-        final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
+        final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
         if (destIntent != null) {
             destIntent.addFlags(launcherFlags);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -563,8 +566,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid) {
-        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
+    private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid, int callingPid) {
+        String processName = info.processName;
+        if(callingPid > 0 && (info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0){
+            //和调用者一个进程
+            ProcessRecord app = mService.findProcessLocked(callingPid);
+            if(app != null){
+                processName = app.processName;
+            }
+        }
+        ProcessRecord targetApp = mService.startProcessIfNeedLocked(processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
         if (targetApp == null) {
             return null;
         }
