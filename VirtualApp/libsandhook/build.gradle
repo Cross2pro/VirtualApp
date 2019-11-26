@@ -30,5 +30,4 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3'
 }
