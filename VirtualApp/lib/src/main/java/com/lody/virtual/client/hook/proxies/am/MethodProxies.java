@@ -53,6 +53,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.StubActivityRecord;
+import com.xdja.zs.UacProxyActivity;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -708,6 +709,13 @@ class MethodProxies {
                 if (intent.getPackage() != null && isAppPkg(intent.getPackage())) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
+
+                //xdja uac scheme
+                if(Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null
+                        && intent.getData().toString().startsWith(UacProxyActivity.IAM_URI)){
+                    intent = UacProxyActivity.isHook(intent);
+                }
+
                 args[intentIndex] = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
                 ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
                 if (resolveInfo == null || resolveInfo.activityInfo == null) {

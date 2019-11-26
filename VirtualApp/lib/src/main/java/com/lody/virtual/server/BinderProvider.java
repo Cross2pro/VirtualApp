@@ -121,19 +121,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
 
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Log.d("wxd", " start preLaunchApp");
-                    VirtualCore.get().preLaunchApp();
-                    Log.d("wxd", " end preLaunchApp");
-                    sleep(8000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
+        //xdja
+        VirtualCore.get().preLaunchApp();
         return true;
     }
 
