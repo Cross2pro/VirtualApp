@@ -163,7 +163,7 @@ public class ActiveServices {
         proxyIntent.setAction(System.currentTimeMillis() + "");
         proxyIntent.setClassName(StubManifest.getStubPackageName(targetApp.is64bit), StubManifest.getStubServiceName(targetApp.vpid));
         RunningServiceData info = userSpace.getOrCreateRunningServiceInfo(serviceInfo);
-        int startId = info.startId++;
+        int startId = ++info.startId;
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
         proxyIntent.putExtra("_VA_|_intent_", intent);
@@ -220,7 +220,7 @@ public class ActiveServices {
         proxyIntent.setClassName(StubManifest.getStubPackageName(targetApp.is64bit), StubManifest.getStubServiceName(targetApp.vpid));
         int startId;
         synchronized (userSpace.mRunningServices) {
-            startId = data.startId++;
+            startId = ++data.startId;
         }
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
@@ -295,6 +295,7 @@ public class ActiveServices {
                 return -1;
             }
             data.startId = 0;
+            userSpace.mRunningServices.remove(component);
         }
         return startId;
     }
