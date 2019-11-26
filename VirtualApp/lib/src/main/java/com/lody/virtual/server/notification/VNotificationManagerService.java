@@ -241,7 +241,7 @@ public class VNotificationManagerService extends INotificationManager.Stub {
 
     @Override
     public String dealNotificationChannel(String id, String packageName, int userId) {
-        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.DEFAULT_ID.equals(id)) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.isVAChannel(id)) {
             return id;
         }
         String prefix = packageName + "@" + userId;
@@ -294,7 +294,7 @@ public class VNotificationManagerService extends INotificationManager.Stub {
 
     @Override
     public String getRealNotificationChannel(String id, String packageName, int userId) {
-        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.DEFAULT_ID.equals(id)) {
+        if (TextUtils.equals(mContext.getPackageName(), packageName) || "miscellaneous".equals(id) || NotificationChannelCompat.isVAChannel(id)) {
             return id;
         }
         if (id == null) {
