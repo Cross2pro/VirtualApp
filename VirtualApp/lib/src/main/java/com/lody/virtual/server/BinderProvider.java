@@ -83,6 +83,8 @@ public final class BinderProvider extends ContentProvider {
         if (!VirtualCore.get().isStartup()) {
             return false;
         }
+
+        addService(ServiceManagerNative.INSTALLERSETTING, InstallerSettingService.get());
         VPackageManagerService.systemReady();
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         addService(ServiceManagerNative.ACTIVITY, VActivityManagerService.get());
@@ -114,7 +116,6 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.APPPERMISSION, VAppPermissionManagerService.get());
         VWaterMarkService.systemReady();
         addService(ServiceManagerNative.WATERMARK, VWaterMarkService.get());
-        addService(ServiceManagerNative.INSTALLERSETTING, InstallerSettingService.get());
 //        VSafekeyCkmsManagerService.systemReady(context);
 //        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
         /* End Changed by XDJA */
