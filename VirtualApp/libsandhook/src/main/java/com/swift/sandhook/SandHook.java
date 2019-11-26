@@ -69,6 +69,10 @@ public class SandHook {
         HookWrapper.addHookClass(hookWrapperClass);
     }
 
+    public static void addHookClass(ClassLoader classLoader, Class... hookWrapperClass) throws HookErrorException {
+        HookWrapper.addHookClass(classLoader, hookWrapperClass);
+    }
+
     public static synchronized void hook(HookWrapper.HookEntity entity) throws HookErrorException {
 
         if (entity == null)
@@ -336,7 +340,7 @@ public class SandHook {
         if (SandHookConfig.SDK_INT < Build.VERSION_CODES.N)
             return false;
         try {
-            File profile = new File("/data/misc/profiles/cur/" + SandHookConfig.curUse + "/" + selfPackageName + "/primary.prof");
+            File profile = new File("/data/misc/profiles/cur/" + SandHookConfig.curUser + "/" + selfPackageName + "/primary.prof");
             if (!profile.getParentFile().exists()) return false;
             try {
                 profile.delete();

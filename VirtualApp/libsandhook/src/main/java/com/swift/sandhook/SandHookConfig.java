@@ -13,7 +13,7 @@ public class SandHookConfig {
     //Enable compile with jit
     public volatile static boolean compiler = true;
     public volatile static ClassLoader initClassLoader;
-    public volatile static int curUse = 0;
+    public volatile static int curUser = 0;
     public volatile static boolean delayHook = true;
 
     public volatile static String libSandHookPath;
@@ -28,7 +28,6 @@ public class SandHookConfig {
             }
         }
     };
-
 
     public interface LibLoader {
         void loadLib();

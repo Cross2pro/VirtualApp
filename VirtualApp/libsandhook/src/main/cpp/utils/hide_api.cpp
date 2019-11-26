@@ -157,17 +157,23 @@ extern "C" {
         if (jitCompilerHandle == nullptr)
             return false;
         if (!canCompile()) return false;
+
+        //backup thread flag and state because of jit compile function will modify thread state
+        uint32_t old_flag_and_state = *((uint32_t *) thread);
+        bool ret;
         if (SDK_INT >= ANDROID_Q) {
             if (jitCompileMethodQ == nullptr) {
                 return false;
             }
-            return jitCompileMethodQ(jitCompilerHandle, artMethod, thread, false, false);
+            ret = jitCompileMethodQ(jitCompilerHandle, artMethod, thread, false, false);
         } else {
             if (jitCompileMethod == nullptr) {
                 return false;
             }
-            return jitCompileMethod(jitCompilerHandle, artMethod, thread, false);
+            ret= jitCompileMethod(jitCompilerHandle, artMethod, thread, false);
         }
+        memcpy(thread, &old_flag_and_state, 4);
+        return ret;
     }
 
     void suspendVM() {
@@ -274,6 +280,12 @@ extern "C" {
 
     bool hookClassInit(void(*callback)(void*)) {
         void* symFixupStaticTrampolines = getSymCompat(art_lib_path, "_ZN3art11ClassLinker22FixupStaticTrampolinesENS_6ObjPtrINS_6mirror5ClassEEE");
+
+        if (symFixupStaticTrampolines == nullptr) {
+            //huawei lon-al00 android 7.0 api level 24
+            symFixupStaticTrampolines = getSymCompat(art_lib_path,
+                                                     "_ZN3art11ClassLinker22FixupStaticTrampolinesEPNS_6mirror5ClassE");
+        }
         if (symFixupStaticTrampolines == nullptr || hook_native == nullptr)
             return false;
         backup_fixup_static_trampolines = reinterpret_cast<void (*)(void *, void *)>(hook_native(
