@@ -31,6 +31,9 @@ public class SandXposed {
         return Build.VERSION.SDK_INT > 28 || (Build.VERSION.SDK_INT == 28 && getPreviewSDKInt() > 0);
     }
 
+    /**
+     * 在Application，Va的App进程的初始化调用，onVirtualProcess
+     */
     public static void init(boolean debug, File cacheDir) {
         SandHookConfig.DEBUG = debug;
         HookLog.DEBUG = debug;
@@ -43,6 +46,9 @@ public class SandXposed {
         XposedCompat.cacheDir = new File(cacheDir, "sandhook_cache_general");
     }
 
+    /**
+     * 在VClient的Application初始化之前调用，AppCallback#beforeStartApplication
+     */
     public static void initForXposed(Context context, String processName) {
         XposedCompat.cacheDir = new File(context.getCacheDir(), MD5(processName));
     }

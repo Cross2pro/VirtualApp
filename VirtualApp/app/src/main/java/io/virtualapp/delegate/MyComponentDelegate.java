@@ -2,19 +2,13 @@ package io.virtualapp.delegate;
 
 import android.app.Application;
 import android.content.Context;
-import android.os.Build;
 
 import com.lody.virtual.client.core.AppCallback;
-
-import andhook.SandXposed;
 
 public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void beforeStartApplication(String packageName, String processName, Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            SandXposed.initForXposed(context, processName);
-        }
     }
 
     @Override

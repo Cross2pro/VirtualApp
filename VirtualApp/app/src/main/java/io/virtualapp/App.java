@@ -12,7 +12,6 @@ import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.VServiceKeepAliveManager;
 
-import andhook.SandXposed;
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
 import io.virtualapp.delegate.MyTaskDescDelegate;
@@ -113,7 +112,6 @@ public class App extends Application {
 
             @Override
             public void onVirtualProcess() {
-                SandXposed.init(BuildConfig.DEBUG, VirtualCore.get().getContext().getCacheDir());
                 //listener components
                 virtualCore.setAppCallback(new MyComponentDelegate());
                 //fake task description's icon and title
