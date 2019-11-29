@@ -571,9 +571,11 @@ public class PackageParserEx {
             N = p.requestedPermissions == null ? 0 : p.requestedPermissions.size();
             if (N > 0) {
                 pi.requestedPermissions = new String[N];
+                pi.requestedPermissionsFlags = new int[N];
                 for (int i = 0; i < N; i++) {
                     final String perm = p.requestedPermissions.get(i);
                     pi.requestedPermissions[i] = perm;
+                    pi.requestedPermissionsFlags[i] = VirtualCore.get().checkSelfPermission(perm, false) ? 0 : PackageInfo.REQUESTED_PERMISSION_GRANTED;
                 }
             }
         }
