@@ -60,6 +60,10 @@ public class NotificationChannelCompat {
         return false;
     }
 
+    public static boolean isVAChannel(String name){
+        return DAEMON_ID.equals(name) || DEFAULT_ID.equals(name) || LIGHT_ID.equals(name) || SYSTEM_ID.equals(name);
+    }
+
     @TargetApi(Build.VERSION_CODES.O)
     public static void checkOrCreateGroup(Context context, String groupId, String name) {
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
