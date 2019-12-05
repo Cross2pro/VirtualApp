@@ -375,7 +375,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 return res;
             }
             if (!isAllowedUpdate(existOne, pkg, options.updateStrategy)) {
-                return InstallResult.makeFailure("Not allowed to update the package.");
+                res.error = "Not allowed to update the package.";
+                return res;
             }
             res.isUpdate = true;
             VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_DEL);
