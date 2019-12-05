@@ -11,9 +11,11 @@ import android.util.Log;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import mirror.android.content.ContentProviderClientICS;
 import mirror.android.content.ContentProviderClientJB;
+import mirror.android.content.ContentProviderClientQ;
 
 public class Stirrer {
 
@@ -42,7 +44,9 @@ public class Stirrer {
             try {
                 IInterface provider = VActivityManager.get().acquireProviderClient(0, info);
                 if (provider != null) {
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    if (BuildCompat.isQ()) {
+                        contentProviderClient = ContentProviderClientQ.ctor.newInstance(VirtualCore.get().getContext().getContentResolver(), provider, authority, true);
+                    } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
                         contentProviderClient = ContentProviderClientJB.ctor.newInstance(VirtualCore.get().getContext().getContentResolver(), provider, true);
                     } else {
                         contentProviderClient = ContentProviderClientICS.ctor.newInstance(VirtualCore.get().getContext().getContentResolver(), provider);
