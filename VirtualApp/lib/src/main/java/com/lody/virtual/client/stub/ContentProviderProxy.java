@@ -23,6 +23,7 @@ import android.webkit.MimeTypeMap;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -34,6 +35,7 @@ import java.util.Locale;
 
 import mirror.android.content.ContentProviderClientICS;
 import mirror.android.content.ContentProviderClientJB;
+import mirror.android.content.ContentProviderClientQ;
 
 import static android.content.ContentResolver.SCHEME_FILE;
 
@@ -140,7 +142,10 @@ public class ContentProviderProxy extends ContentProvider {
         try {
             IInterface provider = VActivityManager.get().acquireProviderClient(info.userId, info.info);
             if (provider != null) {
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                if (BuildCompat.isQ()) {
+                    String authority = info.uri.getAuthority();
+                    return ContentProviderClientQ.ctor.newInstance(getContext().getContentResolver(), provider, authority, true);
+                } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
                     return ContentProviderClientJB.ctor.newInstance(getContext().getContentResolver(), provider, true);
                 } else {
                     return ContentProviderClientICS.ctor.newInstance(getContext().getContentResolver(), provider);
