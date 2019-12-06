@@ -2248,7 +2248,8 @@ class MethodProxies {
             {
                 if (args.length > 2 && args[1] instanceof String) {
                     String targetPkg = (String)args[1];
-                    if (!isAppPkg(targetPkg)) {
+                    //内部应用的uri，如果外部安装了同样的应用，会出现异常
+                    //if (!isAppPkg(targetPkg)) {
                         for (int i = 0; i < args.length; i++) {
                             Object obj = args[i];
                             if (obj instanceof Uri) {
@@ -2258,9 +2259,9 @@ class MethodProxies {
                                 }
                             }
                         }
-                    } else {
+                    //} else {
                         //return 0;
-                    }
+                    //}
                 }
             }
 			MethodParameterUtils.replaceFirstAppPkg(args);
