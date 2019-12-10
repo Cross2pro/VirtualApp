@@ -31,6 +31,7 @@ import android.os.Message;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
 
@@ -433,7 +434,7 @@ public final class VClient extends IVClient.Stub {
                 Object HwApiCacheMangerEx = Reflect.on(clazz).call("getHwApiCacheManagerEx").get();
                 Reflect.on(HwApiCacheMangerEx).call("apiPreCache", VirtualCore.get().getPackageManager());
             } catch (Throwable e) {
-                Log.e("kk", "fix hw", e);
+                //ignore
             }
         }
 
@@ -534,10 +535,15 @@ public final class VClient extends IVClient.Stub {
         }
 
         try {
+            //TODO reset?
+//            if(LoadedApk.mApplication != null) {
+//                LoadedApk.mApplication.set(data.info, null);
+//            }
             mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         } catch (Throwable e) {
             throw new RuntimeException("Unable to makeApplication", e);
         }
+        Log.e("kk", data.info+" mInitialApplication set  " + LoadedApk.mApplication.get(data.info));
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
         if (Build.VERSION.SDK_INT >= 24 && "com.tencent.mm:recovery".equals(processName)) {
@@ -573,7 +579,21 @@ public final class VClient extends IVClient.Stub {
             InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
             Application createdApp = ActivityThread.mInitialApplication.get(mainThread);
             if (createdApp != null) {
-                mInitialApplication = createdApp;
+                if (TextUtils.equals(VirtualCore.get().getHostPkg(), createdApp.getPackageName())) {
+                    VLog.w("kk", "mInitialApplication is host!!");
+                    ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
+                    //reset mInitialApplication
+                } else {
+                    mInitialApplication = createdApp;
+                }
+            }
+            //reset
+            if(LoadedApk.mApplication != null) {
+                Application application = LoadedApk.mApplication.get(data.info);
+                if (application != null && TextUtils.equals(VirtualCore.get().getHostPkg(), application.getPackageName())) {
+                    VLog.w("kk", "LoadedApk's mApplication is host!");
+                    LoadedApk.mApplication.set(data.info, mInitialApplication);
+                }
             }
         } catch (Exception e) {
             if (!mInstrumentation.onException(mInitialApplication, e)) {
