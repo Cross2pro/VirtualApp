@@ -1,7 +1,6 @@
 package com.lody.virtual.client.hook.proxies.window.session;
 
 import android.annotation.SuppressLint;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -24,7 +24,6 @@ import com.xdja.zs.VWaterMarkManager;
 import com.xdja.zs.MobileInfoUtil;
 import com.xdja.zs.WaterMarkInfo;
 
-import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -131,7 +130,7 @@ class Relayout extends BaseMethodProxy{
 
         // 先清除水印，防止页面不刷新导致的水印残留
         if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
-            omView.setForeground(null);
+            omView.setForeground(new ColorDrawable(Color.BLACK));
         }
 
         if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
