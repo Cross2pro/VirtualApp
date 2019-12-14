@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -130,7 +131,9 @@ class Relayout extends BaseMethodProxy{
 
         // 先清除水印，防止页面不刷新导致的水印残留
         if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
-            omView.setForeground(new ColorDrawable(Color.BLACK));
+            Drawable drawable = new ColorDrawable(Color.BLACK);
+            drawable.setAlpha(0);
+            omView.setForeground(drawable);
         }
 
         if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
