@@ -387,7 +387,11 @@ public class PackageParserEx {
         }
         if (config.isEnableIORedirect()) {
             if (config.isUseRealDataDir(ai.packageName)) {
-                ai.dataDir = "/data/data/" + ai.packageName + "/";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    ai.dataDir = "/data/user/" + userId + "/" + ai.packageName + "/";
+                } else {
+                    ai.dataDir = "/data/data/" + ai.packageName + "/";
+                }
             }
             if (config.isUseRealLibDir(ai.packageName)) {
                 ai.nativeLibraryDir = "/data/data/" + ai.packageName + "/lib/";
@@ -461,6 +465,13 @@ public class PackageParserEx {
             flags |= ApplicationInfo.FLAG_PERSISTENT;
         }
         p.applicationInfo.flags |= flags;
+    }
+
+    private static boolean isAppPermissionEnable(String pkg, String perName) {
+        if (!VirtualCore.get().checkSelfPermission(perName, false)) {
+            return false;
+        }
+        return com.xdja.zs.VAppPermissionManagerService.get().getAppPermissionEnable(pkg, perName);
     }
 
     public static PackageInfo generatePackageInfo(VPackage p, int flags, long firstInstallTime, long lastUpdateTime, PackageUserState state, int userId) {
@@ -575,7 +586,7 @@ public class PackageParserEx {
                 for (int i = 0; i < N; i++) {
                     final String perm = p.requestedPermissions.get(i);
                     pi.requestedPermissions[i] = perm;
-                    pi.requestedPermissionsFlags[i] = VirtualCore.get().checkSelfPermission(perm, false) ? 0 : PackageInfo.REQUESTED_PERMISSION_GRANTED;
+                    pi.requestedPermissionsFlags[i] = isAppPermissionEnable(pi.packageName, perm) ? PackageInfo.REQUESTED_PERMISSION_GRANTED : 0;
                 }
             }
         }

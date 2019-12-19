@@ -39,6 +39,11 @@ public class ActivityTaskManagerStub extends BinderInvocationProxy {
         addMethodProxy(new MethodProxies.StartActivityIntentSender());
         addMethodProxy(new MethodProxies.GetTasks());
         addMethodProxy(new MethodProxies.GetCallingPackage());
+        addMethodProxy(new MethodProxies.OverridePendingTransition());
+        addMethodProxy(new MethodProxies.GetActivityClassForToken());
+        addMethodProxy(new MethodProxies.StartNextMatchingActivity());
+        addMethodProxy(new MethodProxies.StartActivityAsCaller());
+        addMethodProxy(new MethodProxies.StartVoiceActivity());
 
         addMethodProxy(new StaticMethodProxy("activityDestroyed") {
             @Override
