@@ -1,5 +1,6 @@
 package com.lody.virtual.os;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
@@ -13,6 +14,7 @@ import com.lody.virtual.helper.utils.VLog;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 
 /**
  * @author Lody
@@ -94,6 +96,7 @@ public class VEnvironment {
         EMULATED_DIRECTORY = ensureCreated(new File(EXTERNAL_STORAGE_DIRECTORY, "emulated"));
     }
 
+    @SuppressLint("SdCardPath")
     public static void systemReady() {
         //create private dir at SdCard & all of TFCard
         getContext().getExternalFilesDir(null).getAbsolutePath();
@@ -106,8 +109,16 @@ public class VEnvironment {
                 e.printStackTrace();
             }
         }
-    }
+        //创建 /data/user/0/ & /data/data/
+        ensureCreated(new File(ROOT, "/data/user/0"));
+        //创建链接
+        try {
+            FileUtils.createSymlink(ROOT+"/data/user/0",ROOT+"/data/data");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+    }
 
     private static Context getContext() {
         return VirtualCore.get().getContext();

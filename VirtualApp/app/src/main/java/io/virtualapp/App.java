@@ -50,7 +50,7 @@ public class App extends Application {
 
         @Override
         public boolean isUseRealDataDir(String packageName) {
-            return false;
+            return true;
         }
 
         @Override
