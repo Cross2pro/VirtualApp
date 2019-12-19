@@ -106,8 +106,8 @@ public class NotificationListener extends NotificationListenerService {
         String packageName = sbn.getPackageName();
         Bundle extras = notification.extras;
         String notificationTitle = extras.getString(Notification.EXTRA_TITLE);
-        int notificationIcon = extras.getInt(Notification.EXTRA_SMALL_ICON);
-        Bitmap notificationLargeIcon = ((Bitmap)extras.getParcelable(Notification.EXTRA_LARGE_ICON));
+//        int notificationIcon = extras.getInt(Notification.EXTRA_SMALL_ICON);
+//        Bitmap notificationLargeIcon = ((Bitmap)extras.getParcelable(Notification.EXTRA_LARGE_ICON));
         CharSequence notificationText = extras.getCharSequence(Notification.EXTRA_TEXT);
         CharSequence notificationSubText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT);
 

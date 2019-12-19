@@ -342,7 +342,6 @@ off_t EncryptFile::lseek(int fd, off_t offset, int whence) {
 
 int EncryptFile::llseek(int fd, unsigned long offset_high, unsigned long offset_low,
                         loff_t *result, unsigned int whence) {
-    off64_t rel_offset = 0; rel_offset |= offset_high; rel_offset <<= 32; rel_offset |= offset_low;
     //log("EncryptFile::llseek [fd %d] [offset %lld] [whence %d]", fd, rel_offset, whence);
 
     int ret;

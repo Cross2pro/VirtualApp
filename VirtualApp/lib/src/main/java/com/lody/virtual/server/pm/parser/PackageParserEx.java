@@ -21,7 +21,6 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
-import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -33,13 +32,13 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.server.pm.PackageCacheManager;
 import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.pm.PackageUserState;
+import com.xdja.zs.InstallerSettingManager;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,12 +58,15 @@ public class PackageParserEx {
 
     public static VPackage parsePackage(File packageFile) throws Throwable {
         PackageParser parser = PackageParserCompat.createParser(packageFile);
+        if (BuildCompat.isQ()) {
+            parser.setCallback(new PackageParser.CallbackImpl(VirtualCore.getPM()));
+        }
         PackageParser.Package p = PackageParserCompat.parsePackage(parser, packageFile, 0);
         if (p.requestedPermissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")
                 && p.mAppMetaData != null
                 && p.mAppMetaData.containsKey("fake-signature")) {
             String sig = p.mAppMetaData.getString("fake-signature");
-            p.mSignatures = new Signature[]{new Signature(sig)};
+            buildSignature(p, new Signature[]{new Signature(sig)});
             VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
         } else {
             try {
@@ -80,6 +82,16 @@ public class PackageParserEx {
             }
         }
         return buildPackageCache(p);
+    }
+
+    private static void buildSignature(PackageParser.Package p, Signature[] signatures) {
+        if (BuildCompat.isQ()) {
+            Object signingDetails = mirror.android.content.pm.PackageParser.Package.mSigningDetails.get(p);
+            mirror.android.content.pm.PackageParser.SigningDetails.pastSigningCertificates.set(signingDetails, signatures);
+            mirror.android.content.pm.PackageParser.SigningDetails.signatures.set(signingDetails, signatures);
+        } else {
+            p.mSignatures = signatures;
+        }
     }
 
     public static VPackage readPackageCache(String packageName) {
@@ -259,8 +271,17 @@ public class PackageParserEx {
             }
             if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion < 28) {
                 String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
-                if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR)) {
-                    sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
+                if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR) && !sharedLibraryFileList.contains(APACHE_LEGACY_JAR_Q)) {
+                    if (BuildCompat.isQ()) {
+                        if (!FileUtils.isExist(APACHE_LEGACY_JAR_Q)) {
+                            sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                        } else {
+                            sharedLibraryFileList.add(APACHE_LEGACY_JAR_Q);
+                        }
+                    } else {
+                        sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+                    }
                 }
             }
             sharedLibraryFiles = sharedLibraryFileList.toArray(new String[0]);
@@ -269,13 +290,16 @@ public class PackageParserEx {
         ai.sharedLibraryFiles = sharedLibraryFiles;
     }
 
-    private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
+    private static boolean initApplicationAsUser(ApplicationInfo ai, int userId) {
         PackageSetting ps = PackageCacheManager.getSetting(ai.packageName);
         if (ps == null) {
-            throw new IllegalStateException();
+            return false;
         }
         boolean is64bit = ps.isRunOn64BitProcess();
         String apkPath = ps.getApkPath(is64bit);
+        if(apkPath == null){
+            return false;
+        }
         ai.publicSourceDir = apkPath;
         ai.sourceDir = apkPath;
         SettingConfig config = VirtualCore.getConfig();
@@ -293,6 +317,9 @@ public class PackageParserEx {
                 // ignore
             }
             if (libConfig == SettingConfig.AppLibConfig.UseRealLib && outside == null) {
+                libConfig = SettingConfig.AppLibConfig.UseOwnLib;
+            }
+            if (GmsSupport.isGoogleAppOrService(ai.packageName)) {
                 libConfig = SettingConfig.AppLibConfig.UseOwnLib;
             }
             if (outside != null) {
@@ -366,6 +393,7 @@ public class PackageParserEx {
                 ai.nativeLibraryDir = "/data/data/" + ai.packageName + "/lib/";
             }
         }
+        return true;
     }
 
     private static String chooseOutsideNativeLib(ApplicationInfo ai, boolean is64bit) {
@@ -449,6 +477,9 @@ public class PackageParserEx {
         pi.versionName = p.mVersionName;
         pi.sharedUserId = p.mSharedUserId;
         pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
+        if(pi.applicationInfo == null){
+            return null;
+        }
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
         if (p.requestedPermissions != null && !p.requestedPermissions.isEmpty()) {
@@ -540,9 +571,11 @@ public class PackageParserEx {
             N = p.requestedPermissions == null ? 0 : p.requestedPermissions.size();
             if (N > 0) {
                 pi.requestedPermissions = new String[N];
+                pi.requestedPermissionsFlags = new int[N];
                 for (int i = 0; i < N; i++) {
                     final String perm = p.requestedPermissions.get(i);
                     pi.requestedPermissions[i] = perm;
+                    pi.requestedPermissionsFlags[i] = VirtualCore.get().checkSelfPermission(perm, false) ? 0 : PackageInfo.REQUESTED_PERMISSION_GRANTED;
                 }
             }
         }
@@ -572,13 +605,15 @@ public class PackageParserEx {
         // Make shallow copy so we can store the metadata/libraries safely
         ApplicationInfo ai = new ApplicationInfo(p.applicationInfo);
         //
-        if(InstallerSetting.systemApps.contains(p.packageName)){
+        if(InstallerSettingManager.get().isSystemApp(p.packageName)){
             ai.flags = ai.flags | ApplicationInfo.FLAG_SYSTEM;
         }
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }
-        initApplicationAsUser(ai, userId);
+        if(!initApplicationAsUser(ai, userId)){
+            return null;
+        }
         return ai;
     }
 
@@ -596,6 +631,9 @@ public class PackageParserEx {
             ai.metaData = a.metaData;
         }
         ai.applicationInfo = generateApplicationInfo(a.owner, flags, state, userId);
+        if(ai.applicationInfo == null){
+            return null;
+        }
         return ai;
     }
 
@@ -611,6 +649,9 @@ public class PackageParserEx {
             si.metaData = s.metaData;
         }
         si.applicationInfo = generateApplicationInfo(s.owner, flags, state, userId);
+        if(si.applicationInfo == null){
+            return null;
+        }
         return si;
     }
 
@@ -631,6 +672,9 @@ public class PackageParserEx {
             pi.uriPermissionPatterns = null;
         }
         pi.applicationInfo = generateApplicationInfo(p.owner, flags, state, userId);
+        if(pi.applicationInfo == null){
+            return null;
+        }
         return pi;
     }
 

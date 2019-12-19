@@ -69,7 +69,7 @@ public class App extends Application {
                 return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName)
                         || "com.android.providers.media".equals(packageName);//扫描铃声
             }
-            return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName) || "com.tencent.mm".equals(packageName);
+            return "com.example.demo2".equals(packageName) || InstallerSetting.privApps.contains(packageName);
         }
 
         @Override
@@ -135,6 +135,7 @@ public class App extends Application {
 //                virtualCore.addVisibleOutsidePackage("com.whatsapp");
 //                virtualCore.addVisibleOutsidePackage("com.tencent.mm");
 //                virtualCore.addVisibleOutsidePackage("com.immomo.momo");
+                virtualCore.addVisibleOutsidePackage("com.xdja.safekeyservice");
             }
         });
     }

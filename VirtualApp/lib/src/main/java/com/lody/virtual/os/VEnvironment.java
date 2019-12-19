@@ -61,7 +61,7 @@ public class VEnvironment {
     };
 
     static {
-        File host = new File("/data/data/" + StubManifest.PACKAGE_NAME);
+        File host = new File(getContext().getApplicationInfo().dataDir);
         // Point to: /
         ROOT = ensureCreated(new File(host, "virtual"));
         // Point to: /data/
@@ -73,7 +73,7 @@ public class VEnvironment {
         // Point to: /opt/
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
 
-        File host64 = new File("/data/data/" + StubManifest.PACKAGE_NAME_64BIT);
+        File host64 = new File(host.getParent(), StubManifest.PACKAGE_NAME_64BIT);
         // Point to: /
         ROOT64 = ensureCreated(new File(host64, "virtual"));
         // Point to: /data/

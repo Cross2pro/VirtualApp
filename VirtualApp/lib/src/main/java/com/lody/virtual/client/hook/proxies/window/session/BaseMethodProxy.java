@@ -1,7 +1,6 @@
 package com.lody.virtual.client.hook.proxies.window.session;
 
 import android.annotation.SuppressLint;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,6 +8,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -24,7 +25,6 @@ import com.xdja.zs.VWaterMarkManager;
 import com.xdja.zs.MobileInfoUtil;
 import com.xdja.zs.WaterMarkInfo;
 
-import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -39,6 +39,8 @@ import java.util.List;
  */
 
 class Relayout extends BaseMethodProxy{
+
+    static final String TAG = Relayout.class.getName();
 
     private String mImei = "";
     private String mIconPath = "";
@@ -61,16 +63,16 @@ class Relayout extends BaseMethodProxy{
 
         WaterMarkInfo waterMark = VWaterMarkManager.get().getWaterMark();
         if (waterMark == null || TextUtils.isEmpty(waterMark.getWaterMarkContent())) {
-            Log.e("lxf-Relayout","WaterMarkInfo is Null!");
+            Log.e(TAG,"WaterMarkInfo is Null!");
             return;
         }else if(waterMark.getTextSize()==0.0){
-            Log.e("lxf-Relayout","TextSize is 0!");
+            Log.e(TAG,"TextSize is 0!");
             return;
         }else if(TextUtils.isEmpty(waterMark.getTextColor())){
-            Log.e("lxf-Relayout","TextColor is Null!");
+            Log.e(TAG,"TextColor is Null!");
             return;
         }else if(waterMark.getTextAlpha()==0.0){
-            Log.e("lxf-Relayout","TextAlpha is 0!");
+            Log.e(TAG,"TextAlpha is 0!");
             return;
         }
 
@@ -84,7 +86,7 @@ class Relayout extends BaseMethodProxy{
         infos.clear();
         String content[] = waterInfo.split(",");
         for (String c : content){
-            Log.e("lxf-Relayout","connect "+c);
+            Log.e(TAG,"connect "+c);
             if("T".equals(c)){
                 @SuppressLint("SimpleDateFormat")
                 SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -129,11 +131,13 @@ class Relayout extends BaseMethodProxy{
 
         // 先清除水印，防止页面不刷新导致的水印残留
         if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
-            omView.setForeground(null);
+            Drawable drawable = new ColorDrawable(Color.BLACK);
+            drawable.setAlpha(0);
+            omView.setForeground(drawable);
         }
 
         if(VAppPermissionManager.get().getAppPermissionEnable(getAppPkg(),VAppPermissionManager.PROHIBIT_WATER_MARK)){
-            Log.e("lxf-Relayout","禁止启用水印");
+            Log.e(TAG,"禁止启用水印");
             return super.call(who, method, args);
         }
         if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
@@ -144,14 +148,14 @@ class Relayout extends BaseMethodProxy{
 
             int screenWidth = omView.getMeasuredWidth();
             int screenHeight = omView.getMeasuredHeight();
-            Log.e("lxf","relayout "+screenWidth +":"+ screenHeight);
+            Log.e(TAG,"relayout "+screenWidth +":"+ screenHeight);
 
             //长宽比例适配，去除小窗口水印绘制
             Configuration configuration = VirtualCore.get().getContext().getResources().getConfiguration();
             if(configuration.orientation==configuration.ORIENTATION_PORTRAIT){
-                Log.e("lxf-orient","h/w "+(((float)screenHeight/screenWidth)>1.5));
+                Log.e(TAG,"h/w "+(((float)screenHeight/screenWidth)>1.5));
             }else {
-                Log.e("lxf-orient","w/h "+(((float)screenWidth/screenHeight)>1.5));
+                Log.e(TAG,"w/h "+(((float)screenWidth/screenHeight)>1.5));
             }
             if((((float)screenHeight/screenWidth)>1.5 && (configuration.orientation==configuration.ORIENTATION_PORTRAIT))
                     || (((float)screenWidth/screenHeight)>1.5 && (configuration.orientation==configuration.ORIENTATION_LANDSCAPE))){
@@ -182,7 +186,7 @@ class Relayout extends BaseMethodProxy{
 
     private void drawWaterMark(Canvas canvas, int width, int height) {
 
-        Log.e("lxf-Relayout","drawWaterMark");
+        Log.e(TAG,"drawWaterMark");
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 //        paint.setStyle(Paint.Style.STROKE);
 //        paint.setStrokeWidth(1);

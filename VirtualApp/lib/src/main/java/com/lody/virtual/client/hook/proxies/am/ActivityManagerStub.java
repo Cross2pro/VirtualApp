@@ -22,7 +22,6 @@ import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
-import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 
 import java.lang.reflect.Method;
@@ -111,10 +110,17 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 // add by lml@xdja.com
                 @Override
                 public boolean beforeCall(Object who, Method method, Object... args) {
-                    if (!VActivityManager.get().isAppPid(VBinder.getCallingPid())) {
+                    // if (!VActivityManager.get().isAppPid(VBinder.getCallingPid()))
+                    {
                         for (Object o:args) {
                             if (o instanceof Intent) {
                                 Intent intent = (Intent)o;
+                                {
+                                    Uri uri = intent.getData();
+                                    if (uri == null || "com.android.externalstorage.documents".equals(uri.getAuthority())) {
+                                        continue;
+                                    }
+                                }
                                 ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
                             }
                         }
@@ -144,6 +150,10 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 public Object call(Object who, Method method, Object... args) throws Throwable {
                     IBinder token = (IBinder) args[0];
                     VActivityManager.get().onFinishActivity(token);
+                    if (VActivityManager.get().includeExcludeFromRecentsFlag(token)) {
+                        //FINISH_TASK_WITH_ROOT_ACTIVITY
+                        args[3] = 1;
+                    }
                     return super.call(who, method, args);
                 }
 

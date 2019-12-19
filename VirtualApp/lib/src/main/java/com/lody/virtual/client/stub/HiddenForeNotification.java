@@ -1,9 +1,12 @@
 package com.lody.virtual.client.stub;
 
+import android.app.Notification;
 import android.app.Notification.Builder;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.IBinder;
 
@@ -26,6 +29,9 @@ public class HiddenForeNotification extends Service {
             builder.setContentText(service.getString(R.string.keep_service_damon_noti_text));
             builder.setContentIntent(PendingIntent.getService(service, 0, new Intent(service, HiddenForeNotification.class), 0));
         }*/
+        if (VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setVisibility(Notification.VISIBILITY_SECRET);
+        }
         builder.setSound(null);
         service.startForeground(ID, builder.getNotification());
         if (VERSION.SDK_INT <= 24) {
@@ -42,6 +48,9 @@ public class HiddenForeNotification extends Service {
             builder.setSmallIcon(android.R.drawable.ic_dialog_dialer);
             builder.setContentTitle(getString(R.string.keep_service_noti_title));
             builder.setContentText(getString(R.string.keep_service_noti_text));*/
+            if (VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder.setVisibility(Notification.VISIBILITY_SECRET);
+            }
             builder.setSound(null);
             startForeground(ID, builder.getNotification());
             stopForeground(true);

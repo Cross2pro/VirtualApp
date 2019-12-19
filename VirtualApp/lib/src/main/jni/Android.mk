@@ -18,7 +18,6 @@ LOCAL_CPPFLAGS += -std=c++11
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Foundation
 LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/Jni
-LOCAL_C_INCLUDES += $(MAIN_LOCAL_PATH)/syscall
 
 LOCAL_SRC_FILES := Jni/VAJni.cpp \
 				   Jni/Helper.cpp \
@@ -35,15 +34,6 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    Substrate/SubstrateHook.cpp \
                    Substrate/SubstratePosixMemory.cpp \
                    Substrate/And64InlineHook.cpp \
-                   syscall/sysnum.cpp \
-                   syscall/tracer/tracer.cpp \
-                   syscall/tracer/reg.cpp \
-                   syscall/tracer/event.cpp \
-                   syscall/tracer/syscall.cpp \
-                   syscall/tracer/mem.cpp \
-                   syscall/tracer/enter.cpp \
-                   syscall/tracer/exit.cpp \
-                   syscall/tracer/path.cpp \
                    transparentED/ff_Recognizer.cpp \
                    transparentED/EncryptFile.cpp \
                    transparentED/originalInterface.cpp \
@@ -65,7 +55,7 @@ LOCAL_SRC_FILES := Jni/VAJni.cpp \
                    utils/utils.cpp \
                    utils/md5.c \
                    utils/zMd5.cpp \
-                   utils/controllerManagerNative.cpp \
+                   utils/controllerManagerNative.cpp
 
 LOCAL_LDLIBS := -llog -latomic
 

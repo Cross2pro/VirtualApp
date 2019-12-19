@@ -63,6 +63,7 @@ public class ActivityThread {
         public static RefObject<ActivityInfo> activityInfo;
         public static RefObject<Intent> intent;
         public static RefObject<IBinder> token;
+        public static RefObject<Boolean> isTopResumedActivity;
     }
 
     public static class ProviderClientRecord {

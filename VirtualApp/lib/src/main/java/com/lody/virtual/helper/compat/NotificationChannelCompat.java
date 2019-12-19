@@ -7,6 +7,8 @@ import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -58,6 +60,10 @@ public class NotificationChannelCompat {
         return false;
     }
 
+    public static boolean isVAChannel(String name){
+        return DAEMON_ID.equals(name) || DEFAULT_ID.equals(name) || LIGHT_ID.equals(name) || SYSTEM_ID.equals(name);
+    }
+
     @TargetApi(Build.VERSION_CODES.O)
     public static void checkOrCreateGroup(Context context, String groupId, String name) {
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -105,12 +111,17 @@ public class NotificationChannelCompat {
                 channel.setSound(null, null);
                 channel.setShowBadge(false);
                 if (channelId.equals(LIGHT_ID)) {
+                    //通知栏使用默认铃声
+                    Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    channel.setSound(sound, Notification.AUDIO_ATTRIBUTES_DEFAULT);
                     channel.enableVibration(true);
                     channel.enableLights(true);
                     channel.setLightColor(Color.GREEN);
                     channel.setGroup(GROUP_PHONE);
                 } else if (channelId.equals(DAEMON_ID)) {
                     channel.setGroup(GROUP_DAEMON);
+                    channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+                    channel.setImportance(NotificationManager.IMPORTANCE_LOW);
                 } else if (channelId.equals(DEFAULT_ID)) {
                     channel.setGroup(GROUP_APP);
                 } else if (channelId.equals(SYSTEM_ID)) {

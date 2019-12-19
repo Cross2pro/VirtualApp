@@ -30,6 +30,8 @@ public class LoadedApk {
     public static RefMethod<IServiceConnection> forgetServiceDispatcher;
     public static RefMethod<ClassLoader> getClassLoader;
 
+    public static RefObject<Application> mApplication;
+
     public static RefBoolean mSecurityViolation;
 
     public static class ReceiverDispatcher {

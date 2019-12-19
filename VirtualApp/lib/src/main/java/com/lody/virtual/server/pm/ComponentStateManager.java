@@ -41,6 +41,15 @@ public class ComponentStateManager extends PersistenceLayer {
         }
     }
 
+    public void clearAll(int userId){
+        synchronized (this) {
+            if(states.indexOfKey(userId) >= 0){
+                states.remove(userId);
+                save();
+            }
+        }
+    }
+
     private UserComponentState getOrCreate(int userId) {
         UserComponentState state;
         state = states.get(userId);

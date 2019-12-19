@@ -107,7 +107,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
         synchronized (this) {
-            return mActivityStack.startActivityLocked(userId, intent, info, resultTo, options, resultWho, requestCode, VBinder.getCallingUid());
+            return mActivityStack.startActivityLocked(userId, intent, info, resultTo, options, resultWho, requestCode, VBinder.getCallingUid(), VBinder.getCallingPid());
         }
     }
 
@@ -129,7 +129,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
                 infos[i] = ai;
             }
-            return mActivityStack.startActivitiesLocked(userId, intents, infos, resolvedTypes, token, options, VBinder.getCallingUid());
+            return mActivityStack.startActivitiesLocked(userId, intents, infos, resolvedTypes, token, options, VBinder.getCallingUid(), VBinder.getCallingPid());
         }
     }
 
@@ -1203,4 +1203,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
+    @Override
+    public boolean includeExcludeFromRecentsFlag(IBinder token) {
+        return mActivityStack.includeExcludeFromRecentsFlag(token);
+    }
 }

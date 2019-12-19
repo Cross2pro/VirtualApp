@@ -2,20 +2,19 @@ package com.xdja.ckms;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
-import android.content.res.AssetFileDescriptor;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.xdja.utils.SignatureVerify;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -81,6 +80,9 @@ public class TokenProvider extends ContentProvider {
                             readBytes += is.read(buffer, readBytes, leftBytes);
                         }
                         result.putByteArray("tokenBytes", buffer);
+                        String signature = SignatureVerify.getHostSHA1Signature();
+                        Log.e(TAG, VirtualCore.get().getHostPkg() + " : " + signature);
+                        result.putString("signature", signature);
                         is.close();
                         ret = 0;
                     } catch (IOException e) {
@@ -105,6 +107,9 @@ public class TokenProvider extends ContentProvider {
                             }
 
                             result.putByteArray("tokenBytes", buffer);
+                            String signature = SignatureVerify.getSHA1Signature(pkg_list.get(0));
+                            Log.e(TAG, pkg_list.get(0) + " : " + signature);
+                            result.putString("signature", signature);
                             is.close();
 
                             ret = 0;

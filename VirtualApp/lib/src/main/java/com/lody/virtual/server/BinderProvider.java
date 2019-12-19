@@ -32,6 +32,7 @@ import com.lody.virtual.server.pm.VUserManagerService;
 import com.lody.virtual.server.vs.VirtualStorageService;
 
 import com.xdja.activitycounter.ActivityCounterService;
+import com.xdja.zs.InstallerSettingService;
 import com.xdja.zs.VSafekeyManagerService;
 import com.xdja.zs.VServiceKeepAliveService;
 import com.xdja.zs.VWaterMarkService;
@@ -82,6 +83,8 @@ public final class BinderProvider extends ContentProvider {
         if (!VirtualCore.get().isStartup()) {
             return false;
         }
+
+        addService(ServiceManagerNative.INSTALLERSETTING, InstallerSettingService.get());
         VPackageManagerService.systemReady();
         addService(ServiceManagerNative.PACKAGE, VPackageManagerService.get());
         addService(ServiceManagerNative.ACTIVITY, VActivityManagerService.get());
@@ -119,19 +122,8 @@ public final class BinderProvider extends ContentProvider {
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
 
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Log.d("wxd", " start preLaunchApp");
-                    VirtualCore.get().preLaunchApp();
-                    Log.d("wxd", " end preLaunchApp");
-                    sleep(8000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
+        //xdja
+        VirtualCore.get().preLaunchApp();
         return true;
     }
 

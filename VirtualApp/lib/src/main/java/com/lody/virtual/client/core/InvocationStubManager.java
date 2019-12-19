@@ -14,6 +14,7 @@ import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appops.FlymePermissionServiceStub;
 import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appwidget.AppWidgetManagerStub;
+import com.lody.virtual.client.hook.proxies.am.ActivityTaskManagerStub;
 import com.lody.virtual.client.hook.proxies.audio.AudioManagerStub;
 import com.lody.virtual.client.hook.proxies.backup.BackupManagerStub;
 import com.lody.virtual.client.hook.proxies.battery_stats.BatteryStatsHub;
@@ -22,6 +23,7 @@ import com.lody.virtual.client.hook.proxies.clipboard.ClipBoardStub;
 import com.lody.virtual.client.hook.proxies.connectivity.ConnectivityStub;
 import com.lody.virtual.client.hook.proxies.content.ContentServiceStub;
 import com.lody.virtual.client.hook.proxies.context_hub.ContextHubServiceStub;
+import com.lody.virtual.client.hook.proxies.dev_identifiers_policy.DeviceIdentifiersPolicyServiceHub;
 import com.lody.virtual.client.hook.proxies.devicepolicy.DevicePolicyManagerStub;
 import com.lody.virtual.client.hook.proxies.display.DisplayStub;
 import com.lody.virtual.client.hook.proxies.dropbox.DropBoxManagerStub;
@@ -44,6 +46,7 @@ import com.lody.virtual.client.hook.proxies.phonesubinfo.PhoneSubInfoStub;
 import com.lody.virtual.client.hook.proxies.pm.PackageManagerStub;
 import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
+import com.lody.virtual.client.hook.proxies.role.RoleStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
 import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.storage_stats.StorageStatsStub;
@@ -216,6 +219,11 @@ public final class InvocationStubManager {
             }
             if (mirror.oem.IFlymePermissionService.TYPE != null) {
                 addInjector(new FlymePermissionServiceStub());
+            }
+            if (BuildCompat.isQ()) {
+                addInjector(new ActivityTaskManagerStub());
+                addInjector(new DeviceIdentifiersPolicyServiceHub());
+                addInjector(new RoleStub());
             }
         }
     }

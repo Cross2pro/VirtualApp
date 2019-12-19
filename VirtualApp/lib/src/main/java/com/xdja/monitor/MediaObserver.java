@@ -21,6 +21,7 @@ import com.lody.virtual.helper.compat.StrictModeCompat;
 import com.lody.virtual.os.VEnvironment;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,8 +113,19 @@ public class MediaObserver {
                     boolean isTransferOK = false;
                     if (Math.abs(currTime - dateAdded * 1000) <= 1000) {
                         File target = new File(getScreenShotDir(), display);
+                        String rootPath = VEnvironment.getDataDirectory().getParentFile().getPath();
+                        String internalTarget = target.getPath().substring(rootPath.length());
+
+                        Log.d(TAG, "processMesdi, internalTarget: " + internalTarget);
                         try {
-                            final InputStream inputStream = mContentResolver.openInputStream(uri);
+                            // final InputStream inputStream = mContentResolver.openInputStream(uri);
+//                            try {
+//                                Thread.sleep(500);
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+                            File origFile = new File(file_path);
+                            final InputStream inputStream = new FileInputStream(origFile);
                             OutputStream outputStream = new FileOutputStream(target);
                             byte[] buf = new byte[2048];
                             int len;
@@ -122,7 +134,7 @@ public class MediaObserver {
                             }
                             inputStream.close();
                             outputStream.close();
-                            scanMediaFile(Uri.parse("file://" + file_path));
+                            scanMediaFile(Uri.parse("file://" + internalTarget));
                             isTransferOK = true;
                         } catch (IOException e) {
                             e.printStackTrace();

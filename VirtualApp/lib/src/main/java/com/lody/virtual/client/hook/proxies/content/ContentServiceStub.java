@@ -11,7 +11,6 @@ import mirror.android.content.IContentService;
  * @author Lody
  * @see IContentService
  */
-@LogInvocation(LogInvocation.Condition.ALWAYS)
 @Inject(MethodProxies.class)
 public class ContentServiceStub extends BinderInvocationProxy {
     private static final String TAG = ContentServiceStub.class.getSimpleName();

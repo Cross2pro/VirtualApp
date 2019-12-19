@@ -27,7 +27,7 @@ public class MobileInfoUtil {
             }
             return imei;
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             return "";
         }
     }

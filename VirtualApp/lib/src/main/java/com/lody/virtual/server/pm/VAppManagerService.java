@@ -375,7 +375,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 return res;
             }
             if (!isAllowedUpdate(existOne, pkg, options.updateStrategy)) {
-                return InstallResult.makeFailure("Not allowed to update the package.");
+                res.error = "Not allowed to update the package.";
+                return res;
             }
             res.isUpdate = true;
             VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_DEL);
@@ -521,6 +522,11 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private void supportTelephony(int userId) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            setDefaultComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.RcsProvider"), userId);
+        } else {
+            disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.RcsProvider"), userId);
+        }
         if (Build.VERSION.SDK_INT < 28) {
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierIdProvider"), userId);
             disableComponent(new ComponentName(InstallerSetting.PROVIDER_TELEPHONY_PKG, "com.android.providers.telephony.CarrierProvider"), userId);

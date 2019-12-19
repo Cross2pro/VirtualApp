@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Environment;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -41,8 +42,12 @@ public class exceptionRecorder {
     {
         String logPath = getExceptionRecordPath();
         ensureCreated(new File(logPath));
-
-        String logFile = logPath + "/" + VirtualCore.get().getProcessName() + "_" + stampToDate(System.currentTimeMillis()) + ".log";
+        String processName = VirtualCore.get().getProcessName();
+        String replaceName = null;
+        if(processName.contains(":")) {
+            replaceName = processName.replace(":","_");
+        }
+        String logFile = logPath + "/" + replaceName + "_" + stampToDate(System.currentTimeMillis()) + ".log";
 
         File file = new File(logFile);
         if (!file.exists()) {

@@ -100,12 +100,14 @@ static struct {
 
 jint dvm_getCallingUid(JNIEnv *env, jclass clazz) {
     jint uid = patchEnv.native_getCallingUid(patchEnv.IPCThreadState_self());
+    env = ensureEnvCreated();
     uid = env->CallStaticIntMethod(nativeEngineClass, patchEnv.method_onGetCallingUid, uid);
     return uid;
 }
 
 jint new_getCallingUid(JNIEnv *env, jclass clazz) {
     int uid = patchEnv.orig_getCallingUid(env, clazz);
+    env = ensureEnvCreated();
     uid = env->CallStaticIntMethod(nativeEngineClass, patchEnv.method_onGetCallingUid, uid);
     return uid;
 }
@@ -116,6 +118,7 @@ jstring new_nativeLoad(JNIEnv *env, jclass clazz, jstring _file, jobject classLo
     char buffer[PATH_MAX];
     const char *redirected_path = IOUniformer::query(orig_path.c_str(), buffer, sizeof(buffer));
     if (redirected_path != NULL) {
+        env = ensureEnvCreated();
         _file = env->NewStringUTF(redirected_path);
     }
     return patchEnv.orig_nativeLoad(env, clazz, _file, classLoader, _ld);
@@ -125,7 +128,7 @@ static void
 new_bridge_openDexNativeFunc(const void **args, void *pResult, const void *method, void *self) {
 
     JNIEnv *env = ensureEnvCreated();
-//
+
     const char *source = args[0] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[0]);
     const char *output = args[1] == NULL ? NULL : patchEnv.GetCstrFromString((void *) args[1]);
 
@@ -184,6 +187,9 @@ static jobject new_native_openDexNativeFunc(JNIEnv *env, jclass jclazz, jstring 
 static jobject new_native_openDexNativeFunc_N(JNIEnv *env, jclass jclazz, jstring javaSourceName,
                                               jstring javaOutputName, jint options, jobject loader,
                                               jobject elements) {
+
+    env = ensureEnvCreated();
+
     jclass stringClass = env->FindClass("java/lang/String");
     jobjectArray array = env->NewObjectArray(2, stringClass, NULL);
 
@@ -218,6 +224,9 @@ static jint new_native_cameraNativeSetupFunc_T(JNIEnv *env, jobject thiz,
         ALOGE("cameraNativeSetupFunc");
         return -19;
     }
+	
+    env = ensureEnvCreated();
+
     if (index >= 0) {
         jstring host = env->NewStringUTF(patchEnv.host_packageName);
         switch (index) {
@@ -284,6 +293,7 @@ static void new_native_mediaRecorderNativePrepareFunc(JNIEnv *env, jclass thiz) 
 
 static jint
 new_native_audioRecordNativeCheckPermission(JNIEnv *env, jobject thiz, jstring _packagename) {
+    env = ensureEnvCreated();
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
     return patchEnv.orig_audioRecordNativeCheckPermission(env, thiz, host);
 }
@@ -307,6 +317,7 @@ static jint new_native_audioRecordNativeSetupFunc_M(JNIEnv *env, jobject thiz,
                                                     jobject o1, jobject o2, jint o3, jint o4,
                                                     jint o5,
                                                     jint o6, jint o7, jintArray o8, jobject o9) {
+    env = ensureEnvCreated();
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
     return patchEnv.orig_audioRecordNativeSetupFunc_M(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8,
                                                       host);
@@ -317,6 +328,7 @@ static jint new_native_audioRecordNativeSetupFunc_N(JNIEnv *env, jobject thiz,
                                                     jint o5,
                                                     jint o6, jint o7, jintArray o8, jobject o9,
                                                     jlong o10) {
+    env = ensureEnvCreated();
     jstring host = env->NewStringUTF(patchEnv.host_packageName);
     return patchEnv.orig_audioRecordNativeSetupFunc_N(env, thiz, o1, o2, o3, o4, o5, o6, o7, o8,
                                                       host, o10);

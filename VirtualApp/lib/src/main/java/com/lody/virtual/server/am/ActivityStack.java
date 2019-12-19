@@ -15,6 +15,7 @@ import android.util.Log;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ObjectsCompat;
@@ -22,14 +23,18 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
+import mirror.android.app.Activity;
 import mirror.android.app.ActivityManagerNative;
 import mirror.com.android.internal.R_Hide;
 
@@ -52,6 +57,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
      */
     private final SparseArray<TaskRecord> mHistory = new SparseArray<>();
     private final List<ActivityRecord> mLaunchingActivities = new ArrayList<>();
+    private final Map<ActivityInfo, IBinder> mExcludeRecentActivityRecord = new HashMap<>();
 
 
     ActivityStack(VActivityManagerService mService) {
@@ -175,26 +181,32 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder resultTo, Bundle options, int callingUid) {
+    int startActivitiesLocked(int userId, Intent[] intents, ActivityInfo[] infos, String[] resolvedTypes, IBinder resultTo, Bundle options, int callingUid, int callingPid) {
         for (int i = 0; i < intents.length; i++) {
-            startActivityLocked(userId, intents[i], infos[i], resultTo, options, null, 0, callingUid);
+            startActivityLocked(userId, intents[i], infos[i], resultTo, options, null, 0, callingUid, callingPid);
         }
         return 0;
     }
 
 
-    private boolean isAllowUseSourceTask(ActivityRecord source, ActivityInfo info) {
+    private boolean isAllowUseSourceTask(ActivityRecord source, ActivityInfo info, int userId, String affinity) {
         if (source == null) {
             return false;
         }
         if (source.info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
             return false;
         }
+        //xdja LAUNCH_SINGLE_TASK模式需要对比taskAffinity，如果affinity不同需要newTask，例如wps编辑界面
+        if(info.launchMode == LAUNCH_SINGLE_TASK){
+            if(findTaskByAffinityLocked(userId, affinity) == null){
+                return false;
+            }
+        }
         return true;
     }
 
     int startActivityLocked(int userId, Intent intent, ActivityInfo info, IBinder resultTo, Bundle options,
-                            String resultWho, int requestCode, int callingUid) {
+                            String resultWho, int requestCode, int callingUid, int callingPid) {
         synchronized (mHistory) {
             optimizeTasksLocked();
         }
@@ -213,7 +225,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0
                 || containFlags(intent, Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)) {
-            mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
+            if (info.packageName.equals(InstallerSetting.MDM_CLIENT_PKG) &&
+            info.name.contains("ForceControlActivity")) {
+                synchronized (mExcludeRecentActivityRecord) {
+                    if (!mExcludeRecentActivityRecord.containsKey(info)) {
+                        mExcludeRecentActivityRecord.put(info, null);
+                    }
+                }
+            } else {
+                mLauncherFlags |= Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS;
+            }
         }
 
         boolean notStartToFront = false;
@@ -229,31 +250,20 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
 
         TaskRecord reuseTask = null;
-        if (!multipleTask) {
+        if ((info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0) {
+            //same process
+        } else if (!multipleTask) {
             switch (info.launchMode) {
                 case LAUNCH_SINGLE_INSTANCE: {
                     reuseTask = findTaskByAffinityLocked(userId, affinity);
                     break;
                 }
                 case LAUNCH_SINGLE_TASK:
-                    //xdja 安通拨号首界面多个实例
-                    if("com.xdja.dialer".equals(affinity) && "android.intent.action.MAIN".equals(intent.getAction())){
-                        reuseTask = findTaskByAffinityLocked(userId, affinity);
-                        break;
-                    }
-                    //xdja
-                    if(!isAllowUseSourceTask(sourceRecord, info)){
-                        //sourceRecord被LAUNCH_SINGLE_INSTANCE模式启动, 需要newTask
-                        break;
-                    }
-                    //LAUNCH_SINGLE_TASK模式需要对比taskAffinity，如果affinity不同需要newTask
-                    reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    break;
                 case LAUNCH_MULTIPLE:
                 case LAUNCH_SINGLE_TOP: {
                     if (newTask || sourceTask == null) {
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
-                    } else if (isAllowUseSourceTask(sourceRecord, info)) {
+                    } else if (isAllowUseSourceTask(sourceRecord, info, userId, affinity)) {
                         reuseTask = sourceTask;
                     }
                     break;
@@ -262,7 +272,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
         }
         if (reuseTask == null || reuseTask.isFinishing()) {
-            return startActivityInNewTaskLocked(mLauncherFlags, userId, intent, info, options, callingUid);
+            return startActivityInNewTaskLocked(mLauncherFlags, userId, intent, info, options, callingUid, callingPid);
         }
         mAM.moveTaskToFront(reuseTask.taskId, 0);
 
@@ -379,7 +389,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
         }
         ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo, userId);
-        Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
+        Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
 
         if (destIntent != null) {
             destIntent.addFlags(mLauncherFlags);
@@ -408,9 +418,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
 
-    private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid) {
+    private int startActivityInNewTaskLocked(int launcherFlags, final int userId, Intent intent, final ActivityInfo info, final Bundle options, int callingUid, int callingPid) {
         ActivityRecord targetRecord = newActivityRecord(intent, info, null, userId);
-        final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid);
+        final Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
         if (destIntent != null) {
             destIntent.addFlags(launcherFlags);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -556,8 +566,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
-    private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid) {
-        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
+    private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid, int callingPid) {
+        String processName = info.processName;
+        if(callingPid > 0 && (info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0){
+            //和调用者一个进程
+            ProcessRecord app = mService.findProcessLocked(callingPid);
+            if(app != null){
+                processName = app.processName;
+            }
+        }
+        ProcessRecord targetApp = mService.startProcessIfNeedLocked(processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
         if (targetApp == null) {
             return null;
         }
@@ -587,14 +605,24 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             optimizeTasksLocked();
             TaskRecord task = mHistory.get(taskId);
             if (task == null) {
-                task = new TaskRecord(taskId, record.userId, ComponentUtils.getTaskAffinity(record.info), record.intent);
+                boolean excludeRecent = (record.info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0;
+                task = new TaskRecord(taskId, record.userId, ComponentUtils.getTaskAffinity(record.info), record.intent, excludeRecent);
                 mHistory.put(taskId, task);
                 Intent intent = new Intent(Constants.ACTION_NEW_TASK_CREATED);
                 intent.putExtra(Constants.EXTRA_USER_HANDLE, record.userId);
                 intent.putExtra(Constants.EXTRA_PACKAGE_NAME, record.info.packageName);
                 VirtualCore.get().getContext().sendBroadcast(intent);
             }
+
+
             record.init(task, targetApp, token);
+
+            synchronized (mExcludeRecentActivityRecord) {
+                if (mExcludeRecentActivityRecord.containsKey(record.info)) {
+                    mExcludeRecentActivityRecord.put(record.info, token);
+                }
+            }
+
             synchronized (task.activities) {
                 task.activities.add(record);
             }
@@ -711,4 +739,20 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return null;
         }
     }
+
+    boolean includeExcludeFromRecentsFlag(IBinder token){
+        synchronized (mExcludeRecentActivityRecord) {
+            Iterator<Map.Entry<ActivityInfo, IBinder>> entries = mExcludeRecentActivityRecord.entrySet().iterator();
+            while(entries.hasNext()) {
+                Map.Entry<ActivityInfo, IBinder> entry = entries.next();
+                if (entry.getValue() != null && entry.getValue().equals(token)) {
+                    VLog.d("VActivityManagerService", entry.getKey().taskAffinity + " has excludeFromRecentTask flag");
+                    entries.remove();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

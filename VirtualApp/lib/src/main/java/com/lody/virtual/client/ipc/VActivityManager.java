@@ -659,4 +659,12 @@ public class VActivityManager {
         }
     }
 
+    public boolean includeExcludeFromRecentsFlag(IBinder token) {
+        try {
+            return getService().includeExcludeFromRecentsFlag(token);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
 }

@@ -461,7 +461,6 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
     return -1;
 }
 
-
 HOOK_DEF(int, fstat, int fd, struct stat *buf)
 {
     int ret;
@@ -481,10 +480,9 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
             flag = true;
         }
     }
-
-    if(!flag)
+    if(!flag) {
         ret = orig_fstat(fd, buf);
-
+    }
     return ret;
 }
 
@@ -756,9 +754,21 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
         /*zString op("openat fd = %d err = %s", ret, strerror(errno));
         doFileTrace(relocated_path, op.toString());*/
 
+        if (getApiLevel() >= 29) {
+            xdja::zs::sp<virtualFileDescribe> oldVfd(
+                    virtualFileDescribeSet::getVFDSet().get(ret));
+            if (oldVfd.get() != nullptr) {
+                virtualFileDescribeSet::getVFDSet().reset(ret);
+                xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+                if (vf.get() != nullptr) {
+                    virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
+                }
+                oldVfd.get()->decStrong(0);
+            }
+        }
+
         if (ret > 0 && (is_TED_Enable() || changeDecryptState(false, 1)) &&
             isEncryptPath(relocated_path)) {
-
 
             /*******************only here**********************/
             virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
@@ -808,6 +818,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
 
 HOOK_DEF(int, close, int __fd) {
     int ret;
+    LOGE("close fd[%d]", __fd);
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(__fd));
     if (vfd.get() == nullptr) {
         if (virtualFileDescribeSet::getVFDSet().getFlag(__fd)) {
@@ -1280,12 +1291,7 @@ HOOK_DEF(int, __llseek, unsigned int fd, unsigned long offset_high,
          unsigned long offset_low, off64_t *result,
          unsigned int whence)
 {
-    off64_t rel_offset = 0;
     bool flag = false;
-
-    rel_offset |= offset_high;
-    rel_offset <<= 32;
-    rel_offset |= offset_low;
 
     int ret;
 
@@ -1676,6 +1682,19 @@ HOOK_DEF(int, dup, int oldfd)
     getPathFromFd(oldfd, path);
     getPathFromFd(ret, path2);
 
+    if (getApiLevel() >= 29) {
+        xdja::zs::sp<virtualFileDescribe> oldVfd(
+                virtualFileDescribeSet::getVFDSet().get(ret));
+        if (oldVfd.get() != nullptr) {
+            virtualFileDescribeSet::getVFDSet().reset(ret);
+            xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+            if (vf.get() != nullptr) {
+                virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
+            }
+            oldVfd.get()->decStrong(0);
+        }
+    }
+
     if(ret > 0 && (is_TED_Enable()||changeDecryptState(false,1)) && isEncryptPath(path2.toString())) {
         /*******************only here**********************/
         virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
@@ -1689,7 +1708,7 @@ HOOK_DEF(int, dup, int oldfd)
         virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
 
         if (vf.get() != nullptr) {
-            LOGE("judge : open vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
+            LOGE("judge : dup vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(), ret);
             vf->vlseek(vfd.get(), 0, SEEK_SET);
         } else {
             virtualFileDescribeSet::getVFDSet().reset(ret);
@@ -1721,6 +1740,70 @@ HOOK_DEF(int, dup, int oldfd)
 HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
 {
     return syscall(__NR_dup3, oldfd, newfd, flags);
+}
+
+HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
+    va_list arg;
+    int ret = -1;
+    va_start (arg, cmd);
+    switch (cmd) {
+        case F_DUPFD:
+        case F_DUPFD_CLOEXEC: {
+            int target = va_arg (arg, int);
+            ret = syscall(__NR_fcntl, fd, cmd, target);
+
+            if (getApiLevel() >= 29 && ret > 0) {
+                xdja::zs::sp<virtualFileDescribe> oldVfd(
+                        virtualFileDescribeSet::getVFDSet().get(ret));
+                if (oldVfd.get() != nullptr) {
+                    virtualFileDescribeSet::getVFDSet().reset(ret);
+                    xdja::zs::sp<virtualFile> vf(oldVfd->_vf->get());
+                    if (vf.get() != nullptr) {
+                        virtualFileManager::getVFM().releaseVF(vf->getPath(), oldVfd.get());
+                    }
+                    oldVfd.get()->decStrong(0);
+                }
+            }
+
+            zString path;
+            getPathFromFd(ret, path);
+
+            if (ret > 0 && (is_TED_Enable() || changeDecryptState(false, 1)) &&
+                isEncryptPath(path.toString())) {
+                /*******************only here**********************/
+                virtualFileDescribe *pvfd = new virtualFileDescribe(ret);
+                pvfd->incStrong(0);
+                /***************************************************/
+                xdja::zs::sp<virtualFileDescribe> vfd(pvfd);
+
+                int _Errno;
+                xdja::zs::sp<virtualFile> vf(
+                        virtualFileManager::getVFM().getVF(vfd.get(), path.toString(), &_Errno));
+
+                virtualFileDescribeSet::getVFDSet().set(ret, pvfd);
+
+                if (vf.get() != nullptr) {
+                    LOGE("judge : fcntl vf [PATH %s] [VFS %d] [FD %d]", vf->getPath(), vf->getVFS(),
+                         ret);
+                    vf->vlseek(vfd.get(), 0, SEEK_SET);
+                } else {
+                    virtualFileDescribeSet::getVFDSet().reset(ret);
+                    /******through this way to release vfd *********/
+                    virtualFileDescribeSet::getVFDSet().release(pvfd);
+                    /***********************************************/
+                }
+            }
+            va_end(arg);
+        }
+            break;
+        default:
+            void * target = va_arg(arg, void*);
+            ret = orig_fcntl(fd, cmd, target);
+            va_end(arg);
+            break;
+    }
+
+    return ret;
 }
 
 HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
@@ -1934,7 +2017,12 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, sendfile64);
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
+        HOOK_SYMBOL(handle, fcntl);
+#if defined(__i386__) || defined(__x86_64__)
+        HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
+#else
         HOOK_SYMBOL(handle, connect);
+#endif
         HOOK_SYMBOL(handle, msync);
         if (api_level <= 20) {
             HOOK_SYMBOL(handle, access);
@@ -1975,12 +2063,14 @@ IOUniformer::startUniformer(const char *so_path, const char *so_path_64, const c
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
     LOGE("FFR path %s init %s", getMagicPath(), ret ? "success" : "fail");
     char api_level_chars[56];
+    char pre_api_level_chars[56];
     setenv("V_SO_PATH", so_path, 1);
 //    setenv("V_SO_PATH_64", so_path_64, 1);
     sprintf(api_level_chars, "%i", api_level);
     setenv("V_API_LEVEL", api_level_chars, 1);
-    sprintf(api_level_chars, "%i", preview_api_level);
-    setenv("V_PREVIEW_API_LEVEL", api_level_chars, 1);
+    sprintf(pre_api_level_chars, "%i", preview_api_level);
+    setenv("V_PREVIEW_API_LEVEL", pre_api_level_chars, 1);
+    setenv("V_API_LEVEL", api_level_chars, 1);
     setenv("V_NATIVE_PATH", native_path, 1);
     startIOHook(api_level);
 }

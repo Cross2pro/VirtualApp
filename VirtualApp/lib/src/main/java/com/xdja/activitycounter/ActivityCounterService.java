@@ -21,7 +21,7 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
 
     public static final int ADD = 0;
     public static final int RDU = 1;
-    private String TAG = "ActivityCounterService";
+    static final String TAG = ActivityCounterService.class.getName();
 
     private static final Singleton<ActivityCounterService> sService = new Singleton<ActivityCounterService>() {
         @Override
@@ -76,8 +76,8 @@ public class ActivityCounterService extends IActivityCounterService.Stub {
         //get all count of pid
         for(int id:mActivityCounter.keySet()){
             String packagename = mProcessesMap.get(id);
-            Log.e("lxf-ActivityCounter",packagename);
-            Log.e("lxf-ActivityCounter","count "+mActivityCounter.get(id));
+            Log.e(TAG,packagename);
+            Log.e(TAG,"count "+mActivityCounter.get(id));
             count += mActivityCounter.get(id);
         }
         Log.d(TAG,"getFroundCount "+count);

@@ -31,6 +31,7 @@ import android.os.IInterface;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.Telephony;
+import android.telecom.TelecomManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -51,6 +52,8 @@ import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.remote.AppRunningProcessInfo;
+import com.lody.virtual.remote.StubActivityRecord;
+import com.xdja.zs.UacProxyActivity;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
@@ -103,7 +106,7 @@ import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.content.IIntentReceiverJB;
 import mirror.android.content.pm.ParceledListSlice;
 import mirror.android.content.pm.UserInfo;
-import mirror.android.widget.Toast;
+import android.widget.Toast;
 
 /**
  * @author Lody
@@ -141,14 +144,23 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             Object _infos = method.invoke(who, args);
+            boolean slice = ParceledListSliceCompat.isReturnParceledListSlice(method);
             //noinspection unchecked
-            List<ActivityManager.RecentTaskInfo> infos =
-                    ParceledListSliceCompat.isReturnParceledListSlice(method)
-                            ? ParceledListSlice.getList.call(_infos)
-                            : (List) _infos;
-            for (ActivityManager.RecentTaskInfo info : infos) {
+            List<ActivityManager.RecentTaskInfo> infos = slice ? ParceledListSlice.getList.call(_infos)
+                    : (List) _infos;
+            Iterator<ActivityManager.RecentTaskInfo> it = infos.iterator();
+            while (it.hasNext()){
+                ActivityManager.RecentTaskInfo info = it.next();
                 AppTaskInfo taskInfo = VActivityManager.get().getTaskInfo(info.id);
                 if (taskInfo == null) {
+                    ComponentName cmp = ComponentUtils.getAppComponent(info.baseIntent);
+                    if(cmp == null){
+                        it.remove();
+                    }
+                    continue;
+                }
+                if (taskInfo.excludeRecent) {
+                    it.remove();
                     continue;
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -165,6 +177,9 @@ class MethodProxies {
                 } catch (Throwable e) {
                     // ignore
                 }
+            }
+            if(slice){
+                return ParceledListSliceCompat.create(infos);
             }
             return _infos;
         }
@@ -279,6 +294,9 @@ class MethodProxies {
 
         @Override
         public int getProviderNameIndex() {
+            if (BuildCompat.isQ()) {
+                return 1;
+            }
             return 0;
         }
 
@@ -636,7 +654,7 @@ class MethodProxies {
                     pkg = packageUri.getSchemeSpecificPart();
                 }
                 if(InstallerSetting.systemApps.contains(pkg)){
-                    InstallerSetting.showToast(getHostContext(),"自带应用不可卸载",Toast.LENGTH_LONG);
+                    InstallerSetting.showToast(getHostContext(),"自带应用不可卸载", Toast.LENGTH_LONG);
                     intent.setData(null);
                     return method.invoke(who, args);
                 }else if(VAppPermissionManager.get().getAppPermissionEnable(pkg,VAppPermissionManager.PROHIBIT_APP_UNINSTALL)){
@@ -687,13 +705,35 @@ class MethodProxies {
             }
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
-                VLog.e("VActivityManager", "Unable to resolve activityInfo : %s", intent);
+                VLog.d("VActivityManager", "Unable to resolve activityInfo : %s", intent);
                 if (intent.getPackage() != null && isAppPkg(intent.getPackage())) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
+
+                //xdja uac scheme
+                if(Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null
+                        && intent.getData().toString().startsWith(UacProxyActivity.IAM_URI)){
+                    intent = UacProxyActivity.isHook(intent);
+                }
+
                 args[intentIndex] = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
                 ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
                 if (resolveInfo == null || resolveInfo.activityInfo == null) {
+                    //fix google phone 安通拨号的设置默认电话
+                    if (InstallerSetting.DIALER_PKG.equals(getAppPkg())) {
+                        if (intent.getComponent() != null && "com.android.settings".equals(intent.getComponent().getPackageName())) {
+                            if (intent.getComponent().getClassName().contains("PreferredListSettingsActivity")
+                                    || intent.getComponent().getClassName().contains("HomeSettingsActivity")) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                    intent.setAction(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
+                                    intent.putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getHostPkg());
+                                    intent.setComponent(null);
+                                    return method.invoke(who, args);
+                                }
+                            }
+                        }
+                    }
+                    VLog.e("VActivityManager", "Unable to resolve activityInfo : %s in outside", intent);
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
                 if (!Intent.ACTION_VIEW.equals(intent.getAction())
@@ -1186,10 +1226,13 @@ class MethodProxies {
             if (args[permissionIndex] instanceof String) {
                 args[permissionIndex] = null;
             }
-            IntentSenderExtData ext = new IntentSenderExtData(sender.asBinder(), fillIn, null, null, 0, options, 0, 0);
-            Intent newFillIn = new Intent();
-            newFillIn.putExtra("_VA_|_ext_", ext);
-            args[intentIndex] = newFillIn;
+            if (fillIn != null) {
+                IntentSenderExtData ext = new IntentSenderExtData(sender.asBinder(), fillIn, null, null, 0, options, 0, 0);
+                Intent newFillIn = new Intent();
+                newFillIn.setExtrasClassLoader(IntentSenderExtData.class.getClassLoader());
+                newFillIn.putExtra("_VA_|_ext_", ext);
+                args[intentIndex] = newFillIn;
+            }
             return super.call(who, method, args);
         }
     }
@@ -1207,6 +1250,24 @@ class MethodProxies {
         }
     }
 
+    static class BindServiceQ extends BindService {
+
+        @Override
+        public String getMethodName() {
+            return "bindIsolatedService";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            args[7] = VirtualCore.get().getHostPkg();
+            return super.call(who, method, args);
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess() || isServerProcess();
+        }
+    }
 
     static class BindService extends MethodProxy {
 
@@ -1673,6 +1734,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             MethodParameterUtils.replaceFirstAppPkg(args);
+            replaceFirstUserId(args);
             args[IDX_RequiredPermission] = null;
             IntentFilter filter = (IntentFilter) args[IDX_IntentFilter];
             if (filter == null) {
@@ -1829,6 +1891,12 @@ class MethodProxies {
                     || name.equals(getConfig().getBinderProviderAuthority())) {
                 return method.invoke(who, args);
             }
+            if (BuildCompat.isQ()) {
+                int pkgIdx = nameIdx - 1;
+                if (args[pkgIdx] instanceof String) {
+                    args[pkgIdx] = getHostPkg();
+                }
+            }
             int userId = VUserHandle.myUserId();
             ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
 
@@ -1893,6 +1961,9 @@ class MethodProxies {
 
 
         public int getProviderNameIndex() {
+            if (BuildCompat.isQ()) {
+                return 2;
+            }
             return 1;
         }
 
@@ -2177,7 +2248,8 @@ class MethodProxies {
             {
                 if (args.length > 2 && args[1] instanceof String) {
                     String targetPkg = (String)args[1];
-                    if (!isAppPkg(targetPkg)) {
+                    //内部应用的uri，如果外部安装了同样的应用，会出现异常
+                    //if (!isAppPkg(targetPkg)) {
                         for (int i = 0; i < args.length; i++) {
                             Object obj = args[i];
                             if (obj instanceof Uri) {
@@ -2187,11 +2259,12 @@ class MethodProxies {
                                 }
                             }
                         }
-                    } else {
-                        return 0;
-                    }
+                    //} else {
+                        //return 0;
+                    //}
                 }
             }
+			MethodParameterUtils.replaceFirstAppPkg(args);
             return method.invoke(who, args);
         }
 

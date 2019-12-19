@@ -47,6 +47,9 @@ public class PackageSetting implements Parcelable {
         if (appMode == MODE_APP_USE_OUTSIDE_APK) {
             try {
                 ApplicationInfo info = VirtualCore.get().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+                if(info == null){
+                    return null;
+                }
                 return info.publicSourceDir;
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
