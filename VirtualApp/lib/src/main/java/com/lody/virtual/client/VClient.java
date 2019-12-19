@@ -767,7 +767,7 @@ public final class VClient extends IVClient.Stub {
         String cache = new File(dataDir, "cache").getAbsolutePath();
         NativeEngine.redirectDirectory("/tmp/", cache);
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
-        NativeEngine.redirectDirectory("/data/user" + realUserId + "/" + packageName, dataDir);
+        NativeEngine.redirectDirectory("/data/user/" + realUserId + "/" + packageName, dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NativeEngine.redirectDirectory("/data/user_de/" + realUserId + "/" + packageName, de_dataDir);
         }

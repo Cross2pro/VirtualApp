@@ -556,6 +556,7 @@ public class VAppManagerService extends IAppManager.Stub {
             if (ps != null) {
                 if (!ps.isInstalled(userId)) {
                     ps.setInstalled(userId, true);
+                    mkdirsForUser(packageName, userId);
                     notifyAppInstalled(ps, userId);
                     mPersistenceLayer.save();
                     //版本差异适配
@@ -961,5 +962,17 @@ public class VAppManagerService extends IAppManager.Stub {
             }
         }
         throw new PackageManager.NameNotFoundException();
+    }
+
+    private void mkdirsForUser(String packageName, int userId){
+        File dir = VEnvironment.getDataUserPackageDirectory(userId, packageName);
+        File files = new File(dir, "files");
+        File cache = new File(dir, "cache");
+        if(!files.exists()){
+            files.mkdirs();
+        }
+        if(!cache.exists()){
+            cache.mkdirs();
+        }
     }
 }
