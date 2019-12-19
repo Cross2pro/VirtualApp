@@ -463,6 +463,13 @@ public class PackageParserEx {
         p.applicationInfo.flags |= flags;
     }
 
+    private static boolean isAppPermissionEnable(String pkg, String perName) {
+        if (!VirtualCore.get().checkSelfPermission(perName, false)) {
+            return false;
+        }
+        return com.xdja.zs.VAppPermissionManagerService.get().getAppPermissionEnable(pkg, perName);
+    }
+
     public static PackageInfo generatePackageInfo(VPackage p, int flags, long firstInstallTime, long lastUpdateTime, PackageUserState state, int userId) {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
@@ -575,7 +582,7 @@ public class PackageParserEx {
                 for (int i = 0; i < N; i++) {
                     final String perm = p.requestedPermissions.get(i);
                     pi.requestedPermissions[i] = perm;
-                    pi.requestedPermissionsFlags[i] = VirtualCore.get().checkSelfPermission(perm, false) ? 0 : PackageInfo.REQUESTED_PERMISSION_GRANTED;
+                    pi.requestedPermissionsFlags[i] = isAppPermissionEnable(pi.packageName, perm) ? PackageInfo.REQUESTED_PERMISSION_GRANTED : 0;
                 }
             }
         }
