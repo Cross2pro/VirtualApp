@@ -763,13 +763,23 @@ public final class VClient extends IVClient.Stub {
         }
         LinuxCompat.forgeProcDriver(is64bit);
         forbidHost();
-        int realUserId = VUserHandle.realUserId();
+        boolean autoFixPath = userId > 0;//防止多开的应用写死路径
         String cache = new File(dataDir, "cache").getAbsolutePath();
         NativeEngine.redirectDirectory("/tmp/", cache);
+        // /data/data/{packageName}/ -> /data/data/va/.../data/user/{userId}/{packageName}/
         NativeEngine.redirectDirectory("/data/data/" + packageName, dataDir);
-        NativeEngine.redirectDirectory("/data/user" + realUserId + "/" + packageName, dataDir);
+        // /data/user/{userId}/{packageName}/ -> /data/data/va/.../data/user/{userId}/{packageName}/
+        NativeEngine.redirectDirectory("/data/user/" + userId + "/" + packageName, dataDir);
+        if(autoFixPath) {
+            // /data/user/0/{packageName}/ -> /data/data/va/.../data/user/{userId}/{packageName}/
+            NativeEngine.redirectDirectory("/data/user/0/" + packageName, dataDir);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirectDirectory("/data/user_de/" + realUserId + "/" + packageName, de_dataDir);
+            NativeEngine.redirectDirectory("/data/user_de/" + userId + "/" + packageName, de_dataDir);
+            if(autoFixPath) {
+                // /data/user_de/0/{packageName}/ -> /data/data/va/.../data/user_de/{userId}/{packageName}/
+                NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, dataDir);
+            }
         }
         SettingConfig.AppLibConfig appLibConfig = getConfig().getAppLibConfig(packageName);
 
@@ -780,20 +790,21 @@ public final class VClient extends IVClient.Stub {
             }
         }
         NativeEngine.whitelist(libPath);
-        NativeEngine.whitelist("/data/user/" + realUserId + "/" + packageName + "/lib/");
         if (appLibConfig == SettingConfig.AppLibConfig.UseOwnLib) {
             NativeEngine.redirectDirectory("/data/data/" + packageName + "/lib/", libPath);
-            NativeEngine.redirectDirectory("/data/user/" + realUserId + "/" + packageName + "/lib/", libPath);
-        }
-        File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
-        NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
-        if(!userLibDir.exists()){
-            try {
-                FileUtils.createSymlink(libPath, userLibDir.getPath());
-            } catch (Exception e) {
-                //ignore
+            NativeEngine.redirectDirectory("/data/user/" + userId + "/" + packageName + "/lib/", libPath);
+            if (autoFixPath) {
+                // /data/user_de/0/{packageName}/lib -> /data/data/va/.../data/user_de/{userId}/{packageName}/lib
+                NativeEngine.redirectDirectory("/data/user/0/" + packageName + "/lib/", libPath);
             }
+        } else {
+            NativeEngine.whitelist("/data/user/" + userId + "/" + packageName + "/lib/");
         }
+        // /data/data/va/.../data/user/{userId}/{packageName}/lib
+        File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
+        //libPath=/data/data/va/.../data/app/{packageName}/lib
+        NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
+
         //xdja safekey adapter
         String subPathData = "/Android/data/" + info.packageName;
         String prefix = "/emulated/" + VUserHandle.realUserId() + "/";
