@@ -615,10 +615,12 @@ public class PackageParserEx {
         }
         // Make shallow copy so we can store the metadata/libraries safely
         ApplicationInfo ai = new ApplicationInfo(p.applicationInfo);
-        //
-        if(InstallerSettingManager.get().isSystemApp(p.packageName)){
+
+        //xdja mdm能否卸载盒内应用需要判断FLAG_SYSTEM标志，龙剑邮箱添加该标志so加载失败，黑龙江项目中无mdm
+        if(InstallerSettingManager.get().isSystemApp(p.packageName) && (!p.packageName.equals("com.xdja.HDSafeEMailClient"))){
             ai.flags = ai.flags | ApplicationInfo.FLAG_SYSTEM;
         }
+
         if ((flags & PackageManager.GET_META_DATA) != 0) {
             ai.metaData = p.mAppMetaData;
         }
