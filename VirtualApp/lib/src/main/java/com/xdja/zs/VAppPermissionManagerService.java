@@ -13,8 +13,10 @@ import com.xdja.utils.SignatureVerify;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by geyao on 2018/1/22.
@@ -28,6 +30,11 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
      * 权限信息缓存map
      */
     private static Map<String, Boolean> functionMaps;
+
+    /**
+     * 缓存透明加解密配置信息
+     */
+    private static Set<String> encryptConfig;
     /**
      * 权限监听
      */
@@ -48,6 +55,7 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
 
     public static void systemReady() {
         functionMaps = new HashMap<>();
+        encryptConfig = new HashSet<>();
     }
 
     private static final Singleton<VAppPermissionManagerService> sService = new Singleton<VAppPermissionManagerService>() {
@@ -101,6 +109,13 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
         }else if(VAppPermissionManager.PROHIBIT_WATER_MARK.equalsIgnoreCase(appPermissionName)){
             //后台于终端策略默认值不统一，后台为启用水印功能 而终端为 禁用水印功能
             functionMaps.put(buildKey(packageName, appPermissionName),!isPermissionOpen);
+            return;
+        } else if(VAppPermissionManager.ALLOW_DATA_ENCRYPT.equals(appPermissionName)) {
+            if (isPermissionOpen) {
+                encryptConfig.add(packageName);
+            } else {
+                encryptConfig.remove(packageName);
+            }
             return;
         }
         functionMaps.put(buildKey(packageName, appPermissionName), isPermissionOpen);
@@ -234,6 +249,13 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
         return isAllowThirdAppInstallion;
     }
 
+    /**
+     * 获取透明加解密配置
+     */
+    @Override
+    public String[] getEncryptConfig() {
+        return encryptConfig.toArray(new String[encryptConfig.size()]);
+    }
 
     private static ArrayList<String> EnabledInstallationSource = new ArrayList<>();
     public void setEnableInstallationSource(List<String> list) {

@@ -59,6 +59,10 @@ public class VAppPermissionManager {
      */
     public static final String ALLOW_SECURE_ACCESS = "启用安全接入";
     /**
+     * 透明加解密
+     */
+    public static final String ALLOW_DATA_ENCRYPT = "启用数据加密";
+    /**
      * 目前支持的权限集合
      */
     public static final String[] permissions = new String[]{
@@ -71,7 +75,8 @@ public class VAppPermissionManager {
             PROHIBIT_LOCATION,//禁止读取位置信息
             ALLOW_DATA_ENCRYPT_DECRYPT,//应用数据加解密
             PROHIBIT_APP_UNINSTALL,//应用防卸载
-            ALLOW_SECURE_ACCESS//启用安全接入
+            ALLOW_SECURE_ACCESS,//启用安全接入
+            ALLOW_DATA_ENCRYPT//启用数据加密
     };
 
     static private VAppPermissionManager sInstance = new VAppPermissionManager();
@@ -315,6 +320,19 @@ public class VAppPermissionManager {
         } catch (RemoteException e) {
             e.printStackTrace();
             VirtualRuntime.crash(e);
+        }
+    }
+
+    /**
+     * 获取透明加解密配置信息
+     */
+    public String[] getEncryptConfig() {
+        try {
+            return getService().getEncryptConfig();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            VirtualRuntime.crash(e);
+            return  null;
         }
     }
 

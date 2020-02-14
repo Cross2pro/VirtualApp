@@ -21,4 +21,7 @@ bool hasAppendFlag(int fd);
 void delAppendFlag(int fd);
 void addAppendFlag(int fd);
 int getApiLevel();
+bool configSafePkgName(char const ** name, int count);
+void addEncryptPkgName(const char* name);
+void delEncryptPkgName(const char* name);
 #endif //VIRTUALAPP_UTILS_H

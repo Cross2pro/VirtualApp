@@ -28,4 +28,6 @@ interface IAppPermission {
 
     void setInstallSourceSignature(in List<String> list);
     List<String> getInstallSourceSignature();
+
+    String[] getEncryptConfig();
 }

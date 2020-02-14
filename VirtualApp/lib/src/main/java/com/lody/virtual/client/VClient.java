@@ -849,7 +849,9 @@ public final class VClient extends IVClient.Stub {
 
         //xdja 放开异常记录路径
         NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
-
+        if (VAppPermissionManager.get().getEncryptConfig() != null) {
+            NativeEngine.nativeConfigEncryptPkgName(VAppPermissionManager.get().getEncryptConfig());
+        }
         NativeEngine.enableIORedirect();
     }
 

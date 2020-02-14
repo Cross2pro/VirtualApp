@@ -357,6 +357,12 @@ public class NativeEngine {
 
     public static native void nativeChangeDecryptState(boolean state);
 
+    public static native boolean nativeConfigEncryptPkgName(String[] name);
+
+    public static native void nativeAddEncryptPkgName(String name);
+
+    public static native void nativeDelEncryptPkgName(String name);
+
     public static native boolean nativeGetDecryptState();
 
     private static native void nativeIOReadOnly(String path);
