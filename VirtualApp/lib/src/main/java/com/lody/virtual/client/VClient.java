@@ -525,14 +525,14 @@ public final class VClient extends IVClient.Stub {
             Security.removeProvider("AndroidNSSP");
             NetworkSecurityConfigProvider.install.call(context);
         }
-		
-        VirtualCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
 
         if(data.appInfo != null && "com.tencent.mm".equals(data.appInfo.packageName)
                 && "com.tencent.mm".equals(data.appInfo.processName)){
             ClassLoader originClassLoader = context.getClassLoader();
             fixWeChatTinker(context, data.appInfo, originClassLoader);
         }
+
+        VirtualCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
 
         try {
             //TODO reset?

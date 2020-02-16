@@ -70,7 +70,7 @@ bool doHookWithReplacement(JNIEnv* env,
         hookMethod->disableCompilable();
     }
 
-    if (SDK_INT > ANDROID_N) {
+    if (SDK_INT > ANDROID_N && SDK_INT < ANDROID_Q) {
         forceProcessProfiles();
     }
     if ((SDK_INT >= ANDROID_N && SDK_INT <= ANDROID_P)
@@ -122,7 +122,7 @@ bool doHookWithInline(JNIEnv* env,
     }
 
     originMethod->disableCompilable();
-    if (SDK_INT > ANDROID_N) {
+    if (SDK_INT > ANDROID_N && SDK_INT < ANDROID_Q) {
         forceProcessProfiles();
     }
     if ((SDK_INT >= ANDROID_N && SDK_INT <= ANDROID_P)
@@ -180,9 +180,6 @@ Java_com_swift_sandhook_SandHook_hookMethod(JNIEnv *env, jclass type, jobject or
 
     int mode = reinterpret_cast<int>(hookMode);
 
-    //suspend other threads
-    SandHook::StopTheWorld stopTheWorld;
-
     if (mode == INLINE) {
         if (!origin->isCompiled()) {
             if (SDK_INT >= ANDROID_N) {
@@ -219,6 +216,8 @@ Java_com_swift_sandhook_SandHook_hookMethod(JNIEnv *env, jclass type, jobject or
 
 
 label_hook:
+    //suspend other threads
+    SandHook::StopTheWorld stopTheWorld;
     if (isInlineHook && trampolineManager.canSafeInline(origin)) {
         return doHookWithInline(env, origin, hook, backup) ? INLINE : -1;
     } else {

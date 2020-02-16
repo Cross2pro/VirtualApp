@@ -57,7 +57,6 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation project(':lib')
-    implementation project(':libsandhook')
     //Android Lib
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.android.support:percent:26.1.0'

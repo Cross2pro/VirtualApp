@@ -9,7 +9,6 @@ public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void beforeStartApplication(String packageName, String processName, Context context) {
-
     }
 
     @Override

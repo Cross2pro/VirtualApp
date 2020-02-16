@@ -83,6 +83,8 @@
 #}
 
 -keep class io.vposed.VPosed
+-keep class com.android.**
+
 -keepclassmembers class io.vposed.VPosed {
    public *;
 }
