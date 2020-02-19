@@ -736,6 +736,11 @@ class MethodProxies {
                     VLog.e("VActivityManager", "Unable to resolve activityInfo : %s in outside", intent);
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
+
+                if (Intent.ACTION_DIAL.equals(intent.getAction())) {
+                    return method.invoke(who, args);
+                }
+
                 if (!Intent.ACTION_VIEW.equals(intent.getAction())
                         && !isVisiblePackage(resolveInfo.activityInfo.applicationInfo)) {
                     return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
