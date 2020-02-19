@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.providers;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.hook.base.MethodBox;
@@ -23,6 +24,7 @@ public class BadgeProviderHook extends ExternalProviderHook {
             info.packageName = extras.getString("package");
             info.className = extras.getString("class");
             info.badgerCount = extras.getInt("badgenumber");
+            Log.e("wxd", " change_badge " + " useeId : " + info.userId + " package : " + info.packageName + " count : " + info.badgerCount);
             VActivityManager.get().notifyBadgerChange(info);
             Bundle out = new Bundle();
             out.putBoolean("success", true);
@@ -32,7 +34,8 @@ public class BadgeProviderHook extends ExternalProviderHook {
             info.userId = VUserHandle.myUserId();
             info.packageName = VClient.get().getCurrentPackage();
             info.badgerCount = extras.getInt("app_badge_count");
-            VActivityManager.get().notifyBadgerChange(info);
+            //xdja 只需要使用change_badge即可
+            //VActivityManager.get().notifyBadgerChange(info);
             Bundle out = new Bundle();
             out.putBoolean("success", true);
         }

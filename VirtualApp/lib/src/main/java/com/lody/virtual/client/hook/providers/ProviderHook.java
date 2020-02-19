@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 
 import com.lody.virtual.client.hook.base.MethodBox;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -57,7 +58,7 @@ public class ProviderHook implements InvocationHandler {
                 return new BadgeProviderHook(provider);
             }
         });
-        PROVIDER_MAP.put("com.huawei.android.launcher.settings", new HookFetcher() {
+        PROVIDER_MAP.put("com.huawei.android.launcher.settings;com.android.badge", new HookFetcher() {
             @Override
             public ProviderHook fetch(boolean external, IInterface provider) {
                 return new BadgeProviderHook(provider);
@@ -78,6 +79,7 @@ public class ProviderHook implements InvocationHandler {
     }
 
     private static HookFetcher fetchHook(String authority) {
+        Log.i("wxd", " authority : " + authority);
         HookFetcher fetcher = PROVIDER_MAP.get(authority);
         if (fetcher == null) {
             fetcher = new HookFetcher() {

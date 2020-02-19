@@ -11,6 +11,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Process;
 import android.text.TextUtils;
@@ -187,6 +188,11 @@ public class ComponentUtils {
             if(action != null) {
                 newIntent.setAction(action);
             }
+        }
+
+        Bundle bundle = intent.getExtras();
+        if(bundle != null){
+            newIntent.putExtras(bundle);
         }
 
         BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
