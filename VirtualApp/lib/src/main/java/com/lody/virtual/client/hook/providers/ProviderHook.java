@@ -58,7 +58,7 @@ public class ProviderHook implements InvocationHandler {
                 return new BadgeProviderHook(provider);
             }
         });
-        PROVIDER_MAP.put("com.huawei.android.launcher.settings;com.android.badge", new HookFetcher() {
+        PROVIDER_MAP.put("com.huawei.android.launcher.settings", new HookFetcher() {
             @Override
             public ProviderHook fetch(boolean external, IInterface provider) {
                 return new BadgeProviderHook(provider);

@@ -59,6 +59,14 @@ public class ComponentUtils {
         return info.applicationInfo.taskAffinity;
     }
 
+    public static String getFirstAuthority(ProviderInfo info){
+        if(info == null){
+            return null;
+        }
+        String[] authorities = info.authority.split(";");
+        return authorities.length == 0 ? info.authority : authorities[0];
+    }
+
     public static boolean intentFilterEquals(Intent a, Intent b) {
         if (a != null && b != null) {
             if (!ObjectsCompat.equals(a.getAction(), b.getAction())) {
