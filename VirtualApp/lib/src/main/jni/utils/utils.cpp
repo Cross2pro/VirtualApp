@@ -14,6 +14,7 @@
 #include <string.h>
 #include <map>
 #include <errno.h>
+#include <vector>
 
 #include "transparentED/originalInterface.h"
 #include "utils.h"
@@ -58,19 +59,38 @@ bool getPathFromFd(int fd, zString & path) {
     return ret > 0;
 }
 
-const char * TED_packageVector[] =
-        {
-                "com.tencent.mm",
-                "cn.wps.moffice",
-//                "com.android.gallery3d",
-//                "com.xdja.decrypt",
-//                "android.process.media",
-//                "com.xdja.eoa",
-//                "com.xdja.fileexplore",
-//                "com.xdja.actoma",
-//                "com.xdja.HDSafeEMailClient"
-        };
+static std::vector<std::string> TED_packageVector;
 
+bool configSafePkgName(char const** name, int count) {
+    if (name != nullptr) {
+        TED_packageVector.clear();
+        for(int i = 0; i < count; i++) {
+            TED_packageVector.push_back(name[i]);
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void addEncryptPkgName(const char* name) {
+    if (name != nullptr) {
+        std::vector<std::string>::iterator iter = std::find(TED_packageVector.begin(), TED_packageVector.end(), name);
+        if (iter != TED_packageVector.end()) {
+            return;
+        }
+        TED_packageVector.push_back(name);
+    }
+}
+
+void delEncryptPkgName(const char* name) {
+    if (name != nullptr) {
+        std::vector<std::string>::iterator iter = std::find(TED_packageVector.begin(), TED_packageVector.end(), name);
+        if (iter != TED_packageVector.end()) {
+            TED_packageVector.erase(iter);
+        }
+    }
+}
 bool is_TED_Enable()
 {
 //    return false;
@@ -86,9 +106,8 @@ bool is_TED_Enable()
     if(temp_result == -1)
     {
         temp_result = 0;
-
-        for(int i = 0; i < sizeof(TED_packageVector)/sizeof(TED_packageVector[0]); i++) {
-            if (startWith(std::string(pname.toString()), std::string(TED_packageVector[i]))) {
+        for(int i = 0; i < TED_packageVector.size(); i++) {
+            if (startWith(std::string(pname.toString()), TED_packageVector[i].data())) {
                 temp_result = 1;
                 break;
             }

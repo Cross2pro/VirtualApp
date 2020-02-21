@@ -87,6 +87,32 @@ static jboolean jni_nativeGetDecryptState(JNIEnv *env,jclass jclazz){
     return getDecryptState();
 }
 
+static void jni_nativeAddEncryptPkgName(JNIEnv *env,jclass jclazz, jstring name) {
+    ScopeUtfString packageName(name);
+    addEncryptPkgName(packageName.c_str());
+}
+
+static void jni_nativeDelEncryptPkgName(JNIEnv *env,jclass jclazz, jstring name) {
+    ScopeUtfString packageName(name);
+    delEncryptPkgName(packageName.c_str());
+}
+static jboolean jni_nativeConfigEncryptPkgName(JNIEnv *env, jclass jclazz, jobjectArray pkgName) {
+    jboolean  ret = true;
+    int count = env->GetArrayLength(pkgName);
+    char const** namesUTF = (char const**)malloc(sizeof(char*) * count);
+    for(int i = 0 ; i < count; i++) {
+        namesUTF[i] = env->GetStringUTFChars((jstring)env->GetObjectArrayElement(pkgName, i), NULL);
+    }
+
+    ret = configSafePkgName(namesUTF, count);
+
+    for (int i = 0; i < count; i++) {
+        env->ReleaseStringUTFChars((jstring) env->GetObjectArrayElement(pkgName, i), namesUTF[i]);
+    }
+    free(namesUTF);
+    return ret;
+}
+
 jclass nativeEngineClass;
 JavaVM *vm;
 
@@ -111,9 +137,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
             {"nativeGetDecryptState",                  "()Z",                                                         (void *) jni_nativeGetDecryptState},
             {"nativeChangeDecryptState",               "(Z)V",                                                        (void *) jni_nativeChangeDecryptState},
             {"nativeCloseAllSocket",                   "()Z",                                                         (void *) jni_nativeCloseAllSocket},
+            {"nativeConfigEncryptPkgName",             "([Ljava/lang/String;)Z",                                      (void *)jni_nativeConfigEncryptPkgName},
+            {"nativeAddEncryptPkgName",                "(Ljava/lang/String;)V",                                       (void *) jni_nativeAddEncryptPkgName},
+            {"nativeDelEncryptPkgName",                "(Ljava/lang/String;)V",                                       (void *) jni_nativeDelEncryptPkgName},
     };
 
-    if (env->RegisterNatives(nativeEngineClass, methods, 12) < 0) {
+    if (env->RegisterNatives(nativeEngineClass, methods, 15) < 0) {
         return JNI_ERR;
     }
 
