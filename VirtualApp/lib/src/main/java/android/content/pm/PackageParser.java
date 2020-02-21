@@ -107,6 +107,7 @@ public class PackageParser {
         public int mPreferredOrder;
         public String mSharedUserId;
         public ArrayList<String> usesLibraries;
+        public ArrayList<String> usesOptionalLibraries;
         public int mVersionCode;
         public ApplicationInfo applicationInfo;
         public String mVersionName;

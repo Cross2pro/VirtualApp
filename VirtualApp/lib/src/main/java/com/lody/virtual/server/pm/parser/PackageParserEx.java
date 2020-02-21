@@ -229,6 +229,7 @@ public class PackageParserEx {
         cache.mVersionCode = p.mVersionCode;
         cache.configPreferences = p.configPreferences;
         cache.reqFeatures = p.reqFeatures;
+        cache.usesOptionalLibraries = p.usesOptionalLibraries;
         addOwner(cache);
         return cache;
     }
@@ -269,7 +270,7 @@ public class PackageParserEx {
                     // ignore
                 }
             }
-            if (Build.VERSION.SDK_INT >= 28 && ai.targetSdkVersion <= 29) {
+            if (Build.VERSION.SDK_INT >= 28 && (ai.targetSdkVersion < 28 || needFixApache(p.usesLibraries, p.usesOptionalLibraries))) {
                 String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
                 String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
                 if (!sharedLibraryFileList.contains(APACHE_LEGACY_JAR) && !sharedLibraryFileList.contains(APACHE_LEGACY_JAR_Q)) {
@@ -288,6 +289,20 @@ public class PackageParserEx {
             sSharedLibCache.put(ps.packageName, sharedLibraryFiles);
         }
         ai.sharedLibraryFiles = sharedLibraryFiles;
+    }
+
+    private static boolean needFixApache(List<String> usesLibraries, List<String> usesOptionalLibraries){
+        if(usesLibraries != null){
+            if(usesLibraries.contains("org.apache.http.legacy")){
+                return true;
+            }
+        }
+        if(usesOptionalLibraries != null){
+            if(usesOptionalLibraries.contains("org.apache.http.legacy")){
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean initApplicationAsUser(ApplicationInfo ai, int userId) {
