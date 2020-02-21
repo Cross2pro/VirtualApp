@@ -57,6 +57,7 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.compat.StorageManagerCompat;
 import com.lody.virtual.helper.compat.StrictModeCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
@@ -933,8 +934,7 @@ public final class VClient extends IVClient.Stub {
             return null;
         }
         IInterface provider = null;
-        String[] authorities = info.authority.split(";");
-        String authority = authorities.length == 0 ? info.authority : authorities[0];
+        String authority = ComponentUtils.getFirstAuthority(info);
         ContentResolver resolver = VirtualCore.get().getContext().getContentResolver();
         ContentProviderClient client = null;
         try {
@@ -970,8 +970,9 @@ public final class VClient extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
-                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
-                    provider = ProviderHook.createProxy(true, info.authority, provider);
+                String name = ComponentUtils.getFirstAuthority(info);
+                if (name != null && !name.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, name, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     ContentProviderHolderOreo.provider.set(holder, provider);
                 }
@@ -982,8 +983,9 @@ public final class VClient extends IVClient.Stub {
                     continue;
                 }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
-                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
-                    provider = ProviderHook.createProxy(true, info.authority, provider);
+                String name = ComponentUtils.getFirstAuthority(info);
+                if (name != null && !name.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, name, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
                 }

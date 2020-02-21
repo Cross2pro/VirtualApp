@@ -1917,7 +1917,7 @@ class MethodProxies {
                         provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
-                        VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);
+                        VLog.e("VActivityManager", "acquireProviderClient fail: " + name);
                         return null;
                     }
                     ContentProviderHolderOreo.provider.set(holder, provider);
@@ -1928,7 +1928,7 @@ class MethodProxies {
                         provider = VActivityManager.get().acquireProviderClient(userId, info, getVUid(), android.os.Process.myPid(), getAppPkg());
                     }
                     if (provider == null) {
-                        VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority);
+                        VLog.e("VActivityManager", "acquireProviderClient fail: " + name);
                         return null;
                     }
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -1943,14 +1943,14 @@ class MethodProxies {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     info = ContentProviderHolderOreo.info.get(holder);
                     if (provider != null) {
-                        provider = ProviderHook.createProxy(true, info.authority, provider);
+                        provider = ProviderHook.createProxy(true, name, provider);
                     }
                     ContentProviderHolderOreo.provider.set(holder, provider);
                 } else {
                     IInterface provider = IActivityManager.ContentProviderHolder.provider.get(holder);
                     info = IActivityManager.ContentProviderHolder.info.get(holder);
                     if (provider != null) {
-                        provider = ProviderHook.createProxy(true, info.authority, provider);
+                        provider = ProviderHook.createProxy(true, name, provider);
                     }
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
                 }

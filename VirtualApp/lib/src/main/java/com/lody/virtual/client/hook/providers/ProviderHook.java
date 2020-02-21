@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 
 import com.lody.virtual.client.hook.base.MethodBox;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -78,6 +79,7 @@ public class ProviderHook implements InvocationHandler {
     }
 
     private static HookFetcher fetchHook(String authority) {
+        Log.i("wxd", " authority : " + authority);
         HookFetcher fetcher = PROVIDER_MAP.get(authority);
         if (fetcher == null) {
             fetcher = new HookFetcher() {

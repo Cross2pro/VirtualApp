@@ -11,6 +11,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Process;
 import android.text.TextUtils;
@@ -56,6 +57,14 @@ public class ComponentUtils {
             return info.taskAffinity;
         }
         return info.applicationInfo.taskAffinity;
+    }
+
+    public static String getFirstAuthority(ProviderInfo info){
+        if(info == null){
+            return null;
+        }
+        String[] authorities = info.authority.split(";");
+        return authorities.length == 0 ? info.authority : authorities[0];
     }
 
     public static boolean intentFilterEquals(Intent a, Intent b) {
@@ -187,6 +196,11 @@ public class ComponentUtils {
             if(action != null) {
                 newIntent.setAction(action);
             }
+        }
+
+        Bundle bundle = intent.getExtras();
+        if(bundle != null){
+            newIntent.putExtras(bundle);
         }
 
         BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
