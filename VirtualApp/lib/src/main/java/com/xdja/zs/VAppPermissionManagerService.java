@@ -129,6 +129,9 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
      */
     @Override
     public boolean getAppPermissionEnable(String packageName, String appPermissionName) {
+        if (VAppPermissionManager.ALLOW_DATA_ENCRYPT.equals(appPermissionName)) {
+            return encryptConfig.contains(packageName);
+        }
         Boolean aBoolean = functionMaps.get(buildKey(packageName, appPermissionName));
         if (aBoolean == null) {
             VLog.e(TAG, "result is null return false");
