@@ -298,8 +298,7 @@ public class controllerService extends IController.Stub {
                         showToast();
                         return false;
                     }
-                    showToast();
-                    return false;
+                    return true;
                 } else {// handle black list
                     if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
                         for(Map.Entry<String,Integer> entry:Black_Network_Strategy.entrySet()) {
@@ -413,13 +412,13 @@ public class controllerService extends IController.Stub {
     @Override
     public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
         isWhiteOrBlackFlag = isWhiteOrBlackList;
-        if(isWhiteOrBlackList) {
-            if(networkStrategy != null && !networkStrategy.isEmpty()) {
+        if (isWhiteOrBlackList) {
+            if (networkStrategy != null) {
                 White_Network_Strategy = (HashMap<String, Integer>) networkStrategy;
                 mWhiteNetStrategyPersistence.save();
             }
         } else {
-            if(networkStrategy != null && !networkStrategy.isEmpty()) {
+            if (networkStrategy != null) {
                 Black_Network_Strategy = (HashMap<String, Integer>) networkStrategy;
                 mBlackNetStrategyPersistence.save();
             }
