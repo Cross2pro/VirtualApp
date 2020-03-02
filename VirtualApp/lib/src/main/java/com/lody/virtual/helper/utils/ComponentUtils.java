@@ -198,10 +198,11 @@ public class ComponentUtils {
             }
         }
 
-        Bundle bundle = intent.getExtras();
-        if(bundle != null){
-            newIntent.putExtras(bundle);
-        }
+//        Bundle bundle = intent.getExtras();
+//        if(bundle != null && intent.getAction() != null){
+//            newIntent.putExtras(bundle);
+//        }
+        //TODO intent的数据已经在BroadcastIntentData里面了，这里应该是历史遗留代码
 
         BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
         newIntent.putExtra("_VA_|_data_", data);
