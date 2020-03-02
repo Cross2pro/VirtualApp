@@ -16,6 +16,7 @@
 
 #include <asm/mman.h>
 #include <sys/mman.h>
+#include <arpa/inet.h>
 #include <utils/zMd5.h>
 #include <utils/controllerManagerNative.h>
 
@@ -1808,10 +1809,21 @@ HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
 
 HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     int ret = -1;
-    if(!controllerManagerNative::isNetworkEnable()){
+    if(addr->sa_family == AF_INET) {
+        sockaddr_in* pSin = (sockaddr_in*)addr;
+        char * ip = inet_ntoa(pSin->sin_addr);
+        //int port = pSin->sin_port;
+        //log("connect [ip %s] [port %d]",ip,port);
+        if(!controllerManagerNative::isIpOrNameEnable(ip)) {
+            //log("return [ret %d] ENETUNREACH",ret);
+            errno = ENETUNREACH;//无法传送数据包至指定的主机.
+            return ret;
+        }
+    }
+    /*if(!controllerManagerNative::isNetworkEnable()){
         errno = ENETUNREACH;//无法传送数据包至指定的主机.
         return -1;
-    }
+    }*/
 
     ret = syscall(__NR_connect, sd, addr, socklen);
     return ret;

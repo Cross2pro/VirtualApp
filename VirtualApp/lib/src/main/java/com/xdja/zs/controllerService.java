@@ -9,10 +9,15 @@ import android.util.Log;
 
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
-import com.xdja.zs.IControllerServiceCallback;
+import com.xdja.zs.netstrategy.BlackNetStrategyPersistenceLayer;
+import com.xdja.zs.netstrategy.TurnOnOffNetPersistenceLayer;
+import com.xdja.zs.netstrategy.WhiteNetStrategyPersistenceLayer;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class controllerService extends IController.Stub {
     private final String Tag = "controllerService";
@@ -21,8 +26,25 @@ public class controllerService extends IController.Stub {
     private static HashMap<String, HashSet<String>> IPMAP = new HashMap<>();
     private static HashSet<String> JXIP_list = new HashSet<String>();
     private static boolean activitySwitchFlag = true;
-
+    public Map<String,Integer> White_Network_Strategy = new HashMap<String,Integer>();
+    private BlackNetStrategyPersistenceLayer mBlackNetStrategyPersistence = new BlackNetStrategyPersistenceLayer(this);
+    public Map<String,Integer> Black_Network_Strategy = new HashMap<String,Integer>();
+    private WhiteNetStrategyPersistenceLayer mWhiteNetStrategyPersistence = new WhiteNetStrategyPersistenceLayer(this);
+    public static boolean NetworkStragegyOnorOff = false;
+    public static boolean isWhiteOrBlackFlag = false;
+    private TurnOnOffNetPersistenceLayer mNetworkPersistence = new TurnOnOffNetPersistenceLayer(this);
     private IControllerServiceCallback mCSCallback = null;
+    private IToastCallback mToastCallback = null;
+
+    public controllerService() {
+        init();
+    }
+
+    private void init() {
+        mNetworkPersistence.read();
+        mBlackNetStrategyPersistence.read();
+        mWhiteNetStrategyPersistence.read();
+    }
 
     static {
 
@@ -225,4 +247,183 @@ public class controllerService extends IController.Stub {
         JXIP_list.add("15306" + serverip_6);
     }
 
+    @Override
+    public void registerToastCallback(IToastCallback iToastCallback) throws RemoteException{
+        if(iToastCallback != null) {
+            mToastCallback = iToastCallback;
+        } else {
+            VLog.e(Tag, "controllerService iToastCallback is null, registerCallback failed");
+        }
+    }
+
+    @Override
+    public void OnOrOffNetworkStrategy(boolean isOnOrOff) throws RemoteException {
+        NetworkStragegyOnorOff = isOnOrOff;
+        mNetworkPersistence.save();
+    }
+
+    @Override
+    public boolean isIpOrNameEnable(String packageName, String ip) throws RemoteException{
+        if(NetworkStragegyOnorOff) {
+            if(ip != null) {
+                //handle white list
+                if (isWhiteOrBlackFlag) {
+                    if(White_Network_Strategy != null && !White_Network_Strategy.isEmpty()) {
+                        for(Map.Entry<String,Integer> entry:White_Network_Strategy.entrySet()) {
+                            String network_strategy = entry.getKey();
+                            int network_type = entry.getValue();
+                            if(network_type == 1) {//ip
+                                if(network_strategy.contains("-")) {
+                                    if(judgeIpSection(ip,network_strategy)) {
+                                        return true;
+                                    }
+                                } else if(network_strategy.contains("/")) {
+                                    if(judgeIpSubnet(ip,network_strategy)) {
+                                        return true;
+                                    }
+                                } else {
+                                    if(judgeIp(ip,network_strategy)) {
+                                        return true;
+                                    }
+                                }
+                            } else if(network_type == 2) {//domain name
+                                if(network_strategy.contains("*")) {
+                                    network_strategy = network_strategy.replace("*", "www");
+                                }
+                                if(judgeDomain(ip,network_strategy)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        showToast();
+                        return false;
+                    }
+                    showToast();
+                    return false;
+                } else {// handle black list
+                    if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
+                        for(Map.Entry<String,Integer> entry:Black_Network_Strategy.entrySet()) {
+                            String network_strategy = entry.getKey();
+                            int network_type = entry.getValue();
+                            if(network_type == 1) {//ip
+                                if(network_strategy.contains("-")) {
+                                    if(judgeIpSection(ip,network_strategy)) {
+                                        showToast();
+                                        return false;
+                                    }
+                                } else if(network_strategy.contains("/")) {
+                                    if(judgeIpSubnet(ip,network_strategy)) {
+                                        showToast();
+                                        return false;
+                                    }
+                                } else {
+                                    if(judgeIp(ip,network_strategy)) {
+                                        showToast();
+                                        return false;
+                                    }
+                                }
+                            } else if(network_type == 2) {//domain name
+                                if(network_strategy.contains("*")) {
+                                    network_strategy = network_strategy.replace("*", "www");
+                                }
+                                if(judgeDomain(ip,network_strategy)) {
+                                    showToast();
+                                    return false;
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void showToast() throws RemoteException {
+        if(mToastCallback != null) {
+            mToastCallback.showToast();
+        }
+    }
+
+    private boolean judgeIp(String ip,String ipStreategy) {
+        return ip.equals(ipStreategy);
+    }
+
+    private boolean judgeIpSection(String ip,String ipStreategy) {
+        String ipSection = ipStreategy.trim();
+        int idx = ipSection.indexOf("-");
+        String beginIp = ipSection.substring(0,idx);
+        String endIp = ipSection.substring(idx+1);
+        return (getIp2long(beginIp)<=getIp2long(ip) && getIp2long(ip)<=getIp2long(endIp));
+    }
+
+    private boolean judgeIpSubnet(String ip,String ipStrategy) {
+        String ipSubnet = ipStrategy.trim();
+        int idx = ipSubnet.indexOf("/");
+        String subnet = ipStrategy.substring(0,idx);
+        int len = Integer.valueOf(subnet);
+        String ip_mask = getSubnet(ip,len);
+        String ipStrategy_mask = getSubnet(subnet,len);
+        return ip_mask.equals(ipStrategy_mask);
+    }
+
+    private String getSubnet(String ip,int len) {
+        String[] ips = ip.split("\\.");
+        StringBuilder spliip = new StringBuilder();
+        for(String str : ips) {
+            String subip = Integer.toBinaryString(Integer.valueOf(str));
+            int sub_len = subip.length();
+            if(sub_len < 8) {
+                for(int i = 0; i < 8 - sub_len;i++) {
+                    subip = subip + '0';
+                }
+                spliip.append(subip);
+            }
+            spliip.append(subip);
+        }
+        return spliip.substring(0,len);
+    }
+
+    private long getIp2long(String ip) {
+        String[] ips = ip.split("\\.");
+        long ip2long = 0L;
+        for (int i = 0; i < ips.length; ++i) {
+            ip2long = ip2long << 8 | Integer.parseInt(ips[i]);
+        }
+        return ip2long;
+    }
+
+    private boolean judgeDomain(String ip,String domain) {
+        try {
+            InetAddress[] ips = InetAddress.getAllByName(domain);
+            for(InetAddress inetAddress:ips) {
+                if(ip.equals(inetAddress.getHostAddress()))
+                {
+                    return  true;
+                }
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
+        isWhiteOrBlackFlag = isWhiteOrBlackList;
+        if(isWhiteOrBlackList) {
+            if(networkStrategy != null && !networkStrategy.isEmpty()) {
+                White_Network_Strategy = (HashMap<String, Integer>) networkStrategy;
+                mWhiteNetStrategyPersistence.save();
+            }
+        } else {
+            if(networkStrategy != null && !networkStrategy.isEmpty()) {
+                Black_Network_Strategy = (HashMap<String, Integer>) networkStrategy;
+                mBlackNetStrategyPersistence.save();
+            }
+        }
+        mNetworkPersistence.save();
+    }
 }

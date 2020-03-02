@@ -71,6 +71,7 @@ import com.xdja.utils.PackagePermissionManager;
 import com.xdja.zs.IAppPermissionCallback;
 import com.xdja.zs.IControllerServiceCallback;
 import com.xdja.zs.INotificationCallback;
+import com.xdja.zs.IToastCallback;
 import com.xdja.zs.IUiCallback;
 import com.xdja.zs.IVSCallback;
 import com.xdja.zs.IVSKeyCallback;
@@ -934,6 +935,10 @@ public final class VirtualCore {
     }
 
     public abstract static class VSKeyCallback extends IVSKeyCallback.Stub {
+
+    }
+
+    public abstract static class ToastCallback extends IToastCallback.Stub {
 
     }
 

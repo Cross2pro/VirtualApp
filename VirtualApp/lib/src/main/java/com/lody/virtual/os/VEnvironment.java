@@ -492,4 +492,17 @@ public class VEnvironment {
     public static File getPublicResourcePath64(String packageName){
         return new File(getDataAppPackageDirectory64(packageName), /*base.apk*/EncodeUtils.decodeBase64("YmFzZS5hcGs="));
     }
+
+    public static File getBlackNetStrategyInfoFile() {
+        return new File(getSystemSecureDirectory(), "black-netstrategy-list.ini");
+    }
+
+    public static File getWhiteNetStrategyInfoFile() {
+        return new File(getSystemSecureDirectory(), "white-netstrategy-list.ini");
+    }
+
+    public static File getNetEnableInfoFile() {
+        return new File(getSystemSecureDirectory(), "network-enable.ini");
+    }
+
 }
