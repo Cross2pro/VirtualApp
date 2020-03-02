@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
@@ -149,7 +150,18 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 }
             });
         }
+        VirtualCore.get().registerReceiver(this, mReceiver, new IntentFilter(Constants.ACTION_BADGER_CHANGE));
     }
+
+    private VirtualCore.Receiver mReceiver = new VirtualCore.Receiver() {
+        @Override
+        public void onReceive(Context context, Intent intent, int userId) {
+            Log.d("kk-test", "onReceive:" + intent);
+            Log.d("kk-test", "userId:" + intent.getIntExtra("userId", -1));
+            Log.d("kk-test", "packageName:" + intent.getStringExtra("packageName"));
+            Log.d("kk-test", "badgerCount:" + intent.getIntExtra("badgerCount", -1));
+        }
+    };
 
 
     private VirtualCore.Receiver alarmReceiver = new VirtualCore.Receiver() {
