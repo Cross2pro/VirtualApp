@@ -6,7 +6,12 @@ import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.IController;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by zhangsong on 18-1-23.
  */
@@ -143,4 +148,39 @@ public class controllerManager {
             VirtualRuntime.crash(e);
         }
     }
+
+    public static boolean isIpOrNameEnable(String ip) {
+        boolean ret = false;
+        try {
+            ret = controllerManager.get().getService().isIpOrNameEnable(VirtualRuntime.getInitialPackageName(),ip);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
+    public void addNetworkStrategy(Map<String,Integer> networkStrategy,boolean isWhiteOrBlackList) {
+        try {
+            controllerManager.get().getService().addNetworkStrategy(networkStrategy,isWhiteOrBlackList);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void OnOrOffNetworkStrategy(boolean isOnOrOff) {
+        try {
+            controllerManager.get().getService().OnOrOffNetworkStrategy(isOnOrOff);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void registerToastCallback(IToastCallback iToastCallback) {
+        try {
+            controllerManager.get().getService().registerToastCallback(iToastCallback);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
 }

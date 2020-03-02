@@ -16,6 +16,7 @@ class controllerManagerNative {
     static jmethodID isChangeConnect_method;
     static jmethodID isGatewayEnable_method;
     static jmethodID isSoundRecordEnable_method;
+    static jmethodID isIpOrNameEnable_method;
 
 public:
     static bool initial();
@@ -26,7 +27,7 @@ public:
     static bool isChangeConnect(int port, char *ip);
     static bool isGatewayEnable();
     static bool isSoundRecordEnable();
-
+    static bool isIpOrNameEnable(char *ip);
 };
 
 
