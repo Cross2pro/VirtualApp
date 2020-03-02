@@ -261,7 +261,7 @@ public class NativeEngine {
             bypassHiddenAPI();
         } else if (BuildCompat.isPie()) {
             try {
-                nativeBypassHiddenAPIEnforcementPolicy();
+                nativeBypassHiddenAPIEnforcementPolicy(Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -369,7 +369,7 @@ public class NativeEngine {
 
     private static native void nativeEnableIORedirect(String soPath, String soPath64, String cachePath, int apiLevel, int previewApiLevel);
 
-    private static native void nativeBypassHiddenAPIEnforcementPolicy();
+    private static native void nativeBypassHiddenAPIEnforcementPolicy(int apiLevel, int previewApiLevel);
 
     public static int onGetUid(int uid) {
         if (!VClient.get().isAppRunning()) {

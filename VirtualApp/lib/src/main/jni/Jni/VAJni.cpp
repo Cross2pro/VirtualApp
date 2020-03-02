@@ -73,8 +73,8 @@ static jstring jni_nativeReverseRedirectedPath(JNIEnv *env, jclass jclazz, jstri
     return env->NewStringUTF(orig_path);
 }
 
-static void jni_bypassHiddenAPIEnforcementPolicy(JNIEnv *env, jclass jclazz) {
-    bypassHiddenAPIEnforcementPolicy();
+static void jni_bypassHiddenAPIEnforcementPolicy(JNIEnv *env, jclass jclazz, jint apiLevel, jint previewApiLevel) {
+    bypassHiddenAPIEnforcementPolicy(apiLevel, previewApiLevel);
 }
 
 static jboolean jni_nativeCloseAllSocket(JNIEnv *env, jclass jclazz){
@@ -133,7 +133,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
             {"nativeIOForbid",                         "(Ljava/lang/String;)V",                                       (void *) jni_nativeIOForbid},
             {"nativeIOReadOnly",                       "(Ljava/lang/String;)V",                                       (void *) jni_nativeIOReadOnly},
             {"nativeEnableIORedirect",                 "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V", (void *) jni_nativeEnableIORedirect},
-            {"nativeBypassHiddenAPIEnforcementPolicy", "()V",                                                         (void *) jni_bypassHiddenAPIEnforcementPolicy},
+            {"nativeBypassHiddenAPIEnforcementPolicy", "(II)V",                                                         (void *) jni_bypassHiddenAPIEnforcementPolicy},
             {"nativeGetDecryptState",                  "()Z",                                                         (void *) jni_nativeGetDecryptState},
             {"nativeChangeDecryptState",               "(Z)V",                                                        (void *) jni_nativeChangeDecryptState},
             {"nativeCloseAllSocket",                   "()Z",                                                         (void *) jni_nativeCloseAllSocket},

@@ -617,8 +617,10 @@ void *getDalvikSOHandle() {
 
 #if defined(__LP64__)
 #define LIB_ART_PATH "/system/lib64/libart.so"
+#define LIB_ART_PATH_Q "/apex/com.android.runtime/lib64/libart.so"
 #else
 #define LIB_ART_PATH "/system/lib/libart.so"
+#define LIB_ART_PATH_Q "/apex/com.android.runtime/lib/libart.so"
 #endif
 
 enum Action {
@@ -645,8 +647,11 @@ bool bypassShouldBlockAccessToMethod() {
 }
 
 
-void bypassHiddenAPIEnforcementPolicy() {
-    void *handle = fake_dlopen(LIB_ART_PATH, 0);
+void bypassHiddenAPIEnforcementPolicy(int apiLevel, int previewApiLevel) {
+    if(previewApiLevel > 0){
+        apiLevel ++;
+    }
+    void *handle = fake_dlopen(apiLevel >= 29 ? LIB_ART_PATH_Q : LIB_ART_PATH, 0);
 
 
     void *symbol = fake_dlsym(handle,

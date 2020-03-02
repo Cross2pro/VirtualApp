@@ -26,7 +26,7 @@ enum METHODS {
     MEDIA_RECORDER_PREPARE
 };
 
-void bypassHiddenAPIEnforcementPolicy();
+void bypassHiddenAPIEnforcementPolicy(jint apiLevel, jint previewApiLevel);
 
 void hookAndroidVM(JNIEnv *env, jobjectArray javaMethods,
                    jstring packageName, jboolean isArt, jint apiLevel, jint cameraMethodType,

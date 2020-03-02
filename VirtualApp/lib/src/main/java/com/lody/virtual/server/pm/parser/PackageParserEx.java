@@ -642,6 +642,9 @@ public class PackageParserEx {
         if(!initApplicationAsUser(ai, userId)){
             return null;
         }
+        if(VirtualCore.getConfig().isForceVmSafeMode(ai.packageName)) {
+            ai.flags |= ApplicationInfo.FLAG_VM_SAFE_MODE;
+        }
         return ai;
     }
 

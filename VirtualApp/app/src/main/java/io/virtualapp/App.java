@@ -77,6 +77,11 @@ public class App extends Application {
             super.startPreviewActivity(userId, info, callBack);
             //如果需要自定义，要注释super.startPreviewActivity，并且启动一个类似WindowPreviewActivity
         }
+
+        @Override
+        public boolean isForceVmSafeMode(String packageName) {
+            return "com.tencent.mm".equals(packageName);
+        }
     };
 
     public static App getApp() {
