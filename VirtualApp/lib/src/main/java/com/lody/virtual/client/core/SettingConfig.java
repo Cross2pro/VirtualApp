@@ -104,6 +104,10 @@ public abstract class SettingConfig {
         WindowPreviewActivity.previewActivity(userId, info, callBack);
     }
 
+    public boolean isForceVmSafeMode(String packageName){
+        return false;
+    }
+
     public static class FakeWifiStatus {
 
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";

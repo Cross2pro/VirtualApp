@@ -311,7 +311,8 @@
         tools:ignore="ProtectedPermissions" />
 	
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <application>
+    <application
+        android:vmSafeMode="false">
 
         <!--safekey adapter-->
         <service android:name="com.xdja.tun.TunVpnService"
