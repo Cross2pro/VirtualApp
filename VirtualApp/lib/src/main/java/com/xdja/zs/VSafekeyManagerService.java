@@ -105,30 +105,38 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
                 return null;
             }
             String cardIdStr = null;
-            for (JniApiParam jap : all.second) {
-
-                VLog.d(TAG, "CardId : " + jap.cardId + "CardType : " + jap.chipType);
-
-                if (jap.chipType == JniApiParam.TYPE_ONBOARD) {
-                    cardIdStr = jap.cardId;
-                } else if (jap.chipType == JniApiParam.TYPE_TF) {
-                    cardIdStr = jap.cardId;
-                } else if (jap.chipType == JniApiParam.TYPE_BLUETOOTH) {
-                    cardIdStr = jap.cardId;
-                } else if (jap.chipType == JniApiParam.TYPE_COVERED) {
-                    cardIdStr = jap.cardId;
-                } else if (jap.chipType == JniApiParam.TYPE_VHSM) {
-                    cardIdStr = jap.cardId;
-                    jniApiVhsmManager = JarMultiJniApiVhsmManager.getInstance();
-                } else if (jap.chipType == JniApiParam.TYPE_VHSM_NET) {
-                    cardIdStr = jap.cardId;
-                    jniApiVhsmManager = JarMultiJniApiVhsmManager.getInstance();
+            int size = all.second.size();
+            if (size > 1) {
+                String[] cardIdCache  = new String[5];
+                for (JniApiParam jap : all.second) {
+                    VLog.d(TAG, "CardId : " + jap.cardId + "CardType : " + jap.chipType);
+                    if (jap.chipType == JniApiParam.TYPE_TF) {
+                       cardIdCache[0] = jap.cardId;
+                    } else if (jap.chipType == JniApiParam.TYPE_COVERED) {
+                        cardIdCache[1] = jap.cardId;
+                    } else if (jap.chipType == JniApiParam.TYPE_VHSM || jap.chipType == JniApiParam.TYPE_VHSM_NET) {
+                        cardIdCache[2] = jap.cardId;
+                        jniApiVhsmManager = JarMultiJniApiVhsmManager.getInstance();
+                    } else if (jap.chipType == JniApiParam.TYPE_ONBOARD) {
+                        cardIdCache[3] = jap.cardId;
+                    } else if(jap.chipType == JniApiParam.TYPE_BLUETOOTH) {
+                        cardIdCache[4] = jap.cardId;
+                    }
                 }
+                for (String cardId: cardIdCache) {
+                    if (cardId != null) {
+                        VLog.d(TAG, "Use CardId : " + cardId);
+                        cardIdStr = cardId;
+                        cardFlag = true;
+                        return cardIdStr;
+                    }
+                }
+            } else if (size == 1){
+                cardIdStr = all.second.get(0).cardId;
                 if(cardIdStr != null){
                     cardFlag = true;
                     return cardIdStr;
                 }
-
             }
         } else{
             VLog.e(TAG,"List<JniApiParam> is null, Get card id failed ! ");
