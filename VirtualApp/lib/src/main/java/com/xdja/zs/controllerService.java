@@ -249,6 +249,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public void registerToastCallback(IToastCallback iToastCallback) throws RemoteException{
+        VLog.e(Tag, "registerCallback IToastCallback");
         if(iToastCallback != null) {
             mToastCallback = iToastCallback;
         } else {
@@ -258,6 +259,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public void OnOrOffNetworkStrategy(boolean isOnOrOff) throws RemoteException {
+        VLog.e(Tag,"OnOrOffNetworkStrategy isOnOrOff " + isOnOrOff);
         NetworkStragegyOnorOff = isOnOrOff;
         mNetworkPersistence.save();
     }
@@ -411,6 +413,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
+        VLog.e(Tag,"addNetworkStrategy isWhiteOrBlackList " + isWhiteOrBlackList);
         isWhiteOrBlackFlag = isWhiteOrBlackList;
         if (isWhiteOrBlackList) {
             if (networkStrategy != null) {
