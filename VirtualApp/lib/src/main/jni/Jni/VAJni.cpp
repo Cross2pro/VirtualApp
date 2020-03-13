@@ -97,14 +97,18 @@ static void jni_nativeDelEncryptPkgName(JNIEnv *env,jclass jclazz, jstring name)
     delEncryptPkgName(packageName.c_str());
 }
 static jboolean jni_nativeConfigEncryptPkgName(JNIEnv *env, jclass jclazz, jobjectArray pkgName) {
-    jboolean  ret = true;
+    jboolean  ret = 1;
+
+    if (pkgName == nullptr) {
+        return ret;
+    }
     int count = env->GetArrayLength(pkgName);
     char const** namesUTF = (char const**)malloc(sizeof(char*) * count);
     for(int i = 0 ; i < count; i++) {
         namesUTF[i] = env->GetStringUTFChars((jstring)env->GetObjectArrayElement(pkgName, i), NULL);
     }
 
-    ret = configSafePkgName(namesUTF, count);
+    ret = static_cast<jboolean>(configSafePkgName(namesUTF, count));
 
     for (int i = 0; i < count; i++) {
         env->ReleaseStringUTFChars((jstring) env->GetObjectArrayElement(pkgName, i), namesUTF[i]);

@@ -257,6 +257,9 @@ public class VAppPermissionManagerService extends IAppPermission.Stub {
      */
     @Override
     public String[] getEncryptConfig() {
+        if (encryptConfig.size() == 0) {
+            return null;
+        }
         return encryptConfig.toArray(new String[encryptConfig.size()]);
     }
 
