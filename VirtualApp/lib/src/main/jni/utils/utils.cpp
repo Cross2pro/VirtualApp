@@ -106,6 +106,11 @@ bool is_TED_Enable()
     if(temp_result == -1)
     {
         temp_result = 0;
+
+        if(TED_packageVector.empty()) {
+            slog("%s vector is empty is_TED_Enable false", pname.toString());
+            return temp_result == 1;
+        }
         for(int i = 0; i < TED_packageVector.size(); i++) {
             if (startWith(std::string(pname.toString()), TED_packageVector[i].data())) {
                 temp_result = 1;
