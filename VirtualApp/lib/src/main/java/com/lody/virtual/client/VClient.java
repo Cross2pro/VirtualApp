@@ -291,6 +291,21 @@ public final class VClient extends IVClient.Stub {
         } else if(ActivityThreadQ.handleNewIntent != null){
             ActivityThreadQ.handleNewIntent.call(VirtualCore.mainThread(), data.token, Collections.singletonList(intent));
         }
+        if("com.tencent.mm".equals(getCurrentPackage())){
+            //xdja 修复微信按2次返回键退出
+            //第二次是因为是在顶层activity，微信用了Process.kill导致重启。
+            if(intent.getComponent() != null && intent.getComponent().getClassName().endsWith(".ui.LauncherUI")){
+                if(intent.getBooleanExtra("can_finish", false)){
+                    Intent home = new Intent(Intent.ACTION_MAIN);
+                    home.addCategory(Intent.CATEGORY_HOME);
+                    home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        VirtualCore.get().getContext().startActivity(home);
+                    } catch (Throwable ignore) {
+                    }
+                }
+            }
+        }
     }
 
     public void bindApplication(final String packageName, final String processName) {
