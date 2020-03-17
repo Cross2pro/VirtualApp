@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
+import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.netstrategy.BlackNetStrategyPersistenceLayer;
 import com.xdja.zs.netstrategy.TurnOnOffNetPersistenceLayer;
 import com.xdja.zs.netstrategy.WhiteNetStrategyPersistenceLayer;
@@ -35,7 +36,7 @@ public class controllerService extends IController.Stub {
     private TurnOnOffNetPersistenceLayer mNetworkPersistence = new TurnOnOffNetPersistenceLayer(this);
     private IControllerServiceCallback mCSCallback = null;
     private IToastCallback mToastCallback = null;
-
+    private static HashSet<String> packagenames = new HashSet<>();
     public controllerService() {
         init();
     }
@@ -307,10 +308,10 @@ public class controllerService extends IController.Stub {
                                 }
                             }
                         }
-                        showToast();
+                        showToast(packageName);
                         return false;
                     }
-                    showToast();
+                    showToast(packageName);
                     return false;
                 } else {
                     if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
@@ -324,17 +325,17 @@ public class controllerService extends IController.Stub {
                                     splictIp = strs[strs.length - 1];
                                     if(network_strategy.contains("-")) {
                                         if(judgeIpSection(splictIp,network_strategy)) {
-                                            showToast();
+                                            showToast(packageName);
                                             return false;
                                         }
                                     } else if(network_strategy.contains("/")) {
                                         if(judgeIpSubnet(splictIp,network_strategy)) {
-                                            showToast();
+                                            showToast(packageName);
                                             return false;
                                         }
                                     } else {
                                         if(judgeIp(splictIp,network_strategy)) {
-                                            showToast();
+                                            showToast(packageName);
                                             return false;
                                         }
                                     }
@@ -344,7 +345,7 @@ public class controllerService extends IController.Stub {
                                     network_strategy = network_strategy.replace("*", "www");
                                 }
                                 if(judgeIpV6Domain(ipv6,network_strategy)) {
-                                    showToast();
+                                    showToast(packageName);
                                     return false;
                                 }
                             }
@@ -391,10 +392,10 @@ public class controllerService extends IController.Stub {
                                 }
                             }
                         }
-                        showToast();
+                        showToast(packageName);
                         return false;
                     }
-                    showToast();
+                    showToast(packageName);
                     return false;
                 } else {// handle black list
                     if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
@@ -404,17 +405,17 @@ public class controllerService extends IController.Stub {
                             if(network_type == 1) {//ip
                                 if(network_strategy.contains("-")) {
                                     if(judgeIpSection(ip,network_strategy)) {
-                                        showToast();
+                                        showToast(packageName);
                                         return false;
                                     }
                                 } else if(network_strategy.contains("/")) {
                                     if(judgeIpSubnet(ip,network_strategy)) {
-                                        showToast();
+                                        showToast(packageName);
                                         return false;
                                     }
                                 } else {
                                     if(judgeIp(ip,network_strategy)) {
-                                        showToast();
+                                        showToast(packageName);
                                         return false;
                                     }
                                 }
@@ -423,7 +424,7 @@ public class controllerService extends IController.Stub {
                                     network_strategy = network_strategy.replace("*", "www");
                                 }
                                 if(judgeDomain(ip,network_strategy)) {
-                                    showToast();
+                                    showToast(packageName);
                                     return false;
                                 }
                             }
@@ -435,6 +436,12 @@ public class controllerService extends IController.Stub {
             }
         }
         return true;
+    }
+    private void showToast(String packagename) throws RemoteException{
+        if (!packagenames.contains(packagename)) {
+            showToast();
+            packagenames.add(packagename);
+        }
     }
 
     private void showToast() throws RemoteException {
@@ -524,6 +531,7 @@ public class controllerService extends IController.Stub {
     @Override
     public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
         VLog.d(Tag,"addNetworkStrategy isWhiteOrBlackList " + isWhiteOrBlackList + " networkStrategy " + networkStrategy);
+        packagenames.clear();
         isWhiteOrBlackFlag = isWhiteOrBlackList;
         if (isWhiteOrBlackList) {
             if (networkStrategy != null) {
