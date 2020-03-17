@@ -159,6 +159,16 @@ public class controllerManager {
         return ret;
     }
 
+    public static boolean isIpV6Enable(String ipV6) {
+        boolean ret = false;
+        try {
+            ret = controllerManager.get().getService().isIpV6Enable(VirtualRuntime.getInitialPackageName(),ipV6);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
     public void addNetworkStrategy(Map<String,Integer> networkStrategy,boolean isWhiteOrBlackList) {
         try {
             controllerManager.get().getService().addNetworkStrategy(networkStrategy,isWhiteOrBlackList);
@@ -178,6 +188,14 @@ public class controllerManager {
     public void registerToastCallback(IToastCallback iToastCallback) {
         try {
             controllerManager.get().getService().registerToastCallback(iToastCallback);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public void unregisterToastCallback() {
+        try {
+            controllerManager.get().getService().unregisterToastCallback();
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }

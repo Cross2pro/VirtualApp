@@ -249,7 +249,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public void registerToastCallback(IToastCallback iToastCallback) throws RemoteException{
-        VLog.e(Tag, "registerCallback IToastCallback");
+        VLog.d(Tag, "registerCallback IToastCallback");
         if(iToastCallback != null) {
             mToastCallback = iToastCallback;
         } else {
@@ -258,10 +258,104 @@ public class controllerService extends IController.Stub {
     }
 
     @Override
+    public void unregisterToastCallback() throws RemoteException {
+        VLog.d(Tag, "controllerService unregisterToastCallback ");
+        mCSCallback = null;
+    }
+
+    @Override
     public void OnOrOffNetworkStrategy(boolean isOnOrOff) throws RemoteException {
-        VLog.e(Tag,"OnOrOffNetworkStrategy isOnOrOff " + isOnOrOff);
+        VLog.d(Tag,"OnOrOffNetworkStrategy isOnOrOff " + isOnOrOff);
         NetworkStragegyOnorOff = isOnOrOff;
         mNetworkPersistence.save();
+    }
+
+    @Override
+    public boolean isIpV6Enable(String packageName, String ipv6) throws RemoteException {
+        if (NetworkStragegyOnorOff) {
+            if(ipv6 != null) {
+                if(isWhiteOrBlackFlag) {
+                    if(White_Network_Strategy != null && !White_Network_Strategy.isEmpty()) {
+                        for(Map.Entry<String,Integer> entry:White_Network_Strategy.entrySet()) {
+                            String network_strategy = entry.getKey();
+                            int network_type = entry.getValue();
+                            if(network_type == 1) {//ip
+                                String splictIp = null;
+                                if(ipv6.contains(".")) {
+                                    String[] strs = ipv6.split(":");
+                                    splictIp = strs[strs.length - 1];
+                                    if(network_strategy.contains("-")) {
+                                        if(judgeIpSection(splictIp,network_strategy)) {
+                                            return true;
+                                        }
+                                    } else if(network_strategy.contains("/")) {
+                                        if(judgeIpSubnet(splictIp,network_strategy)) {
+                                            return true;
+                                        }
+                                    } else {
+                                        if(judgeIp(splictIp,network_strategy)) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            } else if(network_type == 2) {//domain name
+                                if(network_strategy.contains("*")) {
+                                    network_strategy = network_strategy.replace("*", "www");
+                                }
+                                if(judgeIpV6Domain(ipv6,network_strategy)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        showToast();
+                        return false;
+                    }
+                    showToast();
+                    return false;
+                } else {
+                    if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
+                        for(Map.Entry<String,Integer> entry:Black_Network_Strategy.entrySet()) {
+                            String network_strategy = entry.getKey();
+                            int network_type = entry.getValue();
+                            if(network_type == 1) {//ip
+                                String splictIp = null;
+                                if(ipv6.contains(".")) {
+                                    String[] strs = ipv6.split(":");
+                                    splictIp = strs[strs.length - 1];
+                                    if(network_strategy.contains("-")) {
+                                        if(judgeIpSection(splictIp,network_strategy)) {
+                                            showToast();
+                                            return false;
+                                        }
+                                    } else if(network_strategy.contains("/")) {
+                                        if(judgeIpSubnet(splictIp,network_strategy)) {
+                                            showToast();
+                                            return false;
+                                        }
+                                    } else {
+                                        if(judgeIp(splictIp,network_strategy)) {
+                                            showToast();
+                                            return false;
+                                        }
+                                    }
+                                }
+                            } else if(network_type == 2) {//domain name
+                                if(network_strategy.contains("*")) {
+                                    network_strategy = network_strategy.replace("*", "www");
+                                }
+                                if(judgeIpV6Domain(ipv6,network_strategy)) {
+                                    showToast();
+                                    return false;
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                    return true;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -300,7 +394,8 @@ public class controllerService extends IController.Stub {
                         showToast();
                         return false;
                     }
-                    return true;
+                    showToast();
+                    return false;
                 } else {// handle black list
                     if(Black_Network_Strategy != null && !Black_Network_Strategy.isEmpty()) {
                         for(Map.Entry<String,Integer> entry:Black_Network_Strategy.entrySet()) {
@@ -411,9 +506,24 @@ public class controllerService extends IController.Stub {
         return false;
     }
 
+    private boolean judgeIpV6Domain(String ipv6,String domain) {
+        try {
+            InetAddress[] ips = InetAddress.getAllByName(domain);
+            for(InetAddress inetAddress:ips) {
+                if(ipv6.contains(inetAddress.getHostAddress()) || ipv6.equals(inetAddress.getHostAddress()))
+                {
+                    return  true;
+                }
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     @Override
     public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
-        VLog.e(Tag,"addNetworkStrategy isWhiteOrBlackList " + isWhiteOrBlackList);
+        VLog.d(Tag,"addNetworkStrategy isWhiteOrBlackList " + isWhiteOrBlackList + " networkStrategy " + networkStrategy);
         isWhiteOrBlackFlag = isWhiteOrBlackList;
         if (isWhiteOrBlackList) {
             if (networkStrategy != null) {
