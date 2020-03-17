@@ -14,6 +14,7 @@ jmethodID controllerManagerNative::isChangeConnect_method = 0;
 jmethodID controllerManagerNative::isGatewayEnable_method = 0;
 jmethodID controllerManagerNative::isSoundRecordEnable_method = 0;
 jmethodID controllerManagerNative::isIpOrNameEnable_method = 0;
+jmethodID controllerManagerNative::isIpV6Enable_method = 0;
 
 bool controllerManagerNative::initial() {
     zJNIEnv env;
@@ -34,12 +35,14 @@ bool controllerManagerNative::initial() {
         controllerManagerNative::isChangeConnect_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isChangeConnect", "(ILjava/lang/String;)Z");
         controllerManagerNative::isSoundRecordEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class, "isSoundRecordEnable", "()Z");
         controllerManagerNative::isIpOrNameEnable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"isIpOrNameEnable","(Ljava/lang/String;)Z");
+        controllerManagerNative::isIpV6Enable_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"isIpV6Enable","(Ljava/lang/String;)Z");
         if (controllerManagerNative::isNetworkEnable_method == NULL
             || controllerManagerNative::isChangeConnect_method == NULL
             || controllerManagerNative::isGatewayEnable_method == NULL
             || controllerManagerNative::isCameraEnable_method == NULL
             || controllerManagerNative::isSoundRecordEnable_method == NULL
-            || controllerManagerNative::isIpOrNameEnable_method == NULL)
+            || controllerManagerNative::isIpOrNameEnable_method == NULL
+            || controllerManagerNative::isIpV6Enable_method == NULL)
             break;
 
         ret = true;
@@ -102,5 +105,17 @@ bool controllerManagerNative::isIpOrNameEnable(char *ip) {
     jstring ipstr = env.get()->NewStringUTF(ip);
     ret = env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class,controllerManagerNative::isIpOrNameEnable_method,ipstr);
     env.get()->DeleteLocalRef(ipstr);
+    return ret;
+}
+
+bool controllerManagerNative::isIpV6Enable(char *ipv6)  {
+    zJNIEnv env;
+    bool ret = false;
+    if (env.get() == NULL) {
+        return false;
+    }
+    jstring ipv6str = env.get()->NewStringUTF(ipv6);
+    ret = env.get()->CallStaticBooleanMethod(controllerManagerNative::cmn_class,controllerManagerNative::isIpV6Enable_method,ipv6str);
+    env.get()->DeleteLocalRef(ipv6str);
     return ret;
 }

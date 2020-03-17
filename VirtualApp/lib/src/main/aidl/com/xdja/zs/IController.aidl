@@ -20,7 +20,9 @@ interface IController {
     void appProcessStart(String packageName, String processName, int pid);
     void appProcessStop(String packageName, String processName, int pid);
     boolean isIpOrNameEnable(String packageName,String ip);
+    boolean isIpV6Enable(String packageName,String ipv6);
     void OnOrOffNetworkStrategy(boolean isOnOrOff);
     void addNetworkStrategy(in Map networkStrategy,boolean isWhiteOrBlackList);
     void registerToastCallback(IToastCallback iToastCallback);
+    void unregisterToastCallback();
 }

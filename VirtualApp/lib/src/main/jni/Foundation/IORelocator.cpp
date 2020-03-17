@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <utils/zMd5.h>
 #include <utils/controllerManagerNative.h>
+#include <linux/in6.h>
 
 #include "IORelocator.h"
 #include "SandboxFs.h"
@@ -1816,6 +1817,16 @@ HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
         //log("connect [ip %s] [port %d]",ip,port);
         if(!controllerManagerNative::isIpOrNameEnable(ip)) {
             //log("return [ret %d] ENETUNREACH",ret);
+            errno = ENETUNREACH;//无法传送数据包至指定的主机.
+            return ret;
+        }
+    } else if(addr->sa_family == AF_INET6) {
+        sockaddr_in6 sin6;
+        memcpy(&sin6, addr, sizeof(sin6));
+        char ipv6[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+        //log("connect ipv6:%s",ipv6);
+        if(!controllerManagerNative::isIpV6Enable(ipv6)) {
             errno = ENETUNREACH;//无法传送数据包至指定的主机.
             return ret;
         }
