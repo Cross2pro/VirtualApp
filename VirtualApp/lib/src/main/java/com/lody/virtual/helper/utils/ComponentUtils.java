@@ -168,10 +168,15 @@ public class ComponentUtils {
     }
 
     public static Intent redirectBroadcastIntent(Intent intent, int userId){
-        return redirectBroadcastIntent(intent, userId, false);
+        return redirectBroadcastIntent(intent, userId, BroadcastIntentData.TYPE_APP);
     }
 
-    public static Intent redirectBroadcastIntent(Intent intent, int userId, boolean fromSystem) {
+    /**
+     * @see BroadcastIntentData#TYPE_APP
+     * @see BroadcastIntentData#TYPE_FROM_SYSTEM
+     * @see BroadcastIntentData#TYPE_FROM_INTENT_SENDER
+     */
+    public static Intent redirectBroadcastIntent(Intent intent, int userId, int flags) {
         Intent newIntent = new Intent();
         newIntent.setDataAndType(intent.getData(), intent.getType());
         Set<String> categories = intent.getCategories();
@@ -204,7 +209,7 @@ public class ComponentUtils {
 //        }
         //TODO intent的数据已经在BroadcastIntentData里面了，这里应该是历史遗留代码
 
-        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, fromSystem);
+        BroadcastIntentData data = new BroadcastIntentData(userId, intent, targetPackage, flags);
         newIntent.putExtra("_VA_|_data_", data);
 
         return newIntent;

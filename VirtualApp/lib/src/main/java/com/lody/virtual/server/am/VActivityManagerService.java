@@ -951,7 +951,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                            BroadcastReceiver resultReceiver, Handler scheduler, int initialCode,
                                            String initialData, Bundle initialExtras) {
         int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
-        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, BroadcastIntentData.TYPE_FROM_SYSTEM);
         VirtualCore.get().getContext().sendOrderedBroadcast(intent, null/* permission */, resultReceiver, scheduler, initialCode, initialData,
                 initialExtras);
     }
@@ -970,13 +970,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     public void sendBroadcastAsUser(Intent target, VUserHandle user, String permission) {
         int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
-        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, BroadcastIntentData.TYPE_FROM_SYSTEM);
         VirtualCore.get().getContext().sendBroadcast(intent);
     }
 
     public void sendBroadcastAsUserWithPackage(Intent target, VUserHandle user, String targetPackage) {
         int userId = user == null ? VUserHandle.USER_ALL : user.getIdentifier();
-        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, true);
+        Intent intent = ComponentUtils.redirectBroadcastIntent(target, userId, BroadcastIntentData.TYPE_FROM_SYSTEM);
         if(!TextUtils.isEmpty(targetPackage)){
             intent.putExtra("_VA_|_privilege_pkg_", targetPackage);
         }
@@ -1105,33 +1105,35 @@ public class VActivityManagerService extends IActivityManager.Stub {
         // EMPTY
     }
 
-    void scheduleStaticBroadcast(final BroadcastIntentData data, final int appId, final ActivityInfo info, final BroadcastReceiver.PendingResult result) {
-        if (!handleStaticBroadcast(data, appId, info, result)) {
+    void scheduleStaticBroadcast(final BroadcastIntentData data, final int appId, final ActivityInfo info, final int flags,final BroadcastReceiver.PendingResult result) {
+        if (!handleStaticBroadcast(data, appId, info, flags, result)) {
             result.finish();
         }
     }
 
-    private boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
+    private boolean handleStaticBroadcast(BroadcastIntentData data, int appId, ActivityInfo info, final int flags, BroadcastReceiver.PendingResult result) {
         if (data.userId >= 0) {
-            return handleStaticBroadcastAsUser(data, appId, data.userId, info, result);
+            return handleStaticBroadcastAsUser(data, appId, data.userId, info, flags, result);
         } else {
             int[] users = VAppManagerService.get().getPackageInstalledUsers(info.packageName);
             if (users.length == 1) {
-                return handleStaticBroadcastAsUser(data, appId, users[0], info, result);
+                return handleStaticBroadcastAsUser(data, appId, users[0], info, flags, result);
             }
             for (int userId : users) {
-                handleStaticBroadcastAsUser(data, appId, userId, info, result);
+                handleStaticBroadcastAsUser(data, appId, userId, info, flags, result);
             }
             return true;
         }
     }
 
-    private boolean handleStaticBroadcastAsUser(BroadcastIntentData data, int appId, int userId, ActivityInfo info, BroadcastReceiver.PendingResult result) {
+    private boolean handleStaticBroadcastAsUser(BroadcastIntentData data, int appId, int userId, ActivityInfo info, final int flags, BroadcastReceiver.PendingResult result) {
         int vuid = VUserHandle.getUid(userId, appId);
         boolean send = false;
         synchronized (this) {
             ProcessRecord r = findProcess(info.processName, vuid);
-            if (r == null && isStartProcessForBroadcast(info.packageName, userId, data.intent.getAction())) {
+            if (r == null &&
+                    ((flags & BroadcastIntentData.TYPE_FROM_INTENT_SENDER) != 0 //通知栏之类的触发，允许唤醒应用
+                            || isStartProcessForBroadcast(info.packageName, userId, data.intent.getAction()))) {
                 r = startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, -1, VActivityManager.PROCESS_TYPE_RECEIVER);
             }
             if (r != null && r.appThread != null) {
