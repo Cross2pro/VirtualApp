@@ -11,6 +11,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.compat.IntentCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.IntentSenderExtData;
 
@@ -48,7 +49,7 @@ public class ShadowPendingReceiver extends BroadcastReceiver {
         String resultData = getResultData();
         Bundle result = getResultExtras(true);
         VLog.d("BroadcastSystem", "ShadowPendingReceiver::sendBroadcast:resultCode=%d, resultData=%s, %s", resultCode, resultData, finalIntent);
-        Intent redirectIntent = ComponentUtils.redirectBroadcastIntent(finalIntent, userId, true);
+        Intent redirectIntent = ComponentUtils.redirectBroadcastIntent(finalIntent, userId, BroadcastIntentData.TYPE_FROM_INTENT_SENDER);
         redirectIntent.putExtra("_VA_|_hasResult_", true);
         redirectIntent.putExtra("_VA_|_resultCode_", resultCode);
         redirectIntent.putExtra("_VA_|_resultData_", resultData);

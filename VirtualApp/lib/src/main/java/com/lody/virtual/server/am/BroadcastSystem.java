@@ -350,10 +350,14 @@ public class BroadcastSystem {
                     // ignore
                 }
             }
+            //如果应用停止，允许广播唤醒应用
+            //1.系统发送的广播
+            //ShadowPendingReceiver
+            //
             if (data == null) {
                 //系统
                 intent.setPackage(null);
-                data = new BroadcastIntentData(VUserHandle.USER_ALL, intent, null, true);
+                data = new BroadcastIntentData(VUserHandle.USER_ALL, intent, null, BroadcastIntentData.TYPE_FROM_SYSTEM);
             } else {
                 //广播本身的限制条件过滤
                 if(data.intent.getPackage() != null && !TextUtils.equals(info.packageName, data.intent.getPackage())){
@@ -370,7 +374,7 @@ public class BroadcastSystem {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && info.applicationInfo.targetSdkVersion >= Build.VERSION_CODES.O) {
                     //非系统发送的广播
                     if (InstallerSetting.privApps.contains(info.packageName)//provider
-                            || (data.fromSystem && !isBackgroundAction(data.intent.getAction()))) {
+                            || (data.isFromSystem() && !isBackgroundAction(data.intent.getAction()))) {
                         // 允许系统应用接收隐式广播
                         // 允许来自服务进程的广播（除了应用安装/卸载/替换广播
                         // MDM在InstallerSetting.privApps名单，允许被收到全部静态广播
@@ -384,7 +388,7 @@ public class BroadcastSystem {
                 }
             }
             VLog.d(TAG, "StaticBroadcastReceiver:[%s] onReceive:%s", info.name, data.intent.getAction());
-            mAMS.scheduleStaticBroadcast(data, this.appId, info, goAsync());
+            mAMS.scheduleStaticBroadcast(data, this.appId, info, data.type, goAsync());
         }
     }
 

@@ -29,6 +29,7 @@ import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.BadgerInfo;
+import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.PendingResultData;
@@ -405,7 +406,16 @@ public class VActivityManager {
     }
 
     public void sendBroadcast(Intent intent, int userId) {
-        Intent newIntent = ComponentUtils.redirectBroadcastIntent(intent, userId, true);
+        sendBroadcast(intent, userId, BroadcastIntentData.TYPE_FROM_SYSTEM);
+    }
+
+    /**
+     * @see BroadcastIntentData#TYPE_APP
+     * @see BroadcastIntentData#TYPE_FROM_SYSTEM
+     * @see BroadcastIntentData#TYPE_FROM_INTENT_SENDER
+     */
+    public void sendBroadcast(Intent intent, int userId, int flags) {
+        Intent newIntent = ComponentUtils.redirectBroadcastIntent(intent, userId, flags);
         if (newIntent != null) {
             VirtualCore.get().getContext().sendBroadcast(newIntent);
         }
