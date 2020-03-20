@@ -366,17 +366,19 @@ public final class VClient extends IVClient.Stub {
         final boolean is64Bit = VirtualCore.get().is64BitEngine();
         // Fix: com.loafwallet
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-                keyStore.load(null);
-                Enumeration<String> aliases = keyStore.aliases();
-                while (aliases.hasMoreElements()) {
-                    String entry = aliases.nextElement();
-                    VLog.w(TAG, "remove entry: " + entry);
-                    keyStore.deleteEntry(entry);
+            if("com.loafwallet".equals(packageName)) {
+                try {
+                    KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+                    keyStore.load(null);
+                    Enumeration<String> aliases = keyStore.aliases();
+                    while (aliases.hasMoreElements()) {
+                        String entry = aliases.nextElement();
+                        VLog.w(TAG, "remove entry: " + entry);
+                        keyStore.deleteEntry(entry);
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
-            } catch (Throwable e) {
-                e.printStackTrace();
             }
         }
         ActivityThread.mInitialApplication.set(
