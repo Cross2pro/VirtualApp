@@ -45,46 +45,9 @@ public class ActivityTaskManagerStub extends BinderInvocationProxy {
         addMethodProxy(new MethodProxies.StartActivityAsCaller());
         addMethodProxy(new MethodProxies.StartVoiceActivity());
 
-        addMethodProxy(new StaticMethodProxy("activityDestroyed") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                IBinder token = (IBinder) args[0];
-                VActivityManager.get().onActivityDestroy(token);
-                return super.call(who, method, args);
-            }
-        });
-        addMethodProxy(new StaticMethodProxy("activityResumed") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                IBinder token = (IBinder) args[0];
-                VActivityManager.get().onActivityResumed(token);
-                return super.call(who, method, args);
-            }
-        });
-        addMethodProxy(new StaticMethodProxy("finishActivity") {
-            @Override
-            public Object call(Object who, Method method, Object... args) throws Throwable {
-                IBinder token = (IBinder) args[0];
-                VActivityManager.get().onFinishActivity(token);
-                return super.call(who, method, args);
-            }
-
-            @Override
-            public boolean isEnable() {
-                return isAppProcess();
-            }
-        });
-        addMethodProxy(new StaticMethodProxy("finishActivityAffinity") {
-            @Override
-            public Object call(Object who, Method method, Object... args) {
-                IBinder token = (IBinder) args[0];
-                return VActivityManager.get().finishActivityAffinity(getAppUserId(), token);
-            }
-
-            @Override
-            public boolean isEnable() {
-                return isAppProcess();
-            }
-        });
+        addMethodProxy(new MethodProxies.ActivityDestroyed());
+        addMethodProxy(new MethodProxies.ActivityResumed());
+        addMethodProxy(new MethodProxies.FinishActivity());
+        addMethodProxy(new MethodProxies.FinishActivityAffinity());
     }
 }
