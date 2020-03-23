@@ -83,6 +83,10 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         return intent;
     }
 
+    protected void superOnCreate(Bundle savedInstanceState){
+        super.onCreate(savedInstanceState);
+    }
+
     @SuppressLint("MissingSuperCall")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
