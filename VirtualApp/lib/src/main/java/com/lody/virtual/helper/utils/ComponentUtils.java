@@ -408,7 +408,7 @@ public class ComponentUtils {
             }
         } else if (isExternalStorageDocument(uri)) {
             String[] split = DocumentsContract.getDocumentId(uri).split(":");
-            if ("primary".equalsIgnoreCase(split[0]) || "secondary".equalsIgnoreCase(split[0])) {
+            if ("primary".equalsIgnoreCase(split[0])) {
                 return new Uri.Builder().scheme(SCHEME_CONTENT)
                         .authority(StubManifest.getProxyAuthority(is64bit))
                         .appendPath("external")

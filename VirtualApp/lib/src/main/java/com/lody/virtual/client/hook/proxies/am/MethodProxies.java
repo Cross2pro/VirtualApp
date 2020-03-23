@@ -2438,9 +2438,20 @@ class MethodProxies {
                 Intent intent = (Intent) args[intentIndex];
                 if (intent != null && intent.getData() != null) {
                     Uri uri = intent.getData();
-                    Uri newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().is64BitEngine(), uri);
-                    if (uri != newUri) {
-                        Log.i("kk-test", "newUri="+newUri);
+                    Uri newUri= null;
+                    boolean needFix = true;
+                    if("com.android.externalstorage.documents".equalsIgnoreCase(uri.getAuthority())){
+                        newUri = DocumentHook.getOutsideUri(uri);
+                        if(newUri != uri){
+                            //外部sd卡的路径
+                            needFix = false;
+                        }
+                    }
+                    if(needFix) {
+                        newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().is64BitEngine(), uri);
+                    }
+                    if (newUri != null && uri != newUri) {
+                        //Log.i("kk-test", "newUri="+newUri);
                         intent.setDataAndType(newUri, intent.getType());
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
