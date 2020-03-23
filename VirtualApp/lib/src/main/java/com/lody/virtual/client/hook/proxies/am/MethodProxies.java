@@ -2439,18 +2439,16 @@ class MethodProxies {
                 if (intent != null && intent.getData() != null) {
                     Uri uri = intent.getData();
                     Uri newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().is64BitEngine(), uri);
-//                    ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
-//                    if ("com.android.externalstorage.documents".equals(uri.getAuthority())) {
-//                        Uri newUri = DocumentHook.getOutsideUri(uri);
-                        if (uri != newUri) {
-                            intent.setDataAndType(newUri, intent.getType());
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
-                                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION |
-                                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-                            }
+                    if (uri != newUri) {
+                        Log.i("kk-test", "newUri="+newUri);
+                        intent.setDataAndType(newUri, intent.getType());
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION |
+                                    Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
                         }
+                    }
 //                    } else {
 //                        ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
 //                    }

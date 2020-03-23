@@ -3,24 +3,33 @@ package com.lody.virtual.helper.utils;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ComponentName;
+import android.content.ContentProviderClient;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Process;
+import android.os.RemoteException;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.ShadowPendingReceiver;
@@ -31,10 +40,12 @@ import com.lody.virtual.helper.compat.IntentCompat;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.BroadcastIntentData;
+import com.xdja.utils.Stirrer;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -343,7 +354,7 @@ public class ComponentUtils {
         }
 
         if (intent.hasExtra(Intent.EXTRA_INTENT)) {
-            Object extraintent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+           Object extraintent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
             if (extraintent instanceof Intent) {
                 Intent outIntent = processOutsideIntent(userId, is64bit, (Intent) extraintent);
                 intent.putExtra(Intent.EXTRA_INTENT, outIntent);
@@ -352,18 +363,99 @@ public class ComponentUtils {
         return intent;
     }
 
+    private static String getInSideDataColumn(Uri uri, String where, String[] args) {
+        //_data
+        ContentProviderClient client = Stirrer.getConentProvider(uri.getAuthority());
+        if (client == null) {
+            VLog.e("kk-test", "not found client by %s", uri.getAuthority());
+        } else {
+            Cursor cursor = null;
+            try {
+                cursor = client.query(uri, null, where, args, null);
+                if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex("_data");
+                    if (index >= 0) {
+                        return cursor.getString(index);
+                    }
+                }
+            } catch (RemoteException e) {
+                VLog.e("kk-test", "getInSideDataColumn", e);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+        return null;
+    }
+
     public static Uri processOutsideUri(int userId, boolean is64bit, Uri uri) {
+        if (isDownloadsDocument(uri)) {
+            String documentId = DocumentsContract.getDocumentId(uri);
+            String path;
+            if (documentId.startsWith("raw:")) {
+                path = documentId.replaceFirst("raw:", "");
+            } else {
+                path = getInSideDataColumn(ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"), Long.valueOf(documentId).longValue()), null, null);
+            }
+            if (path != null) {
+                return new Uri.Builder().scheme(SCHEME_CONTENT)
+                        .authority(StubManifest.getProxyAuthority(is64bit))
+                        .appendPath("external")
+                        .appendPath(path)
+                        .appendQueryParameter("__va_scheme", SCHEME_FILE)
+                        .build();
+            }
+        } else if (isExternalStorageDocument(uri)) {
+            String[] split = DocumentsContract.getDocumentId(uri).split(":");
+            if ("primary".equalsIgnoreCase(split[0]) || "secondary".equalsIgnoreCase(split[0])) {
+                return new Uri.Builder().scheme(SCHEME_CONTENT)
+                        .authority(StubManifest.getProxyAuthority(is64bit))
+                        .appendPath("external")
+                        .appendPath(split[1])
+                        .appendQueryParameter("__va_scheme", SCHEME_FILE)
+                        .build();
+            }
+        } else if (isMediaDocument(uri)) {
+            String[] split2 = DocumentsContract.getDocumentId(uri).split(":");
+            String str = split2[0];
+            Uri uri2;
+            if ("image".equals(str)) {
+                uri2 = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            } else if ("video".equals(str)) {
+                uri2 = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+            } else if ("audio".equals(str)) {
+                uri2 = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+            } else {
+                uri2 = null;
+            }
+            if (uri2 != null) {
+                String path = getInSideDataColumn(uri2, "_id=?", new String[]{split2[1]});
+                if (path != null) {
+                    return new Uri.Builder()
+                            .scheme(SCHEME_CONTENT)
+                            .authority(StubManifest.getProxyAuthority(is64bit))
+                            .appendPath("external")
+                            .appendPath(path)
+                            .appendQueryParameter("__va_scheme", SCHEME_FILE)
+                            .build();
+                }
+            }
+        }
         // add & change by lml@xdja.com
         if (SCHEME_FILE.equals(uri.getScheme())) {
+            //content://io.busniess.va.provider_proxy/external/1/2.txt?__va_scheme=file
             String path = uri.getPath();
             String external_path = Environment.getExternalStorageDirectory().getAbsolutePath();
             if (path.startsWith(external_path)) {
                 String split_path = path.substring(external_path.length());
-
-                Uri fake_uri = uri.buildUpon().scheme(SCHEME_CONTENT).path("/external" + split_path).authority(StubManifest.getProxyAuthority(is64bit)).appendQueryParameter("__va_scheme", SCHEME_FILE).build();
+                Uri fake_uri = uri.buildUpon().scheme(SCHEME_CONTENT)
+                        .path("/external" + split_path)
+                        .authority(StubManifest.getProxyAuthority(is64bit))
+                        .appendQueryParameter("__va_scheme", SCHEME_FILE).build();
                 return fake_uri;
             } else {
-                return Uri.fromFile(new File(NativeEngine.resverseRedirectedPath(uri.getPath())));
+                return Uri.fromFile(new File(NativeEngine.resverseRedirectedPath(path)));
             }
         }
 
@@ -395,4 +487,17 @@ public class ComponentUtils {
         }
         return null;
     }
+
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
+    }
+
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
+
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
 }
