@@ -1,10 +1,12 @@
 package com.xdja.zs;
 
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.utils.IInterfaceUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.IController;
@@ -149,20 +151,20 @@ public class controllerManager {
         }
     }
 
-    public static boolean isIpOrNameEnable(String ip) {
+    public static boolean isIpV4Enable(String ipv4) {
         boolean ret = false;
         try {
-            ret = controllerManager.get().getService().isIpOrNameEnable(VirtualRuntime.getInitialPackageName(),ip);
+            ret = controllerManager.get().getService().isIpV4Enable(VirtualRuntime.getInitialPackageName(),ipv4);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
         return ret;
     }
 
-    public static boolean isIpV6Enable(String ipV6) {
+    public static boolean isIpV6Enable(String ipv6) {
         boolean ret = false;
         try {
-            ret = controllerManager.get().getService().isIpV6Enable(VirtualRuntime.getInitialPackageName(),ipV6);
+            ret = controllerManager.get().getService().isIpV6Enable(VirtualRuntime.getInitialPackageName(),ipv6);
         } catch (RemoteException e) {
             VirtualRuntime.crash(e);
         }
@@ -201,4 +203,39 @@ public class controllerManager {
         }
     }
 
+    public static boolean isDomainEnable(String domain) {
+        boolean ret = false;
+        try {
+            ret = controllerManager.get().getService().isDomainEnable(VirtualRuntime.getInitialPackageName(), domain);
+        }catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
+    public static boolean getNetworkState() {
+        try{
+            return controllerManager.get().getService().getNetworkState();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return false;
+    }
+
+    public static boolean isWhiteList() {
+        try {
+            return controllerManager.get().getService().isWhiteList();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return false;
+    }
+
+    public static void addWhiteIpStrategy(String ip) {
+        try {
+            controllerManager.get().getService().addWhiteIpStrategy(VirtualRuntime.getInitialPackageName(),ip);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }

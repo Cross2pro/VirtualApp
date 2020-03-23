@@ -16,9 +16,12 @@ class controllerManagerNative {
     static jmethodID isChangeConnect_method;
     static jmethodID isGatewayEnable_method;
     static jmethodID isSoundRecordEnable_method;
-    static jmethodID isIpOrNameEnable_method;
+    static jmethodID isIpV4Enable_method;
     static jmethodID isIpV6Enable_method;
-
+    static jmethodID isDomainEnable_method;
+    static jmethodID getNetworkState_method;
+    static jmethodID isWhiteList_method;
+    static jmethodID addWhiteIpStrategy_method;
 public:
     static bool initial();
 
@@ -28,8 +31,12 @@ public:
     static bool isChangeConnect(int port, char *ip);
     static bool isGatewayEnable();
     static bool isSoundRecordEnable();
-    static bool isIpOrNameEnable(char *ip);
+    static bool isIpV4Enable(char *ipv4);
     static bool isIpV6Enable(char *ipv6);
+    static bool isDomainEnable(char * domain);
+    static bool getNetworkState();
+    static bool isWhiteList();
+    static void addWhiteIpStrategy(char *ip);
 };
 
 
