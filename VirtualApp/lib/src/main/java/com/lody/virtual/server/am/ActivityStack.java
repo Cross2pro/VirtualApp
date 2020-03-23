@@ -23,7 +23,6 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.remote.StubActivityRecord;
 
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import mirror.android.app.Activity;
 import mirror.android.app.ActivityManagerNative;
 import mirror.com.android.internal.R_Hide;
 
@@ -48,7 +46,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
  */
 
 /* package */ class ActivityStack {
-
+    private static final String TAG = "ActivityStack";
     private final ActivityManager mAM;
     private final VActivityManagerService mService;
 
@@ -250,9 +248,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
 
         TaskRecord reuseTask = null;
-        if ((info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0) {
-            //same process
-        } else if (!multipleTask) {
+        if (!multipleTask) {
             switch (info.launchMode) {
                 case LAUNCH_SINGLE_INSTANCE: {
                     reuseTask = findTaskByAffinityLocked(userId, affinity);
@@ -567,15 +563,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     private Intent startActivityProcess(int userId, ActivityRecord targetRecord, Intent intent, ActivityInfo info, int callingUid, int callingPid) {
-        String processName = info.processName;
-        if(callingPid > 0 && (info.flags & ActivityInfo.FLAG_MULTIPROCESS) != 0){
-            //和调用者一个进程
-            ProcessRecord app = mService.findProcessLocked(callingPid);
-            if(app != null){
-                processName = app.processName;
-            }
-        }
-        ProcessRecord targetApp = mService.startProcessIfNeedLocked(processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
+        //TODO 以前是为了实现：A调用B，B结束后是返回桌面，不是返回A
+
+        ProcessRecord targetApp = mService.startProcessIfNeedLocked(info.processName, userId, info.packageName, -1, callingUid, VActivityManager.PROCESS_TYPE_ACTIVITY);
         if (targetApp == null) {
             return null;
         }
@@ -746,7 +736,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             while(entries.hasNext()) {
                 Map.Entry<ActivityInfo, IBinder> entry = entries.next();
                 if (entry.getValue() != null && entry.getValue().equals(token)) {
-                    VLog.d("VActivityManagerService", entry.getKey().taskAffinity + " has excludeFromRecentTask flag");
+                    VLog.d(TAG, entry.getKey().taskAffinity + " has excludeFromRecentTask flag");
                     entries.remove();
                     return true;
                 }
