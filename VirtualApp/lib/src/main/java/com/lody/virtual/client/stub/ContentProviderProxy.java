@@ -93,7 +93,6 @@ public class ContentProviderProxy extends ContentProvider {
                 int userId = VUserHandle.myUserId();
                 File root = VEnvironment.getExternalStorageDirectory(userId);
                 File file = new File(root, path);
-
                 Uri u = Uri.fromFile(file);
                 return u;
             }

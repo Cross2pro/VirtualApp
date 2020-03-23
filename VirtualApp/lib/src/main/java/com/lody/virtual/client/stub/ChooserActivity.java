@@ -63,6 +63,7 @@ public class ChooserActivity extends ResolverActivity {
         //system api
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
+            superOnCreate(savedInstanceState);
             VLog.w("ChooseActivity", "Target is not an intent: %s", targetParcelable);
             finish();
             return;

@@ -680,11 +680,11 @@ class MethodProxies {
                 extras.putBundle(ChooserActivity.EXTRA_DATA, options);
                 extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
                 extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
-                if(intent.getAction()!=null&&intent.getAction().equals(Intent.ACTION_VIEW)){
+                if (Intent.ACTION_VIEW.equals(intent.getAction()) || Intent.ACTION_GET_CONTENT.equals(intent.getAction())) {
                     extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-                }else if(intent.getAction()!=null
-                        &&(intent.getAction().equals(ChooserActivity.ACTION)||intent.getAction().equals(Intent.ACTION_CHOOSER))){
-                    extras.putParcelable(Intent.EXTRA_INTENT,intent.getParcelableExtra(Intent.EXTRA_INTENT));
+                } else if (intent.getAction() != null
+                        && (intent.getAction().equals(ChooserActivity.ACTION) || intent.getAction().equals(Intent.ACTION_CHOOSER))) {
+                    extras.putParcelable(Intent.EXTRA_INTENT, intent.getParcelableExtra(Intent.EXTRA_INTENT));
                 }
                 BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
                 intent =  new Intent();
@@ -2433,29 +2433,14 @@ class MethodProxies {
         // add by lml@xdja.com
         @Override
         public boolean beforeCall(Object who, Method method, Object... args) {
-            // if (!VActivityManager.get().isAppPid(VBinder.getCallingPid()))
-            {
-                for (Object o : args) {
-                    if (o instanceof Intent) {
-                        Intent intent = (Intent) o;
-                        {
-                            Uri uri = intent.getData();
-                            if (uri == null || "com.android.externalstorage.documents".equals(uri.getAuthority())) {
-                                continue;
-                            }
-                        }
-                        ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
-                    }
-                }
-            }
-
             int intentIndex = MethodParameterUtils.getIndex(args, Intent.class);
             if (intentIndex >= 0) {
                 Intent intent = (Intent) args[intentIndex];
                 if (intent != null && intent.getData() != null) {
                     Uri uri = intent.getData();
-                    Uri newUri = DocumentHook.getOutsideUri(uri);
+                    Uri newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().is64BitEngine(), uri);
                     if (uri != newUri) {
+                        Log.i("kk-test", "newUri="+newUri);
                         intent.setDataAndType(newUri, intent.getType());
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
@@ -2464,6 +2449,9 @@ class MethodProxies {
                                     Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
                         }
                     }
+//                    } else {
+//                        ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
+//                    }
                 }
             }
             return super.beforeCall(who, method, args);
