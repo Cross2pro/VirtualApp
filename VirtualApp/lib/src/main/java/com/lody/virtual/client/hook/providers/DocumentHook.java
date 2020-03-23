@@ -67,9 +67,8 @@ public class DocumentHook extends ProviderHook {
             if (path.startsWith("secondary")) {
                 path = path.substring("secondary".length());
                 newUri.appendPath(path);
-            } else {
-                newUri.appendPath(path);
             }
+            newUri.appendPath(path);
         }
         return newUri.build();
     }
