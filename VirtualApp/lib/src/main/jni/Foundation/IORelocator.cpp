@@ -20,6 +20,7 @@
 #include <utils/zMd5.h>
 #include <utils/controllerManagerNative.h>
 #include <linux/in6.h>
+#include <netdb.h>
 
 #include "IORelocator.h"
 #include "SandboxFs.h"
@@ -1808,14 +1809,50 @@ HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
     return ret;
 }
 
+HOOK_DEF(int,getaddrinfo,char* __node, const char* __service, const struct addrinfo* __hints, struct addrinfo** __result) {
+    int ret = -1;
+    if(__node != nullptr) {
+        //log("getaddrinfo __node:%s", __node);
+        if(controllerManagerNative::getNetworkState()) {
+            if(!controllerManagerNative::isDomainEnable(__node)) {
+                errno = EAI_FAIL;
+                return ret;
+            }
+            ret = originalInterface::original_getaddrinfo(__node,__service,__hints,__result);
+            if (controllerManagerNative::isWhiteList() && ret == 0) {
+                struct addrinfo *add_result = (*__result);
+                do {
+                    if (add_result->ai_addr->sa_family == AF_INET) {
+                        sockaddr_in *pSin = (sockaddr_in *) (add_result->ai_addr);
+                        char *ipv4 = inet_ntoa(pSin->sin_addr);
+                        //log("getaddrinfo ipv4 %s",ip);
+                        controllerManagerNative::addWhiteIpStrategy(ipv4);
+                    } else if (add_result->ai_addr->sa_family == AF_INET6) {
+                        sockaddr_in6 sin6;
+                        memcpy(&sin6, add_result->ai_addr, sizeof(sin6));
+                        char ipv6[INET6_ADDRSTRLEN];
+                        inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+                        //log("getaddrinfo ipv6 %s",ipv6);
+                        controllerManagerNative::addWhiteIpStrategy(ipv6);
+                    }
+                    add_result = add_result->ai_next;
+                } while (add_result != nullptr);
+            }
+            return ret;
+        }
+    }
+    ret = originalInterface::original_getaddrinfo(__node,__service,__hints,__result);
+    return ret;
+}
+
 HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     int ret = -1;
     if(addr->sa_family == AF_INET) {
         sockaddr_in* pSin = (sockaddr_in*)addr;
-        char * ip = inet_ntoa(pSin->sin_addr);
+        char * ipv4 = inet_ntoa(pSin->sin_addr);
         //int port = pSin->sin_port;
-        //log("connect [ip %s] [port %d]",ip,port);
-        if(!controllerManagerNative::isIpOrNameEnable(ip)) {
+        //log("connect [ipv4 %s]",ipv4);
+        if(!controllerManagerNative::isIpV4Enable(ipv4)) {
             //log("return [ret %d] ENETUNREACH",ret);
             errno = ENETUNREACH;//无法传送数据包至指定的主机.
             return ret;
@@ -1831,11 +1868,6 @@ HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
             return ret;
         }
     }
-    /*if(!controllerManagerNative::isNetworkEnable()){
-        errno = ENETUNREACH;//无法传送数据包至指定的主机.
-        return -1;
-    }*/
-
     ret = syscall(__NR_connect, sd, addr, socklen);
     return ret;
 }
@@ -2041,6 +2073,7 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
         HOOK_SYMBOL(handle, fcntl);
+        HOOK_SYMBOL(handle,getaddrinfo);
 #if defined(__i386__) || defined(__x86_64__)
         HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
 #else
@@ -2076,6 +2109,7 @@ void startIOHook(int api_level) {
     originalInterface::original_pread64 = orig_pread64;
     originalInterface::original_ftruncate64 = orig_ftruncate64;
     originalInterface::original_sendfile = orig_sendfile;
+    originalInterface::original_getaddrinfo = orig_getaddrinfo;
 }
 
 

@@ -32,6 +32,7 @@ public:
     static int (*original_ftruncate64)(int fd, off64_t length);
 
     static ssize_t (*original_sendfile)(int out_fd, int in_fd, off_t* offset, size_t count);
+    static int (*original_getaddrinfo)(char* __node, const char* __service, const struct addrinfo* __hints, struct addrinfo** __result);
 };
 
 #endif //ZZY_TEST_ORIGINALINTERFACE_H

@@ -9,13 +9,13 @@ import com.xdja.zs.controllerService;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WhiteNetStrategyPersistenceLayer extends  PersistenceLayer {
+public class NetStrategyPersistenceLayer extends  PersistenceLayer {
 
     private static final int CURRENT_VERSION = 1;
     private controllerService controllerService;
 
-    public WhiteNetStrategyPersistenceLayer(controllerService controllerService) {
-        super(VEnvironment.getWhiteNetStrategyInfoFile());
+    public NetStrategyPersistenceLayer(controllerService controllerService) {
+        super(VEnvironment.getNetStrategyInfoFile());
         this.controllerService = controllerService;
     }
 
@@ -31,7 +31,7 @@ public class WhiteNetStrategyPersistenceLayer extends  PersistenceLayer {
 
     @Override
     public void writePersistenceData(Parcel p) {
-        HashMap<String,Integer> network_strategy = (HashMap<String, Integer>) controllerService.White_Network_Strategy;
+        HashMap<String,Integer> network_strategy = (HashMap<String, Integer>) controllerService.Network_Strategy;
         int size = network_strategy.size();
         p.writeInt(size);
         for(Map.Entry<String,Integer> entry : network_strategy.entrySet()) {
@@ -42,7 +42,7 @@ public class WhiteNetStrategyPersistenceLayer extends  PersistenceLayer {
 
     @Override
     public void readPersistenceData(Parcel p, int version) {
-        HashMap<String,Integer> network_strategy = (HashMap<String, Integer>) controllerService.White_Network_Strategy;
+        HashMap<String,Integer> network_strategy = (HashMap<String, Integer>) controllerService.Network_Strategy;
         int size = p.readInt();;
         while(size-- > 0) {
             network_strategy.put(p.readString(),p.readInt());
