@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ServiceInfo;
 import android.support.v7.app.AppCompatDelegate;
 
 import com.lody.virtual.client.core.SettingConfig;
@@ -81,6 +82,12 @@ public class App extends Application {
         @Override
         public boolean isForceVmSafeMode(String packageName) {
             return "com.tencent.mm".equals(packageName);
+        }
+
+        @Override
+        public boolean IsServiceCanRestart(ServiceInfo serviceInfo) {
+            //方案2
+            return "com.xdja.swbg".equals(serviceInfo.packageName);
         }
     };
 

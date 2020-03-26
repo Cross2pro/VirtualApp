@@ -4,6 +4,8 @@ import android.content.Context;
 
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
+import com.lody.virtual.client.hook.base.ReplaceUidMethodProxy;
+import com.lody.virtual.helper.compat.BuildCompat;
 
 import mirror.android.media.IAudioService;
 
@@ -43,5 +45,9 @@ public class AudioManagerStub extends BinderInvocationProxy {
 		addMethodProxy(new ReplaceLastPkgMethodProxy("disableSafeMediaVolume"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("registerRemoteControlClient"));
 		addMethodProxy(new ReplaceLastPkgMethodProxy("unregisterAudioFocusClient"));
+		if(BuildCompat.isQ()) {
+			addMethodProxy(new ReplaceUidMethodProxy("setUidDeviceAffinity", 1));
+			addMethodProxy(new ReplaceUidMethodProxy("removeUidDeviceAffinity", 1));
+		}
 	}
 }

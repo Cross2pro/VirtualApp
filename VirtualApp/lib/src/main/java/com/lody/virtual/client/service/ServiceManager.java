@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.collection.ArrayMap;
@@ -16,6 +17,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.ClientConfig;
+import com.lody.virtual.remote.ServiceResult;
 
 import java.util.Map;
 
@@ -167,14 +169,23 @@ public class ServiceManager {
         if (record == null) {
             return;
         }
-        int res = VActivityManager.get().onServiceUnBind(VUserHandle.myUserId(), component);
-        boolean destroy = res == 0;
+        ServiceResult res = VActivityManager.get().onServiceUnBind(VUserHandle.myUserId(), component);
+        if(res.restart) {
+            if (!VirtualCore.getConfig().IsServiceCanRestart(serviceInfo)) {
+                res.restart = false;
+            }
+        }
+        boolean destroy = res.startId == 0 || res.restart;
         if (destroy || record.decreaseConnectionCount(intent)) {
             boolean rebind = record.service.onUnbind(intent);
             if (destroy) {
                 record.service.onDestroy();
                 mServices.remove(component);
                 VActivityManager.get().onServiceDestroyed(VUserHandle.myUserId(), component);
+                if (res.restart) {
+                    ServiceRecord sr = getOrCreateService(component, serviceInfo);
+                    sr.service.onStartCommand(null, 0, res.startId);
+                }
                 return;
             }
             record.setShouldRebind(intent, rebind);

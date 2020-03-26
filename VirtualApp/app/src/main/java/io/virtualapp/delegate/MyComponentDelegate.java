@@ -1,7 +1,9 @@
 package io.virtualapp.delegate;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Bundle;
 
 import com.lody.virtual.client.core.AppCallback;
 
@@ -18,14 +20,51 @@ public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void afterApplicationCreate(String packageName, String processName, Application application) {
-//        XposedHelpers.findAndHookMethod(WebSettings.class, "getDefaultUserAgent", Context.class, new XC_MethodHook() {
-//            @Override
-//            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                super.afterHookedMethod(param);
-//                param.setResult("Mozilla/5.0 (Linux; Android 9; STF-AL00 Build/KKKKKKKKK; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36");
-//                Log.e("kk", "getDefaultUserAgent:" + param.getResult());
-//            }
-//        });
+        if(!"com.xdja.swbg".equals(packageName)){
+            return;
+        }
+        application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                if (activity.getClass().getName().endsWith("InCallActivity")) {
+                    //方案1
+//                    Intent service = new Intent()
+//                            .setClassName("com.xdja.swbg", "com.csipsimple.service.SipService");
+//                    activity.stopService(service);
+//                    activity.startService(service);
+                }
+            }
+        });
     }
 
 }

@@ -17,6 +17,7 @@ import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
+import com.lody.virtual.remote.ServiceResult;
 
 /**
  * @author Lody
@@ -115,7 +116,7 @@ interface IActivityManager{
 
     void onServiceDestroyed(int userId, in ComponentName component);
 
-    int onServiceUnBind(int userId, in ComponentName component);
+    ServiceResult onServiceUnBind(int userId, in ComponentName component);
 
     void setServiceForeground(in ComponentName component, int userId, int id, String tag, boolean cancel);
 

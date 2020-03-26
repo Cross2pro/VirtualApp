@@ -51,6 +51,7 @@ import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.PendingResultData;
+import com.lody.virtual.remote.ServiceResult;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -1080,7 +1081,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     @Override
-    public int onServiceUnBind(int userId, ComponentName component) {
+    public ServiceResult onServiceUnBind(int userId, ComponentName component) {
         synchronized (mServices) {
             return mServices.onUnbind(userId, component);
         }
