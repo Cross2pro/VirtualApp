@@ -110,6 +110,8 @@ import mirror.android.view.ThreadedRenderer;
 import mirror.com.android.internal.content.ReferrerIntent;
 import mirror.dalvik.system.VMRuntime;
 import mirror.java.lang.ThreadGroupN;
+import mirror.oem.HwApiCacheManagerEx;
+import mirror.oem.HwFrameworkFactory;
 
 import static com.lody.virtual.client.core.VirtualCore.getConfig;
 import static com.lody.virtual.os.VUserHandle.getUserId;
@@ -446,15 +448,7 @@ public final class VClient extends IVClient.Stub {
         }
         System.setProperty("java.io.tmpdir", tmpDir.getAbsolutePath());
 
-        if (BuildCompat.isQ()) {
-            try {
-                Class clazz = Class.forName("android.common.HwFrameworkFactory", true, Context.class.getClassLoader());
-                Object HwApiCacheMangerEx = Reflect.on(clazz).call("getHwApiCacheManagerEx").get();
-                Reflect.on(HwApiCacheMangerEx).call("apiPreCache", VirtualCore.get().getPackageManager());
-            } catch (Throwable e) {
-                //ignore
-            }
-        }
+        fixForEmui10();
 
         if (getConfig().isEnableIORedirect()) {
             if (VirtualCore.get().isIORelocateWork()) {
@@ -676,6 +670,23 @@ public final class VClient extends IVClient.Stub {
         }
     }
 
+
+    private void fixForEmui10() {
+        if (BuildCompat.isQ() && BuildCompat.isEMUI()) {
+            if (HwApiCacheManagerEx.getDefault != null && HwApiCacheManagerEx.mPkg != null) {
+                HwApiCacheManagerEx.mPkg.set(HwApiCacheManagerEx.getDefault.call(), VirtualCore.get().getPM());
+            } else if (HwFrameworkFactory.getHwApiCacheManagerEx != null) {
+                Object hwmgr = HwFrameworkFactory.getHwApiCacheManagerEx.call();
+                if (hwmgr != null) {
+                    try {
+                        Reflect.on(hwmgr).call("apiPreCache", VirtualCore.get().getPM());
+                    } catch (Throwable e) {
+                        //ignore
+                    }
+                }
+            }
+        }
+    }
 
     private void fixWeChatRecovery(Application app) {
         try {
