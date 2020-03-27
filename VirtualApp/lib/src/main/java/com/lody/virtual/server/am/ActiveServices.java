@@ -19,6 +19,7 @@ import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.ServiceResult;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 
 import java.util.ArrayList;
@@ -28,8 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import mirror.android.widget.Toast;
 
 /**
  * @author Lody
@@ -220,7 +219,7 @@ public class ActiveServices {
         proxyIntent.setClassName(StubManifest.getStubPackageName(targetApp.is64bit), StubManifest.getStubServiceName(targetApp.vpid));
         int startId;
         synchronized (userSpace.mRunningServices) {
-            startId = ++data.startId;
+            startId = data.startId++;//bindService need
         }
         proxyIntent.putExtra("_VA_|_start_id_", startId);
         proxyIntent.putExtra("_VA_|_service_info_", serviceInfo);
@@ -230,16 +229,21 @@ public class ActiveServices {
     }
 
 
-    public int onUnbind(int userId, ComponentName component) {
+    public ServiceResult onUnbind(int userId, ComponentName component) {
         UserSpace userSpace = getUserSpace(userId);
+        ServiceResult serviceResult = new ServiceResult();
         synchronized (userSpace.mRunningServices) {
             RunningServiceData info = userSpace.mRunningServices.get(component);
-            if(info == null){
+            if (info == null) {
                 Log.e(TAG, " onUnbind RunningServiceData is null " + component.toString());
-                return 0;
+                serviceResult.died = true;
+                return serviceResult;
             }
-            return info.startId;
+            serviceResult.startId = info.startId;
+            serviceResult.clientCount = info.clientCount;
+            serviceResult.restart = info.clientCount <= 0 && info.startId > 0;
         }
+        return serviceResult;
     }
 
     //xdja

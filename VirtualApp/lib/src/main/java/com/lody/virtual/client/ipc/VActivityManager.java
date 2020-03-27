@@ -33,6 +33,7 @@ import com.lody.virtual.remote.BroadcastIntentData;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.IntentSenderData;
 import com.lody.virtual.remote.PendingResultData;
+import com.lody.virtual.remote.ServiceResult;
 import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IActivityManager;
@@ -592,7 +593,7 @@ public class VActivityManager {
         }
     }
 
-    public int onServiceUnBind(int userId, ComponentName component) {
+    public ServiceResult onServiceUnBind(int userId, ComponentName component) {
         try {
             return getService().onServiceUnBind(userId, component);
         } catch (RemoteException e) {

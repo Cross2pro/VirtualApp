@@ -2,6 +2,7 @@ package com.lody.virtual.client.core;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ServiceInfo;
 
 import com.lody.virtual.client.stub.WindowPreviewActivity;
 
@@ -77,6 +78,9 @@ public abstract class SettingConfig {
         return null;
     }
 
+    public boolean IsServiceCanRestart(ServiceInfo serviceInfo){
+        return false;
+    }
 
     /**
      * 是否禁止悬浮窗
