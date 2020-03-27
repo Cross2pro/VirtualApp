@@ -238,15 +238,28 @@ public class NativeEngine {
                 Method getRuntime = (Method) getMethodMethod.invoke(clazz, "getRuntime", new Class[0]);
                 Method setHiddenApiExemptions = (Method) getMethodMethod.invoke(clazz, "setHiddenApiExemptions", new Class[]{String[].class});
                 Object runtime = getRuntime.invoke(null);
-                setHiddenApiExemptions.invoke(runtime, new Object[]{
-                        new String[]{
-                                "Landroid/",
-                                "Lcom/android/",
-                                "Ljava/lang/",
-                                "Ldalvik/system/",
-                                "Llibcore/io/",
-                        }
-                });
+                if (BuildCompat.isEMUI()) {
+                    setHiddenApiExemptions.invoke(runtime, new Object[]{
+                            new String[]{
+                                    "Landroid/",
+                                    "Lcom/android/",
+                                    "Ljava/lang/",
+                                    "Ldalvik/system/",
+                                    "Llibcore/io/",
+                                    "Lhuawei/"
+                            }
+                    });
+                } else {
+                    setHiddenApiExemptions.invoke(runtime, new Object[]{
+                            new String[]{
+                                    "Landroid/",
+                                    "Lcom/android/",
+                                    "Ljava/lang/",
+                                    "Ldalvik/system/",
+                                    "Llibcore/io/",
+                            }
+                    });
+                }
             } catch (Throwable e) {
                 e.printStackTrace();
             }
