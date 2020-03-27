@@ -37,9 +37,11 @@
 #include "transparentED/originalInterface.h"
 #include "transparentED/ff_Recognizer.h"
 
-void startIOHook(int api_level);
+void startIOHook(JNIEnv *env, int api_level);
 
 bool need_load_env = true;
+
+int g_api_level;
 
 bool execve_process = false;
 
@@ -127,7 +129,8 @@ void IOUniformer::init_env_before_all() {
     char *api_level_char = getenv("V_API_LEVEL");
     if (api_level_char != NULL) {
         int api_level = atoi(api_level_char);
-        startIOHook(api_level);
+        g_api_level = api_level;
+        startIOHook(nullptr, api_level);
     }
 }
 
@@ -1879,6 +1882,10 @@ HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
     orig_xlogger_Write(_info, _log);
 }
 
+HOOK_DEF(bool, SetCheckJniEnabled, void* vm, bool enbaled) {
+    return orig_SetCheckJniEnabled(vm, false);
+}
+
 __END_DECLS
 // end IO DEF
 
@@ -1886,6 +1893,23 @@ __END_DECLS
 void onSoLoaded(const char *name, void *handle) {
 }
 
+bool relocate_art(JNIEnv *env, const char *art_path) {
+    intptr_t art_addr, art_off, symbol;
+    if ((art_addr = get_addr(art_path)) == 0) {
+        ALOGE("Cannot found art addr.");
+        return false;
+    }
+    //disable jni check
+    if (g_api_level >= 21 && env && resolve_symbol(art_path, "_ZN3art9JavaVMExt18SetCheckJniEnabledEb",
+                                                          &art_off) == 0) {
+        symbol = art_addr + art_off;
+        orig_SetCheckJniEnabled = reinterpret_cast<bool (*)(void *, bool)>(symbol);
+        JavaVM *vm;
+        env->GetJavaVM(&vm);
+        orig_SetCheckJniEnabled(vm, false);
+    }
+    return true;
+}
 
 bool relocate_linker() {
     intptr_t linker_addr, dlopen_off, symbol;
@@ -2008,8 +2032,24 @@ bool on_found_linker_syscall_arm(const char *path, int num, void *func) {
 
 #endif
 
-void startIOHook(int api_level) {
+void startIOHook(JNIEnv *env, int api_level) {
     void *handle = dlopen("libc.so", RTLD_NOW);
+    const char *art = nullptr;
+    if (sizeof(void *) == 8) {
+        if (api_level >= 29) {
+            art = "/apex/com.android.runtime/lib64/libart.so";
+        } else {
+            art = "/apex/com.android.runtime/lib/libart.so";
+        }
+    } else {
+        if (api_level >= 29) {
+            art = "/apex/com.android.runtime/lib/libart.so";
+        } else {
+            art = "/system/lib/libart.so";
+        }
+    }
+    relocate_art(env, art);
+
     if (handle) {
 #if defined(__aarch64__)
         HOOK_SYMBOL(handle, fchownat);
@@ -2114,7 +2154,7 @@ void startIOHook(int api_level) {
 
 
 void
-IOUniformer::startUniformer(const char *so_path, const char *so_path_64, const char *native_path,
+IOUniformer::startUniformer(JNIEnv *env, const char *so_path, const char *so_path_64, const char *native_path,
                             int api_level,
                             int preview_api_level) {
     bool ret = ff_Recognizer::getFFR().init(getMagicPath());
@@ -2129,5 +2169,5 @@ IOUniformer::startUniformer(const char *so_path, const char *so_path_64, const c
     setenv("V_PREVIEW_API_LEVEL", pre_api_level_chars, 1);
     setenv("V_API_LEVEL", api_level_chars, 1);
     setenv("V_NATIVE_PATH", native_path, 1);
-    startIOHook(api_level);
+    startIOHook(env, api_level);
 }

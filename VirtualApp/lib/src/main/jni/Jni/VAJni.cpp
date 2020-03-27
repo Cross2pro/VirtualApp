@@ -29,7 +29,7 @@ jni_nativeEnableIORedirect(JNIEnv *env, jclass, jstring soPath, jstring soPath64
     ScopeUtfString so_path(soPath);
     ScopeUtfString so_path_64(soPath64);
     ScopeUtfString native_path(nativePath);
-    IOUniformer::startUniformer(so_path.c_str(), so_path_64.c_str(), native_path.c_str(), apiLevel,
+    IOUniformer::startUniformer(env, so_path.c_str(), so_path_64.c_str(), native_path.c_str(), apiLevel,
                                 preview_api_level);
 }
 
