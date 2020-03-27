@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.com.android.internal.R_Hide;
@@ -56,7 +57,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     private final SparseArray<TaskRecord> mHistory = new SparseArray<>();
     private final List<ActivityRecord> mLaunchingActivities = new ArrayList<>();
     private final Map<ActivityInfo, IBinder> mExcludeRecentActivityRecord = new HashMap<>();
-
+    private final Map<ActivityRecord, LaunchingActivity> pendingNewIntents = new ConcurrentHashMap<>();
 
     ActivityStack(VActivityManagerService mService) {
         this.mService = mService;
@@ -329,6 +330,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 }
             }
         }
+        ActivityRecord pendingActivityRecorder = null;
         if (info.launchMode == LAUNCH_SINGLE_TOP || singleTop) {
             notReorderToFront = true;
             /*
@@ -337,6 +339,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             ActivityRecord top = reuseTask.getTopActivityRecord();
             if (top != null && !top.marked && top.component.equals(component)) {
                 notifyNewIntentActivityRecord = top;
+            } else {
+                // mark starting activity
+                synchronized (mLaunchingActivities) {
+                    for (ActivityRecord launchingActivity : mLaunchingActivities) {
+                        if (!launchingActivity.marked && launchingActivity.component.equals(component)) {
+                            pendingActivityRecorder = launchingActivity;
+                            break;
+                        }
+                    }
+                }
             }
         }
         if (reorderToFront) {
@@ -383,6 +395,18 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             if (!notifyNewIntentActivityRecord.marked) {
                 return 0;
             }
+        } else if (pendingActivityRecorder != null) {
+            synchronized (mLaunchingActivities) {
+                LaunchingActivity launchingActivity = pendingNewIntents.get(sourceRecord);
+                if (launchingActivity == null) {
+                    launchingActivity = new LaunchingActivity(pendingActivityRecorder.component);
+                }
+                if (sourceRecord == null) {
+                    sourceRecord = pendingActivityRecorder;
+                }
+                launchingActivity.pendingNewIntents.add(new PendingNewIntent(userId, sourceRecord, intent));
+            }
+            return 0;
         }
         ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo, userId);
         Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
@@ -399,7 +423,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             return 0;
         } else {
             synchronized (mLaunchingActivities) {
-                mLaunchingActivities.remove(targetRecord);
+                if (mLaunchingActivities.remove(targetRecord)) {
+                    pendingNewIntents.remove(targetRecord);
+                }
             }
             return -1;
         }
@@ -445,7 +471,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
             return 0;
         } else {
-            mLaunchingActivities.remove(targetRecord);
+            if (mLaunchingActivities.remove(targetRecord)) {
+                pendingNewIntents.remove(targetRecord);
+            }
             return -1;
         }
 
@@ -588,8 +616,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
 
     void onActivityCreated(ProcessRecord targetApp, IBinder token, int taskId, ActivityRecord record) {
+        LaunchingActivity launchingActivity = null;
         synchronized (mLaunchingActivities) {
-            mLaunchingActivities.remove(record);
+            if (mLaunchingActivities.remove(record)) {
+                pendingNewIntents.remove(record);
+            }
         }
         synchronized (mHistory) {
             optimizeTasksLocked();
@@ -615,6 +646,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
             synchronized (task.activities) {
                 task.activities.add(record);
+            }
+            if (launchingActivity != null && launchingActivity.Match(record.component)) {
+                for (PendingNewIntent pendingNewIntent : launchingActivity.pendingNewIntents) {
+                    deliverNewIntentLocked(pendingNewIntent.userId, pendingNewIntent.sourceRecord, record, pendingNewIntent.intent);
+                }
             }
         }
     }
