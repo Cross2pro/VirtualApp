@@ -1,6 +1,5 @@
 package com.lody.virtual.helper.utils;
 
-import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.ContentProviderClient;
@@ -9,13 +8,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
-import android.content.pm.ProviderInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.database.Cursor;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Process;
 import android.os.RemoteException;
@@ -26,10 +23,8 @@ import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
-import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
-import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.lody.virtual.client.stub.ShadowPendingActivity;
 import com.lody.virtual.client.stub.ShadowPendingReceiver;
@@ -44,9 +39,6 @@ import com.xdja.utils.Stirrer;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static android.content.ContentResolver.SCHEME_CONTENT;
@@ -287,6 +279,15 @@ public class ComponentUtils {
 
     public static int getUserIdForIntentSender(Intent sender){
         return sender.getIntExtra("_VA_|_userId_", -1);
+    }
+
+    public static void clearVAData(Intent sender) {
+        if (sender.hasExtra("_VA_|_intent_")) {
+            sender.removeExtra("_VA_|_intent_");
+        }
+        if (sender.hasExtra("_VA_|_userId_")) {
+            sender.removeExtra("_VA_|_userId_");
+        }
     }
 
     public static Intent processOutsideIntent(int userId, boolean is64bit, Intent intent) {
