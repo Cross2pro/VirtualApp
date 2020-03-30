@@ -32,6 +32,14 @@ public class ShadowPendingReceiver extends BroadcastReceiver {
             }
             return;
         }
+        ComponentUtils.clearVAData(intent);
+        if (intent.getExtras() != null) {
+            try {
+                finalIntent.putExtras(intent.getExtras());
+            } catch (Throwable e) {
+                //unknown
+            }
+        }
         IntentSenderExtData ext = intent.getParcelableExtra("_VA_|_ext_");
         if (ext != null && ext.sender != null) {
             IntentSenderData data = VActivityManager.get().getIntentSender(ext.sender);

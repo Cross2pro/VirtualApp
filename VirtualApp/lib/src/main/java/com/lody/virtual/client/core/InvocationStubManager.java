@@ -40,6 +40,7 @@ import com.lody.virtual.client.hook.proxies.media.router.MediaRouterServiceStub;
 import com.lody.virtual.client.hook.proxies.media.session.SessionManagerStub;
 import com.lody.virtual.client.hook.proxies.mount.MountServiceStub;
 import com.lody.virtual.client.hook.proxies.network.NetworkManagementStub;
+import com.lody.virtual.client.hook.proxies.nfc.NfcAdapterStub;
 import com.lody.virtual.client.hook.proxies.notification.NotificationManagerStub;
 import com.lody.virtual.client.hook.proxies.persistent_data_block.PersistentDataBlockServiceStub;
 import com.lody.virtual.client.hook.proxies.phonesubinfo.PhoneSubInfoStub;
@@ -225,6 +226,7 @@ public final class InvocationStubManager {
                 addInjector(new DeviceIdentifiersPolicyServiceHub());
                 addInjector(new RoleStub());
             }
+            addInjector(new NfcAdapterStub());
         }
     }
 
