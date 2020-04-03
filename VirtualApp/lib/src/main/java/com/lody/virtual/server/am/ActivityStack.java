@@ -619,7 +619,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         LaunchingActivity launchingActivity = null;
         synchronized (mLaunchingActivities) {
             if (mLaunchingActivities.remove(record)) {
-                pendingNewIntents.remove(record);
+                launchingActivity = pendingNewIntents.remove(record);
             }
         }
         synchronized (mHistory) {
@@ -647,10 +647,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             synchronized (task.activities) {
                 task.activities.add(record);
             }
-            if (launchingActivity != null && launchingActivity.Match(record.component)) {
-                for (PendingNewIntent pendingNewIntent : launchingActivity.pendingNewIntents) {
-                    deliverNewIntentLocked(pendingNewIntent.userId, pendingNewIntent.sourceRecord, record, pendingNewIntent.intent);
-                }
+        }
+        if (launchingActivity != null && launchingActivity.Match(record.component)) {
+            for (PendingNewIntent pendingNewIntent : launchingActivity.pendingNewIntents) {
+                deliverNewIntentLocked(pendingNewIntent.userId, pendingNewIntent.sourceRecord, record, pendingNewIntent.intent);
             }
         }
     }
