@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.core.VirtualCore;
@@ -34,6 +35,21 @@ public class ShadowPendingActivity extends Activity {
             return;
         }
         ComponentUtils.clearVAData(intent);
+        if ("android.nfc.action.NDEF_DISCOVERED".equals(intent.getAction())
+                || "android.nfc.action.TAG_DISCOVERED".equals(intent.getAction())
+                | "android.nfc.action.TECH_DISCOVERED".equals(intent.getAction())) {
+            if (intent.getData() != null) {
+                finalIntent.setDataAndType(intent.getData(), intent.getType());
+            }
+            if (intent.getCategories() != null) {
+                for (String g : intent.getCategories()) {
+                    finalIntent.addCategory(g);
+                }
+            }
+            if (intent.getAction() != null) {
+                finalIntent.setAction(intent.getAction());
+            }
+        }
         if (intent.getExtras() != null) {
             try {
                 finalIntent.putExtras(intent.getExtras());
