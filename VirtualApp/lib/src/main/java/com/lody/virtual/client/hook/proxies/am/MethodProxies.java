@@ -1908,6 +1908,12 @@ class MethodProxies {
 
             if (info != null && info.enabled && isAppPkg(info.packageName)
                     &&!name.equals("com.android.externalstorage.documents")) {
+
+                if(getAppPkg().equals("com.secspace.app.explorer") && name.equals("media")) {
+                    VLog.w("VActivityManger", "Prevent com.secspace.app.explorer to access media.");
+                    return null;
+                }
+
                 ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId, VActivityManager.PROCESS_TYPE_PROVIDER);
                 if (config == null) {
                     return null;
