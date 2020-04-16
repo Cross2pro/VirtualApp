@@ -54,7 +54,7 @@ import java.util.Set;
 
 
 public class ResolverActivity extends Activity implements AdapterView.OnItemClickListener {
-    private static final String TAG = "ResolverActivity";
+    protected static final String TAG = "ResolverActivity";
     private static final boolean DEBUG = false;
     protected Bundle mOptions;
     protected String mResultWho;
@@ -73,6 +73,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
     private int mMaxColumns;
     private int mLastSelected = ListView.INVALID_POSITION;
     private AlertDialog dialog;
+    protected boolean mIgnoreDefault;
     private boolean mRegistered;
     private Context mContext;
 
@@ -132,6 +133,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
             }
         }
         if(count==0){
+            VLog.w(TAG, "not found app from intent %s", intent);
             //禁止发现双域外部应用
 //            intent = ComponentUtils.processOutsideIntent(0, VirtualCore.get().is64BitEngine(), intent);
 //            intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
@@ -527,13 +529,19 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
                 currentResolveList = mBaseResolveList;
                 mOrigResolveList = null;
             } else {
+                int flags = 0;
+                if(!mIgnoreDefault) {
+                    flags |= PackageManager.MATCH_DEFAULT_ONLY;
+                }
+                if(mAlwaysUseOption){
+                    flags |= PackageManager.GET_RESOLVED_FILTER;
+                }
 //                currentResolveList = mOrigResolveList = mPm.queryIntentActivities(
 //                        mIntent, PackageManager.MATCH_DEFAULT_ONLY
 //                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0));
 
                 currentResolveList = mOrigResolveList = VPackageManager.get().queryIntentActivities(
-                        mIntent, mIntent.resolveType(mContext), PackageManager.MATCH_DEFAULT_ONLY
-                                | (mAlwaysUseOption ? PackageManager.GET_RESOLVED_FILTER : 0), 0);
+                        mIntent, mIntent.resolveType(mContext), flags, 0);
 
                 // Filter out any activities that the launched uid does not
                 // have permission for.  We don't do this when we have an explicit

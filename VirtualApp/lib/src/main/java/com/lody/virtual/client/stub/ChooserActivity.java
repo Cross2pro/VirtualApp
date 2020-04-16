@@ -20,6 +20,7 @@ public class ChooserActivity extends ResolverActivity {
     public static final String EXTRA_WHO = "android.intent.extra.virtual.who";
     public static final String EXTRA_INTENT = "android.intent.extra.virtual.intent";
     public static final String EXTRA_REQUEST_CODE = "android.intent.extra.virtual.request_code";
+    public static final String EXTRA_IGNORE_DEFAULT = "android.intent.extra.virtual.ignore_default";
     public static final String ACTION;
     public static final String EXTRA_RESULTTO = "_va|ibinder|resultTo";
 
@@ -60,11 +61,12 @@ public class ChooserActivity extends ResolverActivity {
         mResultWho = extras.getString(EXTRA_WHO);
         mRequestCode = extras.getInt(EXTRA_REQUEST_CODE, 0);
         mResultTo = BundleCompat.getBinder(extras, EXTRA_RESULTTO);
+        mIgnoreDefault = extras.getBoolean(EXTRA_IGNORE_DEFAULT, false);
         //system api
         Parcelable targetParcelable = intent.getParcelableExtra(Intent.EXTRA_INTENT);
         if (!(targetParcelable instanceof Intent)) {
             superOnCreate(savedInstanceState);
-            VLog.w("ChooseActivity", "Target is not an intent: %s", targetParcelable);
+            VLog.w(TAG, "Target is not an intent: %s", targetParcelable);
             finish();
             return;
         }
@@ -79,7 +81,7 @@ public class ChooserActivity extends ResolverActivity {
             initialIntents = new Intent[pa.length];
             for (int i = 0; i < pa.length; i++) {
                 if (!(pa[i] instanceof Intent)) {
-                    VLog.w("ChooseActivity", "Initial intent #" + i
+                    VLog.w(TAG, "Initial intent #" + i
                             + " not an Intent: %s", pa[i]);
                     finish();
                     return;
