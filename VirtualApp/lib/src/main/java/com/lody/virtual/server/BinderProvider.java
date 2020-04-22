@@ -191,6 +191,7 @@ public final class BinderProvider extends ContentProvider {
             //判断是否是app进程
             if (VActivityManagerService.parseVPid(runningAppProcessInfo.processName) >= 0) {
                 try {
+                    VLog.d(TAG, "kill old process %d", runningAppProcessInfo.pid);
                     Process.killProcess(runningAppProcessInfo.pid);
                 } catch (Throwable e) {
                     //ignore
