@@ -364,7 +364,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    private int parseVPid(String stubProcessName) {
+    public static int parseVPid(String stubProcessName) {
         String prefix;
         if (stubProcessName == null) {
             return -1;
