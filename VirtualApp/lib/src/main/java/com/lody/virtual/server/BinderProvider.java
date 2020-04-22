@@ -1,5 +1,7 @@
 package com.lody.virtual.server;
 
+import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
@@ -9,14 +11,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.stub.KeepAliveService;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
@@ -40,10 +46,13 @@ import com.xdja.zs.controllerService;
 
 import com.xdja.zs.VAppPermissionManagerService;
 
+import java.util.List;
+
 /**
  * @author Lody
  */
 public final class BinderProvider extends ContentProvider {
+    private static final String TAG = "BinderProvider";
 
     private final ServiceFetcher mServiceFetcher = new ServiceFetcher();
     private static boolean sInitialized = false;
@@ -121,10 +130,74 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
-
+        //下面2个清理，确保在无任何app启动之前执行，防止误清理
+        //清理无效的task
+        clearOldTask(context);
+        //清理无效的其他进程
+        clearOldProcess(context);
         //xdja
         VirtualCore.get().preLaunchApp();
         return true;
+    }
+
+    private void clearOldTask(Context context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.AppTask> list = null;
+            try {
+                list = am.getAppTasks();
+            } catch (Throwable e) {
+                VLog.w(TAG, "getAppTasks failed\n%s", VLog.getStackTraceString(e));
+            }
+            if (list != null) {
+                for (ActivityManager.AppTask task : list) {
+                    ActivityManager.RecentTaskInfo taskInfo = null;
+                    try {
+                        taskInfo = task.getTaskInfo();
+                    } catch (Throwable e) {
+                        VLog.w(TAG, "getTaskInfo failed\n%s", VLog.getStackTraceString(e));
+                    }
+                    if (taskInfo == null) {
+                        continue;
+                    }
+                    if (taskInfo.baseIntent != null && taskInfo.baseIntent.getComponent() != null) {
+                        ComponentName cmp = taskInfo.baseIntent.getComponent();
+                        if (cmp != null) {
+                            if (context.getPackageName().equals(cmp.getPackageName())
+                                    && StubManifest.isStubActivity(cmp.getClassName())) {
+                                try {
+                                    VLog.w(TAG, "clear %s", ComponentUtils.getAppComponent(taskInfo.baseIntent));
+                                    //app组件
+                                    task.finishAndRemoveTask();
+                                } catch (Throwable ignore) {
+
+                                }
+//                            } else {
+//                                VLog.w(TAG, "ignore task=%s", cmp);
+                            }
+                        }
+//                    } else {
+//                        VLog.w(TAG, "unknown=%s", taskInfo.baseIntent);
+                    }
+                }
+            }
+        }
+    }
+
+    private void clearOldProcess(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos = am.getRunningAppProcesses();
+        for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcessInfos) {
+            //判断是否是app进程
+            if (VActivityManagerService.parseVPid(runningAppProcessInfo.processName) >= 0) {
+                try {
+                    VLog.d(TAG, "kill old process %d", runningAppProcessInfo.pid);
+                    Process.killProcess(runningAppProcessInfo.pid);
+                } catch (Throwable e) {
+                    //ignore
+                }
+            }
+        }
     }
 
     private void addService(String name, IBinder service) {
