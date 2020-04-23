@@ -106,7 +106,7 @@ public class VSafekeyManagerService extends IVSafekey.Stub {
             }
             String cardIdStr = null;
             int size = all.second.size();
-            if (size > 1) {
+            if (size >= 1) {
                 String[] cardIdCache  = new String[5];
                 for (JniApiParam jap : all.second) {
                     VLog.d(TAG, "CardId : " + jap.cardId + "CardType : " + jap.chipType);
