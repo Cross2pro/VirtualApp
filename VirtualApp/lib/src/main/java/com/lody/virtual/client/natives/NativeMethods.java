@@ -9,6 +9,7 @@ import android.os.Build;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import dalvik.system.DexFile;
 
@@ -92,6 +93,10 @@ public class NativeMethods {
 
         try {
             gCameraStartPreview = Camera.class.getDeclaredMethod("startPreview");
+            if(!Modifier.isNative(gCameraStartPreview.getModifiers())){
+                //huawei android 10
+                gCameraStartPreview = Camera.class.getDeclaredMethod("startPreviewInner");
+            }
             gCameraStartPreview.setAccessible(true);
         } catch (NoSuchMethodException e) {
             // ignore
