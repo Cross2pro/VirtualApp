@@ -7,23 +7,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.xdja.activitycounter.ActivityCounterManager;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+@RequiresApi(api = Build.VERSION_CODES.N)
 @SuppressLint("OverrideAbstract")
 public class NotificationListener extends NotificationListenerService {
     String Tag = "zs_NotificationListener";
 
     public NotificationListener() {
+        whiteList.add("com.android.nfc");
     }
 
+    private Set<String> whiteList = ConcurrentHashMap.<String>newKeySet();
     private Context mApp = null;
     private PackageManager packageManager = null;
 
@@ -35,6 +41,11 @@ public class NotificationListener extends NotificationListenerService {
         packageManager = mApp.getPackageManager();
     }
 
+    private boolean isInWhiteList(String packageName) {
+        return whiteList.contains(packageName);
+    }
+
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(Tag, "onStartCommand");
@@ -43,8 +54,7 @@ public class NotificationListener extends NotificationListenerService {
         } else {
             String type = intent.getType();
 
-            if(type.equals("cancelAll"))
-            {
+            if(type.equals("cancelAll")) {
                 try {
                     cancelAllNotifications();
 
@@ -62,8 +72,7 @@ public class NotificationListener extends NotificationListenerService {
                             }
                         }
                     }
-                }catch (Exception e)
-                {
+                }catch (Exception e) {
                     //不做处理
                 }
             }
@@ -80,8 +89,7 @@ public class NotificationListener extends NotificationListenerService {
         Log.e(Tag, "onListenerConnected");
     }
 
-    private boolean isSystemApp(String pkgName)
-    {
+    private boolean isSystemApp(String pkgName) {
         boolean ret = false;
         try {
             StringBuilder stringBuilder = new StringBuilder();
@@ -114,24 +122,27 @@ public class NotificationListener extends NotificationListenerService {
         Log.e(Tag, String.format("onNotificationPosted [Title: %s] [Text: %s] [SubText: %s] [pkgName %s]",
                 notificationTitle, notificationText, notificationSubText, packageName));
 
-        if(mApp.getPackageName().equals(packageName))
-        {
+        if(mApp.getPackageName().equals(packageName)) {
             Log.e(Tag, String.format("\tthis notify cames from inside, ignore"));
 
             return;
         }
         Log.e(Tag, "currentSpace "+currentSpace());
 
-        if(isSystemApp(packageName) && currentSpace())
-        {
+        if (isInWhiteList(packageName)) {
+
+            Log.d(Tag, "[packageName]" + " in white list");
+            return;
+        }
+
+        if(isSystemApp(packageName) && currentSpace()) {
             Log.e(Tag, "\tdelete this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
 
             return;
         }
 
-        if(currentSpace())
-        {
+        if(currentSpace()) {
             Log.e(Tag, "\tsnooze this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
         }
@@ -153,8 +164,7 @@ public class NotificationListener extends NotificationListenerService {
         return false;
     }
 
-    public static void clearAllNotifications()
-    {
+    public static void clearAllNotifications() {
         Log.e("zs_NotificationListener", "clearAllNotifications");
 
         Intent intent = new Intent();
