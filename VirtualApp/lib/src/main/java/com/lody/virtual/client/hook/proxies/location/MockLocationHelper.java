@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.proxies.location;
 
 import android.os.Build;
+import android.util.ArrayMap;
 
 import com.lody.virtual.client.env.VirtualGPSSatalines;
 import com.lody.virtual.client.ipc.VLocationManager;
@@ -12,10 +13,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import mirror.android.location.GpsStatus;
 import mirror.android.location.GpsStatusL;
 import mirror.android.location.LocationManager;
+import mirror.android.location.LocationManagerQ;
 
 /**
  * @author Lody
@@ -59,7 +62,9 @@ public class MockLocationHelper {
         if(LocationManager.mGpsStatusListeners == null){
             return;
         }
-        HashMap mGpsStatusListeners = LocationManager.mGpsStatusListeners.get(locationManager);
+        Map mGpsStatusListeners = BuildCompat.isQ()?
+                LocationManagerQ.mGpsStatusListeners.get(locationManager)
+                :LocationManager.mGpsStatusListeners.get(locationManager);
         for(Object listenerTransport : mGpsStatusListeners.values()){
             invokeSvStatusChanged(listenerTransport);
             break;

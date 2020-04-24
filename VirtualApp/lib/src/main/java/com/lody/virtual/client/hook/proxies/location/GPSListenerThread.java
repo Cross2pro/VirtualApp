@@ -5,6 +5,7 @@ import android.os.Build.VERSION;
 import android.os.Handler;
 
 import com.lody.virtual.client.ipc.VirtualLocationManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.remote.vloc.VLocation;
 
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import mirror.android.location.LocationManager;
+import mirror.android.location.LocationManagerQ;
 
 
 class GPSListenerThread extends TimerTask {
@@ -117,18 +119,27 @@ class GPSListenerThread extends TimerTask {
                     Object transport = entry.getKey();
                     Map gpsStatusListeners;
                     if (VERSION.SDK_INT >= 24) {
-                        Map nmeaListeners = LocationManager.mGnssNmeaListeners.get(transport);
-                        notifyGPSStatus(LocationManager.mGnssStatusListeners.get(transport));
-                        notifyMNmeaListener(nmeaListeners);
-                        gpsStatusListeners = LocationManager.mGpsStatusListeners.get(transport);
+                        notifyGPSStatus(BuildCompat.isQ()?
+                                LocationManagerQ.mGnssStatusListeners.get(transport)
+                                :LocationManager.mGnssStatusListeners.get(transport));
+                        notifyMNmeaListener(BuildCompat.isQ()?
+                                LocationManagerQ.mGnssNmeaListeners.get(transport)
+                                :LocationManager.mGnssNmeaListeners.get(transport));
+                        gpsStatusListeners = BuildCompat.isQ()?
+                                LocationManagerQ.mGpsStatusListeners.get(transport)
+                                :LocationManager.mGpsStatusListeners.get(transport);
                         notifyGPSStatus(gpsStatusListeners);
-                        notifyMNmeaListener(LocationManager.mGpsNmeaListeners.get(transport));
+                        notifyMNmeaListener(BuildCompat.isQ()?
+                                LocationManagerQ.mGpsNmeaListeners.get(transport)
+                                :LocationManager.mGpsNmeaListeners.get(transport));
                     } else {
                         gpsStatusListeners = LocationManager.mGpsStatusListeners.get(transport);
                         notifyGPSStatus(gpsStatusListeners);
                         notifyMNmeaListener(LocationManager.mNmeaListeners.get(transport));
                     }
-                    final Map listeners = LocationManager.mListeners.get(transport);
+                    final Map listeners = BuildCompat.isQ()?
+                            LocationManagerQ.mListeners.get(transport)
+                            :LocationManager.mListeners.get(transport);
                     if (gpsStatusListeners != null && !gpsStatusListeners.isEmpty()) {
                         if (listeners == null || listeners.isEmpty()) {
                             // listeners not ready

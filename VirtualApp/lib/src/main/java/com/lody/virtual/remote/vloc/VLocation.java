@@ -96,9 +96,17 @@ public class VLocation implements Parcelable {
         Location location = new Location(LocationManager.GPS_PROVIDER);
         location.setAccuracy(8f);
         Bundle extraBundle = new Bundle();
-        location.setBearing(bearing);
+        if (bearing == 0) {
+            location.setBearing(0.1f);
+        } else {
+            location.setBearing(bearing);
+        }
         Reflect.on(location).call("setIsFromMockProvider", false);
-        location.setLatitude(latitude);
+        if (latitude == 0) {
+            location.setLatitude(1.01f);
+        } else {
+            location.setLatitude(latitude);
+        }
         location.setLongitude(longitude);
         location.setSpeed(speed);
         location.setTime(System.currentTimeMillis());
