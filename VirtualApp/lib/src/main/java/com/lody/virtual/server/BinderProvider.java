@@ -137,6 +137,7 @@ public final class BinderProvider extends ContentProvider {
         clearOldProcess(context);
         //xdja
         VirtualCore.get().preLaunchApp();
+        VirtualCore.getConfig().onPreLunchApp();
         return true;
     }
 

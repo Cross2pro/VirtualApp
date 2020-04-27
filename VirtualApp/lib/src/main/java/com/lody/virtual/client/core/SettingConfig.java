@@ -112,6 +112,10 @@ public abstract class SettingConfig {
         return false;
     }
 
+    public void onPreLunchApp(){
+
+    }
+
     public static class FakeWifiStatus {
 
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";
