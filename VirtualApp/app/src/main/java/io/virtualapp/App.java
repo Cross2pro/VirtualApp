@@ -97,6 +97,12 @@ public class App extends Application {
                 //TODO 启动安通+
             }
         }
+
+        @Override
+        public boolean isClearInvalidTask() {
+            //不清理残留的任务记录（安全盒保活的情况，无法清理，反而弹出提示
+            return false;
+        }
     };
 
     public static App getApp() {

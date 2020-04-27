@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
@@ -130,11 +129,15 @@ public final class BinderProvider extends ContentProvider {
         /* End Changed by XDJA */
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
         sInitialized = true;
-        //下面2个清理，确保在无任何app启动之前执行，防止误清理
-        //清理无效的task
-        clearOldTask(context);
-        //清理无效的其他进程
-        clearOldProcess(context);
+        if(context != null) {
+            //下面2个清理，确保在无任何app启动之前执行，防止误清理
+            if (VirtualCore.getConfig().isClearInvalidTask()) {
+                //清理无效的task
+                clearOldTask(context);
+                //清理无效的其他进程
+                clearOldProcess(context);
+            }
+        }
         //xdja
         VirtualCore.get().preLaunchApp();
         VirtualCore.getConfig().onPreLunchApp();

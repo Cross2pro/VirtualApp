@@ -116,6 +116,10 @@ public abstract class SettingConfig {
 
     }
 
+    public boolean isClearInvalidTask(){
+        return true;
+    }
+
     public static class FakeWifiStatus {
 
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";
