@@ -15,6 +15,7 @@ import android.os.WorkSource;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
@@ -143,6 +144,7 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 return super.call(who, method, args);
             }
         });
+        addMethodProxy(new IsScanAlwaysAvailable());
         addMethodProxy(new GetConnectionInfo());
         addMethodProxy(new GetScanResults());
         addMethodProxy(new ReplaceCallingPkgMethodProxy("getBatchedScanResults"));
@@ -210,8 +212,8 @@ public class WifiManagerStub extends BinderInvocationProxy {
 
                 //返回一个无用的wifiinfo
                 WifiInfo info = mirror.android.net.wifi.WifiInfo.ctor.newInstance();
-                mirror.android.net.wifi.WifiInfo.mBSSID.set(info, "00:00:00:00:00:00");
-                mirror.android.net.wifi.WifiInfo.mMacAddress.set(info, "00:00:00:00:00:00");
+                mirror.android.net.wifi.WifiInfo.mBSSID.set(info, "20:00:00:00:00:00");
+                mirror.android.net.wifi.WifiInfo.mMacAddress.set(info, "20:00:00:00:00:00");
 
                 return info;
             }
@@ -221,8 +223,8 @@ public class WifiManagerStub extends BinderInvocationProxy {
             WifiInfo wifiInfo = (WifiInfo) method.invoke(who, args);
             if (wifiInfo != null) {
                 if (isFakeLocationEnable()) {
-                    mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "00:00:00:00:00:00");
-                    mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "00:00:00:00:00:00");
+                    mirror.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "20:00:00:00:00:00");
+                    mirror.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "20:00:00:00:00:00");
                 } else {
                     VDeviceConfig config = getDeviceConfig();
                     if (config.enable) {
@@ -234,6 +236,21 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 }
             }
             return wifiInfo;
+        }
+    }
+
+    private class IsScanAlwaysAvailable extends MethodProxy{
+        @Override
+        public String getMethodName() {
+            return "isScanAlwaysAvailable";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if(isFakeLocationEnable()){
+                return false;
+            }
+            return super.call(who, method, args);
         }
     }
 
@@ -251,11 +268,40 @@ public class WifiManagerStub extends BinderInvocationProxy {
                 Log.e("geyao_TelephonyRegStub", "getScanResults return");
                 return new ArrayList<ScanResult>();
             }
-//            noinspection unchecked
+            //noinspection unchecked
+            List<ScanResult> list = (List<ScanResult>) super.call(who, method, args);
             if (isFakeLocationEnable()) {
-                return new ArrayList<ScanResult>();
+                WifiManager wifiManager = (WifiManager) VClient.get().getCurrentApplication().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+                ArrayList<ScanResult> results = new ArrayList<ScanResult>();
+                if (list != null && list.size() > 0) {
+                    if (wifiInfo != null) {
+                        for (ScanResult sr : list) {
+                            if (TextUtils.equals(sr.SSID, wifiInfo.getSSID())) {
+                                sr.BSSID = "20:00:00:00:00:00";
+                                results.add(sr);
+                                break;
+                            }
+                        }
+                    }
+                    if (results.size() < 1) {
+                        for (ScanResult sr : list) {
+                            sr.BSSID = "20:00:00:00:00:00";
+                            results.add(sr);
+                            if (results.size() >= 1) {
+                                break;
+                            }
+                        }
+                    }
+                }
+                return results;
             }
-            return super.call(who, method, args);
+            return list;
+        }
+
+        @Override
+        public boolean isEnable() {
+            return isAppProcess();
         }
     }
 

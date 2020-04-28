@@ -24,6 +24,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -1820,6 +1821,13 @@ class MethodProxies {
                     intent = intentData.intent;
                 } else {
                     SpecialComponentList.unprotectIntent(intent);
+                }
+                if (isFakeLocationEnable()) {
+                    if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(intent.getAction())) {
+                        intent.putExtra("resultsUpdated", false);
+                    } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                        intent.putExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+                    }
                 }
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
                     IIntentReceiverJB.performReceive.call(mOld, intent, resultCode, data, extras, ordered, sticky, sendingUser);

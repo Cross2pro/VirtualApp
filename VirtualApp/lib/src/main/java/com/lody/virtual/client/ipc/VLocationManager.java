@@ -14,6 +14,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.proxies.location.MockLocationHelper;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.vloc.VLocation;
 
@@ -32,6 +33,7 @@ import java.util.Map;
  * 实现代码少：GpsStatusListenerTransport、ListenerTransport这2个对象，hook里面的方法，修改参数，都是binder
  */
 public class VLocationManager {
+    public static final String TAG = "VLoc";
     private Handler mWorkHandler;
     private HandlerThread mHandlerThread;
     private final List<Object> mGpsListeners = new ArrayList<>();
@@ -190,7 +192,7 @@ public class VLocationManager {
         }
         final Object listenerTransport = args[index];
         if (listenerTransport == null) {
-            Log.e("VLoc", "ListenerTransport:null");
+            Log.e(TAG, "ListenerTransport:null");
         } else {
             //mInterval
             long mInterval;
