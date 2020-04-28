@@ -47,6 +47,7 @@ import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
@@ -343,10 +344,10 @@ public final class VirtualCore {
 
     //Add by xdja
     public void preLaunchApp() {
-
         if (shouldLaunchApp("com.xdja.dialer")) {
             VirtualCore.get().context.startService(new Intent(VirtualCore.get().context, PhoneCallService.class));
         }
+
     }
 
     //Add by xdja
@@ -359,7 +360,7 @@ public final class VirtualCore {
     }
 
     //Add by xdja
-    private boolean shouldLaunchApp(String pkgName) {
+    public boolean shouldLaunchApp(String pkgName) {
         return (isAppInstalled(pkgName) && !isAppRunning(pkgName, myUserId(), false));
     }
 
@@ -1245,5 +1246,6 @@ public final class VirtualCore {
 
         public void onChildProcess() {
         }
+
     }
 }
