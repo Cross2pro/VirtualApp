@@ -3537,8 +3537,9 @@
         <meta-data
             android:name="VA_VERSION"
             android:value="${VA_VERSION}" />
-        <meta-data
+        <!-- true的话，全屏应用占用刘海，会被挡住内容 -->
+        <!--<meta-data
             android:name="android.notch_support"
-            android:value="true" />
+            android:value="true" />-->
     </application>
 </manifest>
