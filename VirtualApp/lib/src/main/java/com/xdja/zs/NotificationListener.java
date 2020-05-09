@@ -17,19 +17,14 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 @RequiresApi(api = Build.VERSION_CODES.N)
 @SuppressLint("OverrideAbstract")
 public class NotificationListener extends NotificationListenerService {
     String Tag = "zs_NotificationListener";
 
     public NotificationListener() {
-        whiteList.add("com.android.nfc");
     }
 
-    private Set<String> whiteList = ConcurrentHashMap.<String>newKeySet();
     private Context mApp = null;
     private PackageManager packageManager = null;
 
@@ -41,8 +36,8 @@ public class NotificationListener extends NotificationListenerService {
         packageManager = mApp.getPackageManager();
     }
 
-    private boolean isInWhiteList(String packageName) {
-        return whiteList.contains(packageName);
+    private boolean isInWhiteList(String packageName, boolean currentSpace) {
+        return VirtualCore.getConfig().isCanShowNotification(packageName, currentSpace);
     }
 
 
@@ -127,15 +122,16 @@ public class NotificationListener extends NotificationListenerService {
 
             return;
         }
-        Log.e(Tag, "currentSpace "+currentSpace());
+        boolean currentSpace = currentSpace();
+        Log.e(Tag, "currentSpace "+currentSpace);
 
-        if (isInWhiteList(packageName)) {
+        if (isInWhiteList(packageName, currentSpace)) {
 
             Log.d(Tag, "[packageName]" + " in white list");
             return;
         }
 
-        if(isSystemApp(packageName) && currentSpace()) {
+        if(isSystemApp(packageName) && currentSpace) {
             Log.e(Tag, "\tdelete this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
 
