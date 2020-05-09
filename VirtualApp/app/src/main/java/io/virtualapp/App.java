@@ -103,6 +103,12 @@ public class App extends Application {
             //不清理残留的任务记录（安全盒保活的情况，无法清理，反而弹出提示
             return false;
         }
+
+        @Override
+        public boolean isCanShowNotification(String packageName, boolean currentSpace) {
+            //无论哪个域，都显示NFC通知栏
+            return "com.android.nfc".equals(packageName);
+        }
     };
 
     public static App getApp() {

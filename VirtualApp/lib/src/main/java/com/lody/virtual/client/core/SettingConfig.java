@@ -120,6 +120,10 @@ public abstract class SettingConfig {
         return true;
     }
 
+    public boolean isCanShowNotification(String packageName, boolean currentSpace) {
+        return false;
+    }
+
     public static class FakeWifiStatus {
 
         public static String DEFAULT_BSSID = "66:55:44:33:22:11";
