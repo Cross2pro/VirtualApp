@@ -11,9 +11,11 @@ import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.ArraySet;
+import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.stub.StubManifest;
@@ -95,8 +97,19 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
             if (paramValue != null) {
                 if (paramValue instanceof ShortcutInfo) {
                     ShortcutInfo shortcutInfo = (ShortcutInfo) paramValue;
-                    args[infoIndex] = wrapper(
-                            VClient.get().getCurrentApplication(), shortcutInfo, getAppPkg(), getAppUserId());
+
+                    Log.e("lxf","shortinfo 1 " + shortcutInfo.getIntent());
+                    Intent i = new Intent(Constants.ACTION_SHORTCUT);
+                    i.putExtra("shortcutinfo",shortcutInfo);
+                    i.putExtra("package",getAppPkg());
+                    VirtualCore.get().getContext().sendBroadcast(i);
+
+                    //添加快捷方式
+
+//                    args[infoIndex] = wrapper(
+//                            VClient.get().getCurrentApplication(), shortcutInfo, getAppPkg(), getAppUserId());
+
+                    return defValue;
                 } else {
                     List<ShortcutInfo> result = new ArrayList<>();
                     List list;
