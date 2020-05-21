@@ -25,6 +25,7 @@ import com.lody.virtual.client.core.VirtualCore;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class OutsideProxyContentProvider extends ContentProvider {
         for (String path : paths) {
             builder.appendPath(path);
         }
-        builder.query(uri.getQuery());
+        builder.encodedQuery(uri.getEncodedQuery());
         return builder.build();
     }
 
@@ -65,7 +66,7 @@ public class OutsideProxyContentProvider extends ContentProvider {
             for (int i = 1; i < size; i++) {
                 builder.appendPath(paths.get(i));
             }
-            builder.query(uri.getQuery());
+            builder.encodedQuery(uri.getEncodedQuery());
             return builder.build();
         }
         return uri;

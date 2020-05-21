@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -40,6 +41,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.InstallerSetting;
+import com.lody.virtual.client.stub.OutsideProxyContentProvider;
 import com.lody.virtual.oem.OemPermissionHelper;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -151,6 +153,12 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             });
         }
         VirtualCore.get().registerReceiver(this, mReceiver, new IntentFilter(Constants.ACTION_BADGER_CHANGE));
+        Uri u1 = Uri.parse("content://123456/1/2/3?a=1&b=2");
+        Uri u2 = OutsideProxyContentProvider.toProxyUri(u1);
+        Uri u3 = OutsideProxyContentProvider.toRealUri(u2);
+        Log.e("V++", "u1="+u1);
+        Log.e("V++", "u2="+u2);
+        Log.e("V++", "u3="+u3);
     }
 
     private VirtualCore.Receiver mReceiver = new VirtualCore.Receiver() {
