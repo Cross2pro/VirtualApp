@@ -22,6 +22,7 @@ public class StubManifest {
     public static String STUB_CP_AUTHORITY = null;
     public static String STUB_CP_AUTHORITY_64BIT = null;
 
+    public static String PROXY_CP_AUTHORITY_OUTSIDE = null;
     public static String PROXY_CP_AUTHORITY = null;
     public static String PROXY_CP_AUTHORITY_64BIT = null;
 

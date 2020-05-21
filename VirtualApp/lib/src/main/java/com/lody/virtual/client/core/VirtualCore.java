@@ -274,6 +274,7 @@ public final class VirtualCore {
             StubManifest.PACKAGE_NAME = packageName;
             StubManifest.STUB_CP_AUTHORITY = packageName + ".virtual_stub_";
             StubManifest.PROXY_CP_AUTHORITY = packageName + ".provider_proxy";
+            StubManifest.PROXY_CP_AUTHORITY_OUTSIDE =  packageName + ".provider_outside";
 
             if (packageName64 == null) {
                 packageName64 = "NO_64BIT";
