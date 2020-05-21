@@ -1,13 +1,18 @@
 package com.lody.virtual.client.hook.providers;
 
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.MethodBox;
+import com.lody.virtual.client.stub.ContentProviderProxy;
 import com.lody.virtual.client.stub.InstallerSetting;
+import com.lody.virtual.client.stub.OutsideProxyContentProvider;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.xdja.mms.SmsConstants;
 
@@ -76,6 +81,30 @@ public class SettingsProviderHook extends ExternalProviderHook {
                 String pkg = getValue(res, SmsConstants.DEFAULT_SMS_APP_SETTING);
                 if (VirtualCore.get().getHostPkg().equals(pkg)) {
                     return wrapBundle(SmsConstants.DEFAULT_SMS_APP_SETTING, InstallerSetting.MESSAGING_PKG);
+                }
+                return res;
+            } else if(Settings.System.RINGTONE.equals(arg)){
+                Bundle res = methodBox.call();
+                String uriStr = getValue(res, Settings.System.RINGTONE);
+                if(!TextUtils.isEmpty(uriStr)) {
+                    Uri uri = OutsideProxyContentProvider.toProxyUri(Uri.parse(uriStr));
+                    return wrapBundle(Settings.System.RINGTONE, uri.toString());
+                }
+                return res;
+            } else if(Settings.System.NOTIFICATION_SOUND.equals(arg)){
+                Bundle res = methodBox.call();
+                String uriStr = getValue(res, Settings.System.NOTIFICATION_SOUND);
+                if(!TextUtils.isEmpty(uriStr)) {
+                    Uri uri = OutsideProxyContentProvider.toProxyUri(Uri.parse(uriStr));
+                    return wrapBundle(Settings.System.NOTIFICATION_SOUND, uri.toString());
+                }
+                return res;
+            } else if(Settings.System.ALARM_ALERT.equals(arg)){
+                Bundle res = methodBox.call();
+                String uriStr = getValue(res, Settings.System.ALARM_ALERT);
+                if(!TextUtils.isEmpty(uriStr)) {
+                    Uri uri = OutsideProxyContentProvider.toProxyUri(Uri.parse(uriStr));
+                    return wrapBundle(Settings.System.ALARM_ALERT, uri.toString());
                 }
                 return res;
             }

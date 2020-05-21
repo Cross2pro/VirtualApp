@@ -3383,6 +3383,11 @@
             android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
             android:process=":p99" />
 
+        <!-- 放在main进程，用来读取外部的provider -->
+        <provider
+            android:name=".client.stub.OutsideProxyContentProvider"
+            android:authorities="${AUTHORITY_PREFIX}.provider_outside"
+            android:exported="false" />
 
         <provider
             android:name=".client.stub.ContentProviderProxy"
