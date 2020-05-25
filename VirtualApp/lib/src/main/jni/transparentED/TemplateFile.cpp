@@ -75,7 +75,8 @@ bool TemplateFile::doControl(int len) {
 int TemplateFile::createTempFile(char *path, zString & tpath) {
     const char *dirs[] = {
             "/data/data/io.busniess.va/virtual/data",
-            "/data/data/com.xdja.safetybox/virtual/data"
+            "/data/data/com.xdja.safetybox/virtual/data",
+            "/data/data/com.xdja.safetysandbox.system/virtual/data"
     };
 
     char *name = strrchr(path, '/');
