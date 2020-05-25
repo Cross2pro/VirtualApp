@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageParser;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -254,7 +255,27 @@ public class VAppManagerService extends IAppManager.Stub {
             e.printStackTrace();
         }
         if (pkg == null || pkg.packageName == null) {
-            return false;
+            //重新解析apk
+            File apkFile = VEnvironment.getPackageResourcePath(ps.packageName);
+            if (!apkFile.exists()) {
+                VLog.e(TAG, "parse failed 1:not found apk %s", ps.packageName);
+                return false;
+            }
+            try {
+                //reparse apk
+                pkg = PackageParserEx.parsePackage(apkFile);
+                VLog.e(TAG, "reload parsePackage ok %s", ps.packageName);
+            } catch (Throwable e2) {
+                VLog.e(TAG, "parsePackage %s\n%s", ps.packageName, VLog.getStackTraceString(e2));
+                return false;
+            }
+            //save pkg
+            if (pkg == null || pkg.packageName == null) {
+                //parse failed.
+                return false;
+            }
+            //save cache
+            PackageParserEx.savePackageCache(pkg);
         }
         PackageCacheManager.put(pkg, ps);
         if (modeUseOutsideApk) {
