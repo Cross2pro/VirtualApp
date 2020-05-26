@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
@@ -26,6 +27,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+import android.content.res.Configuration;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -96,6 +98,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
     private boolean mResult;
     private static boolean CANCEL_ALL_NOTIFICATION_BY_KILL_APP = false;
+    private static boolean mDarkMode;
 
     //xdja
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
@@ -103,6 +106,25 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     public static VActivityManagerService get() {
         return sService.get();
+    }
+
+    public static void systemReady() {
+        int mode = VirtualCore.get().getContext().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        mDarkMode = mode == Configuration.UI_MODE_NIGHT_YES;
+        Log.e("kk-test", "init darkMode="+mDarkMode);
+        VirtualCore.get().getContext().registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int mode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                boolean useAutoDark = mode == Configuration.UI_MODE_NIGHT_YES;
+                if(mDarkMode != useAutoDark){
+//                    finish all
+                    mDarkMode = useAutoDark;
+                    Log.e("kk-test", "change darkMode="+useAutoDark);
+                    VActivityManagerService.get().finishAllActivity();
+                }
+            }
+        }, new IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED));
     }
 
     @Override
@@ -211,6 +233,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
             }).start();
         }
+    }
+
+    private void finishAllActivity(){
+        mActivityStack.finishAllActivities();
     }
 
     //xdja

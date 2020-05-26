@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -157,6 +158,25 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
+    void finishAllActivities(){
+        synchronized (mHistory) {
+            int N = mHistory.size();
+            while (N-- > 0) {
+                TaskRecord task = mHistory.valueAt(N);
+                synchronized (task.activities) {
+                    for (ActivityRecord r : task.activities) {
+                        Log.e("wxd", " finishActivity : " + r.component);
+                        try {
+                            r.process.client.finishActivity(r.token);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     //xdja
     void finishAllActivity(ProcessRecord record) {
         synchronized (mHistory) {
@@ -282,9 +302,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 && ComponentUtils.intentFilterEquals(reuseTask.taskRoot, intent)
                 && reuseTask.taskRoot.getFlags() == intent.getFlags();
 
-        if (startTaskToFront) {
-            return 0;
-        }
         ActivityRecord notifyNewIntentActivityRecord = null;
         boolean marked = false;
         ComponentName component = ComponentUtils.toComponentName(info);
@@ -408,6 +425,9 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             }
             return 0;
         }
+        if (startTaskToFront) {
+            return 0;
+        }
         ActivityRecord targetRecord = newActivityRecord(intent, info, resultTo, userId);
         Intent destIntent = startActivityProcess(userId, targetRecord, intent, info, callingUid, callingPid);
 
@@ -448,7 +468,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
             destIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 // noinspection deprecation
                 destIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
