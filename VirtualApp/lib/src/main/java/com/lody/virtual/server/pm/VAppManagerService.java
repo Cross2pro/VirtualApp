@@ -596,7 +596,7 @@ public class VAppManagerService extends IAppManager.Stub {
             case FORCE_UPDATE:
                 return true;
             case COMPARE_VERSION:
-                return existOne.mVersionCode < newOne.mVersionCode;
+                return existOne.mVersionCode <= newOne.mVersionCode;
             case TERMINATE_IF_EXIST:
                 return false;
         }
