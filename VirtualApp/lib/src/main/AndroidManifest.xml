@@ -3538,6 +3538,9 @@
             </intent-filter>
         </activity>
 
+        <meta-data android:name="android.vivo_nightmode_support" android:value="false"/>
+        <meta-data android:name="com.coloros.DisableSystemDarkMode" android:value="true"/>
+
         <!-- sms -->
         <meta-data
             android:name="VA_VERSION"

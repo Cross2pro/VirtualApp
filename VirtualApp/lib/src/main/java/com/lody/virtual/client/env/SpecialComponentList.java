@@ -76,6 +76,7 @@ public final class SpecialComponentList {
         SYSTEM_BROADCAST_ACTION.add(Intent.ACTION_HEADSET_PLUG);
         SYSTEM_BROADCAST_ACTION.add("android.media.VOLUME_CHANGED_ACTION");
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.CONFIGURATION_CHANGED");
+        SYSTEM_BROADCAST_ACTION.add("android.intent.action.SPLIT_CONFIGURATION_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("android.intent.action.DYNAMIC_SENSOR_CHANGED");
         SYSTEM_BROADCAST_ACTION.add("dynamic_sensor_change");
         SYSTEM_BROADCAST_ACTION.add("com.xdja.dialer.removecall");

@@ -128,6 +128,7 @@ public final class BinderProvider extends ContentProvider {
 //        addService(ServiceManagerNative.CKMSSAFEKEY, VSafekeyCkmsManagerService.get());
         /* End Changed by XDJA */
         addService(ServiceManagerNative.FLOATICONBALL, ActivityCounterService.get());
+        VActivityManagerService.systemReady();
         sInitialized = true;
         if(context != null) {
             //下面2个清理，确保在无任何app启动之前执行，防止误清理
