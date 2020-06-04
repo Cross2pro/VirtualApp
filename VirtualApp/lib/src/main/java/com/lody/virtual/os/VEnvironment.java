@@ -181,6 +181,10 @@ public class VEnvironment {
         return ensureCreated(new File(getDataDirectory(), "app"));
     }
 
+    public static File getEmptySdcardDirectory() {
+        return ensureCreated(new File(getDataDirectory(), "empty_sdcard"));
+    }
+
     public static File getDataAppDirectory64() {
         return ensureCreated(new File(getDataDirectory64(), "app"));
     }

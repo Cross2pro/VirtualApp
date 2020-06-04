@@ -852,7 +852,6 @@ public final class VClient extends IVClient.Stub {
         VirtualStorageManager vsManager = VirtualStorageManager.get();
         //xdja
         vsManager.setVirtualStorage(info.packageName, userId, VEnvironment.getExternalStorageDirectory(userId).getAbsolutePath());
-
         String vsPath = vsManager.getVirtualStorage(info.packageName, userId);
         boolean enable = vsManager.isVirtualStorageEnable(info.packageName, userId);
         if (enable && vsPath != null) {
@@ -870,8 +869,12 @@ public final class VClient extends IVClient.Stub {
                             VLog.d(TAG, e.toString());
                         }
                     }
-
-                    NativeEngine.redirectDirectory(mountPoint, vsPath);
+                    if ("com.mxtech.videoplayer.ad".equals(packageName)) {
+                        NativeEngine.readOnly("/mnt/sdcard");//禁止访问
+                        NativeEngine.redirectDirectory("/mnt/sdcard", VEnvironment.getEmptySdcardDirectory().getPath());
+                    } else {
+                        NativeEngine.redirectDirectory(mountPoint, vsPath);
+                    }
                 }
             }
         }
