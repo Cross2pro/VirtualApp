@@ -14,6 +14,7 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewParent;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 
@@ -59,6 +60,8 @@ class Relayout extends BaseMethodProxy{
 
         mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
         infos.clear();
+        if(null==mImei||"".equals(mImei))
+            mImei = "信大捷按信息技术";
         infos.add(mImei);
 
         WaterMarkInfo waterMark = VWaterMarkManager.get().getWaterMark();
@@ -143,28 +146,17 @@ class Relayout extends BaseMethodProxy{
         if(omView!=null && omView.getClass().getName().equals("com.android.internal.policy.DecorView")){
             //横竖屏切换时会出现未绘制
             //omView.setForeground(null);
-            WindowInsets inset = omView.getRootWindowInsets();
-            int top = inset.getSystemWindowInsetBottom();
 
             int screenWidth = omView.getMeasuredWidth();
             int screenHeight = omView.getMeasuredHeight();
             Log.e(TAG,"relayout "+screenWidth +":"+ screenHeight);
 
             //长宽比例适配，去除小窗口水印绘制
-            Configuration configuration = VirtualCore.get().getContext().getResources().getConfiguration();
-            if(configuration.orientation==configuration.ORIENTATION_PORTRAIT){
-                Log.e(TAG,"h/w "+(((float)screenHeight/screenWidth)>1.5));
-            }else {
-                Log.e(TAG,"w/h "+(((float)screenWidth/screenHeight)>1.5));
-            }
-            if((((float)screenHeight/screenWidth)>1.5 && (configuration.orientation==configuration.ORIENTATION_PORTRAIT))
-                    || (((float)screenWidth/screenHeight)>1.5 && (configuration.orientation==configuration.ORIENTATION_LANDSCAPE))){
-                Bitmap mBackgroundBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(mBackgroundBitmap);
-                drawWaterMark(canvas,screenWidth,screenHeight);
-                Bitmap mDestBitmap = drawDestBitmap(mBackgroundBitmap,top,screenWidth,screenHeight);
-                omView.setForeground(new BitmapDrawable(mDestBitmap));
-            }
+            Bitmap srcBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(srcBitmap);
+            drawWaterMark(canvas,1080,2244);
+//          Bitmap mDestBitmap = drawDestBitmap(mBackgroundBitmap,top,screenWidth,screenHeight);
+            omView.setForeground(new BitmapDrawable(srcBitmap));
         }
 
         return super.call(who, method, args);
@@ -178,7 +170,7 @@ class Relayout extends BaseMethodProxy{
         Canvas canvas = new Canvas(mDestBitmap);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setAntiAlias(true);
-        Rect mTopSrcRect = new Rect(0, top, width, height+top);
+        Rect mTopSrcRect = new Rect(0, 0, width, height);
         Rect mTopDestRect = new Rect(0, 0, width, height);
         canvas.drawBitmap(src, mTopSrcRect, mTopDestRect, paint);
         return mDestBitmap;
@@ -208,11 +200,11 @@ class Relayout extends BaseMethodProxy{
         //文字基准线的下部距离-文字基准线的上部距离 = 文字高度
         float textHeight =  fm.descent - fm.ascent;
         int index1 = 0;
-        for (int positionY = 0; positionY <= height * 3; positionY += height / 4) {
+        for (int positionY = 0; positionY <= height * 2; positionY += height / 4) {
             //旋转后每行会有空白开头;避免对齐
             float fromX = -(index1++ % 2)*(width/3);
             fromX -= (float) (Math.tan(roate)*positionY);
-            for (float positionX = fromX; positionX < width; positionX += (textWidth+distance)) {
+            for (float positionX = fromX; positionX < width*2; positionX += (textWidth+distance)) {
                 int _positionY = positionY;
                 for (String s:infos) {
                     if(TextUtils.isEmpty(s)){
