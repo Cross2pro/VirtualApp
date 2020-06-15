@@ -60,7 +60,7 @@ class AppDefaultConfig {
                     VLog.i(TAG, "getExternalStorageDirectory=%s", Environment.getExternalStorageDirectory().getAbsolutePath());
                 }
                 //MX播放器默认扫描mnt的sdcard路径，导致重复显示
-                String[] paths = new String[]{Uri.encode(Environment.getExternalStorageDirectory().getAbsolutePath())};
+                String[] paths = new String[]{Uri.encode("/storage"), Uri.encode(Environment.getExternalStorageDirectory().getAbsolutePath())};
                 sharedPreferences
                         .edit()
                         .putInt("video_scan_roots.version", Build.VERSION.SDK_INT)
