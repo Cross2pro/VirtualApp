@@ -89,6 +89,13 @@ public abstract class SettingConfig {
         return false;
     }
 
+    /***
+     * 深色模式处理
+     */
+    public void onDarkModeChange(boolean isDarkMode){
+
+    }
+
     /**
      * 是否允许通过广播启动进程
      * 允许规则：

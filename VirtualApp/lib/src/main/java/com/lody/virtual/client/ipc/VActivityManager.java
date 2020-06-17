@@ -678,4 +678,11 @@ public class VActivityManager {
         }
     }
 
+    public void finishAllActivities(){
+        try {
+            getService().finishAllActivities();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }

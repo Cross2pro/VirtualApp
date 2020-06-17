@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.support.v7.app.AppCompatDelegate;
+import android.util.Log;
 
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.VServiceKeepAliveManager;
@@ -108,6 +110,13 @@ public class App extends Application {
         public boolean isCanShowNotification(String packageName, boolean currentSpace) {
             //无论哪个域，都显示NFC通知栏
             return "com.android.nfc".equals(packageName);
+        }
+
+        @Override
+        public void onDarkModeChange(boolean isDarkMode) {
+            //加密微信响应
+            Log.e("kk-test", "change darkMode="+isDarkMode);
+            VActivityManager.get().finishAllActivities();
         }
     };
 

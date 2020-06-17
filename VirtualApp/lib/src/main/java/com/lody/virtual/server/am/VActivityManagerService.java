@@ -111,7 +111,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public static void systemReady() {
         int mode = VirtualCore.get().getContext().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         mDarkMode = mode == Configuration.UI_MODE_NIGHT_YES;
-        Log.e("kk-test", "init darkMode="+mDarkMode);
         VirtualCore.get().getContext().registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -120,8 +119,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 if(mDarkMode != useAutoDark){
 //                    finish all
                     mDarkMode = useAutoDark;
-                    Log.e("kk-test", "change darkMode="+useAutoDark);
-                    VActivityManagerService.get().finishAllActivity();
+                    VirtualCore.getConfig().onDarkModeChange(mDarkMode);
                 }
             }
         }, new IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED));
@@ -235,7 +233,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
         }
     }
 
-    private void finishAllActivity(){
+    @Override
+    public void finishAllActivities(){
         mActivityStack.finishAllActivities();
     }
 
