@@ -114,9 +114,17 @@ public class App extends Application {
 
         @Override
         public void onDarkModeChange(boolean isDarkMode) {
-            //加密微信响应
+            //加密微信处理是微信重启，安全盒应该是最上层应用重启
+            String pkg = "com.tencent.mm";
             Log.e("kk-test", "change darkMode="+isDarkMode);
+            boolean needStartWeixin = false;
+            if(VActivityManager.get().isAppRunning("com.tencent.mm", 0, true)){
+                needStartWeixin = true;
+            }
             VActivityManager.get().finishAllActivities();
+            if(needStartWeixin) {
+                VActivityManager.get().startActivity(VirtualCore.get().getLaunchIntent(pkg, 0), 0);
+            }
         }
     };
 
