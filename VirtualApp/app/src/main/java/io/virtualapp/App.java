@@ -74,7 +74,7 @@ public class App extends Application {
         }
 
         @Override
-        public void startPreviewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack){
+        public void startPreviewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack) {
             super.startPreviewActivity(userId, info, callBack);
             //如果需要自定义，要注释super.startPreviewActivity，并且启动一个类似WindowPreviewActivity
         }
@@ -93,7 +93,7 @@ public class App extends Application {
         @Override
         public void onPreLunchApp() {
             //x进程启动
-            if(VirtualCore.get().shouldLaunchApp("com.xdja.actoma")){
+            if (VirtualCore.get().shouldLaunchApp("com.xdja.actoma")) {
                 //TODO 启动安通+
             }
         }
@@ -108,6 +108,12 @@ public class App extends Application {
         public boolean isCanShowNotification(String packageName, boolean currentSpace) {
             //无论哪个域，都显示NFC通知栏
             return "com.android.nfc".equals(packageName);
+        }
+
+        @Override
+        public void onFirstInstall(String packageName, boolean isClearData) {
+            //running in server process.
+            AppDefaultConfig.setDefaultData(packageName);
         }
     };
 
@@ -139,7 +145,7 @@ public class App extends Application {
             public void onMainProcess() {
                 AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
                 Once.initialise(App.this);
-                
+
             }
 
             @Override
