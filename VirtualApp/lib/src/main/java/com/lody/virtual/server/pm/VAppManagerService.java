@@ -539,6 +539,9 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         res.isSuccess = true;
         VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(res.packageName, VServiceKeepAliveManager.ACTION_TEMP_ADD);
+        if(!res.isUpdate) {
+            VirtualCore.getConfig().onFirstInstall(ps.packageName, false);
+        }
         return res;
     }
 
@@ -700,6 +703,9 @@ public class VAppManagerService extends IAppManager.Stub {
             V64BitHelper.cleanPackageData64(userId, ps.packageName);
         }
         VNotificationManagerService.get().cancelAllNotification(ps.packageName, userId);
+        if(userId == 0 || userId == -1) {
+            VirtualCore.getConfig().onFirstInstall(ps.packageName, true);
+        }
     }
 
     public boolean cleanPackageData(String pkg, int userId) {

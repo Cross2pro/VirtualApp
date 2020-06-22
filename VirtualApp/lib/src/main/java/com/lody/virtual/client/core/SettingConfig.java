@@ -106,6 +106,10 @@ public abstract class SettingConfig {
         return false;
     }
 
+    public void onFirstInstall(String packageName, boolean isClearData){
+
+    }
+
     /**
      * 预留接口：定制白屏/黑屏，透明的默认显示界面
      * @param userId

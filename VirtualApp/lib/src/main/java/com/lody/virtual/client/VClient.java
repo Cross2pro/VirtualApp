@@ -869,13 +869,9 @@ public final class VClient extends IVClient.Stub {
                             VLog.d(TAG, e.toString());
                         }
                     }
-                    if ("com.mxtech.videoplayer.ad".equals(packageName)) {
-                        NativeEngine.readOnly("/mnt/sdcard");//禁止访问
-                        NativeEngine.redirectDirectory("/mnt/sdcard", VEnvironment.getEmptySdcardDirectory().getPath());
-                    } else {
-                        NativeEngine.redirectDirectory(mountPoint, vsPath);
-                    }
+                    NativeEngine.redirectDirectory(mountPoint, vsPath);
                 }
+
             }
         }
 
