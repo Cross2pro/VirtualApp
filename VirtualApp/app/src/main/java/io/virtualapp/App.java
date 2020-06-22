@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.support.v7.app.AppCompatDelegate;
+import android.util.Log;
 
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.VServiceKeepAliveManager;
@@ -111,6 +113,20 @@ public class App extends Application {
         }
 
         @Override
+        public void onDarkModeChange(boolean isDarkMode) {
+            //加密微信处理是微信重启，安全盒应该是最上层应用重启
+            String pkg = "com.tencent.mm";
+            Log.e("kk-test", "change darkMode="+isDarkMode);
+            boolean needStartWeixin = false;
+            if(VActivityManager.get().isAppRunning("com.tencent.mm", 0, true)){
+                needStartWeixin = true;
+            }
+            VActivityManager.get().finishAllActivities();
+            if(needStartWeixin) {
+                VActivityManager.get().startActivity(VirtualCore.get().getLaunchIntent(pkg, 0), 0);
+            }
+        }
+
         public void onFirstInstall(String packageName, boolean isClearData) {
             //running in server process.
             AppDefaultConfig.setDefaultData(packageName);

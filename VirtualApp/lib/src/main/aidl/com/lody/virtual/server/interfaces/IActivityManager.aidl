@@ -131,4 +131,6 @@ interface IActivityManager{
     List<AppRunningProcessInfo> getRunningAppProcesses(String packageName, int userId);
 
     boolean includeExcludeFromRecentsFlag(in IBinder token);
+
+    void finishAllActivities();
 }
