@@ -132,5 +132,9 @@ interface IActivityManager{
 
     boolean includeExcludeFromRecentsFlag(in IBinder token);
 
+    void onBackHome();
+
+    long getLastBackHomeTime();
+
     void finishAllActivities();
 }

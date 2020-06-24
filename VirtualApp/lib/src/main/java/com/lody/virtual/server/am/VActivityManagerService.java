@@ -99,6 +99,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private boolean mResult;
     private static boolean CANCEL_ALL_NOTIFICATION_BY_KILL_APP = false;
     private static boolean mDarkMode;
+    private long lastBackHomeTime;
 
     //xdja
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
@@ -1234,5 +1235,20 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public boolean includeExcludeFromRecentsFlag(IBinder token) {
         return mActivityStack.includeExcludeFromRecentsFlag(token);
+    }
+
+    @Override
+    public void onBackHome() {
+        synchronized (this) {
+            lastBackHomeTime = System.currentTimeMillis();
+            Log.e("kk-test", "lastBackHomeTime="+lastBackHomeTime);
+        }
+    }
+
+    @Override
+    public long getLastBackHomeTime() {
+        synchronized (this) {
+            return lastBackHomeTime;
+        }
     }
 }
