@@ -1,4 +1,4 @@
-package io.virtualapp;
+package com.lody.virtual.client.core;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -11,7 +11,6 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -22,7 +21,7 @@ import java.io.InputStream;
 
 import mirror.android.app.SharedPreferencesImpl;
 
-class AppDefaultConfig {
+public class AppDefaultConfig {
     private static final boolean DEBUG = false;
     private static final String TAG = "kk-test";
 

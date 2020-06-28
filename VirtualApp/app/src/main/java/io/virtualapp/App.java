@@ -8,6 +8,7 @@ import android.content.pm.ServiceInfo;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 
+import com.lody.virtual.client.core.AppDefaultConfig;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
