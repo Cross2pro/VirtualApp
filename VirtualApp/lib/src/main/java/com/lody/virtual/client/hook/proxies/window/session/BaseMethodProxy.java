@@ -61,7 +61,7 @@ class Relayout extends BaseMethodProxy{
         mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
         infos.clear();
         if(null==mImei||"".equals(mImei))
-            mImei = "信大捷按信息技术";
+            mImei = "安全模式";
         infos.add(mImei);
 
         WaterMarkInfo waterMark = VWaterMarkManager.get().getWaterMark();
