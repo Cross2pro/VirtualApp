@@ -281,7 +281,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                     if (newTask || sourceTask == null) {
                         reuseTask = findTaskByAffinityLocked(userId, affinity);
                     } else if (isAllowUseSourceTask(sourceRecord, info, userId, affinity)) {
-                        reuseTask = sourceTask;
+                        if ((info.launchMode == LAUNCH_SINGLE_TASK) &&
+                                (sourceRecord.task != null) &&
+                                (!sourceRecord.task.affinity.equals(affinity))) {
+                            reuseTask = findTaskByAffinityLocked(userId, affinity);
+                        } else {
+                            reuseTask = sourceTask;
+                        }
                     }
                     break;
                 }
