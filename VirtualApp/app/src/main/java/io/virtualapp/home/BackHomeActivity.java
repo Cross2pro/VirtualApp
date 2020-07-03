@@ -6,6 +6,10 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
+
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.ipc.VActivityManager;
 
 
 /**
@@ -31,6 +35,7 @@ public class BackHomeActivity extends Activity {
                 break;
             }
         }
+        VActivityManager.get().onBackHome();
         if (!existTask) {
             Intent intent = new Intent(this, HomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -38,5 +43,11 @@ public class BackHomeActivity extends Activity {
             startActivity(intent);
         }
         finish();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        VActivityManager.get().onBackHome();
     }
 }

@@ -467,6 +467,22 @@ public class VActivityManager {
         }
     }
 
+    public void onBackHome(){
+        try {
+            getService().onBackHome();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public long getLastBackHomeTime() {
+        try {
+            return getService().getLastBackHomeTime();
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
     public boolean launchApp(final int userId, String packageName) {
         return launchApp(userId, packageName, true);
     }

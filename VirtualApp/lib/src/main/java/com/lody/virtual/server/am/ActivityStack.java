@@ -241,6 +241,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         boolean multipleTask = newTask && containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
         boolean reorderToFront = containFlags(intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         boolean singleTop = containFlags(intent, Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        boolean alwaysRetainTaskState = (info.flags & ActivityInfo.FLAG_ALWAYS_RETAIN_TASK_STATE) != 0;
 
         if ((info.flags & ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS) != 0
                 || containFlags(intent, Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)) {
@@ -412,14 +413,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             if (!notifyNewIntentActivityRecord.marked) {
                 return 0;
             }
-        } else if (pendingActivityRecorder != null) {
+        } else if (pendingActivityRecorder != null && sourceRecord != null) {
             synchronized (mLaunchingActivities) {
                 LaunchingActivity launchingActivity = pendingNewIntents.get(sourceRecord);
                 if (launchingActivity == null) {
                     launchingActivity = new LaunchingActivity(pendingActivityRecorder.component);
-                }
-                if (sourceRecord == null) {
-                    sourceRecord = pendingActivityRecorder;
                 }
                 launchingActivity.pendingNewIntents.add(new PendingNewIntent(userId, sourceRecord, intent));
             }
