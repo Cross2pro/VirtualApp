@@ -151,6 +151,9 @@ class Relayout extends BaseMethodProxy{
             int screenHeight = omView.getMeasuredHeight();
             Log.e(TAG,"relayout "+screenWidth +":"+ screenHeight);
 
+            if (screenWidth == 0 || screenHeight == 0) {
+                return super.call(who, method, args);
+            }
             //长宽比例适配，去除小窗口水印绘制
             Bitmap srcBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(srcBitmap);
