@@ -72,5 +72,4 @@ namespace IOUniformer {
 
     void readOnly(const char *path);
 }
-
 #endif //NDK_HOOK_H

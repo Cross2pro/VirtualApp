@@ -45,6 +45,8 @@ namespace FunctionDef {
                                                      jobject, jobject, jintArray, jint, jint,
                                                      jint, jint, jintArray, jstring, jlong);
 
+    typedef void (*JNI_nativeExitFunc)(JNIEnv *, jobject, jint);
+
 }
 
 using namespace FunctionDef;
@@ -95,6 +97,8 @@ static struct {
 
     JNI_audioRecordNativeSetupFunc_M orig_audioRecordNativeSetupFunc_M;
     JNI_audioRecordNativeSetupFunc_N orig_audioRecordNativeSetupFunc_N;
+
+    JNI_nativeExitFunc orig_nativeExitFunc;
 
 } patchEnv;
 
@@ -602,6 +606,39 @@ hookAudioRecordNativeSetup(JNIEnv *env, jobject javaMethod, jboolean isArt, jint
     }
 }
 
+jmethodID method_onKillByExit;
+
+static void
+new_bridge_RuntimeNativeExitFunc(JNIEnv *env, jobject thiz, jint code) {
+    if(method_onKillByExit == nullptr){
+        method_onKillByExit = env->GetStaticMethodID(nativeEngineClass,
+                                               "onKill",
+                                               "(I)Z");
+        ALOGI("init method");
+    }
+    env = ensureEnvCreated();
+    jboolean ret = env->CallStaticBooleanMethod(nativeEngineClass, method_onKillByExit, -1);
+    if(!ret){
+        return;
+    }
+    patchEnv.orig_nativeExitFunc(env, thiz, code);
+}
+
+inline void
+hookRuntimeNativeExit(JNIEnv *env, jobject javaMethod, jboolean isArt, int apiLevel) {
+    if (!javaMethod) {
+        return;
+    }
+    if (!isArt) {
+    } else {
+        jmethodID method = env->FromReflectedMethod(javaMethod);
+        hookJNIMethod(method,
+                      (void *) new_bridge_RuntimeNativeExitFunc,
+                      (void **) &patchEnv.orig_nativeExitFunc
+        );
+    }
+}
+
 void *getDalvikSOHandle() {
     char so_name[25] = {0};
     __system_property_get("persist.sys.dalvik.vm.lib.2", so_name);
@@ -766,6 +803,10 @@ void hookAndroidVM(JNIEnv *env, jobjectArray javaMethods,
                                isArt, apiLevel,
                                audioRecordMethodType);
     hookRuntimeNativeLoad(env);
+
+    hookRuntimeNativeExit(env, env->GetObjectArrayElement(javaMethods, NATIVE_EXIT),
+                          isArt,
+                          apiLevel);
 
     hookCameraStartPreviewMethod(env,
                                  env->GetObjectArrayElement(javaMethods, CAMERA_STARTPREVIEW),

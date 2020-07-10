@@ -38,6 +38,8 @@ public class NativeMethods {
     public static Method gAudioRecordStart;
     public static Method gMediaRecordPrepare;
 
+    public static Method gNativeExit;
+
     static {
         try {
             init();
@@ -119,6 +121,12 @@ public class NativeMethods {
             gMediaRecordPrepare.setAccessible(true);
         } catch (NoSuchMethodException e) {
             // ignore
+        }
+
+        try{
+            gNativeExit = Runtime.class.getDeclaredMethod("nativeExit", int.class);
+        } catch (Throwable e){
+            //ignore
         }
     }
 

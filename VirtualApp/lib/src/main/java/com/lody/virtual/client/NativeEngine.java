@@ -1,10 +1,13 @@
 package com.lody.virtual.client;
 
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Process;
+import android.support.annotation.Keep;
+import android.util.Log;
 import android.util.Pair;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -220,7 +223,9 @@ public class NativeEngine {
                 NativeMethods.gCameraStartPreview,
                 NativeMethods.gCameraNativeTakePicture,
                 NativeMethods.gAudioRecordStart,
-                NativeMethods.gMediaRecordPrepare};
+                NativeMethods.gMediaRecordPrepare,
+                NativeMethods.gNativeExit,
+        };
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType, NativeMethods.gAudioRecordMethodType);
         } catch (Throwable e) {
@@ -384,10 +389,30 @@ public class NativeEngine {
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy(int apiLevel, int previewApiLevel);
 
+    @Keep
     public static int onGetUid(int uid) {
         if (!VClient.get().isAppRunning()) {
             return uid;
         }
         return VClient.get().getBaseVUid();
+    }
+
+    @Keep
+    public static boolean onKill(int pid) {
+        if (!VClient.get().isAppRunning()) {
+            return true;
+        }
+        Log.e("V++", "onKill:"+pid);
+        if(pid == Process.myPid() || pid == -1){
+            Intent home = new Intent(Intent.ACTION_MAIN);
+            home.addCategory(Intent.CATEGORY_HOME);
+            home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                VirtualCore.get().getContext().startActivity(home);
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
+        return true;
     }
 }
