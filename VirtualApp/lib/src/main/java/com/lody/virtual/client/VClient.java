@@ -1209,14 +1209,7 @@ public final class VClient extends IVClient.Stub {
             if(isMainThread){
                 //如果是activity是最上层，可能会不断重启activity，或者保留一个白色无效的activity
                 //返回主界面
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                try {
-                    VirtualCore.get().getContext().startActivity(intent);
-                } catch (Throwable ignore) {
-                    VLog.w(TAG, "back home", e);
-                }
+                VirtualCore.get().gotoBackHome();
             }
             if (handler != null) {
                 handler.uncaughtException(t, e);

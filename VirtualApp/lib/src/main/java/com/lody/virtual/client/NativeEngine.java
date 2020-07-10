@@ -1,13 +1,11 @@
 package com.lody.virtual.client;
 
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Process;
 import android.support.annotation.Keep;
-import android.util.Log;
 import android.util.Pair;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -398,21 +396,25 @@ public class NativeEngine {
     }
 
     @Keep
-    public static boolean onKill(int pid) {
+    public static void onSystemExit(int code) {
         if (!VClient.get().isAppRunning()) {
-            return true;
+            return;
         }
-        Log.e("V++", "onKill:"+pid);
-        if(pid == Process.myPid() || pid == -1){
-            Intent home = new Intent(Intent.ACTION_MAIN);
-            home.addCategory(Intent.CATEGORY_HOME);
-            home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            try {
-                VirtualCore.get().getContext().startActivity(home);
-            } catch (Throwable ignore) {
-            }
-            return true;
-        }
-        return true;
+        VLog.w("V++", "System.exit:" + code);
+        VirtualCore.get().gotoBackHome();
     }
+
+    @Keep
+    public static void onSendSignal(int pid, int sig, int quiet) {
+        if (!VClient.get().isAppRunning()) {
+            return;
+        }
+        VLog.w("V++", "onSendSignal:" + pid + ", " + sig);
+        //返回主界面
+        if (pid == android.os.Process.myPid() && sig == android.os.Process.SIGNAL_KILL) {
+            //异常闪退的在VClient有处理
+            VirtualCore.get().gotoBackHome();
+        }
+    }
+
 }

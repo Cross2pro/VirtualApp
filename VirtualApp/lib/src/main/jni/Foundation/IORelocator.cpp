@@ -224,23 +224,10 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
     return -1;
 }
 
-jmethodID method_onKill;
 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
     ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
-    JNIEnv* env = ensureEnvCreated();
-    if(method_onKill == nullptr){
-        method_onKill = env->GetStaticMethodID(nativeEngineClass,
-                                               "onKill",
-                                               "(I)Z");
-        ALOGI("init method");
-    }
-    env = ensureEnvCreated();
-    jboolean ret = env->CallStaticBooleanMethod(nativeEngineClass, method_onKill, (jint)pid);
-    if(!ret){
-        return 0;
-    }
     return syscall(__NR_kill, pid, sig);
 }
 
