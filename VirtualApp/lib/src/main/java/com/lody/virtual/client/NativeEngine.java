@@ -221,9 +221,7 @@ public class NativeEngine {
                 NativeMethods.gCameraStartPreview,
                 NativeMethods.gCameraNativeTakePicture,
                 NativeMethods.gAudioRecordStart,
-                NativeMethods.gMediaRecordPrepare,
-                NativeMethods.gNativeExit,
-        };
+                NativeMethods.gMediaRecordPrepare};
         try {
             nativeLaunchEngine(methods, VirtualCore.get().getHostPkg(), VirtualRuntime.isArt(), Build.VERSION.SDK_INT, NativeMethods.gCameraMethodType, NativeMethods.gAudioRecordMethodType);
         } catch (Throwable e) {

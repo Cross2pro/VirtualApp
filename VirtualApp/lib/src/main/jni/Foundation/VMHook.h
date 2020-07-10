@@ -23,7 +23,7 @@ enum METHODS {
     CAMERA_STARTPREVIEW,
     CAMERA_TAKEPICTURE,
     AUDIO_RECORD_START,
-    MEDIA_RECORDER_PREPARE,
+    MEDIA_RECORDER_PREPARE
 };
 
 void bypassHiddenAPIEnforcementPolicy(jint apiLevel, jint previewApiLevel);

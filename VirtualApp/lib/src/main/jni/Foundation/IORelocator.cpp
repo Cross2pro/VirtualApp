@@ -224,7 +224,6 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
     return -1;
 }
 
-
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
     ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
