@@ -411,7 +411,7 @@ public class NativeEngine {
                 VirtualCore.get().getContext().startActivity(home);
             } catch (Throwable ignore) {
             }
-            return false;
+            return true;
         }
         return true;
     }
