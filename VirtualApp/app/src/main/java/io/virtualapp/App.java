@@ -49,6 +49,9 @@ public class App extends Application {
         public Intent onHandleLauncherIntent(Intent originIntent) {
             Intent intent = new Intent(VirtualCore.get().getContext(), BackHomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if(originIntent != null && originIntent.getExtras() != null) {
+                intent.putExtras(originIntent.getExtras());
+            }
             return intent;
         }
 

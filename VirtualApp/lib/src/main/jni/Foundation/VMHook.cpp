@@ -45,6 +45,9 @@ namespace FunctionDef {
                                                      jobject, jobject, jintArray, jint, jint,
                                                      jint, jint, jintArray, jstring, jlong);
 
+    typedef void (*JNI_systemExit)(JNIEnv *, jclass, jint);
+    typedef void  (*JNI_sendSignal)(JNIEnv *, jclass, jint, jint);
+
 }
 
 using namespace FunctionDef;
@@ -57,6 +60,8 @@ static struct {
     jint api_level;
     jmethodID method_onGetCallingUid;
     jmethodID method_onOpenDexFileNative;
+    jmethodID method_onSystemExit;
+    jmethodID method_onSendSignal;
 
     void *art_work_around_app_jni_bugs;
 
@@ -95,6 +100,10 @@ static struct {
 
     JNI_audioRecordNativeSetupFunc_M orig_audioRecordNativeSetupFunc_M;
     JNI_audioRecordNativeSetupFunc_N orig_audioRecordNativeSetupFunc_N;
+
+    JNI_systemExit orig_systemExit;
+    JNI_sendSignal orig_sendSignal;
+    JNI_sendSignal orig_sendSignalQuiet;
 
 } patchEnv;
 
@@ -602,6 +611,52 @@ hookAudioRecordNativeSetup(JNIEnv *env, jobject javaMethod, jboolean isArt, jint
     }
 }
 
+void new_systemExit(JNIEnv *env, jclass clazz, jint code) {
+    env->CallStaticVoidMethod(nativeEngineClass, patchEnv.method_onSystemExit, code);
+    patchEnv.orig_systemExit(env, clazz, code);
+}
+
+void new_sendSignal(JNIEnv *env, jclass clazz, jint pid, jint sig) {
+    env->CallStaticVoidMethod(nativeEngineClass, patchEnv.method_onSendSignal, pid, sig, 0);
+    patchEnv.orig_sendSignal(env, clazz, pid, sig);
+}
+
+void new_sendSignalQuiet(JNIEnv *env, jclass clazz, jint pid, jint sig) {
+    env->CallStaticVoidMethod(nativeEngineClass, patchEnv.method_onSendSignal, pid, sig, 1);
+    patchEnv.orig_sendSignalQuiet(env, clazz, pid, sig);
+}
+
+void hookSystemExit(JNIEnv *env, jboolean isArt) {
+    if (isArt) {
+        jclass binderClass = env->FindClass("java/lang/Runtime");
+        jmethodID nativeExit = env->GetStaticMethodID(binderClass, "nativeExit", "(I)V");
+        hookJNIMethod(nativeExit,
+                      (void *) new_systemExit,
+                      (void **) &patchEnv.orig_systemExit
+        );
+    } else {
+        //TODO 4.4 dvm
+    }
+}
+
+void hookSendSignal(JNIEnv *env, jboolean isArt) {
+    if (isArt) {
+        jclass binderClass = env->FindClass("android/os/Process");
+        jmethodID sendSignal = env->GetStaticMethodID(binderClass, "sendSignal", "(II)V");
+        hookJNIMethod(sendSignal,
+                      (void *) new_sendSignal,
+                      (void **) &patchEnv.orig_sendSignal
+        );
+        jmethodID sendSignalQuiet = env->GetStaticMethodID(binderClass, "sendSignalQuiet", "(II)V");
+        hookJNIMethod(sendSignalQuiet,
+                      (void *) new_sendSignalQuiet,
+                      (void **) &patchEnv.orig_sendSignalQuiet
+        );
+    } else {
+        //TODO 4.4 dvm
+    }
+}
+
 void *getDalvikSOHandle() {
     char so_name[25] = {0};
     __system_property_get("persist.sys.dalvik.vm.lib.2", so_name);
@@ -716,6 +771,13 @@ void hookAndroidVM(JNIEnv *env, jobjectArray javaMethods,
     patchEnv.method_onOpenDexFileNative = env->GetStaticMethodID(nativeEngineClass,
                                                                  "onOpenDexFileNative",
                                                                  "([Ljava/lang/String;)V");
+    patchEnv.method_onSystemExit = env->GetStaticMethodID(nativeEngineClass,
+                                                          "onSystemExit",
+                                                          "(I)V");
+
+    patchEnv.method_onSendSignal = env->GetStaticMethodID(nativeEngineClass,
+                                                          "onSendSignal",
+                                                          "(III)V");
 
     if (!isArt) {
         // workaround for dlsym returns null when system has libhoudini
@@ -751,6 +813,10 @@ void hookAndroidVM(JNIEnv *env, jobjectArray javaMethods,
     }
     measureNativeOffset(env, isArt);
     hookGetCallingUid(env, isArt);
+
+    hookSystemExit(env, isArt);
+    hookSendSignal(env, isArt);
+
     hookOpenDexFileNative(env, env->GetObjectArrayElement(javaMethods, OPEN_DEX), isArt,
                           apiLevel);
     hookCameraNativeSetup(env, env->GetObjectArrayElement(javaMethods, CAMERA_SETUP), isArt,

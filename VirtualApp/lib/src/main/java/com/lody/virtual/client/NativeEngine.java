@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Process;
+import android.support.annotation.Keep;
 import android.util.Pair;
 
 import com.lody.virtual.client.core.VirtualCore;
@@ -384,10 +385,34 @@ public class NativeEngine {
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy(int apiLevel, int previewApiLevel);
 
+    @Keep
     public static int onGetUid(int uid) {
         if (!VClient.get().isAppRunning()) {
             return uid;
         }
         return VClient.get().getBaseVUid();
     }
+
+    @Keep
+    public static void onSystemExit(int code) {
+        if (!VClient.get().isAppRunning()) {
+            return;
+        }
+        VLog.w("V++", "System.exit:" + code);
+        VirtualCore.get().gotoBackHome();
+    }
+
+    @Keep
+    public static void onSendSignal(int pid, int sig, int quiet) {
+        if (!VClient.get().isAppRunning()) {
+            return;
+        }
+        VLog.w("V++", "onSendSignal:" + pid + ", " + sig);
+        //返回主界面
+        if (pid == android.os.Process.myPid() && sig == android.os.Process.SIGNAL_KILL) {
+            //异常闪退的在VClient有处理
+            VirtualCore.get().gotoBackHome();
+        }
+    }
+
 }

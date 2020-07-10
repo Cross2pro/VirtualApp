@@ -153,6 +153,19 @@ public final class VirtualCore {
         return get().mainThread;
     }
 
+    public void gotoBackHome() {
+        Intent home = new Intent(Intent.ACTION_MAIN);
+        home.addCategory(Intent.CATEGORY_HOME);
+        home.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        home.putExtra("pid", Process.myPid());
+        home.putExtra("process", get().getProcessName());
+        home.putExtra("userId", VUserHandle.myUserId());
+        try {
+            getContext().startActivity(home);
+        } catch (Throwable ignore) {
+        }
+    }
+
     public ConditionVariable getInitLock() {
         return mInitLock;
     }
