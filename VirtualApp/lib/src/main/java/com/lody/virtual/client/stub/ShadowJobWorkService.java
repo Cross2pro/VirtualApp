@@ -57,6 +57,7 @@ public class ShadowJobWorkService extends Service {
 
     public static void startJob(Context context, JobParameters jobParams) {
         Intent intent = new Intent("action.startJob");
+        intent.setClass(context, ShadowJobWorkService.class);
         intent.setPackage(context.getPackageName());
         intent.putExtra("jobParams", jobParams);
         context.startService(intent);
@@ -65,7 +66,7 @@ public class ShadowJobWorkService extends Service {
 
     public static void stopJob(Context context, JobParameters jobParams) {
         Intent intent = new Intent("action.stopJob");
-        intent.setPackage(context.getPackageName());
+        intent.setClass(context, ShadowJobWorkService.class);
         intent.putExtra("jobParams", jobParams);
         context.startService(intent);
     }
