@@ -17,7 +17,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 
-@RequiresApi(api = Build.VERSION_CODES.N)
+@RequiresApi(api = Build.VERSION_CODES.O)
 @SuppressLint("OverrideAbstract")
 public class NotificationListener extends NotificationListenerService {
     String Tag = "zs_NotificationListener";
@@ -39,7 +39,6 @@ public class NotificationListener extends NotificationListenerService {
     private boolean isInWhiteList(String packageName, boolean currentSpace) {
         return VirtualCore.getConfig().isCanShowNotification(packageName, currentSpace);
     }
-
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -64,6 +63,7 @@ public class NotificationListener extends NotificationListenerService {
                             if (!item.getPackageName().equals(mApp.getPackageName())) {
                                 Log.e(Tag, String.format("int NotificationListener, snooze [Title: %s]", notificationTitle));
                                 cancelNotification(item.getKey());
+                                snoozeNotification(item.getKey(),10000);
                             }
                         }
                     }
@@ -134,13 +134,14 @@ public class NotificationListener extends NotificationListenerService {
         if(isSystemApp(packageName) && currentSpace) {
             Log.e(Tag, "\tdelete this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
-
+            snoozeNotification(sbn.getKey(),10000);
             return;
         }
 
         if(currentSpace()) {
             Log.e(Tag, "\tsnooze this notify " + sbn.getKey());
             cancelNotification(sbn.getKey());
+            snoozeNotification(sbn.getKey(),10000);
         }
     }
 
