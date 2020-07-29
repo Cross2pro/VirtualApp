@@ -314,7 +314,7 @@
 
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <application
-        android:vmSafeMode="false">
+        android:vmSafeMode="true"><!-- false：性能提升，但是微信，QQ等应用会出现jit错误-->
 
         <!--safekey adapter-->
         <service android:name="com.xdja.tun.TunVpnService"

@@ -2,7 +2,7 @@ ext {
     if (project.hasProperty('appid')) {
         PACKAGE_NAME_32BIT = appid
     } else {
-        PACKAGE_NAME_32BIT = 'io.busniess.va'
+        PACKAGE_NAME_32BIT = 'io.busniess.va.test'
     }
 
     PACKAGE_NAME_ARM64 = 'io.virtualapp.addon.arm64'

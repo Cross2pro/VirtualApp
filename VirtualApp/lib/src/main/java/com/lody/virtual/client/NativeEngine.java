@@ -410,8 +410,10 @@ public class NativeEngine {
         VLog.w("V++", "onSendSignal:" + pid + ", " + sig);
         //返回主界面
         if (pid == android.os.Process.myPid() && sig == android.os.Process.SIGNAL_KILL) {
-            //异常闪退的在VClient有处理
-            VirtualCore.get().gotoBackHome();
+            if (VClient.get().countOfActivity > 0) {//有前台activity才返回桌面。
+                //异常闪退的在VClient有处理
+                VirtualCore.get().gotoBackHome();
+            }
         }
     }
 
