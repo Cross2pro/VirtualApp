@@ -247,9 +247,9 @@
     <uses-permission
         android:name="android.permission.DEVICE_POWER"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.WRITE_APN_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
+<!--    <uses-permission-->
+<!--        android:name="android.permission.WRITE_APN_SETTINGS"-->
+<!--        tools:ignore="ProtectedPermissions" />-->
 
     <!-- xdja -->
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS"/>
