@@ -1847,6 +1847,34 @@ HOOK_DEF(int,getaddrinfo,char* __node, const char* __service, const struct addri
     return ret;
 }
 
+HOOK_DEF(ssize_t,sendto,int fd, const void* buf, size_t n, int flags, struct sockaddr* dst_addr, socklen_t dst_addr_length) {
+    ssize_t ret = -1;
+    if (nullptr != dst_addr) {
+        if (dst_addr->sa_family == AF_INET) {
+            sockaddr_in *pSin = (sockaddr_in *) dst_addr;
+            char *ipv4 = inet_ntoa(pSin->sin_addr);
+            //log("sendto [ipv4 %s]", ipv4);
+            if (!controllerManagerNative::isIpV4Enable(ipv4)) {
+                //log("return [ret %d] ",ret);
+                errno = EACCES;
+                return ret;
+            }
+        } else if (dst_addr->sa_family == AF_INET6) {
+            sockaddr_in6 sin6;
+            memcpy(&sin6, dst_addr, sizeof(sin6));
+            char ipv6[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+            //log("sendto ipv6:%s", ipv6);
+            if (!controllerManagerNative::isIpV6Enable(ipv6)) {
+                errno = EACCES;
+                return ret;
+            }
+        }
+    }
+    ret = syscall(__NR_sendto,fd,buf,n,flags,dst_addr,dst_addr_length);
+    return ret;
+}
+
 HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
     int ret = -1;
     if(addr->sa_family == AF_INET) {
@@ -2077,6 +2105,7 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, dup3);
         HOOK_SYMBOL(handle, fcntl);
         HOOK_SYMBOL(handle,getaddrinfo);
+        HOOK_SYMBOL(handle,sendto);
 #if defined(__i386__) || defined(__x86_64__)
         HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
 #else
