@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
+import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 
@@ -134,6 +136,30 @@ public class App extends Application {
         public void onFirstInstall(String packageName, boolean isClearData) {
             //running in server process.
             AppDefaultConfig.setDefaultData(packageName);
+        }
+
+        @Override
+        public boolean onHandleView(Intent intent, String packageName, int userId) {
+            if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getType() != null) {
+                if (intent.getType().startsWith("image/")) {
+                    if (VirtualCore.get().isAppInstalled(InstallerSetting.GALLERY_PKG)) {
+                        intent.setPackage(InstallerSetting.GALLERY_PKG);
+                        return false;
+                    }
+                } else if (intent.getType().startsWith("video/")) {
+                    if (VirtualCore.get().isAppInstalled(InstallerSetting.VIDEO_PLAYER_PKG)) {
+                        intent.setPackage(InstallerSetting.VIDEO_PLAYER_PKG);
+                        return false;
+                    }
+                }
+            }
+            return super.onHandleView(intent, packageName, userId);
+        }
+
+        @Override
+        public Intent getChooserIntent(Intent orgIntent, IBinder resultTo, String resultWho, int requestCode, Bundle options, int userId) {
+            //上层可以重写ChooserActivity
+            return super.getChooserIntent(orgIntent, resultTo, resultWho, requestCode, options, userId);
         }
     };
 

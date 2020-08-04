@@ -1,10 +1,17 @@
 package com.lody.virtual.client.core;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
+import android.os.Bundle;
+import android.os.IBinder;
 
+import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.stub.ChooserActivity;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.client.stub.WindowPreviewActivity;
+import com.lody.virtual.helper.compat.BundleCompat;
 
 /**
  * @author Lody
@@ -125,6 +132,38 @@ public abstract class SettingConfig {
 
     public void onPreLunchApp(){
 
+    }
+
+    /**
+     *
+     * @param intent 如果需要默认组件，就设置intent#setComponent
+     * @param packageName
+     * @param userId
+     * @return true则提示找不到activity，false内部显示选择列表
+     */
+    public boolean onHandleView(Intent intent, String packageName, int userId){
+        return false;
+    }
+
+    public Intent getChooserIntent(Intent orgIntent, IBinder resultTo, String resultWho, int requestCode, Bundle options, int userId){
+        Bundle extras = new Bundle();
+        extras.putInt(Constants.EXTRA_USER_HANDLE, userId);
+        extras.putBundle(ChooserActivity.EXTRA_DATA, options);
+        extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
+        extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
+        if (Intent.ACTION_VIEW.equals(orgIntent.getAction()) || Intent.ACTION_GET_CONTENT.equals(orgIntent.getAction())) {
+            extras.putParcelable(Intent.EXTRA_INTENT, new Intent(orgIntent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } else if (orgIntent.getAction() != null
+                && (orgIntent.getAction().equals(ChooserActivity.ACTION) || orgIntent.getAction().equals(Intent.ACTION_CHOOSER))) {
+            extras.putParcelable(Intent.EXTRA_INTENT, orgIntent.getParcelableExtra(Intent.EXTRA_INTENT));
+        }
+        BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
+        Intent intent =  new Intent();
+        //如果上层需要重写ChooserActivity的界面，可以参考这个
+        intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
+        intent.putExtras(extras);
+        intent.putExtra("_VA_CHOOSER",true);
+        return intent;
     }
 
     public boolean isClearInvalidTask(){
