@@ -674,25 +674,15 @@ class MethodProxies {
             if (pkg != null && !isAppPkg(pkg)) {
                 return method.invoke(who, args);
             }
-            // chooser
-            if (ChooserActivity.check(intent)) {
-                Bundle extras = new Bundle();
-                extras.putInt(Constants.EXTRA_USER_HANDLE, userId);
-                extras.putBundle(ChooserActivity.EXTRA_DATA, options);
-                extras.putString(ChooserActivity.EXTRA_WHO, resultWho);
-                extras.putInt(ChooserActivity.EXTRA_REQUEST_CODE, requestCode);
-                if (Intent.ACTION_VIEW.equals(intent.getAction()) || Intent.ACTION_GET_CONTENT.equals(intent.getAction())) {
-                    extras.putParcelable(Intent.EXTRA_INTENT, new Intent(intent).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-                } else if (intent.getAction() != null
-                        && (intent.getAction().equals(ChooserActivity.ACTION) || intent.getAction().equals(Intent.ACTION_CHOOSER))) {
-                    extras.putParcelable(Intent.EXTRA_INTENT, intent.getParcelableExtra(Intent.EXTRA_INTENT));
+
+            if(Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getType() != null){
+                if(VirtualCore.getConfig().onHandleView(intent, getAppPkg(), getAppUserId())){
+                    return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
                 }
-                BundleCompat.putBinder(extras, ChooserActivity.EXTRA_RESULTTO, resultTo);
-                intent =  new Intent();
-                //intent = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
-                intent.setComponent(new ComponentName(StubManifest.PACKAGE_NAME, ChooserActivity.class.getName()));
-                intent.putExtras(extras);
-                intent.putExtra("_VA_CHOOSER",true);
+            }
+            // chooser
+            if (intent.getPackage() == null && intent.getComponent() == null && ChooserActivity.check(intent)) {
+                intent = VirtualCore.getConfig().getChooserIntent(intent, resultTo, resultWho, requestCode, options, userId);
                 args[intentIndex] = intent;
                 return method.invoke(who, args);
             }
