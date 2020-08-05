@@ -399,7 +399,9 @@ public class NativeEngine {
             return;
         }
         VLog.w("V++", "System.exit:" + code);
-        VirtualCore.get().gotoBackHome();
+        if (VClient.get().countOfActivity > 0) {
+            VirtualCore.get().gotoBackHome();
+        }
     }
 
     @Keep
