@@ -38,6 +38,7 @@ public class BadgeProviderHook extends ExternalProviderHook {
             //VActivityManager.get().notifyBadgerChange(info);
             Bundle out = new Bundle();
             out.putBoolean("success", true);
+            return out;
         }
         return super.call(methodBox, method, arg, extras);
     }
