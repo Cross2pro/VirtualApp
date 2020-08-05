@@ -37,16 +37,12 @@ public class ScreenLockManager extends BaseCounterManager{
     synchronized void changeState(int mode, boolean on,String name) {
         Log.e(TAG,"name " + name);
         //安通拨号，微信，安通＋,安全通话, 闹钟
-        if ("com.xdja.incallui.InCallActivity".equals(name)
-                || "plugin.voip.ui.VideoActivity".equals(name)
-                || "com.xdja.securevoip.presenter.activity.InCallPresenter".equals(name)
-                || "com.xdja.voip.sdk.incall.InCallActivity".equals(name)
-                || "com.android.deskclock.alarms.AlarmActivity".equals(name)){
+        if (VirtualCore.getConfig().isFloatOnLockScreen(name)){
             Log.e(TAG,"Incall Activity " + name);
             screenLock(4);
             return;
         }
-        Log.e(TAG,"isScreenOn " + isScreenOn);
+        Log.e(TAG,"isScreenOn " + isScreenOn+", name="+name);
         if(!isScreenOn  && on){
             screenLock(UNLOCK);
             isScreenOn = true; // 进入安全盒后清除锁屏状态

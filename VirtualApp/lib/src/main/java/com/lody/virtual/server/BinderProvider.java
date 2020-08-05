@@ -135,6 +135,8 @@ public final class BinderProvider extends ContentProvider {
             if (VirtualCore.getConfig().isClearInvalidTask()) {
                 //清理无效的task
                 clearOldTask(context);
+            }
+            if (VirtualCore.getConfig().isClearInvalidProcess()) {
                 //清理无效的其他进程
                 clearOldProcess(context);
             }

@@ -476,15 +476,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             } else {
                 destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
             }
-            boolean noAnimation = false;
-            try {
-                noAnimation = intent.getBooleanExtra("_VA_|no_animation", false);
-            } catch (Throwable e) {
-                // ignore
-            }
-            if (noAnimation) {
-                destIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            }
             if (options != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 VirtualCore.get().getContext().startActivity(destIntent, options);
             } else {
