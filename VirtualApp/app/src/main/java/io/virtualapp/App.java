@@ -133,6 +133,7 @@ public class App extends Application {
             }
         }
 
+        @Override
         public void onFirstInstall(String packageName, boolean isClearData) {
             //running in server process.
             AppDefaultConfig.setDefaultData(packageName);
@@ -160,6 +161,18 @@ public class App extends Application {
         public Intent getChooserIntent(Intent orgIntent, IBinder resultTo, String resultWho, int requestCode, Bundle options, int userId) {
             //上层可以重写ChooserActivity
             return super.getChooserIntent(orgIntent, resultTo, resultWho, requestCode, options, userId);
+        }
+
+        @Override
+        public boolean isClearInvalidProcess() {
+            //盒内上次退出，部分进程会重启
+            return true;
+        }
+
+        @Override
+        public boolean isFloatOnLockScreen(String className) {
+            //锁屏界面需要显示的
+            return "com.tencent.av.ui.VideoInviteActivity".equals(className) || super.isFloatOnLockScreen(className);
         }
     };
 

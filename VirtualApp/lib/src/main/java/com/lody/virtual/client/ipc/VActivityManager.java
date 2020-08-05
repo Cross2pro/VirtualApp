@@ -523,7 +523,7 @@ public class VActivityManager {
             VActivityManager.get().startActivity(intent, userId);
         } else {
             VLog.d("kk", "app's main thread not running.");
-            intent.putExtra("_VA_|no_animation", true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             final VirtualCore.UiCallback callBack = new VirtualCore.UiCallback() {
                 private boolean mLaunched;
 

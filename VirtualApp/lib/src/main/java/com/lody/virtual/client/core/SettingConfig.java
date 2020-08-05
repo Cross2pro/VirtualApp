@@ -96,6 +96,17 @@ public abstract class SettingConfig {
         return false;
     }
 
+    public boolean isFloatOnLockScreen(String className){
+        if ("com.xdja.incallui.InCallActivity".equals(className)
+                || className.endsWith("plugin.voip.ui.VideoActivity")
+                || "com.xdja.securevoip.presenter.activity.InCallPresenter".equals(className)
+                || "com.xdja.voip.sdk.incall.InCallActivity".equals(className)
+                || "com.android.deskclock.alarms.AlarmActivity".equals(className)){
+            return true;
+        }
+        return false;
+    }
+
     /***
      * 深色模式处理
      */
@@ -167,6 +178,10 @@ public abstract class SettingConfig {
     }
 
     public boolean isClearInvalidTask(){
+        return true;
+    }
+
+    public boolean isClearInvalidProcess(){
         return true;
     }
 

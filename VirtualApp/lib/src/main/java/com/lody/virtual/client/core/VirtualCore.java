@@ -484,7 +484,7 @@ public final class VirtualCore {
             }
             @Override
             public void onActivityStarted(Activity activity) {
-                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getLocalClassName(),android.os.Process.myPid());
+                ActivityCounterManager.get().activityCountAdd(activity.getPackageName(),activity.getClass().getName(),android.os.Process.myPid());
             }
             @Override
             public void onActivityResumed(Activity activity) {}
@@ -492,7 +492,7 @@ public final class VirtualCore {
             public void onActivityPaused(Activity activity) {}
             @Override
             public void onActivityStopped(Activity activity) {
-                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),activity.getLocalClassName(),android.os.Process.myPid());
+                ActivityCounterManager.get().activityCountReduce(activity.getPackageName(),activity.getClass().getName(),android.os.Process.myPid());
             }
             @Override
             public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
