@@ -286,13 +286,13 @@ public class controllerService extends IController.Stub {
                         String splictIp = null;
                         if (ipv6.contains(".")) {
                             String[] strs = ipv6.split(":");
-                            splictIp = strs[strs.length - 1];
+                            splictIp = strs[strs.length - 1];//从IPv6中提取IPv4
                             if (network_strategy.contains("-")) {
                                 if (judgeIpSection(splictIp, network_strategy)) {
                                     return true;
                                 }
                             } else if (network_strategy.contains("/")) {
-                                if (judgeIpSubnet(splictIp, network_strategy)) {
+                                if (judgeSubnet(splictIp, network_strategy)) {
                                     return true;
                                 }
                             } else {
@@ -338,7 +338,7 @@ public class controllerService extends IController.Stub {
                                     return false;
                                 }
                             } else if (network_strategy.contains("/")) {
-                                if (judgeIpSubnet(splictIp, network_strategy)) {
+                                if (judgeSubnet(splictIp, network_strategy)) {
                                     netControlSuccess(packageName);
                                     return false;
                                 }
@@ -392,7 +392,7 @@ public class controllerService extends IController.Stub {
                                 return true;
                             }
                         } else if (network_strategy.contains("/")) {
-                            if (judgeIpSubnet(ipv4, network_strategy)) {
+                            if (judgeSubnet(ipv4, network_strategy)) {
                                 return true;
                             }
                         } else {
@@ -429,7 +429,7 @@ public class controllerService extends IController.Stub {
                                 return false;
                             }
                         } else if (network_strategy.contains("/")) {
-                            if (judgeIpSubnet(ipv4, network_strategy)) {
+                            if (judgeSubnet(ipv4, network_strategy)) {
                                 netControlSuccess(packageName);
                                 return false;
                             }
@@ -468,7 +468,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public boolean isDomainEnable(String packageName, String doamin) throws RemoteException {
-        Log.e(Tag,"packageName:" + packageName);
+        //Log.e(Tag,"packageName:" + packageName + " domain:" + doamin);
         if(NetworkStragegyOnorOff && doamin != null) {
             if (isWhiteOrBlackFlag) {//handle white list
                 if (domain_strategys != null) {
@@ -573,31 +573,37 @@ public class controllerService extends IController.Stub {
         return (getIp2long(beginIp)<=getIp2long(ip) && getIp2long(ip)<=getIp2long(endIp));
     }
 
-    private boolean judgeIpSubnet(String ip,String ipStrategy) {
-        String ipSubnet = ipStrategy.trim();
-        int idx = ipSubnet.indexOf("/");
-        String subnet = ipStrategy.substring(0,idx);
-        int len = Integer.valueOf(subnet);
-        String ip_mask = getSubnet(ip,len);
-        String ipStrategy_mask = getSubnet(subnet,len);
-        return ip_mask.equals(ipStrategy_mask);
+    private boolean judgeSubnet(String ip,String networkStrategy) {
+        networkStrategy = networkStrategy.trim();
+        int idx = networkStrategy.indexOf("/");
+        String ip1 = networkStrategy.substring(0, idx);
+        String subnet = networkStrategy.substring(idx + 1, networkStrategy.length());
+        int subnetInt = ipStrToInt(subnet);
+        int a = ipStrToInt(ip1);
+        int b = ipStrToInt(ip);
+        //IP1与IP2属于同一子网络
+        if ((a & subnetInt) == (b & subnetInt)) {
+            return true;
+        }
+        //IP1与IP2不属于同一子网络
+        else {
+            return false;
+        }
     }
 
-    private String getSubnet(String ip,int len) {
-        String[] ips = ip.split("\\.");
-        StringBuilder spliip = new StringBuilder();
-        for(String str : ips) {
-            String subip = Integer.toBinaryString(Integer.valueOf(str));
-            int sub_len = subip.length();
-            if(sub_len < 8) {
-                for(int i = 0; i < 8 - sub_len;i++) {
-                    subip = subip + '0';
-                }
-                spliip.append(subip);
-            }
-            spliip.append(subip);
+    /**
+     * 将点分十进制的IP地址转换成整数表示
+     * @param ip 点分十进制的IP地址
+     * @return IP地址的整数表
+     */
+    private int ipStrToInt(String ip) {
+        String[] part = ip.split("\\.");
+        int intIP = 0;
+        for (int i = 0; i < part.length; i++) {
+            int t = Integer.parseInt(part[i]);
+            intIP += t << (24 - 8 * i);
         }
-        return spliip.substring(0,len);
+        return intIP;
     }
 
     private long getIp2long(String ip) {
