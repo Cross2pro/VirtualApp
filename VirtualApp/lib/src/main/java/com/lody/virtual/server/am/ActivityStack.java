@@ -413,11 +413,15 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             if (!notifyNewIntentActivityRecord.marked) {
                 return 0;
             }
-        } else if (pendingActivityRecorder != null && sourceRecord != null) {
+        } else if (pendingActivityRecorder != null) {
+            if (sourceRecord == null) {
+                sourceRecord = pendingActivityRecorder;
+            }
             synchronized (mLaunchingActivities) {
                 LaunchingActivity launchingActivity = pendingNewIntents.get(sourceRecord);
                 if (launchingActivity == null) {
                     launchingActivity = new LaunchingActivity(pendingActivityRecorder.component);
+                    pendingNewIntents.put(sourceRecord, launchingActivity);
                 }
                 launchingActivity.pendingNewIntents.add(new PendingNewIntent(userId, sourceRecord, intent));
             }
