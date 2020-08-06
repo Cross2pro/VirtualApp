@@ -97,11 +97,11 @@ public abstract class SettingConfig {
     }
 
     public boolean isFloatOnLockScreen(String className){
-        if ("com.xdja.incallui.InCallActivity".equals(className)
+        if ((className!= null) && ("com.xdja.incallui.InCallActivity".equals(className)
                 || className.endsWith("plugin.voip.ui.VideoActivity")
                 || "com.xdja.securevoip.presenter.activity.InCallPresenter".equals(className)
                 || "com.xdja.voip.sdk.incall.InCallActivity".equals(className)
-                || "com.android.deskclock.alarms.AlarmActivity".equals(className)){
+                || "com.android.deskclock.alarms.AlarmActivity".equals(className))){
             return true;
         }
         return false;
