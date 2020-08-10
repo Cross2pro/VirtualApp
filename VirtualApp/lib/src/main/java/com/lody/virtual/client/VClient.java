@@ -629,8 +629,6 @@ public final class VClient extends IVClient.Stub {
                 if (screenShort) {
                     activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE
                             , WindowManager.LayoutParams.FLAG_SECURE);
-                } else {
-                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 }
             }
             @Override
