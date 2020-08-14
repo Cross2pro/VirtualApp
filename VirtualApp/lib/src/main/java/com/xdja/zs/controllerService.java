@@ -322,7 +322,7 @@ public class controllerService extends IController.Stub {
                             }
                         }
                     }
-                    netControlSuccess(packageName);
+                    netControlSuccess(packageName,ipv6);
                     return false;
                 }
             } else { //handle white list
@@ -334,23 +334,23 @@ public class controllerService extends IController.Stub {
                             splictIp = strs[strs.length - 1];
                             if (network_strategy.contains("-")) {
                                 if (judgeIpSection(splictIp, network_strategy)) {
-                                    netControlSuccess(packageName);
+                                    netControlSuccess(packageName,ipv6);
                                     return false;
                                 }
                             } else if (network_strategy.contains("/")) {
                                 if (judgeSubnet(splictIp, network_strategy)) {
-                                    netControlSuccess(packageName);
+                                    netControlSuccess(packageName,ipv6);
                                     return false;
                                 }
                             } else {
                                 if (judgeIp(splictIp, network_strategy)) {
-                                    netControlSuccess(packageName);
+                                    netControlSuccess(packageName,ipv6);
                                     return false;
                                 }
                             }
                         } else {
                             if (ipv6.equals(network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv6);
                                 return false;
                             }
                         }
@@ -359,17 +359,17 @@ public class controllerService extends IController.Stub {
                         if (network_strategy.contains("*")) {
                             String network_strategy_domain = network_strategy.replace("*", "www");
                             if (judgeIpV6Domain(ipv6, network_strategy_domain)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv6);
                                 return false;
                             }
                             network_strategy_domain = network_strategy.replace("*", "m");
                             if (judgeIpV6Domain(ipv6, network_strategy_domain)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv6);
                                 return false;
                             }
                         } else {
                             if (judgeIpV6Domain(ipv6, network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv6);
                                 return false;
                             }
                         }
@@ -417,7 +417,7 @@ public class controllerService extends IController.Stub {
                             }
                         }
                     }
-                    netControlSuccess(packageName);
+                    netControlSuccess(packageName,ipv4);
                     return false;
                 }
             } else {// handle black list
@@ -425,17 +425,17 @@ public class controllerService extends IController.Stub {
                     for (String network_strategy : ip_strategys) {
                         if (network_strategy.contains("-")) {
                             if (judgeIpSection(ipv4, network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                         } else if (network_strategy.contains("/")) {
                             if (judgeSubnet(ipv4, network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                         } else {
                             if (judgeIp(ipv4, network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                         }
@@ -444,17 +444,17 @@ public class controllerService extends IController.Stub {
                         if (network_strategy.contains("*")) {
                             String network_strategy_domain = network_strategy.replace("*", "www");
                             if (judgeIpV4Domain(ipv4, network_strategy_domain)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                             network_strategy_domain = network_strategy.replace("*", "m");
                             if (judgeIpV4Domain(ipv4, network_strategy_domain)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                         } else {
                             if (judgeIpV4Domain(ipv4, network_strategy)) {
-                                netControlSuccess(packageName);
+                                netControlSuccess(packageName,ipv4);
                                 return false;
                             }
                         }
@@ -468,7 +468,7 @@ public class controllerService extends IController.Stub {
 
     @Override
     public boolean isDomainEnable(String packageName, String doamin) throws RemoteException {
-        //Log.e(Tag,"packageName:" + packageName + " domain:" + doamin);
+        //VLog.d(Tag,"packageName:" + packageName + " domain:" + doamin);
         if(NetworkStragegyOnorOff && doamin != null) {
             if (isWhiteOrBlackFlag) {//handle white list
                 if (domain_strategys != null) {
@@ -480,7 +480,7 @@ public class controllerService extends IController.Stub {
                             return true;
                         }
                     }
-                    netControlSuccess(packageName);
+                    netControlSuccess(packageName,doamin);
                     return false;
                 }
             } else {// handle black list
@@ -490,7 +490,7 @@ public class controllerService extends IController.Stub {
                             network_strategy = network_strategy.replace("*.", "");
                         }
                         if (doamin.contains(network_strategy)) {
-                            netControlSuccess(packageName);
+                            netControlSuccess(packageName,doamin);
                             return false;
                         }
                     }
@@ -547,7 +547,8 @@ public class controllerService extends IController.Stub {
         return false;
     }
 
-    private void netControlSuccess(String packagename) throws RemoteException{
+    private void netControlSuccess(String packagename,String domainOrIp) throws RemoteException{
+        VLog.d(Tag,"packagename:" + packagename + " domainOrIp:" + domainOrIp);
         if (!packagenames.contains(packagename)) {
             showToast();
             VActivityManagerService.get().closeAllLongSocket(packagename,0);
@@ -618,7 +619,7 @@ public class controllerService extends IController.Stub {
     @Override
     public void addNetworkStrategy(Map networkStrategy, boolean isWhiteOrBlackList) {
         VLog.d(Tag,"addNetworkStrategy isWhiteOrBlackList " + isWhiteOrBlackList + " networkStrategy " + networkStrategy);
-        packagenames.clear();
+        //packagenames.clear();
         isWhiteOrBlackFlag = isWhiteOrBlackList;
         if( networkStrategy != null) {
             Network_Strategy.clear();
