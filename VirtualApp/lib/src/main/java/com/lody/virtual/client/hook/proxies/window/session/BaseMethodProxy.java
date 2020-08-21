@@ -58,11 +58,12 @@ class Relayout extends BaseMethodProxy{
 
     private void updateContent(){
 
-        mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
-        infos.clear();
-        if(null==mImei||"".equals(mImei))
-            mImei = "安全模式";
-        infos.add(mImei);
+//取消默认水印设置，完全依赖上层设置，包括默认值。不设置不显示。
+//        mImei = MobileInfoUtil.getIMEI(VirtualCore.get().getContext());
+//        infos.clear();
+//        if(null==mImei||"".equals(mImei))
+//            mImei = "安全模式";
+//        infos.add(mImei);
 
         WaterMarkInfo waterMark = VWaterMarkManager.get().getWaterMark();
         if (waterMark == null || TextUtils.isEmpty(waterMark.getWaterMarkContent())) {
