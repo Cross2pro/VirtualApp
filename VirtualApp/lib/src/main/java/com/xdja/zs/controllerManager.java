@@ -238,4 +238,31 @@ public class controllerManager {
             VirtualRuntime.crash(e);
         }
     }
+
+    public String[] getIpStrategy() {
+        try {
+            return getService().getIpStrategy();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+            return null;
+        }
+    }
+
+    public String[] getDomainStrategy() {
+        try {
+            return getService().getDomainStrategy();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+            return null;
+        }
+    }
+
+    public static void isNetworkControl(String ipOrdomain,boolean isSuccessOrFail) {
+        try {
+            get().getService().isNetworkControl(VirtualRuntime.getInitialPackageName(),ipOrdomain,isSuccessOrFail);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);;
+        }
+    }
+
 }

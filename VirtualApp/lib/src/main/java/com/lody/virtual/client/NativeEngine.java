@@ -385,6 +385,13 @@ public class NativeEngine {
 
     private static native void nativeBypassHiddenAPIEnforcementPolicy(int apiLevel, int previewApiLevel);
 
+    public static native boolean nativeConfigNetStrategy(String[] netStrategy,int type);
+
+    public static native void nativeConfigNetworkState(boolean netonOroff);
+
+    public static native void nativeConfigWhiteOrBlack(boolean isWhiteOrBlack);
+
+
     @Keep
     public static int onGetUid(int uid) {
         if (!VClient.get().isAppRunning()) {

@@ -1811,93 +1811,125 @@ HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
     return ret;
 }
 
-HOOK_DEF(int,getaddrinfo,char* __node, const char* __service, const struct addrinfo* __hints, struct addrinfo** __result) {
+HOOK_DEF(int, getaddrinfo,const char *__node, const char *__service, const struct addrinfo *__hints,
+         struct addrinfo **__result) {
     int ret = -1;
-    if(__node != nullptr) {
-        //log("getaddrinfo __node:%s", __node);
-        if(controllerManagerNative::getNetworkState()) {
-            if(!controllerManagerNative::isDomainEnable(__node)) {
-                errno = EAI_FAIL;
+    if (__node != nullptr) {
+        if (getNetWorkState()) {
+            if(isWhiteList()) {
+                if (!isDomainEnable(__node)) {
+                    errno = EAI_FAIL;
+                    return ret;
+                }
+                ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
+                if (ret == 0) {
+                    struct addrinfo *add_result = (*__result);
+                    do {
+                        if (add_result->ai_addr->sa_family == AF_INET) {
+                            sockaddr_in *pSin = (sockaddr_in *) (add_result->ai_addr);
+                            char *ipv4 = inet_ntoa(pSin->sin_addr);
+                            //log("wkw getaddrinfo ipv4 %s domain %s", ipv4, __node);
+                            addWhiteIpStrategy(ipv4);
+                        } else if (add_result->ai_addr->sa_family == AF_INET6) {
+                            sockaddr_in6 sin6;
+                            memcpy(&sin6, add_result->ai_addr, sizeof(sin6));
+                            char ipv6[INET6_ADDRSTRLEN];
+                            inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+                            //log("wkw getaddrinfo ipv6 %s domain %s", ipv6, __node);
+                            addWhiteIpStrategy(ipv6);
+                        }
+                        add_result = add_result->ai_next;
+                    } while (add_result != nullptr);
+                }
+                return ret;
+            } else {
+                ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
+                if(!isDomainEnable(__node)) {
+                    struct addrinfo *add_result = (*__result);
+                    do {
+                        if (add_result->ai_addr->sa_family == AF_INET) {
+                            sockaddr_in *pSin = (sockaddr_in *) (add_result->ai_addr);
+                            char *ipv4 = inet_ntoa(pSin->sin_addr);
+                            //log("wkw getaddrinfo ipv4 %s domain %s", ipv4, __node);
+                            addWhiteIpStrategy(ipv4);
+                        } else if (add_result->ai_addr->sa_family == AF_INET6) {
+                            sockaddr_in6 sin6;
+                            memcpy(&sin6, add_result->ai_addr, sizeof(sin6));
+                            char ipv6[INET6_ADDRSTRLEN];
+                            inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+                            //log("wkw getaddrinfo ipv6 %s domain %s", ipv6, __node);
+                            addWhiteIpStrategy(ipv6);
+                        }
+                        add_result = add_result->ai_next;
+                    } while (add_result != nullptr);
+                    errno = EAI_FAIL;
+                    return -1;
+                }
                 return ret;
             }
-            ret = originalInterface::original_getaddrinfo(__node,__service,__hints,__result);
-            if (controllerManagerNative::isWhiteList() && ret == 0) {
-                struct addrinfo *add_result = (*__result);
-                do {
-                    if (add_result->ai_addr->sa_family == AF_INET) {
-                        sockaddr_in *pSin = (sockaddr_in *) (add_result->ai_addr);
-                        char *ipv4 = inet_ntoa(pSin->sin_addr);
-                        //log("getaddrinfo ipv4 %s",ip);
-                        controllerManagerNative::addWhiteIpStrategy(ipv4);
-                    } else if (add_result->ai_addr->sa_family == AF_INET6) {
-                        sockaddr_in6 sin6;
-                        memcpy(&sin6, add_result->ai_addr, sizeof(sin6));
-                        char ipv6[INET6_ADDRSTRLEN];
-                        inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
-                        //log("getaddrinfo ipv6 %s",ipv6);
-                        controllerManagerNative::addWhiteIpStrategy(ipv6);
-                    }
-                    add_result = add_result->ai_next;
-                } while (add_result != nullptr);
-            }
-            return ret;
         }
     }
-    ret = originalInterface::original_getaddrinfo(__node,__service,__hints,__result);
+    ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
     return ret;
 }
 
-HOOK_DEF(ssize_t,sendto,int fd, const void* buf, size_t n, int flags, struct sockaddr* dst_addr, socklen_t dst_addr_length) {
+HOOK_DEF(ssize_t, sendto, int fd, const void *buf, size_t n, int flags, struct sockaddr *dst_addr,
+         socklen_t dst_addr_length) {
     ssize_t ret = -1;
-    if (nullptr != dst_addr) {
-        if (dst_addr->sa_family == AF_INET) {
-            sockaddr_in *pSin = (sockaddr_in *) dst_addr;
+    if (getNetWorkState()) {
+        if (nullptr != dst_addr) {
+            if (dst_addr->sa_family == AF_INET) {
+                sockaddr_in *pSin = (sockaddr_in *) dst_addr;
+                char *ipv4 = inet_ntoa(pSin->sin_addr);
+                //log("wkw sendto [ipv4 %s]", ipv4);
+                if (!isIpV4Enable(ipv4)) {
+                    //log("return [ret %d] ",ret);
+                    errno = EACCES;
+                    return ret;
+                }
+            } else if (dst_addr->sa_family == AF_INET6) {
+                sockaddr_in6 sin6;
+                memcpy(&sin6, dst_addr, sizeof(sin6));
+                char ipv6[INET6_ADDRSTRLEN];
+                inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
+                //log("wkw sendto ipv6:%s", ipv6);
+                if (!isIpV6Enable(ipv6)) {
+                    errno = EACCES;
+                    return ret;
+                }
+            }
+        }
+    }
+    ret = syscall(__NR_sendto, fd, buf, n, flags, dst_addr, dst_addr_length);
+    return ret;
+}
+
+HOOK_DEF(int, connect, int sd, struct sockaddr *addr, socklen_t socklen) {
+    int ret = -1;
+    if (getNetWorkState()) {
+        if (addr->sa_family == AF_INET) {
+            sockaddr_in *pSin = (sockaddr_in *) addr;
             char *ipv4 = inet_ntoa(pSin->sin_addr);
-            //log("sendto [ipv4 %s]", ipv4);
-            if (!controllerManagerNative::isIpV4Enable(ipv4)) {
-                //log("return [ret %d] ",ret);
-                errno = EACCES;
+            //int port = pSin->sin_port;
+            log("wkw connect [ipv4 %s]", ipv4);
+            if (!isIpV4Enable(ipv4)) {
+                //log("return [ret %d] ENETUNREACH",ret);
+                errno = ENETUNREACH;//无法传送数据包至指定的主机.
                 return ret;
             }
-        } else if (dst_addr->sa_family == AF_INET6) {
+        } else if (addr->sa_family == AF_INET6) {
             sockaddr_in6 sin6;
-            memcpy(&sin6, dst_addr, sizeof(sin6));
+            memcpy(&sin6, addr, sizeof(sin6));
             char ipv6[INET6_ADDRSTRLEN];
             inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
-            //log("sendto ipv6:%s", ipv6);
-            if (!controllerManagerNative::isIpV6Enable(ipv6)) {
-                errno = EACCES;
+            log("wkw connect ipv6:%s", ipv6);
+            if (!isIpV6Enable(ipv6)) {
+                errno = ENETUNREACH;//无法传送数据包至指定的主机.
                 return ret;
             }
         }
     }
-    ret = syscall(__NR_sendto,fd,buf,n,flags,dst_addr,dst_addr_length);
-    return ret;
-}
 
-HOOK_DEF(int, connect ,int sd, struct sockaddr* addr, socklen_t socklen) {
-    int ret = -1;
-    if(addr->sa_family == AF_INET) {
-        sockaddr_in* pSin = (sockaddr_in*)addr;
-        char * ipv4 = inet_ntoa(pSin->sin_addr);
-        //int port = pSin->sin_port;
-        //log("connect [ipv4 %s]",ipv4);
-        if(!controllerManagerNative::isIpV4Enable(ipv4)) {
-            //log("return [ret %d] ENETUNREACH",ret);
-            errno = ENETUNREACH;//无法传送数据包至指定的主机.
-            return ret;
-        }
-    } else if(addr->sa_family == AF_INET6) {
-        sockaddr_in6 sin6;
-        memcpy(&sin6, addr, sizeof(sin6));
-        char ipv6[INET6_ADDRSTRLEN];
-        inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
-        //log("connect ipv6:%s",ipv6);
-        if(!controllerManagerNative::isIpV6Enable(ipv6)) {
-            errno = ENETUNREACH;//无法传送数据包至指定的主机.
-            return ret;
-        }
-    }
     ret = syscall(__NR_connect, sd, addr, socklen);
     return ret;
 }

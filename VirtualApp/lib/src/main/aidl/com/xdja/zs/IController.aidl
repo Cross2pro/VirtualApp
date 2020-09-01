@@ -29,4 +29,7 @@ interface IController {
     boolean getNetworkState();
     boolean isWhiteList();
     void addWhiteIpStrategy(String packageName,String ip);
+    String[] getIpStrategy();
+    String[] getDomainStrategy();
+    void isNetworkControl(String packageName,String ipOrdomain,boolean isSuccessOrFail);
 }

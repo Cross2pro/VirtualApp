@@ -117,6 +117,32 @@ static jboolean jni_nativeConfigEncryptPkgName(JNIEnv *env, jclass jclazz, jobje
     return ret;
 }
 
+static jboolean jni_nativeConfigNetStrategy(JNIEnv *env, jclass jclazz, jobjectArray netStrategy,jint type) {
+    jboolean ret = 1;
+    if(netStrategy == nullptr) {
+        return ret;
+    }
+    int count = env->GetArrayLength(netStrategy);
+    char const** strategyUTF = (char const**)malloc(sizeof(char*) * count);
+    for(int i = 0; i < count; i++) {
+        strategyUTF[i] = env->GetStringUTFChars((jstring)env->GetObjectArrayElement(netStrategy, i), NULL);
+    }
+    ret = static_cast<jboolean>(configNetStrategy(strategyUTF,type,count));
+    for(int i = 0; i < count; i++) {
+        env->ReleaseStringUTFChars((jstring) env->GetObjectArrayElement(netStrategy, i), strategyUTF[i]);
+    }
+    free(strategyUTF);
+    return ret;
+}
+
+static void jni_nativeConfigNetworkState(JNIEnv *env, jclass jclazz, jboolean netonOroff) {
+    configNetworkState(netonOroff);
+}
+
+static void jni_nativeConfigWhiteOrBlack(JNIEnv *env, jclass jclazz, jboolean isWhiteOrBlack) {
+    configWhiteOrBlack(isWhiteOrBlack);
+}
+
 jclass nativeEngineClass;
 JavaVM *vm;
 
@@ -144,9 +170,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
             {"nativeConfigEncryptPkgName",             "([Ljava/lang/String;)Z",                                      (void *)jni_nativeConfigEncryptPkgName},
             {"nativeAddEncryptPkgName",                "(Ljava/lang/String;)V",                                       (void *) jni_nativeAddEncryptPkgName},
             {"nativeDelEncryptPkgName",                "(Ljava/lang/String;)V",                                       (void *) jni_nativeDelEncryptPkgName},
+            {"nativeConfigNetStrategy",                 "([Ljava/lang/String;I)Z",                                    (void *) jni_nativeConfigNetStrategy},
+            {"nativeConfigNetworkState",                "(Z)V",                                                       (void *) jni_nativeConfigNetworkState},
+            {"nativeConfigWhiteOrBlack",                "(Z)V",                                                       (void *) jni_nativeConfigWhiteOrBlack},
     };
 
-    if (env->RegisterNatives(nativeEngineClass, methods, 15) < 0) {
+    if (env->RegisterNatives(nativeEngineClass, methods, 18) < 0) {
         return JNI_ERR;
     }
 
