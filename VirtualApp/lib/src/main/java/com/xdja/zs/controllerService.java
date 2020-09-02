@@ -578,7 +578,7 @@ public class controllerService extends IController.Stub {
         networkStrategy = networkStrategy.trim();
         int idx = networkStrategy.indexOf("/");
         String ip1 = networkStrategy.substring(0, idx);
-        String subnet = networkStrategy.substring(idx + 1, networkStrategy.length());
+        String subnet = networkStrategy.substring(idx + 1);
         int subnetInt = ipStrToInt(subnet);
         int a = ipStrToInt(ip1);
         int b = ipStrToInt(ip);
@@ -640,6 +640,48 @@ public class controllerService extends IController.Stub {
                 ip_strategys.add(network_strategy);
             } else if(network_type == DOMAIN_STRATEGY) {
                 domain_strategys.add(network_strategy);
+            }
+        }
+    }
+
+    @Override
+    public String[] getIpStrategy() {
+        if(ip_strategys != null && ip_strategys.size() > 0) {
+            return ip_strategys.toArray(new String[ip_strategys.size()]);
+        }
+        return null;
+    }
+
+    @Override
+    public String[] getDomainStrategy() {
+        if(domain_strategys != null && domain_strategys.size() > 0) {
+            return domain_strategys.toArray(new String[domain_strategys.size()]);
+        }
+        return null;
+    }
+
+    @Override
+    public void isNetworkControl(String packageName, String ipOrdomain, boolean isSuccessOrFail) throws RemoteException {
+        if (isWhiteOrBlackFlag) {
+            if (isSuccessOrFail) { //white list true ok
+                VLog.d(Tag, "package:" + packageName + " access ipOrdomain " + ipOrdomain + " white list strategy ok");
+            } else { //white list false fail
+                VLog.d(Tag, "package:" + packageName + " access ipOrdomain " + ipOrdomain + " white list strategy fail");
+                if (!packagenames.contains(packageName)) {
+                    VLog.d("wkw","controller service show Toast");
+                    showToast();
+                    packagenames.add(packageName);
+                }
+            }
+        } else {
+            if (isSuccessOrFail) { //black list true ok
+                VLog.d(Tag,"package:" + packageName + " access ipOrdomain " + ipOrdomain + " black list strategy ok");
+            } else { //black list false ok
+                VLog.d(Tag,"package:" + packageName + " access ipOrdomain " + ipOrdomain + " black list strategy fail");
+                if (!packagenames.contains(packageName)) {
+                    showToast();
+                    packagenames.add(packageName);
+                }
             }
         }
     }

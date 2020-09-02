@@ -19,6 +19,7 @@ jmethodID controllerManagerNative::isDomainEnable_method = 0;
 jmethodID controllerManagerNative::getNetworkState_method = 0;
 jmethodID controllerManagerNative::isWhiteList_method = 0;
 jmethodID controllerManagerNative::addWhiteIpStrategy_method = 0;
+jmethodID controllerManagerNative::isNetworkControl_method = 0;
 bool controllerManagerNative::initial() {
     zJNIEnv env;
     if(env.get() == NULL)
@@ -43,6 +44,7 @@ bool controllerManagerNative::initial() {
         controllerManagerNative::getNetworkState_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"getNetworkState","()Z");
         controllerManagerNative::isWhiteList_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"isWhiteList","()Z");
         controllerManagerNative::addWhiteIpStrategy_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"addWhiteIpStrategy","(Ljava/lang/String;)V");
+        controllerManagerNative::isNetworkControl_method = env.get()->GetStaticMethodID(controllerManagerNative::cmn_class,"isNetworkControl","(Ljava/lang/String;Z)V");
         if (controllerManagerNative::isNetworkEnable_method == NULL
             || controllerManagerNative::isChangeConnect_method == NULL
             || controllerManagerNative::isGatewayEnable_method == NULL
@@ -53,7 +55,8 @@ bool controllerManagerNative::initial() {
             || controllerManagerNative::isDomainEnable_method == NULL
             || controllerManagerNative::getNetworkState_method == NULL
             || controllerManagerNative::isWhiteList_method == NULL
-            || controllerManagerNative::addWhiteIpStrategy_method == NULL)
+            || controllerManagerNative::addWhiteIpStrategy_method == NULL
+            || controllerManagerNative::isNetworkControl_method == NULL)
             break;
 
         ret = true;
@@ -167,4 +170,16 @@ void controllerManagerNative::addWhiteIpStrategy(char * ip) {
     jstring ipstr = env.get()->NewStringUTF(ip);
     env.get()->CallStaticVoidMethod(controllerManagerNative::cmn_class,controllerManagerNative::addWhiteIpStrategy_method,ipstr);
     env.get()->DeleteLocalRef(ipstr);
+}
+
+void
+controllerManagerNative::isNetworkControl(const char *ipOrdomain,
+                                          bool isSuccessOrFail) {
+    zJNIEnv env;
+    if(env.get() == NULL) {
+        return;
+    }
+    jstring ip_domain =  env.get()->NewStringUTF(ipOrdomain);
+    env.get()->CallStaticVoidMethod(controllerManagerNative::cmn_class,controllerManagerNative::isNetworkControl_method,ip_domain,isSuccessOrFail);
+    env.get()->DeleteLocalRef(ip_domain);
 }

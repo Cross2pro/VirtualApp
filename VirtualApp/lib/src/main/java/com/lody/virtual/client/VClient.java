@@ -72,6 +72,7 @@ import com.lody.virtual.server.pm.PackageSetting;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.VAppPermissionManager;
+import com.xdja.zs.controllerManager;
 import com.xdja.zs.exceptionRecorder;
 
 import java.io.File;
@@ -877,6 +878,12 @@ public final class VClient extends IVClient.Stub {
         NativeEngine.whitelist(exceptionRecorder.getExceptionRecordPath());
         if (VAppPermissionManager.get().getEncryptConfig() != null) {
             NativeEngine.nativeConfigEncryptPkgName(VAppPermissionManager.get().getEncryptConfig());
+        }
+        if (controllerManager.getNetworkState()) {
+            NativeEngine.nativeConfigNetworkState(controllerManager.getNetworkState());
+            NativeEngine.nativeConfigWhiteOrBlack(controllerManager.isWhiteList());
+            NativeEngine.nativeConfigNetStrategy(controllerManager.get().getIpStrategy(), 1);
+            NativeEngine.nativeConfigNetStrategy(controllerManager.get().getDomainStrategy(), 2);
         }
         NativeEngine.enableIORedirect();
     }

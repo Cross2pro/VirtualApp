@@ -44,4 +44,4 @@ ssize_t (*originalInterface::original_pwrite64)(int fd, const void *buf, size_t 
 int (*originalInterface::original_ftruncate)(int, off_t) = 0;
 int (*originalInterface::original_ftruncate64)(int, off64_t) = 0;
 ssize_t (*originalInterface::original_sendfile)(int out_fd, int in_fd, off_t* offset, size_t count) = 0;
-int (*originalInterface::original_getaddrinfo)(char* __node, const char* __service, const struct addrinfo* __hints, struct addrinfo** __result) = 0;
+int (*originalInterface::original_getaddrinfo)(const char* __node, const char* __service, const struct addrinfo* __hints, struct addrinfo** __result) = 0;

@@ -15,6 +15,9 @@
 #include <map>
 #include <errno.h>
 #include <vector>
+#include <set>
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #include "transparentED/originalInterface.h"
 #include "utils.h"
@@ -406,4 +409,398 @@ void addAppendFlag(int fd) {
 int getApiLevel() {
     char * api = getenv("V_API_LEVEL");
     return atoi(api);
+}
+
+static bool networkStragegyOnorOff;
+static bool isWhiteOrBlackFlag;
+
+void configNetworkState(bool netonOroff) {
+    networkStragegyOnorOff = netonOroff;
+}
+
+bool getNetWorkState() {
+    return networkStragegyOnorOff;
+}
+
+void configWhiteOrBlack(bool isWhiteOrBlack) {
+    isWhiteOrBlackFlag = isWhiteOrBlack;
+}
+
+static std::set<std::string> ipstrategyset;
+static std::set<std::string> domainstrategyset;
+static const int IP_STRATEGY = 1;
+static const int DOMAIN_STRATEGY = 2;
+
+bool configNetStrategy(char const **netstrategy, int type, int count) {
+    if (netstrategy != nullptr) {
+        if (type == IP_STRATEGY) {
+            ipstrategyset.clear();
+            for (int i = 0; i < count; i++) {
+                ipstrategyset.insert(netstrategy[i]);
+            }
+            return true;
+        } else if (type == DOMAIN_STRATEGY) {
+            domainstrategyset.clear();
+            for (int i = 0; i < count; i++) {
+                domainstrategyset.insert(netstrategy[i]);
+            }
+
+            if(!domainstrategyset.empty()) {
+                //查询域名对应IPV4 添加IPV4名单
+                std::set<std::string>::iterator it_domain;
+                struct addrinfo hints_ipv4,*result_ipv4, *rp_ipv4;
+                int err_ipv4;
+                in_addr addr;
+                memset(&hints_ipv4, 0, sizeof(addrinfo));
+                hints_ipv4.ai_socktype = SOCK_STREAM;
+                hints_ipv4.ai_family = AF_INET;
+                for (it_domain = domainstrategyset.begin();
+                     it_domain != domainstrategyset.end(); it_domain++) {
+                    if (isContainsStr((*it_domain), "*")) {
+                        std::string str = (*it_domain);
+                        str = str.replace(str.find("*"), 1, "");
+                        str = str.replace(str.find("."), 1, "");
+                        if((err_ipv4 = getaddrinfo(str.c_str(), NULL, &hints_ipv4, &result_ipv4)) == 0){
+                            for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
+                                addr.s_addr = ((sockaddr_in*)(rp_ipv4->ai_addr))->sin_addr.s_addr;
+                                addWhiteIpStrategy(inet_ntoa(addr));
+                                //log("wkw get addr: %s domain:%s", inet_ntoa(addr),(*it_domain).c_str());
+                            }
+                        }
+                        freeaddrinfo(result_ipv4);
+                    } else {
+                        log("wkw configNetStrategy for");
+                        if((err_ipv4 = getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv4, &result_ipv4)) == 0){
+                            for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
+                                addr.s_addr = ((sockaddr_in*)(rp_ipv4->ai_addr))->sin_addr.s_addr;
+                                addWhiteIpStrategy(inet_ntoa(addr));
+                                //log("wkw get addr: %s domain:%s", inet_ntoa(addr),(*it_domain).c_str());
+                            }
+                        }
+                        freeaddrinfo(result_ipv4);
+                    }
+                }
+                //查询域名对应IPV6 添加IPV6名单
+                struct addrinfo hints_ipv6,*result_ipv6, *rp_ipv6;
+                int err_ipv6;
+                sockaddr_in6 sin6;
+                memset(&hints_ipv6, 0, sizeof(addrinfo));
+                hints_ipv6.ai_socktype = SOCK_STREAM;
+                hints_ipv6.ai_family = AF_INET6;
+                for (it_domain = domainstrategyset.begin();
+                     it_domain != domainstrategyset.end(); it_domain++) {
+                    if (isContainsStr((*it_domain), "*")) {
+                        std::string str = (*it_domain);
+                        str = str.replace(str.find("*"), 1, "");
+                        str = str.replace(str.find("."), 1, "");
+                        if((err_ipv6 = getaddrinfo(str.c_str(), NULL, &hints_ipv6, &result_ipv6)) == 0){
+                            for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
+                                memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
+                                char ip_v6[INET6_ADDRSTRLEN];
+                                inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
+                                addWhiteIpStrategy(ip_v6);
+                                //log("wkw get addr6 domain %s ip_v6 %s",(*it_domain).c_str(),ip_v6);
+                            }
+                        }
+                        freeaddrinfo(result_ipv6);
+                    } else {
+                        if((err_ipv6 = getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv6, &result_ipv6)) == 0){
+                            for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
+                                memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
+                                char ip_v6[INET6_ADDRSTRLEN];
+                                inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
+                                //addWhiteIpStrategy(ip_v6);
+                                log("wkw get addr6 domain %s ip_v6 %s",(*it_domain).c_str(),ip_v6);
+                            }
+                        }
+                        freeaddrinfo(result_ipv6);
+                    }
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isDomainEnable(const char *domain_node) {
+    if (networkStragegyOnorOff) {
+        std::string domain = domain_node;
+        std::set<std::string>::iterator it_domain;
+        if (isWhiteOrBlackFlag) { //handle white domain list
+            if (domainstrategyset.empty()) {
+                isNetworkControl(domain_node,false);
+                return false;
+            }
+            for (it_domain = domainstrategyset.begin();
+                 it_domain != domainstrategyset.end(); it_domain++) {
+                if (isContainsStr((*it_domain), "*.")) {
+                    std::string str = (*it_domain);
+                    str = str.replace(str.find("*"), 1, "");
+                    str = str.replace(str.find("."), 1, "");
+                    if (isContainsStr(str, domain) || isContainsStr(domain, str)) {
+                        isNetworkControl(domain_node,true);
+                        return true;
+                    }
+                } else {
+                    if ((*it_domain) == domain) {
+                        isNetworkControl(domain_node,true);
+                        return true;
+                    }
+                }
+            }
+            isNetworkControl(domain_node,false);
+            return false;
+        } else { // handle black domain list
+            if (domainstrategyset.empty()) {
+                isNetworkControl(domain_node,true);
+                return true;
+            }
+            for (it_domain = domainstrategyset.begin();
+                 it_domain != domainstrategyset.end(); it_domain++) {
+                if (isContainsStr((*it_domain), "*")) {
+                    std::string str = (*it_domain);
+                    str = str.replace(str.find("*"), 1, "");
+                    str = str.replace(str.find("."), 1, "");
+                    if (isContainsStr(str, domain) || isContainsStr(domain, str)) {
+                        isNetworkControl(domain_node,false);
+                        return false;
+                    }
+                } else {
+                    if ((*it_domain) == domain) {
+                        isNetworkControl(domain_node,false);
+                        return false;
+                    }
+                }
+            }
+            isNetworkControl(domain_node,true);
+            return true;
+        }
+    }
+    return true;
+}
+
+void addWhiteIpStrategy(const char* ip) {
+    ipstrategyset.insert(ip);
+}
+
+bool isIpV4Enable(const char *ipv4) {
+    if (networkStragegyOnorOff) {
+        std::string ip = ipv4;
+        std::set<std::string>::iterator it_ip;
+
+        if (isWhiteOrBlackFlag) {// handle white ipv4 list
+            if (ipstrategyset.empty()) {
+                isNetworkControl(ipv4, false);
+                return false;
+            }
+            for (it_ip = ipstrategyset.begin(); it_ip != ipstrategyset.end(); it_ip++) {
+                if (isContainsStr((*it_ip), "-")) {
+                    if (judgeIpSection((*it_ip), ip)) {
+                        isNetworkControl(ipv4, true);
+                        return true;
+                    }
+                } else if (isContainsStr((*it_ip), "/")) {
+                    if (judgeSubnet((*it_ip), ip)) {
+                        isNetworkControl(ipv4, true);
+                        return true;
+                    }
+                } else {
+                    if (judgeIpEqual((*it_ip), ip)) {
+                        isNetworkControl(ipv4, true);
+                        return true;
+                    }
+                }
+            }
+            isNetworkControl(ipv4, false);
+            return false;
+        } else {// handle black ipv4 list
+            if (ipstrategyset.empty()) {
+                isNetworkControl(ipv4, true);
+                return true;
+            }
+            for (it_ip = ipstrategyset.begin(); it_ip != ipstrategyset.end(); it_ip++) {
+                if (isContainsStr((*it_ip), "-")) {
+                    if (judgeIpSection((*it_ip), ip)) {
+                        isNetworkControl(ipv4, false);
+                        return false;
+                    }
+                } else if (isContainsStr((*it_ip), "/")) {
+                    if (judgeSubnet((*it_ip), ip)) {
+                        isNetworkControl(ipv4, false);
+                        return false;
+                    }
+                } else {
+                    if (judgeIpEqual((*it_ip), ip)) {
+                        isNetworkControl(ipv4, false);
+                        return false;
+                    }
+                }
+            }
+            isNetworkControl(ipv4, true);
+            return true;
+        }
+    }
+    return true;
+}
+
+bool isIpV6Enable(const char *ipv6) {
+    if (networkStragegyOnorOff) {
+        std::string ip = ipv6;
+        std::set<std::string>::iterator it_ip;
+
+        if (isWhiteOrBlackFlag) {//handle white ipv6 list
+            if (ipstrategyset.empty()) {
+                isNetworkControl(ipv6,false);
+                return false;
+            }
+            for (it_ip = ipstrategyset.begin(); it_ip != ipstrategyset.end(); it_ip++) {
+                if ((*it_ip) == ip) {
+                    isNetworkControl(ipv6,true);
+                    return true;
+                } else {
+                    if (isContainsStr(ip, ".")) {//IPV6兼容IPV4格式
+                        std::vector<std::string> vector;
+                        split(ip, ":", vector);
+                        std::string ipv4 = vector.back();
+                        if (isContainsStr((*it_ip), "-")) {
+                            if (judgeIpSection((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,true);
+                                return true;
+                            }
+                        } else if (isContainsStr((*it_ip), "/")) {
+                            if (judgeSubnet((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,true);
+                                return true;
+                            }
+                        } else {
+                            if (judgeIpEqual((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,true);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            isNetworkControl(ipv6,false);
+            return false;
+        } else {//handle black ipv6 list
+            if (ipstrategyset.empty()) {
+                isNetworkControl(ipv6,true);
+                return true;
+            }
+            for (it_ip = ipstrategyset.begin(); it_ip != ipstrategyset.end(); it_ip++) {
+                if ((*it_ip) == ip) {
+                    isNetworkControl(ipv6,false);
+                    return false;
+                } else {
+                    if (isContainsStr(ip, ".")) {//IPV6兼容IPV4格式
+                        std::vector<std::string> vector;
+                        split(ip, ":", vector);
+                        std::string ipv4 = vector.back();
+                        if (isContainsStr((*it_ip), "-")) {
+                            if (judgeIpSection((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,false);
+                                return false;
+                            }
+                        } else if (isContainsStr((*it_ip), "/")) {
+                            if (judgeSubnet((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,false);
+                                return false;
+                            }
+                        } else {
+                            if (judgeIpEqual((*it_ip), ipv4)) {
+                                isNetworkControl(ipv6,false);
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            isNetworkControl(ipv6,true);
+            return true;
+        }
+    }
+    return true;
+}
+
+
+bool judgeIpEqual(std::string netstrategy_ip,std::string real_ip) {
+    return netstrategy_ip == real_ip;
+}
+
+bool judgeIpSection(std::string netstrategy_ip,std::string real_ip) {
+    int index = netstrategy_ip.find("-");
+    std::string beginIp = netstrategy_ip.substr(0,index);
+    std::string endIp = netstrategy_ip.substr(index+1);
+    return  (getIp2Long(beginIp)<=getIp2Long(real_ip) && getIp2Long(real_ip)<=getIp2Long(endIp));
+}
+
+bool judgeSubnet(std::string netstrategy_ip, std::string real_ip) {
+    int index = netstrategy_ip.find("/");
+    std::string ip1 = netstrategy_ip.substr(0, index);
+    std::string subnet = netstrategy_ip.substr(index + 1);
+    int subnetInt = ipStrToInt(subnet);
+    int a = ipStrToInt(ip1);
+    int b = ipStrToInt(real_ip);
+    //IP1与IP2属于同一子网络
+    if ((a & subnetInt) == (b & subnetInt)) {
+        //log("wkw ip1 %s real_ip %s in subnet", ip1.c_str(), real_ip.c_str());
+        return true;
+    } else { //IP1与IP2不属于同一子网络
+        //log("wkw ip1 %s real_ip %s not in subnet", ip1.c_str(), real_ip.c_str());
+        return false;
+    }
+}
+
+int ipStrToInt(std::string ip) {
+    int intIp = 0;
+    std::vector<std::string> vector;
+    split(ip, ".", vector);
+    for (int i = 0; i < vector.size(); i++) {
+        intIp += atoi(vector[i].c_str()) << (24 - 8 * i);
+    }
+    return intIp;
+}
+
+long long getIp2Long(std::string ip) {
+    long long ip2long = 0;
+    std::vector<std::string> vector;
+    split(ip, ".", vector);
+    for (int i = 0; i < vector.size(); i++) {
+        ip2long = ip2long << 8 | atoi(vector[i].c_str());
+    }
+    return ip2long;
+}
+
+void split(const std::string &src, const std::string &separator,
+           std::vector<std::string> &dest) {
+    std::string::size_type pos1, pos2;
+    pos1 = 0;
+    pos2 = src.find(separator);
+    while (std::string::npos != pos2) {
+        dest.push_back(src.substr(pos1, pos2 - pos1));
+        pos1 = pos2 + separator.size();
+        pos2 = src.find(separator, pos1);
+    }
+    if (pos1 != src.length())
+        dest.push_back(src.substr(pos1));
+}
+
+bool isContainsStr(std::string str, std::string contains_str) {
+    std::string::size_type idx = str.find(contains_str);
+    if (idx != std::string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool isWhiteList() {
+    return isWhiteOrBlackFlag;
+}
+
+void isNetworkControl(const char * ipOrdomain, bool isSuccessOrFail) {
+    controllerManagerNative::isNetworkControl(ipOrdomain,
+                                              isSuccessOrFail);
 }

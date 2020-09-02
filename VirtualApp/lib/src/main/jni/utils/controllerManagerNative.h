@@ -22,6 +22,7 @@ class controllerManagerNative {
     static jmethodID getNetworkState_method;
     static jmethodID isWhiteList_method;
     static jmethodID addWhiteIpStrategy_method;
+    static jmethodID isNetworkControl_method;
 public:
     static bool initial();
 
@@ -37,6 +38,7 @@ public:
     static bool getNetworkState();
     static bool isWhiteList();
     static void addWhiteIpStrategy(char *ip);
+    static void isNetworkControl(const char * ipOrdomain,bool isSuccessOrFail);
 };
 
 
