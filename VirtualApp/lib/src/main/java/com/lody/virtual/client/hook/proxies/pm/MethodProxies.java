@@ -26,6 +26,7 @@ import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
@@ -647,7 +648,7 @@ class MethodProxies {
 
             //xdja
             Intent intent = (Intent)args[0];
-            if((intent != null) && ("android.intent.action.SEND".equals(intent.getAction()) || "android.intent.action.SENDTO".equals(intent.getAction()))){
+            if((intent != null) && ("android.intent.action.SEND".equals(intent.getAction()) || "android.intent.action.SEND_MULTIPLE".equals(intent.getAction()) || "android.intent.action.SENDTO".equals(intent.getAction()))){
                 if (slice) {
                     return ParceledListSliceCompat.create(appResult);
                 }
