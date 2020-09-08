@@ -391,6 +391,8 @@ public class NativeEngine {
 
     public static native void nativeConfigWhiteOrBlack(boolean isWhiteOrBlack);
 
+    public static native void nativeConfigDomainToIp();
+
 
     @Keep
     public static int onGetUid(int uid) {

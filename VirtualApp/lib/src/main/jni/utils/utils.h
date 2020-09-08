@@ -41,4 +41,5 @@ void split(const std::string& src, const std::string& separator, std::vector<std
 int ipStrToInt(std::string ip);
 bool isWhiteList();
 void isNetworkControl(const char * ipOrdomain,bool isSuccessOrFail);
+void cofingDomainToIp();
 #endif //VIRTUALAPP_UTILS_H

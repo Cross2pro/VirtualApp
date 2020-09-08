@@ -668,7 +668,7 @@ public class controllerService extends IController.Stub {
             } else { //white list false fail
                 VLog.d(Tag, "package:" + packageName + " access ipOrdomain " + ipOrdomain + " white list strategy fail");
                 if (!packagenames.contains(packageName)) {
-                    VLog.d("wkw","controller service show Toast");
+                    VLog.d(Tag,"controller service show Toast");
                     showToast();
                     packagenames.add(packageName);
                 }
