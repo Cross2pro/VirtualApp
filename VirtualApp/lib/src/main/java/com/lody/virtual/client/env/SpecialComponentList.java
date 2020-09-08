@@ -3,6 +3,7 @@ package com.lody.virtual.client.env;
 import android.Manifest;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
@@ -103,6 +104,7 @@ public final class SpecialComponentList {
         PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_ADDED, Constants.ACTION_USER_ADDED);
         PROTECTED_ACTION_MAP.put(VUserManager.ACTION_USER_REMOVED, Constants.ACTION_USER_REMOVED);
         PROTECTED_ACTION_MAP.put(Intent.ACTION_BOOT_COMPLETED, Constants.ACTION_BOOT_COMPLETED);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_WALLPAPER_CHANGED , Constants.ACTION_WALLPAPER_CHANGED);
         //改为仅内部媒体存储收到
         //update images/videos by media provider
         PROTECTED_ACTION_MAP.put(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Constants.ACTION_MEDIA_SCANNER_SCAN_FILE);

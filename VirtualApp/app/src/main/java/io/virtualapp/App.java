@@ -1,28 +1,43 @@
 package io.virtualapp;
 
 import android.app.Application;
+import android.app.IWallpaperManagerCallback;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
+import android.content.res.Resources;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.FileObserver;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.AppDefaultConfig;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.xdja.zs.VServiceKeepAliveManager;
 
+import java.io.File;
+import java.io.IOException;
+
+import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
 import io.virtualapp.delegate.MyTaskDescDelegate;
 import io.virtualapp.home.BackHomeActivity;
 import jonathanfinerty.once.Once;
+
+import static android.os.ParcelFileDescriptor.*;
 
 /**
  * @author Lody
@@ -173,6 +188,75 @@ public class App extends Application {
         public boolean isFloatOnLockScreen(String className) {
             //锁屏界面需要显示的
             return "com.tencent.av.ui.VideoInviteActivity".equals(className) || super.isFloatOnLockScreen(className);
+        }
+
+        @Override
+        public int getWallpaperHeightHint(String packageName, int userId) {
+            //指定壁纸的高度
+            return Resources.getSystem().getDisplayMetrics().heightPixels;
+        }
+
+        @Override
+        public int getWallpaperWidthHint(String packageName, int userId) {
+            //指定壁纸的宽度
+            return Resources.getSystem().getDisplayMetrics().widthPixels;
+        }
+
+        /**
+         *
+         * @return 是否打断调用
+         */
+        @Override
+        public WallpaperResult onSetWallpaper(String packageName, int userId, String name, Rect cropHint, int which, IWallpaperManagerCallback callback) {
+            //null,则由系统处理外部桌面响应
+            //WallpaperResult#wallpaperFile为null，则无法设置桌面
+            //WallpaperResult#wallpaperFile为自己创建的文件，由当前app取写入
+            File file = new File(Environment.getExternalStorageDirectory(), ".wallpaper/"+System.currentTimeMillis()+".png");
+            File dir = file.getParentFile();
+            WallpaperResult result = new WallpaperResult();
+            try {
+                if(!dir.exists()){
+                    dir.mkdirs();
+                }
+                if(file.exists()){
+                    file.delete();
+                }
+                String realPath = NativeEngine.getRedirectedPath(dir.getAbsolutePath());
+                result.wallpaperFile = ParcelFileDescriptor.open(file,
+                        MODE_CREATE | MODE_READ_WRITE | MODE_TRUNCATE//);
+                , VUiKit.getUiHandler(), e -> {
+                    //系统源码是用FileObserver，如果目标app不ParcelFileDescriptor#close，可能不会响应
+                            try {
+                                callback.onWallpaperChanged();
+                                VirtualCore.get().getContext().sendBroadcast(new Intent(Constants.ACTION_WALLPAPER_CHANGED)
+                                        .putExtra(Intent.EXTRA_STREAM, new File(realPath, file.getName()).getPath()));
+                            } catch (Throwable ex) {
+                                //ignore
+                            }
+                        });
+//                //文件写完后，需要回调
+//                Log.e("MethodInvocationStub", "IWallpaperManager:listen:" + realPath);
+//                //FileObserver需要hook，注册真实路径
+//                new FileObserver(realPath) {
+//                    @Override
+//                    public void onEvent(int event, @Nullable String path) {
+//                        if (event == FileObserver.CLOSE_WRITE) {
+//                            if(file.getName().equals(path)){
+//                                try {
+//                                    callback.onWallpaperChanged();
+//                                } catch (Throwable e) {
+//                                }
+//                                VirtualCore.get().getContext().sendBroadcast(new Intent(Constants.ACTION_WALLPAPER_CHANGED)
+//                                        .putExtra(Intent.EXTRA_STREAM, new File(realPath, path).getPath()));
+//                            }
+//                        }
+//                    }
+//                }.startWatching();
+                return result;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            return null;
         }
     };
 

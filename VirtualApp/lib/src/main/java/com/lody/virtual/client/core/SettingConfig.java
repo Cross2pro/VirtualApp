@@ -1,11 +1,14 @@
 package com.lody.virtual.client.core;
 
+import android.app.IWallpaperManagerCallback;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.stub.ChooserActivity;
@@ -187,6 +190,28 @@ public abstract class SettingConfig {
 
     public boolean isCanShowNotification(String packageName, boolean currentSpace) {
         return false;
+    }
+
+
+    /**
+     * @param cropHint
+     * @param which
+     * @return null,则由系统处理外部桌面响应；WallpaperResult#wallpaperFile为null，则无法设置桌面；wallpaperFile为自己创建的文件，由当前app取写入
+     */
+    public WallpaperResult onSetWallpaper(String packageName, int userId, String name, Rect cropHint, int which, IWallpaperManagerCallback lock){
+        return null;
+    }
+
+    public int getWallpaperWidthHint(String packageName, int userId){
+        return -1;
+    }
+
+    public int getWallpaperHeightHint(String packageName, int userId){
+        return -1;
+    }
+
+    public static class WallpaperResult {
+        public ParcelFileDescriptor wallpaperFile;
     }
 
     public static class FakeWifiStatus {

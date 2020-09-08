@@ -10,6 +10,7 @@ import com.lody.virtual.client.hook.proxies.account.AccountManagerStub;
 import com.lody.virtual.client.hook.proxies.alarm.AlarmManagerStub;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
 import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
+import com.lody.virtual.client.hook.proxies.app.WallpaperManagerStub;
 import com.lody.virtual.client.hook.proxies.appops.AppOpsManagerStub;
 import com.lody.virtual.client.hook.proxies.appops.FlymePermissionServiceStub;
 import com.lody.virtual.client.hook.proxies.appops.SmtOpsManagerStub;
@@ -49,7 +50,7 @@ import com.lody.virtual.client.hook.proxies.power.PowerManagerStub;
 import com.lody.virtual.client.hook.proxies.restriction.RestrictionStub;
 import com.lody.virtual.client.hook.proxies.role.RoleStub;
 import com.lody.virtual.client.hook.proxies.search.SearchManagerStub;
-import com.lody.virtual.client.hook.proxies.shortcut.ShortcutServiceStub;
+import com.lody.virtual.client.hook.proxies.pm.ShortcutServiceStub;
 import com.lody.virtual.client.hook.proxies.storage_stats.StorageStatsStub;
 import com.lody.virtual.client.hook.proxies.system.LockSettingsStub;
 import com.lody.virtual.client.hook.proxies.system.SystemUpdateStub;
@@ -209,6 +210,7 @@ public final class InvocationStubManager {
                 addInjector(new ShortcutServiceStub());
                 addInjector(new DevicePolicyManagerStub());
                 addInjector(new BatteryStatsHub());
+                addInjector(new WallpaperManagerStub());
             }
             if (BuildCompat.isOreo()) {
                 addInjector(new AutoFillManagerStub());

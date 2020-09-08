@@ -1,11 +1,17 @@
 package com.lody.virtual.helper.utils;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author Lody
@@ -25,6 +31,33 @@ public class BitmapUtils {
             drawable.draw(canvas);
             return bitmap;
         }
+    }
+
+    public static Bitmap getBitmapByStream(InputStream drawinput) {
+        BitmapFactory.Options moptions = new BitmapFactory.Options();
+        moptions.inJustDecodeBounds = false;
+        moptions.inPurgeable = true;
+        moptions.inInputShareable = true;
+        return BitmapFactory.decodeStream(drawinput, null, moptions);
+    }
+
+    public static Bitmap getBitmapByFile(String file) {
+        InputStream input = null;
+        Bitmap b = null;
+        try {
+            input = new FileInputStream(file);
+            b = getBitmapByStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (input != null)
+                    input.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return b;
     }
 
 
