@@ -143,6 +143,10 @@ static void jni_nativeConfigWhiteOrBlack(JNIEnv *env, jclass jclazz, jboolean is
     configWhiteOrBlack(isWhiteOrBlack);
 }
 
+static void jni_nativeConfigDomainToIp(JNIEnv *env, jclass jclazz) {
+    cofingDomainToIp();
+}
+
 jclass nativeEngineClass;
 JavaVM *vm;
 
@@ -173,9 +177,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *_vm, void *) {
             {"nativeConfigNetStrategy",                 "([Ljava/lang/String;I)Z",                                    (void *) jni_nativeConfigNetStrategy},
             {"nativeConfigNetworkState",                "(Z)V",                                                       (void *) jni_nativeConfigNetworkState},
             {"nativeConfigWhiteOrBlack",                "(Z)V",                                                       (void *) jni_nativeConfigWhiteOrBlack},
+            {"nativeConfigDomainToIp",                  "()V",                                                         (void *) jni_nativeConfigDomainToIp},
     };
 
-    if (env->RegisterNatives(nativeEngineClass, methods, 18) < 0) {
+    if (env->RegisterNatives(nativeEngineClass, methods, 19) < 0) {
         return JNI_ERR;
     }
 

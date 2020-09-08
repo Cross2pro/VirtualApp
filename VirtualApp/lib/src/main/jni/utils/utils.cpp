@@ -18,6 +18,7 @@
 #include <set>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <Foundation/Log.h>
 
 #include "transparentED/originalInterface.h"
 #include "utils.h"
@@ -437,85 +438,14 @@ bool configNetStrategy(char const **netstrategy, int type, int count) {
             ipstrategyset.clear();
             for (int i = 0; i < count; i++) {
                 ipstrategyset.insert(netstrategy[i]);
+                ALOGE("add ip strategy: %s",netstrategy[i]);
             }
             return true;
         } else if (type == DOMAIN_STRATEGY) {
             domainstrategyset.clear();
             for (int i = 0; i < count; i++) {
                 domainstrategyset.insert(netstrategy[i]);
-            }
-
-            if(!domainstrategyset.empty()) {
-                //查询域名对应IPV4 添加IPV4名单
-                std::set<std::string>::iterator it_domain;
-                struct addrinfo hints_ipv4,*result_ipv4, *rp_ipv4;
-                int err_ipv4;
-                in_addr addr;
-                memset(&hints_ipv4, 0, sizeof(addrinfo));
-                hints_ipv4.ai_socktype = SOCK_STREAM;
-                hints_ipv4.ai_family = AF_INET;
-                for (it_domain = domainstrategyset.begin();
-                     it_domain != domainstrategyset.end(); it_domain++) {
-                    if (isContainsStr((*it_domain), "*")) {
-                        std::string str = (*it_domain);
-                        str = str.replace(str.find("*"), 1, "");
-                        str = str.replace(str.find("."), 1, "");
-                        if((err_ipv4 = getaddrinfo(str.c_str(), NULL, &hints_ipv4, &result_ipv4)) == 0){
-                            for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
-                                addr.s_addr = ((sockaddr_in*)(rp_ipv4->ai_addr))->sin_addr.s_addr;
-                                addWhiteIpStrategy(inet_ntoa(addr));
-                                //log("wkw get addr: %s domain:%s", inet_ntoa(addr),(*it_domain).c_str());
-                            }
-                        }
-                        freeaddrinfo(result_ipv4);
-                    } else {
-                        log("wkw configNetStrategy for");
-                        if((err_ipv4 = getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv4, &result_ipv4)) == 0){
-                            for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
-                                addr.s_addr = ((sockaddr_in*)(rp_ipv4->ai_addr))->sin_addr.s_addr;
-                                addWhiteIpStrategy(inet_ntoa(addr));
-                                //log("wkw get addr: %s domain:%s", inet_ntoa(addr),(*it_domain).c_str());
-                            }
-                        }
-                        freeaddrinfo(result_ipv4);
-                    }
-                }
-                //查询域名对应IPV6 添加IPV6名单
-                struct addrinfo hints_ipv6,*result_ipv6, *rp_ipv6;
-                int err_ipv6;
-                sockaddr_in6 sin6;
-                memset(&hints_ipv6, 0, sizeof(addrinfo));
-                hints_ipv6.ai_socktype = SOCK_STREAM;
-                hints_ipv6.ai_family = AF_INET6;
-                for (it_domain = domainstrategyset.begin();
-                     it_domain != domainstrategyset.end(); it_domain++) {
-                    if (isContainsStr((*it_domain), "*")) {
-                        std::string str = (*it_domain);
-                        str = str.replace(str.find("*"), 1, "");
-                        str = str.replace(str.find("."), 1, "");
-                        if((err_ipv6 = getaddrinfo(str.c_str(), NULL, &hints_ipv6, &result_ipv6)) == 0){
-                            for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
-                                memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
-                                char ip_v6[INET6_ADDRSTRLEN];
-                                inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
-                                addWhiteIpStrategy(ip_v6);
-                                //log("wkw get addr6 domain %s ip_v6 %s",(*it_domain).c_str(),ip_v6);
-                            }
-                        }
-                        freeaddrinfo(result_ipv6);
-                    } else {
-                        if((err_ipv6 = getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv6, &result_ipv6)) == 0){
-                            for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
-                                memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
-                                char ip_v6[INET6_ADDRSTRLEN];
-                                inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
-                                //addWhiteIpStrategy(ip_v6);
-                                log("wkw get addr6 domain %s ip_v6 %s",(*it_domain).c_str(),ip_v6);
-                            }
-                        }
-                        freeaddrinfo(result_ipv6);
-                    }
-                }
+                ALOGE("add domain strategy: %s",netstrategy[i]);
             }
             return true;
         }
@@ -803,4 +733,81 @@ bool isWhiteList() {
 void isNetworkControl(const char * ipOrdomain, bool isSuccessOrFail) {
     controllerManagerNative::isNetworkControl(ipOrdomain,
                                               isSuccessOrFail);
+}
+
+void cofingDomainToIp() {
+    if (!domainstrategyset.empty()) {
+        //查询域名对应IPV4 添加IPV4名单
+        std::set<std::string>::iterator it_domain;
+        struct addrinfo hints_ipv4, *result_ipv4, *rp_ipv4;
+        int err_ipv4;
+        in_addr addr;
+        memset(&hints_ipv4, 0, sizeof(addrinfo));
+        hints_ipv4.ai_socktype = SOCK_STREAM;
+        hints_ipv4.ai_family = AF_INET;
+        //log("wkw cofingDomainToIp");
+        for (it_domain = domainstrategyset.begin();
+             it_domain != domainstrategyset.end(); it_domain++) {
+            if (isContainsStr((*it_domain), "*")) {
+                std::string str = (*it_domain);
+                str = str.replace(str.find("*"), 1, "");
+                str = str.replace(str.find("."), 1, "");
+                if ((err_ipv4 = originalInterface::original_getaddrinfo(str.c_str(), NULL, &hints_ipv4, &result_ipv4)) == 0) {
+                    for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
+                        addr.s_addr = ((sockaddr_in *) (rp_ipv4->ai_addr))->sin_addr.s_addr;
+                        addWhiteIpStrategy(inet_ntoa(addr));
+                        //log("wkw get addr domain %s ip_v4 %s",(*it_domain).c_str(), inet_ntoa(addr));
+                    }
+                }
+                freeaddrinfo(result_ipv4);
+            } else {
+                if ((err_ipv4 = originalInterface::original_getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv4,
+                                            &result_ipv4)) == 0) {
+                    for (rp_ipv4 = result_ipv4; rp_ipv4 != NULL; rp_ipv4 = rp_ipv4->ai_next) {
+                        addr.s_addr = ((sockaddr_in *) (rp_ipv4->ai_addr))->sin_addr.s_addr;
+                        addWhiteIpStrategy(inet_ntoa(addr));
+                        //log("wkw get addr domain %s ip_v4 %s", (*it_domain).c_str(), inet_ntoa(addr));
+                    }
+                }
+                freeaddrinfo(result_ipv4);
+            }
+        }
+        //查询域名对应IPV6 添加IPV6名单
+        struct addrinfo hints_ipv6, *result_ipv6, *rp_ipv6;
+        int err_ipv6;
+        sockaddr_in6 sin6;
+        memset(&hints_ipv6, 0, sizeof(addrinfo));
+        hints_ipv6.ai_socktype = SOCK_STREAM;
+        hints_ipv6.ai_family = AF_INET6;
+        for (it_domain = domainstrategyset.begin();
+             it_domain != domainstrategyset.end(); it_domain++) {
+            if (isContainsStr((*it_domain), "*")) {
+                std::string str = (*it_domain);
+                str = str.replace(str.find("*"), 1, "");
+                str = str.replace(str.find("."), 1, "");
+                if ((err_ipv6 = originalInterface::original_getaddrinfo(str.c_str(), NULL, &hints_ipv6, &result_ipv6)) == 0) {
+                    for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
+                        memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
+                        char ip_v6[INET6_ADDRSTRLEN];
+                        inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
+                        addWhiteIpStrategy(ip_v6);
+                        //log("wkw get addr6 domain %s ip_v6 %s",(*it_domain).c_str(),ip_v6);
+                    }
+                }
+                freeaddrinfo(result_ipv6);
+            } else {
+                if ((err_ipv6 = originalInterface::original_getaddrinfo((*it_domain).c_str(), NULL, &hints_ipv6,
+                                            &result_ipv6)) == 0) {
+                    for (rp_ipv6 = result_ipv6; rp_ipv6 != NULL; rp_ipv6 = rp_ipv6->ai_next) {
+                        memcpy(&sin6, rp_ipv6->ai_addr, sizeof(sin6));
+                        char ip_v6[INET6_ADDRSTRLEN];
+                        inet_ntop(AF_INET6, &sin6.sin6_addr, ip_v6, sizeof(ip_v6));
+                        addWhiteIpStrategy(ip_v6);
+                        //log("wkw get addr6 domain %s ip_v6 %s", (*it_domain).c_str(), ip_v6);
+                    }
+                }
+                freeaddrinfo(result_ipv6);
+            }
+        }
+    }
 }

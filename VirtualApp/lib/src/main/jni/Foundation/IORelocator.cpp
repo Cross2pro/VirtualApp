@@ -1911,7 +1911,7 @@ HOOK_DEF(int, connect, int sd, struct sockaddr *addr, socklen_t socklen) {
             sockaddr_in *pSin = (sockaddr_in *) addr;
             char *ipv4 = inet_ntoa(pSin->sin_addr);
             //int port = pSin->sin_port;
-            log("wkw connect [ipv4 %s]", ipv4);
+            //log("wkw connect [ipv4 %s]", ipv4);
             if (!isIpV4Enable(ipv4)) {
                 //log("return [ret %d] ENETUNREACH",ret);
                 errno = ENETUNREACH;//无法传送数据包至指定的主机.
@@ -1922,7 +1922,7 @@ HOOK_DEF(int, connect, int sd, struct sockaddr *addr, socklen_t socklen) {
             memcpy(&sin6, addr, sizeof(sin6));
             char ipv6[INET6_ADDRSTRLEN];
             inet_ntop(AF_INET6, &sin6.sin6_addr, ipv6, sizeof(ipv6));
-            log("wkw connect ipv6:%s", ipv6);
+            //log("wkw connect ipv6:%s", ipv6);
             if (!isIpV6Enable(ipv6)) {
                 errno = ENETUNREACH;//无法传送数据包至指定的主机.
                 return ret;
