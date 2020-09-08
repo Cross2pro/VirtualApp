@@ -1,6 +1,7 @@
-package com.lody.virtual.client.hook.proxies.shortcut;
+package com.lody.virtual.client.hook.proxies.pm;
 
 import android.annotation.TargetApi;
+import android.app.WallpaperManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -42,7 +43,7 @@ public class ShortcutServiceStub extends BinderInvocationProxy {
 
 
     public ShortcutServiceStub() {
-        super(IShortcutService.Stub.TYPE, "shortcut");
+        super(IShortcutService.Stub.asInterface, Context.SHORTCUT_SERVICE);
     }
 
     @Override

@@ -39,7 +39,7 @@ public class Constants {
 	public static final String ACTION_USER_STARTED = "virtual." + VUserManager.ACTION_USER_STARTED;
 	public static final String ACTION_BOOT_COMPLETED = "virtual." + Intent.ACTION_BOOT_COMPLETED;
 	public static final String ACTION_MEDIA_SCANNER_SCAN_FILE = "virtual." + Intent.ACTION_MEDIA_SCANNER_SCAN_FILE;
-
+	public static final String ACTION_WALLPAPER_CHANGED = "virtual." + Intent.ACTION_WALLPAPER_CHANGED;
     /**
 	 * Server process name of VA
 	 */

@@ -2,9 +2,12 @@ package com.lody.virtual.client.hook.utils;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.ArrayUtils;
+import com.lody.virtual.os.VUserHandle;
 
 import java.util.Arrays;
 import java.util.HashSet;
+
+import static com.lody.virtual.client.hook.base.MethodProxy.getAppUserId;
 
 /**
  * @author Lody
@@ -37,6 +40,16 @@ public class MethodParameterUtils {
 			}
 		}
 		return null;
+	}
+
+	public static void replaceLastUserId(Object[] args){
+		int index = ArrayUtils.indexOfLast(args, Integer.class);
+		if (index != -1) {
+			int uid = (int) args[index];
+			if (uid == getAppUserId()) {
+				args[index] = VUserHandle.realUserId();
+			}
+		}
 	}
 
 	public static String replaceLastAppPkg(Object[] args) {

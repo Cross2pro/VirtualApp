@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
@@ -42,6 +44,8 @@ import com.lody.virtual.client.stub.ChooseTypeAndAccountActivity;
 import com.lody.virtual.client.stub.InstallerActivity;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.OutsideProxyContentProvider;
+import com.lody.virtual.helper.utils.BitmapUtils;
+import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.oem.OemPermissionHelper;
 import com.lody.virtual.os.VUserInfo;
 import com.lody.virtual.os.VUserManager;
@@ -152,7 +156,9 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 }
             });
         }
-        VirtualCore.get().registerReceiver(this, mReceiver, new IntentFilter(Constants.ACTION_BADGER_CHANGE));
+        IntentFilter intentFilter =new IntentFilter(Constants.ACTION_BADGER_CHANGE);
+        intentFilter.addAction(Constants.ACTION_WALLPAPER_CHANGED);
+        VirtualCore.get().registerReceiver(this, mReceiver, intentFilter);
         Uri u1 = Uri.parse("content://123456/1/2/3?a=1&b=2");
         Uri u2 = OutsideProxyContentProvider.toProxyUri(u1);
         Uri u3 = OutsideProxyContentProvider.toRealUri(u2);
@@ -164,10 +170,30 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     private VirtualCore.Receiver mReceiver = new VirtualCore.Receiver() {
         @Override
         public void onReceive(Context context, Intent intent, int userId) {
-            Log.d("kk-test", "onReceive:" + intent);
-            Log.d("kk-test", "userId:" + intent.getIntExtra("userId", -1));
-            Log.d("kk-test", "packageName:" + intent.getStringExtra("packageName"));
-            Log.d("kk-test", "badgerCount:" + intent.getIntExtra("badgerCount", -1));
+            if(Constants.ACTION_BADGER_CHANGE.equals(intent.getAction())) {
+                Log.d("kk-test", "onReceive:" + intent);
+                Log.d("kk-test", "userId:" + intent.getIntExtra("userId", -1));
+                Log.d("kk-test", "packageName:" + intent.getStringExtra("packageName"));
+                Log.d("kk-test", "badgerCount:" + intent.getIntExtra("badgerCount", -1));
+            }else if(Constants.ACTION_WALLPAPER_CHANGED.equals(intent.getAction())){
+                //
+                String path = intent.getStringExtra(Intent.EXTRA_STREAM);
+                if(FileUtils.isExist(path)) {
+                    Log.e("MethodInvocationStub", "setBackground:"+path);
+                    File file = new File(path);
+                    File[] files = file.getParentFile().listFiles();
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.isFile()) {
+                                if (!TextUtils.equals(f.getPath(), file.getPath())) {
+                                    f.delete();
+                                }
+                            }
+                        }
+                    }
+                    mLauncherView.setBackground(new BitmapDrawable(getResources(), BitmapUtils.getBitmapByFile(path)));
+                }
+            }
         }
     };
 

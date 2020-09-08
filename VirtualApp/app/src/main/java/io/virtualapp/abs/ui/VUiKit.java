@@ -40,4 +40,8 @@ public class VUiKit {
 			e.printStackTrace();
 		}
 	}
+
+	public static Handler getUiHandler() {
+		return gUiHandler;
+	}
 }

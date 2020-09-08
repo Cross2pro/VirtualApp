@@ -4,8 +4,18 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
+import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.AppCallback;
+import com.lody.virtual.helper.compat.BuildCompat;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedHelpers;
 
 public class MyComponentDelegate implements AppCallback {
 
@@ -20,6 +30,44 @@ public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void afterApplicationCreate(String packageName, String processName, Application application) {
+//        try {
+//            if(BuildCompat.isQ()){
+//                XposedHelpers.findAndHookMethod("android.os.FileObserver$ObserverThread", application.getClassLoader(),
+//                        "startWatching", int.class, String[].class, int.class, int[].class,new XC_MethodHook() {
+//                            @Override
+//                            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                                String[] paths = (String[])param.args[1];
+//                                for(int i = 0;i<paths.length;i++) {
+//                                    paths[i] = NativeEngine.getRedirectedPath(paths[i]);
+//                                }
+//                                Log.w("MethodInvocationStub", "startWatching:"+Arrays.toString((String[])param.args[1]));
+//                                super.beforeHookedMethod(param);
+//                            }
+//                        });
+//            }else {
+//                XposedHelpers.findAndHookMethod("android.os.FileObserver$ObserverThread", application.getClassLoader(),
+//                        "startWatching", int.class, String.class, int.class, new XC_MethodHook() {
+//                            @Override
+//                            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                                param.args[1] = NativeEngine.getRedirectedPath((String) param.args[1]);
+//                                Log.w("MethodInvocationStub", "startWatching:"+param.args[1]);
+//                                super.beforeHookedMethod(param);
+//                            }
+//                        });
+//            }
+//        }catch (Throwable e){
+//            try {
+//                Class<?> clazz = Class.forName("android.os.FileObserver$ObserverThread", true, application.getClassLoader());
+//                Method[] methods = clazz.getDeclaredMethods();
+//                for(Method method:methods){
+//                    if(Modifier.isNative(method.getModifiers())){
+//                        Log.e("MethodInvocationStub", method.getName()+":"+ Arrays.toString(method.getParameterTypes()));
+//                    }
+//                }
+//            }catch (Throwable e2){
+//                e2.printStackTrace();
+//            }
+//        }
         if(!"com.xdja.swbg".equals(packageName)){
             return;
         }
