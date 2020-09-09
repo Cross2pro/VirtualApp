@@ -16,6 +16,7 @@ import com.lody.virtual.client.hook.base.ReplaceSequencePkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.Method;
 
@@ -33,16 +34,27 @@ public class WallpaperManagerStub extends BinderInvocationProxy {
 
     @Override
     public void inject() throws Throwable {
+        super.inject();
+        WallpaperManager.getInstance(VirtualCore.get().getContext());
         final IInterface hookedService = getInvocationStub().getProxyInterface();
         if (mirror.android.app.WallpaperManager.sGlobals != null && hookedService != null){
             Object sGlobals = mirror.android.app.WallpaperManager.sGlobals.get();
             if(sGlobals != null){
                 if(mirror.android.app.WallpaperManager.Globals.mService != null) {
-                    mirror.android.app.WallpaperManager.Globals.mService.set(sGlobals, hookedService);
+                    Object old = mirror.android.app.WallpaperManager.Globals.mService.get(sGlobals);
+                    if(old != hookedService) {
+                        VLog.w("kk-test", "WallpaperManager.sGlobals.mService="+old);
+                        mirror.android.app.WallpaperManager.Globals.mService.set(sGlobals, hookedService);
+                    } else {
+                        VLog.i("kk-test", "WallpaperManager.sGlobals.mService set ok");
+                    }
+                } else {
+                    VLog.i("kk-test", "WallpaperManager.sGlobals.mService is not found ");
                 }
+            } else {
+                VLog.w("kk-test", "WallpaperManager.sGlobals=null");
             }
         }
-        super.inject();
     }
 
     @Override
