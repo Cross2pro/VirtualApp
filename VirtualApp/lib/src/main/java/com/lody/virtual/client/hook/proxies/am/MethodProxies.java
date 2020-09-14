@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.WallpaperManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
@@ -524,6 +525,11 @@ class MethodProxies {
                     intent.putExtra("package", getHostPkg());
                 }
                 return method.invoke(who, args);
+            }
+
+            if(WallpaperManager.ACTION_CROP_AND_SET_WALLPAPER.equals(intent.getAction())){
+                //屏蔽裁剪并且设置壁纸
+                return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
