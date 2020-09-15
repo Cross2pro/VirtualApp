@@ -94,4 +94,8 @@ final class ProcessRecord extends Binder {
             }
         }
     }
+
+    public String getPackageName(){
+        return info.packageName;
+    }
 }

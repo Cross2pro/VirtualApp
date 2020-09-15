@@ -97,7 +97,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             .getSystemService(Context.NOTIFICATION_SERVICE);
     private final Map<String, Boolean> sIdeMap = new HashMap<>();
     private boolean mResult;
-    private static boolean CANCEL_ALL_NOTIFICATION_BY_KILL_APP = false;
+    private static boolean CANCEL_ALL_NOTIFICATION_BY_KILL_APP = true;
     private static boolean mDarkMode;
     private long lastBackHomeTime;
 
@@ -746,12 +746,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public void killAllApps() {
-        List<String> pkgList;
-        if (CANCEL_ALL_NOTIFICATION_BY_KILL_APP) {
-            pkgList = new ArrayList<>();
-        } else {
-            pkgList = null;
-        }
         synchronized (mProcessLock) {
             for (int i = 0; i < mPidsSelfLocked.size(); i++) {
                 ProcessRecord r = mPidsSelfLocked.get(i);
@@ -773,22 +767,15 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 finishAllActivity(r);
                 */
                 r.kill();
-                if(pkgList != null) {
-                    if (!pkgList.contains(r.info.packageName)) {
-                        pkgList.add(r.info.packageName);
-                    }
+                if(CANCEL_ALL_NOTIFICATION_BY_KILL_APP){
+                    VNotificationManagerService.get().cancelAllNotification(r.getPackageName(), -1);
                 }
-            }
-        }
-        if(pkgList != null) {
-            for (String pkg : pkgList) {
-                VNotificationManagerService.get().cancelAllNotification(pkg, -1);
             }
         }
     }
 
     @Override
-    public void killAppByPkg(final String pkg, int userId) {
+    public void killAppByPkg(final String pkg, final int userId) {
         if(CANCEL_ALL_NOTIFICATION_BY_KILL_APP) {
             VNotificationManagerService.get().cancelAllNotification(pkg, userId);
         }
@@ -825,6 +812,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
                                             e.printStackTrace();
                                         }
                                         r.kill();
+                                        if (CANCEL_ALL_NOTIFICATION_BY_KILL_APP) {
+                                            VNotificationManagerService.get().cancelAllNotification(pkg, userId);
+                                        }
                                     }
                                 }).start();
                             }
@@ -833,6 +823,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
                 }
             }
         }
+
     }
 
     @Override
