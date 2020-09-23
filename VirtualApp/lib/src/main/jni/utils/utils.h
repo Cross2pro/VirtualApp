@@ -42,4 +42,5 @@ int ipStrToInt(std::string ip);
 bool isWhiteList();
 void isNetworkControl(const char * ipOrdomain,bool isSuccessOrFail);
 void cofingDomainToIp();
+bool isIPAddress(const char* str);
 #endif //VIRTUALAPP_UTILS_H
