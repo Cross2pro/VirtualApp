@@ -811,3 +811,20 @@ void cofingDomainToIp() {
         }
     }
 }
+
+bool isIPAddress(const char *str) {
+    int a, b, c, d;
+    char temp[100];
+    if ((sscanf(str, "%d.%d.%d.%d", &a, &b, &c, &d)) != 4) {
+        return false;
+    }
+    sprintf(temp, "%d.%d.%d.%d", a, b, c, d);
+    if (strcmp(temp, str) != 0) {
+        return false;
+    }
+    if (!((a <= 255 && a >= 0) && (b <= 255 && b >= 0) && (c <= 255 && c >= 0))) {
+        return false;
+    } else {
+        return true;
+    }
+}

@@ -1817,6 +1817,25 @@ HOOK_DEF(int, getaddrinfo,const char *__node, const char *__service, const struc
     if (__node != nullptr) {
         if (getNetWorkState()) {
             if(isWhiteList()) {
+                if(isIPAddress(__node) || isContainsStr(__node,":")) {
+                    if(isIPAddress(__node)) {
+                        if(isIpV4Enable(__node)) {
+                            ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
+                            //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                            return ret;
+                        }
+                    } else if(isContainsStr(__node,":")) {
+                        if(isIpV6Enable(__node)) {
+                            ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
+                            //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                            return ret;
+                        }
+                    }
+                    errno = EAI_FAIL;
+                    //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                    return ret;
+                }
+
                 if (!isDomainEnable(__node)) {
                     errno = EAI_FAIL;
                     return ret;
@@ -1843,6 +1862,25 @@ HOOK_DEF(int, getaddrinfo,const char *__node, const char *__service, const struc
                 }
                 return ret;
             } else {
+                if(isIPAddress(__node) || isContainsStr(__node,":")) {
+                    if(isIPAddress(__node)) {
+                        if(!isIpV4Enable(__node)) {
+                            errno = EAI_FAIL;
+                            //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                            return ret;
+                        }
+                    } else if(isContainsStr(__node,":")) {
+                        if(!isIpV6Enable(__node)) {
+                            errno = EAI_FAIL;
+                            //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                            return ret;
+                        }
+                    }
+                    ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
+                    //log("wkw getaddrinfo: node %s ret %d",__node,ret);
+                    return ret;
+                }
+
                 ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
                 if(!isDomainEnable(__node)) {
                     struct addrinfo *add_result = (*__result);
