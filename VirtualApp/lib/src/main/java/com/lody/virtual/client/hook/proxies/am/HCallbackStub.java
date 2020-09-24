@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -23,6 +24,7 @@ import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.ActivityThread;
 import mirror.android.app.ClientTransactionHandler;
 import mirror.android.app.IActivityManager;
+import mirror.android.app.servertransaction.ActivityResultItem;
 import mirror.android.app.servertransaction.ClientTransaction;
 import mirror.android.app.servertransaction.LaunchActivityItem;
 import mirror.android.app.servertransaction.TopResumedActivityChangeItem;
@@ -109,10 +111,14 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                 return true;
             }
             Object item = activityCallbacks.get(0);
-            if (item.getClass() != LaunchActivityItem.TYPE) {
-                return true;
+            if (item.getClass() == LaunchActivityItem.TYPE) {
+               return handleLaunchActivity(msg, item);
+            } else if(item.getClass() == ActivityResultItem.TYPE){
+                if(handleActivityResult(msg, item)){
+                    return false;
+                }
             }
-            return handleLaunchActivity(msg, item);
+            return true;
         } else if (BuildCompat.isQ()) {
             List<Object> activityCallbacks = ClientTransaction.mActivityCallbacks.get(transaction);
             if (activityCallbacks != null && !activityCallbacks.isEmpty()) {
@@ -122,10 +128,19 @@ public class HCallbackStub implements Handler.Callback, IInjector {
                         VLog.e("HCallbackStub", "Activity top position already set to onTop=" + TopResumedActivityChangeItem.mOnTop.get(item));
                         return false;
                     }
+                } else if(item.getClass() == ActivityResultItem.TYPE){
+                    if(handleActivityResult(msg, item)){
+                        return false;
+                    }
                 }
             }
         }
         return true;
+    }
+
+    private boolean handleActivityResult(Message msg, Object r){
+        //TODO
+        return false;
     }
 
     private boolean handleLaunchActivity(Message msg, Object r) {

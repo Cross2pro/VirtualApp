@@ -910,6 +910,10 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (!VirtualCore.getConfig().isNeedRealRequestInstall(getAppPkg())) {
+                //内部安装
+                return true;
+            }
             MethodParameterUtils.replaceFirstAppPkg(args);
             return super.call(who, method, args);
         }

@@ -258,6 +258,12 @@ public class App extends Application {
             }
             return null;
         }
+
+        @Override
+        public boolean isNeedRealRequestInstall(String packageName) {
+            //如果需要给该应用未知来源安装真实的判断，返回true
+            return super.isNeedRealRequestInstall(packageName);
+        }
     };
 
     public static App getApp() {

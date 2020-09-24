@@ -1,6 +1,7 @@
 package com.lody.virtual.client.hook.proxies.am;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.app.IServiceConnection;
@@ -32,6 +33,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.provider.Telephony;
 import android.telecom.TelecomManager;
 import android.text.TextUtils;
@@ -546,7 +548,7 @@ class MethodProxies {
             if ("*/*".equals((String) args[intentIndex + 1])) {
                 args[intentIndex + 1] = resolvedType;
             }
-            IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
+            final IBinder resultTo = resultToIndex >= 0 ? (IBinder) args[resultToIndex] : null;
             String resultWho = null;
             int requestCode = -1;
             Bundle options = ArrayUtils.getFirst(args, Bundle.class);
@@ -567,6 +569,25 @@ class MethodProxies {
                     &&intent.getDataString()!=null
                     &&intent.getDataString().startsWith("smsto:")){
                 return method.invoke(who,args);
+            }
+
+            if(!VirtualCore.getConfig().isNeedRealRequestInstall(getAppPkg())) {
+                if (Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES.equals(intent.getAction())) {
+                    //不需要给安全盒申请安装apk权限，内部应用更新不走系统安装器
+                    //canRequestPackageInstalls必须返回true
+                    if (resultTo != null && requestCode > 0) {
+                        final String finalResultWho = resultWho;
+                        final int finalRequestCode = requestCode;
+                        VirtualRuntime.getUIHandler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                VActivityManager.get().sendActivityResultLocal(resultTo, finalResultWho, finalRequestCode, null, Activity.RESULT_OK);
+                            }
+                        }, 1000);
+                        return ActivityManagerCompat.START_SUCCESS;
+                    }
+                    return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+                }
             }
 
             if (isHostIntent(intent)) {
