@@ -1,11 +1,13 @@
 package com.lody.virtual.client.core;
 
 import android.app.IWallpaperManagerCallback;
+import android.app.Notification;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
@@ -15,6 +17,7 @@ import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.client.stub.WindowPreviewActivity;
 import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.compat.NotificationChannelCompat;
 
 /**
  * @author Lody
@@ -72,7 +75,7 @@ public abstract class SettingConfig {
         return AppLibConfig.UseOwnLib;
     }
 
-    public boolean isAllowServiceStartForeground() {
+    public boolean isAllowServiceStartForeground(String packageName) {
         return true;
     }
 
@@ -82,6 +85,16 @@ public abstract class SettingConfig {
 
     public boolean isHideForegroundNotification() {
         return false;
+    }
+
+    public Notification getForegroundNotification(){
+        Notification.Builder builder = NotificationChannelCompat.createBuilder(VirtualCore.get().getContext(),
+                NotificationChannelCompat.DAEMON_ID);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setVisibility(Notification.VISIBILITY_SECRET);
+        }
+        builder.setSound(null);
+        return builder.build();
     }
 
     public FakeWifiStatus getFakeWifiStatus() {

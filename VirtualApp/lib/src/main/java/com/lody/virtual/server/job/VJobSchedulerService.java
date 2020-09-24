@@ -16,6 +16,7 @@ import com.lody.virtual.client.ipc.VJobScheduler;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VJobWorkItem;
 import com.lody.virtual.server.interfaces.IJobService;
 
@@ -138,17 +139,13 @@ public class VJobSchedulerService extends IJobService.Stub {
         public int virtualJobId;
         public String serviceName;
         public PersistableBundle extras;
+        public long intervalMillis;
+        public long flexMillis;
 
         JobConfig(int virtualJobId, String serviceName, PersistableBundle extra) {
             this.virtualJobId = virtualJobId;
             this.serviceName = serviceName;
             this.extras = extra;
-        }
-
-        JobConfig(Parcel in) {
-            this.virtualJobId = in.readInt();
-            this.serviceName = in.readString();
-            this.extras = in.readParcelable(PersistableBundle.class.getClassLoader());
         }
 
         @Override
@@ -161,6 +158,16 @@ public class VJobSchedulerService extends IJobService.Stub {
             dest.writeInt(this.virtualJobId);
             dest.writeString(this.serviceName);
             dest.writeParcelable(this.extras, flags);
+            dest.writeLong(this.intervalMillis);
+            dest.writeLong(this.flexMillis);
+        }
+
+        protected JobConfig(Parcel in) {
+            this.virtualJobId = in.readInt();
+            this.serviceName = in.readString();
+            this.extras = in.readParcelable(PersistableBundle.class.getClassLoader());
+            this.intervalMillis = in.readLong();
+            this.flexMillis = in.readLong();
         }
 
         public static final Creator<JobConfig> CREATOR = new Creator<JobConfig>() {
@@ -189,9 +196,13 @@ public class VJobSchedulerService extends IJobService.Stub {
                 int jid = mNextJobId;
                 mNextJobId++;
                 config = new JobConfig(jid, service.getClassName(), job.getExtras());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    config.flexMillis = job.getFlexMillis();
+                }
                 mJobStore.put(jobId, config);
             }
         }
+        config.intervalMillis = job.getIntervalMillis();
         config.serviceName = service.getClassName();
         config.extras = job.getExtras();
         saveJobs();
@@ -281,16 +292,19 @@ public class VJobSchedulerService extends IJobService.Stub {
             }
         }
     }
-
     @Override
     public void cancelAll(int uid) {
+        cancelAll(VUserHandle.getAppId(uid), VUserHandle.getUserId(uid));
+    }
+
+    public void cancelAll(int appId, int userId) {
         synchronized (mJobStore) {
             boolean changed = false;
             Iterator<Map.Entry<JobId, JobConfig>> iterator = mJobStore.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<JobId, JobConfig> entry = iterator.next();
                 JobId job = entry.getKey();
-                if (job.vuid == uid) {
+                if (VUserHandle.getAppId(job.vuid) == appId && (userId == -1 || userId == VUserHandle.getUserId(job.vuid))) {
                     JobConfig config = entry.getValue();
                     mScheduler.cancel(config.virtualJobId);
                     changed = true;

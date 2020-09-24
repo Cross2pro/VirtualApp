@@ -37,7 +37,7 @@
 
         <meta-data
             android:name="com.xdja.engine.provider"
-            android:value="content://${PACKAGE_NAME_32BIT}" />
+            android:value="content://${applicationId}" />
 
         <activity
             android:name=".splash.SplashActivity"
@@ -89,7 +89,7 @@
             android:theme="@style/UITheme.HasActionBar" />
         <provider
             android:name=".provider.SafetyProvider"
-            android:authorities="com.xdja.engine.provider"
+            android:authorities="${applicationId}"
             android:exported="true" />
         <!-- va的x进程处理 -->
         <receiver

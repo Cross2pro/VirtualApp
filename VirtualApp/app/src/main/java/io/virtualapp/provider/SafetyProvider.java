@@ -60,6 +60,10 @@ public class SafetyProvider extends ContentProvider {
             return result;
         }
         switch (method) {
+            case "currentSpace":{
+                result.putBoolean("space", true);
+                break;
+            }
             case "setWaterMarkContent":
                 String content = extras.getString("content");
                 int rotate = extras.getInt("rotate");
