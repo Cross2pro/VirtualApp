@@ -131,6 +131,10 @@ public abstract class SettingConfig {
 
     }
 
+    public boolean isNeedRealRequestInstall(String packageName){
+        return false;
+    }
+
     /**
      * 预留接口：定制白屏/黑屏，透明的默认显示界面
      * @param userId

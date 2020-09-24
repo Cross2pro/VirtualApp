@@ -16,6 +16,7 @@ import android.os.RemoteException;
 import android.support.annotation.IntDef;
 import android.support.v4.text.TextUtilsCompat;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -311,7 +312,8 @@ public class VActivityManager {
     }
 
     public void sendCancelActivityResult(IBinder resultTo, String resultWho, int requestCode) {
-        sendActivityResult(resultTo, resultWho, requestCode, null, 0);
+        //TODO sendActivityResult好像无效
+        sendActivityResult(resultTo, resultWho, requestCode, null, Activity.RESULT_CANCELED);
     }
 
     public void sendActivityResult(IBinder resultTo, String resultWho, int requestCode, Intent data, int resultCode) {
@@ -319,6 +321,17 @@ public class VActivityManager {
         if (activity != null) {
             Object mainThread = VirtualCore.mainThread();
             ActivityThread.sendActivityResult.call(mainThread, resultTo, resultWho, requestCode, data, resultCode);
+        }
+    }
+
+    public void sendActivityResultLocal(IBinder resultTo, String resultWho, int requestCode, Intent data, int resultCode) {
+        Activity activity = findActivityByToken(resultTo);
+        if (activity != null) {
+            try {
+                mirror.android.app.Activity.onActivityResult.call(activity, requestCode, resultCode, data);
+            }catch (Throwable e){
+                VLog.e("ActivityManager", "onActivityResult:\r\n%s", VLog.getStackTraceString(e));
+            }
         }
     }
 

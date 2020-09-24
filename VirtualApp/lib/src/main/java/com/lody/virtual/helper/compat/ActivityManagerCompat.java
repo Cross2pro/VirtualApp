@@ -24,6 +24,9 @@ public class ActivityManagerCompat {
 	/** Type for IActivityManager.serviceDoneExecuting: done stopping (destroying) service */
 	public static final int SERVICE_DONE_EXECUTING_STOP = 2;
 
+	public static final int START_SUCCESS = ActivityManager.START_SUCCESS == null ?
+			0 : ActivityManager.START_SUCCESS.get();
+
 	/**
 	 * Result for IActivityManager.startActivity: an error where the
 	 * given Intent could not be resolved to an activity.

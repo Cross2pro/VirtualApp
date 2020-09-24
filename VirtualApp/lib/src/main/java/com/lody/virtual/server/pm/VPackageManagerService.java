@@ -1,5 +1,6 @@
 package com.lody.virtual.server.pm;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -943,6 +944,9 @@ public class VPackageManagerService extends IPackageManager.Stub {
         if ("android.permission.INTERACT_ACROSS_USERS".equals(permission)
                 || "android.permission.INTERACT_ACROSS_USERS_FULL".equals(permission)) {
             return PackageManager.PERMISSION_DENIED;
+        }
+        if(Manifest.permission.REQUEST_INSTALL_PACKAGES.equals(permission)){
+            return PackageManager.PERMISSION_GRANTED;
         }
         PermissionInfo permissionInfo = getPermissionInfo(permission, 0);
         if (permissionInfo != null) {
