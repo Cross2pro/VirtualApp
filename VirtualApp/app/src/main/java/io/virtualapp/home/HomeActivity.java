@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -165,6 +166,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         Log.e("V++", "u1="+u1);
         Log.e("V++", "u2="+u2);
         Log.e("V++", "u3="+u3);
+        VirtualCore.get().startForeground();
     }
 
     private VirtualCore.Receiver mReceiver = new VirtualCore.Receiver() {
@@ -377,6 +379,14 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 dlg.dismiss();
             });
             builder.show();
+            return true;
+        });
+
+        menu.add("Exit").setIcon(R.drawable.ic_crash).setOnMenuItemClickListener(item -> {
+            VirtualCore.get().killAllApps();
+            VirtualCore.get().stopForeground();
+            Process.killProcess(VActivityManager.get().getSystemPid());
+            Process.killProcess(Process.myPid());
             return true;
         });
         mMenuView.setOnClickListener(v -> mPopupMenu.show());

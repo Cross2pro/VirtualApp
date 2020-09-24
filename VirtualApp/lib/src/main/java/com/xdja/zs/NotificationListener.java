@@ -146,19 +146,7 @@ public class NotificationListener extends NotificationListenerService {
     }
 
     boolean currentSpace() {
-        Context context = this;
-        String uri_s = ProviderInfoUtil.getProviderInfo(context);
-        if(uri_s!=null){
-            Uri CONTENT_URI = Uri.parse(uri_s);
-            try {
-                Bundle bundle = new Bundle();
-                Bundle result = context.getContentResolver().call(CONTENT_URI, "currentSpace", VirtualCore.get().getHostPkg(), bundle);
-                return result.getBoolean("space");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
+       return BoxProvider.isCurrentSpace();
     }
 
     public static void clearAllNotifications() {

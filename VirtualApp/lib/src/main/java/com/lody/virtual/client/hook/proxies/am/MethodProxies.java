@@ -1022,7 +1022,7 @@ class MethodProxies {
             if(getHostPkg().equals(component.getPackageName())){
                 return method.invoke(who, args);
             }
-            if (!getConfig().isAllowServiceStartForeground()) {
+            if (!getConfig().isAllowServiceStartForeground(getAppPkg())) {
                 return 0;
             }
             IBinder token = (IBinder) args[1];

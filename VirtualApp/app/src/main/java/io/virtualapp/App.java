@@ -2,6 +2,7 @@ package io.virtualapp;
 
 import android.app.Application;
 import android.app.IWallpaperManagerCallback;
+import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -25,6 +26,7 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.helper.utils.VLog;
+import com.xdja.zs.BoxProvider;
 import com.xdja.zs.VServiceKeepAliveManager;
 
 import java.io.File;
@@ -89,6 +91,10 @@ public class App extends Application {
 
         @Override
         public boolean isAllowStartByReceiver(String packageName, int userId, String action) {
+            if(!BoxProvider.isCurrentSpace()){
+                //非工作域，都禁止自动启动
+                return false;
+            }
             if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
                 return VServiceKeepAliveManager.get().inKeepAliveServiceList(packageName)
                         || "com.android.providers.media".equals(packageName);//扫描铃声
@@ -263,6 +269,31 @@ public class App extends Application {
         public boolean isNeedRealRequestInstall(String packageName) {
             //如果需要给该应用未知来源安装真实的判断，返回true
             return super.isNeedRealRequestInstall(packageName);
+        }
+
+        @Override
+        public boolean isHideForegroundNotification() {
+            //如果需要自定义通知栏
+            //切换到工作域调用VirtualCore.get().startForeground(); 显示前台通知
+            //切换生活域调用VirtualCore.get().stopForeground(); 隐藏前台通知
+            //true=取消自带前台通知
+            return true;
+        }
+
+        @Override
+        public Notification getForegroundNotification() {
+            //TODO 这里可以自定义前台通知样式
+            return super.getForegroundNotification();
+        }
+
+        @Override
+        public boolean isAllowServiceStartForeground(String packageName) {
+            if(!BoxProvider.isCurrentSpace()){
+                //非工作域，都禁止自动启动
+                return false;
+            }
+            //可以禁用某个应用的前台通知
+            return super.isAllowServiceStartForeground(packageName);
         }
     };
 

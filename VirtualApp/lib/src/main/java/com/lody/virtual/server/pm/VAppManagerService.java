@@ -50,6 +50,7 @@ import com.lody.virtual.server.am.VActivityManagerService;
 import com.lody.virtual.server.bit64.V64BitHelper;
 import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IPackageObserver;
+import com.lody.virtual.server.job.VJobSchedulerService;
 import com.lody.virtual.server.notification.VNotificationManagerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
 import com.lody.virtual.server.pm.parser.VPackage;
@@ -634,6 +635,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
                 // Just hidden it
                 VNotificationManagerService.get().cancelAllNotification(packageName, userId);
+                VJobSchedulerService.get().cancelAll(ps.appId, userId);
                 VActivityManagerService.get().killAppByPkg(packageName, userId);
                 ps.setInstalled(userId, false);
                 mPersistenceLayer.save();
@@ -724,6 +726,7 @@ public class VAppManagerService extends IAppManager.Stub {
             AttributeCache.instance().removePackage(packageName);
             BroadcastSystem.get().stopApp(packageName);
             VServiceKeepAliveService.get().scheduleUpdateKeepAliveList(packageName, VServiceKeepAliveManager.ACTION_DEL);
+            VJobSchedulerService.get().cancelAll(ps.appId, VUserHandle.USER_ALL);
             VNotificationManagerService.get().cancelAllNotification(packageName, VUserHandle.USER_ALL);
             VActivityManagerService.get().killAppByPkg(packageName, VUserHandle.USER_ALL);
             if (isPackageSupport32Bit(ps)) {

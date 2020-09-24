@@ -6,6 +6,7 @@ import android.os.Build;
 
 import mirror.RefClass;
 import mirror.RefInt;
+import mirror.RefLong;
 import mirror.RefObject;
 
 /**
@@ -18,4 +19,6 @@ public class JobInfo {
 
     public static RefInt jobId;
     public static RefObject<ComponentName> service;
+    public static RefLong intervalMillis;
+    public static RefLong flexMillis;
 }

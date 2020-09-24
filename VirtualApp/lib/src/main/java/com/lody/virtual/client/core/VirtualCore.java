@@ -47,7 +47,9 @@ import com.lody.virtual.client.ipc.LocalProxyUtils;
 import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
+import com.lody.virtual.client.stub.HiddenForeNotification;
 import com.lody.virtual.client.stub.InstallerSetting;
+import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
@@ -1171,6 +1173,23 @@ public final class VirtualCore {
             return getService().cleanPackageData(pkg, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
+        }
+    }
+
+    public void startForeground(){
+        if(VirtualCore.getConfig().isHideForegroundNotification()){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && VirtualCore.get().getTargetSdkVersion() >= Build.VERSION_CODES.O) {
+                context.startForegroundService(new Intent(context, HiddenForeNotification.class));
+            } else {
+                context.startService(new Intent(context, HiddenForeNotification.class));
+            }
+        }
+    }
+
+    public void stopForeground() {
+        if (VirtualCore.getConfig().isHideForegroundNotification()) {
+            context.stopService(new Intent(context, HiddenForeNotification.class));
         }
     }
 

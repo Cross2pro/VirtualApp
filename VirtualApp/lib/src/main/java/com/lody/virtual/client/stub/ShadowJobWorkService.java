@@ -18,6 +18,7 @@ import android.util.Log;
 
 import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.JobWorkItemCompat;
 import com.lody.virtual.helper.utils.VLog;
@@ -47,9 +48,12 @@ public class ShadowJobWorkService extends Service {
             if("action.startJob".equals(action)){
                 JobParameters jobParams = intent.getParcelableExtra("jobParams");
                 startJob(jobParams);
-            }else if("action.stopJob".equals(action)){
+            } else if ("action.stopJob".equals(action)) {
                 JobParameters jobParams = intent.getParcelableExtra("jobParams");
                 stopJob(jobParams);
+            } else if ("action.cancelJob".equals(action)) {
+                JobParameters jobParams = intent.getParcelableExtra("jobParams");
+                cancelJob(jobParams);
             }
         }
         return START_NOT_STICKY;
@@ -61,7 +65,14 @@ public class ShadowJobWorkService extends Service {
         intent.setPackage(context.getPackageName());
         intent.putExtra("jobParams", jobParams);
         context.startService(intent);
+    }
 
+    public static void cancelJob(Context context, JobParameters jobParams) {
+        Intent intent = new Intent("action.cancelJob");
+        intent.setClass(context, ShadowJobWorkService.class);
+        intent.setPackage(context.getPackageName());
+        intent.putExtra("jobParams", jobParams);
+        context.startService(intent);
     }
 
     public static void stopJob(Context context, JobParameters jobParams) {
@@ -105,6 +116,17 @@ public class ShadowJobWorkService extends Service {
         super.onDestroy();
     }
 
+    public void cancelJob(JobParameters jobParams) {
+        int jobId = jobParams.getJobId();
+        IBinder binder = mirror.android.app.job.JobParameters.callback.get(jobParams);
+        IJobCallback callback = IJobCallback.Stub.asInterface(binder);
+        synchronized (mJobSessions) {
+            mJobSessions.remove(jobId);
+        }
+        emptyCallback(callback, jobId);
+        mScheduler.cancel(jobId);
+        get().cancel(-1, jobId);
+    }
 
     public void startJob(JobParameters jobParams) {
         int jobId = jobParams.getJobId();
@@ -114,18 +136,43 @@ public class ShadowJobWorkService extends Service {
         if (entry == null) {
             emptyCallback(callback, jobId);
             mScheduler.cancel(jobId);
+            if(debug) {
+                VLog.i(TAG, "ShadowJobService:cancel by entry");
+            }
         } else {
             VJobSchedulerService.JobId key = entry.getKey();
             VJobSchedulerService.JobConfig config = entry.getValue();
             JobSession session;
+            final int userId = VUserHandle.getUserId(key.vuid);
             synchronized (mJobSessions) {
                 session = mJobSessions.get(jobId);
             }
-            if (session != null) {
+            if (session != null && !session.isDead()) {
                 // Job Session has exist.
-                session.startJob(true);
+                long lastTime = session.lasttime;
+                if (lastTime > 0 && config.intervalMillis > 0) {
+                    if ((System.currentTimeMillis() - lastTime) >= config.intervalMillis) {
+                        session.startJob(true);
+                        if (debug) {
+                            VLog.i(TAG, "ShadowJobService:start by session 2");
+                        }
+                    } else {
+                        if (debug) {
+                            VLog.i(TAG, "ShadowJobService:cancel by lasttime");
+                        }
+                    }
+                } else {
+                    session.startJob(true);
+                    if (debug) {
+                        VLog.i(TAG, "ShadowJobService:start by session 1");
+                    }
+                }
             } else {
                 boolean bound = false;
+                if(session != null) {
+                    session.release();
+                    session = null;
+                }
                 synchronized (mJobSessions) {
                     mirror.android.app.job.JobParameters.jobId.set(jobParams, key.clientJobId);
                     session = new JobSession(jobId, callback, jobParams, key.packageName);
@@ -133,18 +180,28 @@ public class ShadowJobWorkService extends Service {
                     mJobSessions.put(jobId, session);
                     Intent service = new Intent();
                     service.setComponent(new ComponentName(key.packageName, config.serviceName));
-                    service.putExtra("_VA_|_user_id_", VUserHandle.getUserId(key.vuid));
-                    try {
-                        if (debug) {
-                            VLog.i(TAG, "ShadowJobService:binService:%s, jobId=%s",
-                                    service.getComponent(), jobId);
+                    service.putExtra("_VA_|_user_id_", userId);
+                    if(VActivityManager.get().isAppRunning(key.packageName, userId, false)) {
+                        //如果app没启动就不处理
+                        try {
+                            if (debug) {
+                                VLog.i(TAG, "ShadowJobService:binService:%s, jobId=%s",
+                                        service.getComponent(), jobId);
+                            }
+                            bound = bindService(service, session, Context.BIND_AUTO_CREATE | Context.BIND_NOT_FOREGROUND);
+                        } catch (Throwable e) {
+                            VLog.e(TAG, "bindService:%s", VLog.getStackTraceString(e));
                         }
-                        bound = bindService(service, session, Context.BIND_AUTO_CREATE | Context.BIND_NOT_FOREGROUND);
-                    } catch (Throwable e) {
-                        VLog.e(TAG, e);
+                    } else {
+                        if(debug) {
+                            VLog.i(TAG, "ShadowJobService:app is not running");
+                        }
                     }
                 }
                 if (!bound) {
+                    if(debug) {
+                        VLog.i(TAG, "ShadowJobService:cancel by no start");
+                    }
                     synchronized (mJobSessions) {
                         mJobSessions.remove(jobId);
                     }
@@ -178,6 +235,7 @@ public class ShadowJobWorkService extends Service {
         private IJobService clientJobService;
         private boolean isWorking;
         private String packageName;
+        private long lasttime;
 
         JobSession(int jobId, IJobCallback clientCallback, JobParameters jobParams, String packageName) {
             this.jobId = jobId;
@@ -233,6 +291,18 @@ public class ShadowJobWorkService extends Service {
             return null;
         }
 
+        public boolean isDead(){
+            return clientJobService == null || !clientJobService.asBinder().isBinderAlive();
+        }
+
+        public void release(){
+            lasttime = 0;
+            isWorking = false;
+            clientJobService = null;
+            clientCallback = null;
+            jobParams = null;
+        }
+
         public void startJob(boolean wait){
             if(isWorking){
                 if(debug) {
@@ -240,10 +310,11 @@ public class ShadowJobWorkService extends Service {
                 }
                 return;
             }
+            lasttime = System.currentTimeMillis();
             if(debug) {
                 VLog.i(TAG, "ShadowJobService:startJob:%d", jobId);
             }
-            if (clientJobService == null) {
+            if (clientJobService == null || !clientJobService.asBinder().isBinderAlive()) {
                 if(!wait) {
                     emptyCallback(clientCallback, jobId);
                     synchronized (mJobSessions) {
