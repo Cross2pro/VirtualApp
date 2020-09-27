@@ -53,6 +53,7 @@ import com.lody.virtual.os.VUserManager;
 import com.xdja.monitor.MediaObserver;
 import com.xdja.safekeyservice.jarv2.SecuritySDKManager;
 import com.xdja.safekeyservice.jarv2.bean.IVerifyPinResult;
+import com.xdja.zs.VAppPermissionManager;
 import com.xdja.zs.VSafekeyManager;
 
 import java.io.File;
@@ -167,6 +168,8 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         Log.e("V++", "u2="+u2);
         Log.e("V++", "u3="+u3);
         VirtualCore.get().startForeground();
+
+        VAppPermissionManager.get().setThirdAppInstallationEnable(true);
     }
 
     private VirtualCore.Receiver mReceiver = new VirtualCore.Receiver() {
