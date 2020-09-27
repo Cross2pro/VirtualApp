@@ -16,8 +16,10 @@ import com.xdja.zs.netstrategy.TurnOnOffNetPersistenceLayer;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class controllerService extends IController.Stub {
@@ -29,7 +31,9 @@ public class controllerService extends IController.Stub {
     private static boolean activitySwitchFlag = true;
     public Map<String,Integer> Network_Strategy = new HashMap<String,Integer>();
     private NetStrategyPersistenceLayer mNetStrategyPersistence = new NetStrategyPersistenceLayer(this);
+    //true：开启网络过滤 false:关闭
     public static boolean NetworkStragegyOnorOff = false;
+    //true:白名单 false:黑名单
     public static boolean isWhiteOrBlackFlag = false;
     private TurnOnOffNetPersistenceLayer mNetIsControlPersistence = new TurnOnOffNetPersistenceLayer(this);
     private IControllerServiceCallback mCSCallback = null;
@@ -685,4 +689,29 @@ public class controllerService extends IController.Stub {
             }
         }
     }
+
+    @Override
+    public boolean getOnOrOffNetworkStrategy() {
+        return NetworkStragegyOnorOff;
+    }
+
+    @Override
+    public boolean getisWhiteOrBlackFlag() {
+        return isWhiteOrBlackFlag;
+    }
+
+    private List<String> list = new ArrayList<String>();
+
+    @Override
+    public List<String> getNetworkStrategy() {
+        list.clear();
+        if(ip_strategys != null && ip_strategys.size() > 0) {
+            list.addAll(ip_strategys);
+        }
+        if(domain_strategys != null && domain_strategys.size() > 0) {
+            list.addAll(domain_strategys);
+        }
+        return list;
+    }
+
 }

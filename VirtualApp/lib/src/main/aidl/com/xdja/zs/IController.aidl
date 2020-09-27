@@ -32,4 +32,7 @@ interface IController {
     String[] getIpStrategy();
     String[] getDomainStrategy();
     void isNetworkControl(String packageName,String ipOrdomain,boolean isSuccessOrFail);
+    boolean getOnOrOffNetworkStrategy();
+    boolean getisWhiteOrBlackFlag();
+    List<String> getNetworkStrategy();
 }

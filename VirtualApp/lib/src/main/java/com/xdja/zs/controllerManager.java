@@ -261,7 +261,36 @@ public class controllerManager {
         try {
             get().getService().isNetworkControl(VirtualRuntime.getInitialPackageName(),ipOrdomain,isSuccessOrFail);
         } catch (RemoteException e) {
-            VirtualRuntime.crash(e);;
+            VirtualRuntime.crash(e);
+        }
+    }
+
+    public  boolean getOnOrOffNetworkStrategy() {
+        boolean ret = false;
+        try {
+            ret =  controllerManager.get().getService().getOnOrOffNetworkStrategy();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
+    public boolean getisWhiteOrBlackFlag() {
+        boolean ret = false;
+        try {
+            ret = controllerManager.get().getService().getisWhiteOrBlackFlag();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+        return ret;
+    }
+
+    public  List<String> getNetworkStrategy() {
+        try {
+            return controllerManager.get().getService().getNetworkStrategy();
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+            return null;
         }
     }
 
