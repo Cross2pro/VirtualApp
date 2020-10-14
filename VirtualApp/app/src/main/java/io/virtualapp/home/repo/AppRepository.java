@@ -8,6 +8,7 @@ import android.os.Process;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.remote.InstallOptions;
 import com.lody.virtual.remote.InstallResult;
@@ -70,7 +71,11 @@ public class AppRepository implements AppDataSource {
             List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
             for (InstalledAppInfo info : infos) {
                 if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
-                    continue;
+                    if (!InstallerSetting.PROVIDER_MEDIA_PKG.equals(info.packageName)
+                            && !InstallerSetting.PROVIDER_CONTACTS_PKG.equals(info.packageName)
+                            && !InstallerSetting.PROVIDER_TELEPHONY_PKG.equals(info.packageName)) {
+                        continue;
+                    }
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
                 if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
@@ -172,7 +177,7 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public InstallResult addVirtualApp(AppInfoLite info) {
-        InstallOptions options = InstallOptions.makeOptions(info.notCopyApk, false, InstallOptions.UpdateStrategy.COMPARE_VERSION);
+        InstallOptions options = InstallOptions.makeOptions(info.notCopyApk, true, InstallOptions.UpdateStrategy.COMPARE_VERSION);
         return VirtualCore.get().installPackageSync(info.path, options);
     }
 

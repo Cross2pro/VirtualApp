@@ -13,8 +13,10 @@ import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VNotificationManager;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
+import com.lody.virtual.helper.utils.ComponentUtils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -157,7 +159,7 @@ class MethodProxies {
                         channel.setLightColor(old.getLightColor());
                         channel.setLockscreenVisibility(old.getLockscreenVisibility());
                         channel.setShowBadge(old.canShowBadge());
-                        channel.setSound(old.getSound(), old.getAudioAttributes());
+                        channel.setSound(ComponentUtils.wrapperNotificationSoundUri(old.getSound(), getAppUserId()), old.getAudioAttributes());
                         channel.setVibrationPattern(old.getVibrationPattern());
                         newList.add(channel);
                     } else {
@@ -216,8 +218,18 @@ class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (args.length > 1 && args[1] instanceof String) {
-                args[1] = VNotificationManager.get().dealNotificationChannel((String) args[1], getAppPkg(), getAppUserId());
+            if (BuildCompat.isQ() && args.length > 3) {
+                //(String callingPkg, int userId, String pkg, String channelId);
+                if (args[2] instanceof String && isAppPkg((String)args[2])) {
+                    args[2] = getHostPkg();
+                }
+                if (args[3] instanceof String) {
+                    args[3] = VNotificationManager.get().dealNotificationChannel((String) args[3], getAppPkg(), getAppUserId());
+                }
+            } else {
+                if (args.length > 1 && args[1] instanceof String) {
+                    args[1] = VNotificationManager.get().dealNotificationChannel((String) args[1], getAppPkg(), getAppUserId());
+                }
             }
             Object object = super.call(who, method, args);
             if (object instanceof NotificationChannel) {

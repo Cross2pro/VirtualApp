@@ -107,26 +107,26 @@ public class NotificationChannelCompat {
                     importance = NotificationManager.IMPORTANCE_LOW;
                 }
                 channel = new NotificationChannel(channelId, name, importance);
+                //尽量默认设置
                 channel.setDescription("Compatibility of old versions");
-                channel.setSound(null, null);
-                channel.setShowBadge(false);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
                 if (channelId.equals(LIGHT_ID)) {
                     //通知栏使用默认铃声
                     Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
                     channel.setSound(sound, Notification.AUDIO_ATTRIBUTES_DEFAULT);
                     channel.enableVibration(true);
                     channel.enableLights(true);
-                    channel.setLightColor(Color.GREEN);
                     channel.setGroup(GROUP_PHONE);
                 } else if (channelId.equals(DAEMON_ID)) {
                     channel.setGroup(GROUP_DAEMON);
+                    //静音
+                    channel.setSound(null, null);
+                    channel.setShowBadge(false);
                     channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
                     channel.setImportance(NotificationManager.IMPORTANCE_LOW);
                 } else if (channelId.equals(DEFAULT_ID)) {
                     channel.setGroup(GROUP_APP);
                 } else if (channelId.equals(SYSTEM_ID)) {
-                    channel.enableVibration(true);
-                    channel.enableLights(true);
                     channel.setGroup(GROUP_SYSTEM);
                 }
                 try {

@@ -301,9 +301,9 @@ public class VNotificationManagerService extends INotificationManager.Stub {
             return null;
         }
         String prefix = packageName + "@" + userId;
-        int start = prefix.length() + 1;
+        int start = prefix.length();
         if (start < id.length()) {
-            return id.substring(start);
+            return id.substring(start);//Fix：裁剪少了一个字符
         }
         return id;
     }
@@ -317,9 +317,9 @@ public class VNotificationManagerService extends INotificationManager.Stub {
             return null;
         }
         String prefix = packageName + "@" + userId;
-        int start = prefix.length() + 1;
+        int start = prefix.length();
         if (start < tag.length()) {
-            return tag.substring(start);
+            return tag.substring(start);//Fix：裁剪少了一个字符
         }
         return tag;
     }

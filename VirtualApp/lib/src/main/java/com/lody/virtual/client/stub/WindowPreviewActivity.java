@@ -33,6 +33,8 @@ public class WindowPreviewActivity extends Activity {
     private int mTargetUserId;
     private String mTargetPackageName;
     private IUiCallback mCallback;
+    private boolean isTranslucent;
+
 
     public static void previewActivity(int userId, ActivityInfo info, VirtualCore.UiCallback callBack) {
         Context context = VirtualCore.get().getContext();
@@ -80,6 +82,10 @@ public class WindowPreviewActivity extends Activity {
         //是否使用了自定义背景
         boolean hasCustomBg = startWindowPreview(info, theme);
         if (!hasCustomBg) {
+            if(isTranslucent){
+                finish();
+                return;
+            }
             showDefaultPreview(info);
         }
     }
@@ -101,9 +107,11 @@ public class WindowPreviewActivity extends Activity {
                 R_Hide.styleable.Window.get());
         if (windowExt != null) {
             boolean fullscreen = windowExt.array.getBoolean(R_Hide.styleable.Window_windowFullscreen.get(), false);
-            boolean translucent = windowExt.array.getBoolean(R_Hide.styleable.Window_windowIsTranslucent.get(), false);
+            isTranslucent = windowExt.array.getBoolean(R_Hide.styleable.Window_windowIsTranslucent.get(), false);
             boolean disablePreview = windowExt.array.getBoolean(R_Hide.styleable.Window_windowDisablePreview.get(), false);
-
+            if(isTranslucent){
+                return false;
+            }
             if (!disablePreview) {
                 if (fullscreen) {
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);

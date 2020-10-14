@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -233,6 +234,15 @@ public abstract class SettingConfig {
 
     public static class WallpaperResult {
         public ParcelFileDescriptor wallpaperFile;
+    }
+
+    /**
+     * 如果内部MediaProvider实现铃声的uri，则需要处理content://media/internal/audio/，返回false
+     * 目前是使用外部铃声设置
+     * @param uri
+     */
+    public boolean useOutsideNotificationSound(Uri uri){
+        return true;
     }
 
     public static class FakeWifiStatus {

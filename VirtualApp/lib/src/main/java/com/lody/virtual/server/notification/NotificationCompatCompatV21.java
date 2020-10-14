@@ -11,13 +11,14 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.RemoteViews;
-import android.widget.TabHost;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.InstallerSetting;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NotificationChannelCompat;
+import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.os.VEnvironment;
 
@@ -39,6 +40,9 @@ import mirror.android.app.NotificationO;
     public VNotificationManager.Result dealNotification(int id, Notification notification, String packageName, int userId) {
         if (notification == null) {
             return VNotificationManager.Result.NONE;
+        }
+        if(!BuildCompat.isOreo()){
+            notification.sound = ComponentUtils.wrapperNotificationSoundUri(notification.sound, userId);
         }
         Context appContext = getAppContext(packageName);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
