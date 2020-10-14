@@ -130,6 +130,10 @@ public abstract class SettingConfig {
 
     }
 
+    public boolean useOutsideResourcesBySameApk(String packageName){
+        return false;
+    }
+
     /**
      * 是否允许通过广播启动进程
      * 允许规则：

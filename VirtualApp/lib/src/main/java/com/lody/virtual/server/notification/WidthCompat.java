@@ -10,6 +10,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import com.lody.virtual.helper.compat.BuildCompat;
+import com.lody.virtual.helper.utils.VLog;
 
 /**
  * Created by 247321453 on 2016/7/17.
@@ -17,7 +18,8 @@ import com.lody.virtual.helper.compat.BuildCompat;
  */
 
 /* package */ class WidthCompat {
-    private final static String TAG = WidthCompat.class.getSimpleName();
+    private static final boolean DEBUG = false;
+    private static final String TAG = NotificationCompat.TAG;
     private volatile int mWidth = 0;
 
     public int getNotificationWidth(Context context, int width, int height, int padding) {
@@ -40,6 +42,9 @@ import com.lody.virtual.helper.compat.BuildCompat;
             }
         }
         mWidth = w;
+        if (DEBUG) {
+            VLog.i(TAG, "getNotificationWidth=" + w);
+        }
         return w;
     }
 

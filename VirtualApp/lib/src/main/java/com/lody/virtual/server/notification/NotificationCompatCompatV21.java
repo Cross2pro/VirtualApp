@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.TabHost;
 
@@ -87,7 +88,7 @@ import mirror.android.app.NotificationO;
             }
         }
         ApplicationInfo host = getHostContext().getApplicationInfo();
-        PackageInfo outside = getOutSidePackageInfo(packageName);
+        PackageInfo outside = VirtualCore.getConfig().useOutsideResourcesBySameApk(packageName)?getOutSidePackageInfo(packageName):null;
         PackageInfo inside = VPackageManager.get().getPackageInfo(packageName,
                 PackageManager.GET_SHARED_LIBRARY_FILES, 0);
 

@@ -2,8 +2,10 @@ package com.lody.virtual.server.notification;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +16,8 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.lody.virtual.R;
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -127,11 +131,9 @@ import java.util.HashMap;
         }
         int mode = View.MeasureSpec.AT_MOST;
         //TODO need adaptation
-//            if (isBig) {
-//                mode = View.MeasureSpec.AT_MOST;
-//            } else {
-//                mode = View.MeasureSpec.EXACTLY;
-//            }
+        if (BuildCompat.isOreo() && !isBig) {
+            mode = View.MeasureSpec.EXACTLY;
+        }
         if(DEBUG){
             VLog.v(TAG, "createView:layout");
         }
@@ -139,9 +141,13 @@ import java.util.HashMap;
         mCache.layout(0, 0, width, height);
         mCache.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, mode));
-        mCache.layout(0, 0, width, mCache.getMeasuredHeight());
+        int height2 = mCache.getMeasuredHeight();
+        if(height2 == 0){
+            height2 = height;
+        }
+        mCache.layout(0, 0, width, height2);
         if(DEBUG){
-            VLog.v(TAG, "notification:max=%d/%d, szie=%d/%d", width, height,
+            VLog.v(TAG, "notification:max=%d/%d, size=%d/%d", width, height,
                     mCache.getMeasuredWidth(), mCache.getMeasuredHeight());
         }
         return mCache;
@@ -269,6 +275,18 @@ import java.util.HashMap;
             }
             notification_min_height = getDimem(context, systemUi, "notification_min_height",
                     R.dimen.notification_min_height);
+            if(BuildCompat.isPie() && BuildCompat.isEMUI()){
+                int height = VirtualCore.get().getContext().getResources().getDimensionPixelSize(R.dimen.notification_min_height);
+                if(height > 0){
+                    if (DEBUG) {
+                        VLog.i(TAG, "notification_min_height2=" + height);
+                    }
+                    notification_min_height = height;
+                }
+            }
+            if (DEBUG) {
+                VLog.i(TAG, "notification_min_height=" + notification_min_height);
+            }
             // getDimem(context, systemUi, "notification_row_min_height", 0);
             // if (notification_min_height == 0) {
             // notification_min_height =
@@ -287,7 +305,9 @@ import java.util.HashMap;
             int id = sysContext.getResources().getIdentifier(name, "dimen", NotificationCompat.SYSTEM_UI_PKG);
             if (id != 0) {
                 try {
-                    return Math.round(sysContext.getResources().getDimension(id));
+                    float v = sysContext.getResources().getDimension(id);
+                    VLog.v(TAG, "getDimension="+v);
+                    return Math.round(v);
                 } catch (Exception e) {
 
                 }
