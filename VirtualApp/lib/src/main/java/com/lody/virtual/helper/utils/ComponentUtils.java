@@ -19,7 +19,6 @@ import android.os.RemoteException;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
@@ -248,7 +247,8 @@ public class ComponentUtils {
         //queryIntentServicesInternal
         //resolveIntentInternal
         //queryIntentActivitiesInternal
-        newIntent.setDataAndType(newIntent.getData(), newType);
+        //Fix: 修复uri传递错，导致通知栏跳转不对
+        newIntent.setDataAndType(intent.getData(), newType);
 
         String packageName32bit = VirtualCore.getConfig().getHostPackageName();
         switch (type) {
@@ -501,4 +501,16 @@ public class ComponentUtils {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
+
+    public static Uri wrapperNotificationSoundUri(Uri uri, int userId){
+        if(uri != null){
+            //如果内部MediaProvider实现铃声的uri，则需要处理content://media/internal/audio/，返回false
+            //目前是使用外部铃声设置
+            if(VirtualCore.getConfig().useOutsideNotificationSound(uri)){
+                return uri;
+            }
+            return processOutsideUri(userId, VirtualCore.get().is64BitEngine(), uri);
+        }
+        return uri;
+    }
 }
