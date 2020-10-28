@@ -14,6 +14,7 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.system.Os;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.os.VEnvironment;
 
@@ -41,6 +42,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Lody
  */
 public class FileUtils {
+
+    public static int count(File file) {
+        if(!file.exists()){
+            return -1;
+        }
+        if(file.isFile()){
+            return 1;
+        }
+        if (file.isDirectory()) {
+            String[] fs = file.list();
+            return fs == null ? 0 : fs.length;
+        }
+        return 0;
+    }
 
     public static String getFilenameExt(String filename) {
         int dotPos = filename.lastIndexOf('.');
@@ -194,6 +209,24 @@ public class FileUtils {
             if (out != null) {
                 out.close();
             }
+        }
+    }
+
+    public static void copyFile(InputStream inputStream, File target){
+        FileOutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(target);
+            byte[] data = new byte[4096];
+            int len;
+            while ((len = inputStream.read(data)) != -1) {
+                outputStream.write(data, 0, len);
+            }
+            outputStream.flush();
+        } catch (Throwable e) {
+            //ignore
+        } finally {
+            closeQuietly(inputStream);
+            closeQuietly(outputStream);
         }
     }
 

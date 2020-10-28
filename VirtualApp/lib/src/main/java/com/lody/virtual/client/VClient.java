@@ -806,7 +806,7 @@ public final class VClient extends IVClient.Stub {
             NativeEngine.redirectDirectory("/data/user_de/" + userId + "/" + packageName, de_dataDir);
             if(autoFixPath) {
                 // /data/user_de/0/{packageName}/ -> /data/data/va/.../data/user_de/{userId}/{packageName}/
-                NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, dataDir);
+                NativeEngine.redirectDirectory("/data/user_de/0/" + packageName, de_dataDir);
             }
         }
         SettingConfig.AppLibConfig appLibConfig = getConfig().getAppLibConfig(packageName);
@@ -831,7 +831,17 @@ public final class VClient extends IVClient.Stub {
         // /data/data/va/.../data/user/{userId}/{packageName}/lib
         File userLibDir = VEnvironment.getUserAppLibDirectory(userId, packageName);
         //libPath=/data/data/va/.../data/app/{packageName}/lib
-        NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
+        //改为link，防止其他进程读取这个lib目录，报找不到文件错误
+        try {
+            if(userLibDir.exists() && !FileUtils.isSymlink(userLibDir)){
+                FileUtils.deleteDir(userLibDir);
+            }
+            if(!userLibDir.exists()) {
+                FileUtils.createSymlink(libPath, userLibDir.getPath());
+            }
+        } catch (Exception e) {
+            NativeEngine.redirectDirectory(userLibDir.getPath(), libPath);
+        }
 
         //xdja safekey adapter
         String subPathData = "/Android/data/" + info.packageName;
