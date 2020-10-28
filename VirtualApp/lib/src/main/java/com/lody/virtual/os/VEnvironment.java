@@ -110,23 +110,32 @@ public class VEnvironment {
             }
         }
         //创建 /data/user/0/ & /data/data/
-        ensureCreated(new File(ROOT, "/data/user/0"));
         //创建链接
         try {
-            FileUtils.createSymlink(ROOT+"/data/user/0",ROOT+"/data/data");
+            FileUtils.createSymlink(getUserDataDirectory(0).getPath(), new File(DATA_DIRECTORY, "data").getPath());
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     private static Context getContext() {
         return VirtualCore.get().getContext();
     }
 
-    private static File ensureCreated(File folder) {
+    private static File ensureCreated(File folder){
+        return ensureCreated(folder, false);
+    }
+
+    private static File ensureCreated(File folder, boolean chmod) {
         if (!folder.exists()) {
             folder.mkdirs();
+            if(chmod){
+                try {
+                    FileUtils.chmod(folder.getPath(), FileUtils.FileMode.MODE_755);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return folder;
     }
@@ -269,11 +278,11 @@ public class VEnvironment {
     }
 
     public static File getAppLibDirectory(String packageName) {
-        return ensureCreated(new File(getDataAppPackageDirectory(packageName), "lib"));
+        return ensureCreated(new File(getDataAppPackageDirectory(packageName), "lib"), true);
     }
 
     public static File getAppLibDirectory64(String packageName) {
-        return ensureCreated(new File(getDataAppPackageDirectory64(packageName), "lib"));
+        return ensureCreated(new File(getDataAppPackageDirectory64(packageName), "lib"), true);
     }
 
     public static File getUserAppLibDirectory(int userId, String packageName) {

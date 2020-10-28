@@ -2,6 +2,7 @@ package mirror.com.android.internal.content;
 
 import java.io.File;
 
+import mirror.RefBoolean;
 import mirror.RefClass;
 import mirror.MethodParams;
 import mirror.RefStaticMethod;
@@ -24,5 +25,7 @@ public class NativeLibraryHelper {
 
         @MethodParams({File.class})
         public static RefStaticMethod<Object> create;
+
+        public static RefBoolean extractNativeLibs;
     }
 }

@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.lody.virtual.remote.InstalledAppInfo.MODE_APP_COPY_APK;
@@ -425,8 +426,11 @@ public class VAppManagerService extends IAppManager.Stub {
                 checkSupportAbi = false;
             }
         }
+        Map<String, List<String>> soMap = null;
+
         if (checkSupportAbi) {
-            Set<String> abiList = NativeLibraryHelperCompat.getSupportAbiList(packageFile.getPath());
+            soMap = NativeLibraryHelperCompat.getSoMapForApk(packageFile.getPath());
+            Set<String> abiList = soMap.keySet();
             if (abiList.isEmpty()) {
                 support32bit = true;
             } else {
@@ -452,7 +456,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 return InstallResult.makeFailure("64bit engine not installed.");
             }
         }
-        NativeLibraryHelperCompat.copyNativeBinaries(packageFile, VEnvironment.getAppLibDirectory(pkg.packageName));
+        NativeLibraryHelperCompat.copyNativeBinaries(packageFile, VEnvironment.getAppLibDirectory(pkg.packageName), soMap);
 
         if (!useSourceLocationApk) {
             //old apk
@@ -742,10 +746,12 @@ public class VAppManagerService extends IAppManager.Stub {
                 V64BitHelper.uninstallPackage64(-1, packageName);
             }
             PackageCacheManager.remove(packageName);
+            mPersistenceLayer.save();
             File cacheFile = VEnvironment.getPackageCacheFile(packageName);
             cacheFile.delete();
             File signatureFile = VEnvironment.getSignatureFile(packageName);
             signatureFile.delete();
+            FileUtils.deleteDir(VEnvironment.getDataAppPackageDirectory(packageName));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
