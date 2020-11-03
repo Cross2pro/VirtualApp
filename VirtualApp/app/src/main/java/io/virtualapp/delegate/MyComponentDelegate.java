@@ -30,6 +30,8 @@ public class MyComponentDelegate implements AppCallback {
 
     @Override
     public void afterApplicationCreate(String packageName, String processName, Application application) {
+//        Log.e("kk-test", "path=" + NativeEngine.getRedirectedPath("/data/data/" + packageName + "/"));
+//        Log.e("kk-test", "path=" + NativeEngine.getRedirectedPath("/data/data/" + packageName));
 //        try {
 //            if(BuildCompat.isQ()){
 //                XposedHelpers.findAndHookMethod("android.os.FileObserver$ObserverThread", application.getClassLoader(),

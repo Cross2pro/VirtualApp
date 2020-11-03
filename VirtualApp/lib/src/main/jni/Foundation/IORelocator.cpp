@@ -29,9 +29,11 @@
 #include "Log.h"
 
 #if defined(__LP64__)
-#define LINKER_PATH "/system/bin/linker64"
+#define LINKER_PATH_L "/system/bin/linker64"
+#define LINKER_PATH_Q "/apex/com.android.runtime/bin/linker64"
 #else
-#define LINKER_PATH "/system/bin/linker"
+#define LINKER_PATH_L "/system/bin/linker"
+#define LINKER_PATH_Q "/apex/com.android.runtime/bin/linker"
 #endif
 
 #include "transparentED/originalInterface.h"
@@ -1987,7 +1989,7 @@ __END_DECLS
 void onSoLoaded(const char *name, void *handle) {
 }
 
-bool relocate_linker() {
+bool relocate_linker(const char* LINKER_PATH) {
     intptr_t linker_addr, dlopen_off, symbol;
     if ((linker_addr = get_addr(LINKER_PATH)) == 0) {
         ALOGE("Cannot found linker addr.");
@@ -2197,8 +2199,9 @@ void startIOHook(int api_level) {
             HOOK_SYMBOL(handle, symlink);
         }
 #ifdef __arm__
-        if (!relocate_linker()) {
-            findSyscalls("/system/bin/linker", on_found_linker_syscall_arm);
+        const char* LINKER_PATH = api_level > 28 ? LINKER_PATH_Q : LINKER_PATH_L;
+        if (!relocate_linker(LINKER_PATH)) {
+            findSyscalls(LINKER_PATH, on_found_linker_syscall_arm);
         }
 #endif
 #endif
