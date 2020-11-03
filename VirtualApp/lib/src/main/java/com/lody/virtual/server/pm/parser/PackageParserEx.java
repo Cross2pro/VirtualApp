@@ -403,9 +403,9 @@ public class PackageParserEx {
         if (config.isEnableIORedirect()) {
             if (config.isUseRealDataDir(ai.packageName)) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    ai.dataDir = "/data/user/" + userId + "/" + ai.packageName + "/";
+                    ai.dataDir = "/data/user/" + userId + "/" + ai.packageName;
                 } else {
-                    ai.dataDir = "/data/data/" + ai.packageName + "/";
+                    ai.dataDir = "/data/data/" + ai.packageName;
                 }
             }
             if (config.isUseRealLibDir(ai.packageName)) {

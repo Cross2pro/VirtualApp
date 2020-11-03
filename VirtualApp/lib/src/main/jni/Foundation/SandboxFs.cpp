@@ -108,7 +108,7 @@ match_path(bool is_folder, size_t size, const char *item_path, const char *path,
     if (is_folder) {
         if (path_len < size) {
             // ignore the last '/'
-            return strncmp(item_path, path, size - 1) == 0;
+            return strncmp(item_path, path, size - 1) == 0 && item_path[size - 1] == '/';
         } else {
             return strncmp(item_path, path, size) == 0;
         }
@@ -155,7 +155,8 @@ const char *relocate_path_internal(const char *path, char *const buffer, const s
         if (match_path(item.is_folder, item.orig_size, item.orig_path, path, len)) {
             if (len < item.orig_size) {
                 // remove last /
-                return item.new_path;
+                std::string relocated_path(item.new_path, 0, item.new_size - 1);
+                return strdup(relocated_path.c_str());
             } else {
                 const size_t remain_size = len - item.orig_size + 1u;
                 if (size < item.new_size + remain_size) {
