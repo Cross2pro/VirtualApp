@@ -508,12 +508,12 @@ public class FileUtils {
                     }
                     if (type.startsWith("secondary")) {
                         path = cardRootPath + "/" + split[1];
-                        VLog.d("wuyaowei", "path=======" + path);
-                        return path;
                     } else if (type.startsWith("primary")) {
                         path = Environment.getExternalStorageDirectory() + "/" + split[1];
-                        return path;
+                    } else {
+                        path = cardRootPath + "/" + split[1];
                     }
+                    return path;
                 } else if (isDownloadsDocument(uri)) {
                     // DownloadsProvider
                     final String id = DocumentsContract.getDocumentId(uri);

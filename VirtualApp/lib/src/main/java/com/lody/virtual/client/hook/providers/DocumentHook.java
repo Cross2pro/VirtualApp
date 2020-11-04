@@ -56,9 +56,10 @@ public class DocumentHook extends ProviderHook {
 
     public static Uri getOutsideUri(Uri uri) {
         String url = uri.toString();
-        if (!url.contains("/secondary")) {
+        if (!url.contains("/secondary") && !url.contains("/primary")) {
             return uri;
         }
+
         List<String> paths = uri.getPathSegments();
         String auth = uri.getAuthority();
         String scm = uri.getScheme();
@@ -67,6 +68,7 @@ public class DocumentHook extends ProviderHook {
             if (path.startsWith("secondary")) {
                 path = path.substring("secondary".length());
                 newUri.appendPath(path);
+                break;
             }
             newUri.appendPath(path);
         }
