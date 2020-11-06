@@ -314,6 +314,10 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-permission android:name="android.hardware.usb.host"/>
+    <uses-permission android:name="android.permission.HARDWARE_TEST"
+        tools:ignore="ProtectedPermissions" />
+
     <application
         android:vmSafeMode="true"><!-- false：性能提升，但是微信，QQ等应用会出现jit错误-->
 
@@ -3538,6 +3542,37 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="com.lody.virtual.client.stub.usb.ShadowUsbActivity"
+            android:configChanges="locale|keyboardHidden|orientation|screenSize|fontScale"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:taskAffinity="com.lody.virtual.choose"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_llvision_device_filter" />
+        </activity>
+        <activity
+            android:name=".client.stub.usb.UsbListChooserActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnCloseSystemDialogs="true"
+            android:permission="${PERMISSION_PREFIX}.permission.SAFE_ACCESS"
+            android:process="@string/engine_process_name"
+            android:taskAffinity="com.lody.virtual.choose"
+            android:theme="@style/VAAlertTheme" />
 
         <meta-data android:name="android.vivo_nightmode_support" android:value="false"/>
         <meta-data android:name="com.coloros.DisableSystemDarkMode" android:value="true"/>

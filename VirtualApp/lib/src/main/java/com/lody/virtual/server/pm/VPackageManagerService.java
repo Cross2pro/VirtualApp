@@ -1002,6 +1002,18 @@ public class VPackageManagerService extends IPackageManager.Stub {
 
         List<ResolveInfo> queryIntent(Intent intent, String resolvedType, int flags, int userId) {
             mFlags = flags;
+            if (intent.getAction() == null && intent.getPackage() == null && (flags & PackageManager.GET_ACTIVITIES) != 0 && (flags & PackageManager.GET_META_DATA) != 0) {
+                List<ResolveInfo> resolveInfos = new ArrayList<>();
+                for (VPackage.ActivityComponent activityComponent : mActivities.values()) {
+                    if (activityComponent.metaData != null) {
+                        ResolveInfo resolveInfo = toResolveInfo(activityComponent, PackageManager.GET_META_DATA, 0);
+                        if(resolveInfo != null) {
+                            resolveInfos.add(resolveInfo);
+                        }
+                    }
+                }
+                return resolveInfos;
+            }
             return super.queryIntent(intent, resolvedType, (flags & PackageManager.MATCH_DEFAULT_ONLY) != 0, userId);
         }
 
@@ -1123,6 +1135,27 @@ public class VPackageManagerService extends IPackageManager.Stub {
         protected void dumpFilterLabel(PrintWriter out, String prefix, Object label, int count) {
 
         }
+    }
+
+    protected static ResolveInfo toResolveInfo(VPackage.ActivityComponent activity, int mFlags, int userId) {
+        if (!VPackageManagerService.get().isEnabledLPr(activity.info, mFlags, userId)) {
+            return null;
+        }
+        PackageSetting ps = (PackageSetting) activity.owner.mExtras;
+        ActivityInfo ai = PackageParserEx.generateActivityInfo(activity, mFlags, ps.readUserState(userId), userId);
+        if (ai == null) {
+            return null;
+        }
+        final ResolveInfo res = new ResolveInfo();
+        res.activityInfo = ai;
+        res.preferredOrder = activity.owner.mPreferredOrder;
+        res.match = 0;
+        res.isDefault = false;
+        res.labelRes = activity.info.labelRes;
+        res.nonLocalizedLabel = activity.info.nonLocalizedLabel;
+        res.icon = activity.info.icon;
+        res.resolvePackageName = activity.info.packageName;
+        return res;
     }
 
     private final class ServiceIntentResolver extends IntentResolver<VPackage.ServiceIntentInfo, ResolveInfo> {
