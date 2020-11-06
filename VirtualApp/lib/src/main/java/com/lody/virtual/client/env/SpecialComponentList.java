@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
+import android.hardware.usb.UsbManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -84,6 +85,11 @@ public final class SpecialComponentList {
 		//图标广播
         SYSTEM_BROADCAST_ACTION.add(Constants.ACTION_BADGER_CHANGE);
         SYSTEM_BROADCAST_ACTION.add("com.android.mms.PROGRESS_STATUS");
+        //usb
+        SYSTEM_BROADCAST_ACTION.add(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        SYSTEM_BROADCAST_ACTION.add(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        SYSTEM_BROADCAST_ACTION.add(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
+        SYSTEM_BROADCAST_ACTION.add(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         ACTION_BLACK_LIST.add(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE);

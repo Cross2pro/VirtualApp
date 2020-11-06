@@ -15,4 +15,7 @@
     <string name="choose_nfc_app">选择NFC应用</string>
     <string name="tip_not_found_nfc_app">找不到可用NFC应用</string>
     <string name="tip_invalid_nfc_tag">无效的NFC标签</string>
+    <string name="choose_usb_app">选择USB应用</string>
+    <string name="tip_not_found_usb_app">找不到可用USB应用</string>
+    <string name="tip_invalid_usb_device">无法识别该USB设备</string>
 </resources>

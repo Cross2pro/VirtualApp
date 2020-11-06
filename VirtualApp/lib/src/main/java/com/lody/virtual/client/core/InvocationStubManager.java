@@ -60,6 +60,7 @@ import com.lody.virtual.client.hook.proxies.telephony.HwTelephonyStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyRegistryStub;
 import com.lody.virtual.client.hook.proxies.telephony.TelephonyStub;
 import com.lody.virtual.client.hook.proxies.usage.UsageStatsManagerStub;
+import com.lody.virtual.client.hook.proxies.usb.UsbManagerStub;
 import com.lody.virtual.client.hook.proxies.user.UserManagerStub;
 import com.lody.virtual.client.hook.proxies.vibrator.VibratorStub;
 import com.lody.virtual.client.hook.proxies.view.AutoFillManagerStub;
@@ -229,6 +230,7 @@ public final class InvocationStubManager {
                 addInjector(new RoleStub());
             }
             addInjector(new NfcAdapterStub());
+            addInjector(new UsbManagerStub());
         }
     }
 
