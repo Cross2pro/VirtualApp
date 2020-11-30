@@ -68,7 +68,7 @@ public class StubManifest {
                 || PACKAGE_NAME_64BIT.equals(packageName);
     }
 
-    public static boolean is64bitPackageName(String packageName) {
+    public static boolean isHostPluginPackageName(String packageName) {
         if (PACKAGE_NAME_64BIT == null) {
             return false;
         }

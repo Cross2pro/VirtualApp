@@ -33,7 +33,7 @@ public final class InstalledAppInfo implements Parcelable {
     }
 
     public String getApkPath() {
-        return getApkPath(VirtualCore.get().is64BitEngine());
+        return getApkPath(VirtualCore.get().isPluginEngine());
     }
 
     public String getApkPath(boolean is64bit) {
@@ -61,7 +61,7 @@ public final class InstalledAppInfo implements Parcelable {
     }
 
     public File getOdexFile() {
-        return getOdexFile(VirtualCore.get().is64BitEngine());
+        return getOdexFile(VirtualCore.get().isPluginEngine());
     }
 
     public File getOdexFile(boolean is64Bit) {
@@ -83,7 +83,7 @@ public final class InstalledAppInfo implements Parcelable {
             case FLAG_RUN_64BIT:
                 return true;
             case FLAG_RUN_BOTH_32BIT_64BIT:
-                return VirtualCore.getConfig().get64bitEnginePackageName() != null;
+                return VirtualCore.getConfig().getPluginEnginePackageName() != null;
             default:
                 return false;
         }*/

@@ -15,6 +15,12 @@
 
 #define JNI_CLASS_NAME "com/lody/virtual/client/NativeEngine"
 
+#if defined(__LP64__)
+typedef long jni_ptr;
+#else
+typedef int jni_ptr;
+#endif
+
 extern jclass nativeEngineClass;
 extern JavaVM * vm;
 

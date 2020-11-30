@@ -24,6 +24,11 @@
 #include "utils.h"
 #include "mylog.h"
 #include "controllerManagerNative.h"
+#if defined(__LP64__)
+#define my_fcntl __NR_fcntl
+#else
+#define my_fcntl __NR_fcntl64
+#endif
 
 static inline bool startWith(const std::string &str, const std::string &prefix) {
     return str.compare(0, prefix.length(), prefix) == 0;
@@ -31,7 +36,7 @@ static inline bool startWith(const std::string &str, const std::string &prefix) 
 
 
 static int my_readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz) {
-    int ret = syscall(__NR_readlinkat, dirfd, pathname, buf, bufsiz);
+    int ret = static_cast<int>(syscall(__NR_readlinkat, dirfd, pathname, buf, bufsiz));
     return ret;
 }
 
@@ -41,7 +46,8 @@ bool getSelfProcessName(zString & name)
     if(!fd)
         return false;
 
-    int len = originalInterface::original_read(fd, name.getBuf(), name.getSize());
+    int len = static_cast<int>(originalInterface::original_read(fd, name.getBuf(),
+                                                                static_cast<size_t>(name.getSize())));
     if(len <= 0) {
         originalInterface::original_close(fd);
         return false;
@@ -362,7 +368,7 @@ bool closeAllSockets(){
 }
 
 bool hasAppendFlag(int fd) {
-    int val = syscall(__NR_fcntl64, fd, F_GETFL, 0);
+    int val = syscall(my_fcntl, fd, F_GETFL, 0);
 
     if (val == -1){
         LOGE("fcntl error for F_GETFL");
@@ -374,7 +380,7 @@ bool hasAppendFlag(int fd) {
 }
 
 void delAppendFlag(int fd) {
-    int val = syscall(__NR_fcntl64, fd, F_GETFL, 0);
+    int val = syscall(my_fcntl, fd, F_GETFL, 0);
 
     if (val == -1){
         LOGE("fcntl error for F_GETFL");
@@ -384,14 +390,14 @@ void delAppendFlag(int fd) {
     val &= ~O_APPEND;
 
     LOGE("fcntl FD %d, F_SETFL value: %d", fd, val);
-    if (syscall(__NR_fcntl64, fd, F_SETFL, val) < 0) {
+    if (syscall(my_fcntl, fd, F_SETFL, val) < 0) {
         LOGE("fcntl error for F_SETFL");
         return ;
     }
 }
 
 void addAppendFlag(int fd) {
-    int val = syscall(__NR_fcntl64, fd, F_GETFL, 0);
+    int val = syscall(my_fcntl, fd, F_GETFL, 0);
 
     if (val == -1) {
         LOGE("fcntl error for F_GETFL");
@@ -401,7 +407,7 @@ void addAppendFlag(int fd) {
     val |= O_APPEND;
 
     LOGE("fcntl FD %d, F_SETFL value: %d", fd, val);
-    if (syscall(__NR_fcntl64, fd, F_SETFL, val) < 0) {
+    if (syscall(my_fcntl, fd, F_SETFL, val) < 0) {
         LOGE("fcntl error for F_SETFL");
         return;
     }

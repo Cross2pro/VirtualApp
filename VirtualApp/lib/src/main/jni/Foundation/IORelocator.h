@@ -18,6 +18,21 @@
 
 #include "Jni/Helper.h"
 
+#if defined(__LP64__)
+#define LINKER_PATH_L "/system/bin/linker64"
+#define LINKER_PATH_Q "/apex/com.android.runtime/bin/linker64"
+#define LIBC_PATH_L "/system/lib64/libc.so"
+#define LIBC_PATH_Q "/apex/com.android.runtime/lib64/bionic/libc.so"
+
+#else
+#define LINKER_PATH_L "/system/bin/linker"
+#define LINKER_PATH_Q "/apex/com.android.runtime/bin/linker"
+#define LIBC_PATH_L "/system/lib/libc.so"
+#define LIBC_PATH_Q "/apex/com.android.runtime/lib/bionic/libc.so"
+#endif
+
+#define RETURN_IF_FORBID if(res == FORBID) return -1;
+
 #define HOOK_SYMBOL(handle, func) hook_function(handle, #func, (void*) new_##func, (void**) &orig_##func)
 //#define HOOK_SYMBOL2(handle, func, new_func, old_func) hook_function(handle, #func, (void*) new_func, (void**)old_func)
 #define HOOK_DEF(ret, func, ...) \

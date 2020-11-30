@@ -18,7 +18,7 @@ android {
                 PACKAGE_NAME_ARM64: rootProject.ext.PACKAGE_NAME_ARM64
         ]
         ndk {
-            abiFilters "armeabi", "armeabi-v7a"
+            abiFilters "arm64-v8a"//"armeabi-v7a"//,
         }
     }
     sourceSets {

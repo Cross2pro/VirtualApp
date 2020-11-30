@@ -51,7 +51,7 @@ public class VPackageManager {
 
     public int checkPermission(String permission, String pkgName, int userId) {
         try {
-            return getService().checkPermission(VirtualCore.get().is64BitEngine(), permission, pkgName, userId);
+            return getService().checkPermission(VirtualCore.get().isPluginEngine(), permission, pkgName, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

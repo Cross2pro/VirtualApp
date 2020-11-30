@@ -509,7 +509,7 @@ public class ComponentUtils {
             if(VirtualCore.getConfig().useOutsideNotificationSound(uri)){
                 return uri;
             }
-            return processOutsideUri(userId, VirtualCore.get().is64BitEngine(), uri);
+            return processOutsideUri(userId, VirtualCore.get().isPluginEngine(), uri);
         }
         return uri;
     }

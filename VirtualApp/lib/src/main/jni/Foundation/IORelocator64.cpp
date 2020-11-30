@@ -21,6 +21,7 @@
 #include <utils/controllerManagerNative.h>
 #include <linux/in6.h>
 #include <netdb.h>
+#include <asm/unistd.h>
 
 #include "IORelocator.h"
 #include "SandboxFs.h"
@@ -45,7 +46,7 @@ bool execve_process = false;
 #include "transparentED/virtualFileSystem.h"
 #include "utils/mylog.h"
 
-std::map<uint32_t, MmapFileInfo *> MmapInfoMap;
+std::map<int64_t, MmapFileInfo *> MmapInfoMap;
 using namespace xdja;
 
 void startIOHook(int api_level);
@@ -171,7 +172,7 @@ HOOK_DEF(int, faccessat, int dirfd, const char *pathname, int mode, int flags) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !(mode & W_OK && isReadOnly(relocated_path))) {
-        return syscall(__NR_faccessat, dirfd, relocated_path, mode, flags);
+        return static_cast<int>(syscall(__NR_faccessat, dirfd, relocated_path, mode, flags));
     }
     errno = EACCES;
     return -1;
@@ -182,7 +183,7 @@ HOOK_DEF(int, fchmodat, int dirfd, const char *pathname, mode_t mode, int flags)
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_fchmodat, dirfd, relocated_path, mode, flags);
+        return static_cast<int>(syscall(__NR_fchmodat, dirfd, relocated_path, mode, flags));
     }
     errno = EACCES;
     return -1;
@@ -193,7 +194,7 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        long ret = syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
+        int ret = static_cast<int>(syscall(__NR_newfstatat, dirfd, relocated_path, buf, flags));
         if (is_TED_Enable()) {
             int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
 
@@ -216,7 +217,7 @@ HOOK_DEF(int, fstatat64, int dirfd, const char *pathname, struct stat *buf, int 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int, kill, pid_t pid, int sig) {
     ALOGE("kill >>> pid : %d, sig : %d", pid, sig);
-    return syscall(__NR_kill, pid, sig);
+    return static_cast<int>(syscall(__NR_kill, pid, sig));
 }
 
 // int __statfs64(const char *path, size_t size, struct statfs *stat);
@@ -224,129 +225,7 @@ HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_statfs64, relocated_path, size, stat);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int __open(const char *pathname, int flags, int mode);
-HOOK_DEF(int, __open, const char *pathname, int flags, int mode) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (relocated_path && !((flags & O_WRONLY || flags & O_RDWR) && isReadOnly(relocated_path))) {
-//        int fake_fd = redirect_proc_maps(relocated_path, flags, mode);
-//        if (fake_fd != 0) {
-//            return fake_fd;
-//        }
-        return syscall(__NR_open, relocated_path, flags, mode);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// ssize_t readlink(const char *path, char *buf, size_t bufsiz);
-HOOK_DEF(ssize_t, readlink, const char *pathname, char *buf, size_t bufsiz) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        long ret = syscall(__NR_readlink, relocated_path, buf, bufsiz);
-        if (ret < 0) {
-            return ret;
-        } else {
-            // relocate link content
-            if (reverse_relocate_path_inplace(buf, bufsiz) != -1) {
-                return ret;
-            }
-        }
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int mkdir(const char *pathname, mode_t mode);
-HOOK_DEF(int, mkdir, const char *pathname, mode_t mode) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_mkdir, relocated_path, mode);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int rmdir(const char *pathname);
-HOOK_DEF(int, rmdir, const char *pathname) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_rmdir, relocated_path);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int lchown(const char *pathname, uid_t owner, gid_t group);
-HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_lchown, relocated_path, owner, group);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int utimes(const char *filename, const struct timeval *tvp);
-HOOK_DEF(int, utimes, const char *pathname, const struct timeval *tvp) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_utimes, relocated_path, tvp);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int link(const char *oldpath, const char *newpath);
-HOOK_DEF(int, link, const char *oldpath, const char *newpath) {
-    char temp[PATH_MAX];
-    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
-    if (relocated_path_old) {
-        return syscall(__NR_link, relocated_path_old, newpath);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int access(const char *pathname, int mode);
-HOOK_DEF(int, access, const char *pathname, int mode) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (relocated_path && !(mode & W_OK && isReadOnly(relocated_path))) {
-        return syscall(__NR_access, relocated_path, mode);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int chmod(const char *path, mode_t mode);
-HOOK_DEF(int, chmod, const char *pathname, mode_t mode) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_chmod, relocated_path, mode);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int chown(const char *path, uid_t owner, gid_t group);
-HOOK_DEF(int, chown, const char *pathname, uid_t owner, gid_t group) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_chown, relocated_path, owner, group);
+        return static_cast<int>(syscall(__NR_statfs, relocated_path, size, stat));
     }
     errno = EACCES;
     return -1;
@@ -357,7 +236,7 @@ HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        long ret = syscall(__NR_lstat64, relocated_path, buf);
+        int ret = orig_lstat(relocated_path, buf);
 
         if (is_TED_Enable()) {
             int fd = originalInterface::original_openat(AT_FDCWD, relocated_path, O_RDONLY, 0);
@@ -384,7 +263,7 @@ HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        long ret = syscall(__NR_stat64, relocated_path, buf);
+        int ret = orig_stat(relocated_path, buf);
         if (isReadOnly(relocated_path)) {
             buf->st_mode &= ~S_IWGRP;
         }
@@ -408,34 +287,12 @@ HOOK_DEF(int, stat, const char *pathname, struct stat *buf) {
     return -1;
 }
 
-// int symlink(const char *oldpath, const char *newpath);
-HOOK_DEF(int, symlink, const char *oldpath, const char *newpath) {
-    char temp[PATH_MAX];
-    const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
-    if (relocated_path_old) {
-        return syscall(__NR_symlink, relocated_path_old, newpath);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int unlink(const char *pathname);
-HOOK_DEF(int, unlink, const char *pathname) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (relocated_path && !isReadOnly(relocated_path)) {
-        return syscall(__NR_unlink, relocated_path);
-    }
-    errno = EACCES;
-    return -1;
-}
-
 // int fchmod(const char *pathname, mode_t mode);
 HOOK_DEF(int, fchmod, const char *pathname, mode_t mode) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_fchmod, relocated_path, mode);
+        return static_cast<int>(syscall(__NR_fchmod, relocated_path, mode));
     }
     errno = EACCES;
     return -1;
@@ -447,7 +304,7 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_fstatat64, dirfd, relocated_path, buf, flags);
+        return static_cast<int>(syscall(__NR_newfstatat, dirfd, relocated_path, buf, flags));
     }
     errno = EACCES;
     return -1;
@@ -455,7 +312,7 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
 
 HOOK_DEF(int, fstat, int fd, struct stat *buf)
 {
-    int ret;
+    int ret = -1;
     bool flag = false;
 
     xdja::zs::sp<virtualFileDescribe> vfd(virtualFileDescribeSet::getVFDSet().get(fd));
@@ -478,35 +335,12 @@ HOOK_DEF(int, fstat, int fd, struct stat *buf)
     return ret;
 }
 
-// int mknod(const char *pathname, mode_t mode, dev_t dev);
-HOOK_DEF(int, mknod, const char *pathname, mode_t mode, dev_t dev) {
-    char temp[PATH_MAX];
-    const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
-    if (__predict_true(relocated_path)) {
-        return syscall(__NR_mknod, relocated_path, mode, dev);
-    }
-    errno = EACCES;
-    return -1;
-}
-
-// int rename(const char *oldpath, const char *newpath);
-HOOK_DEF(int, rename, const char *oldpath, const char *newpath) {
-    char temp_old[PATH_MAX], temp_new[PATH_MAX];
-    const char *relocated_path_old = relocate_path(oldpath, temp_old, sizeof(temp_old));
-    const char *relocated_path_new = relocate_path(newpath, temp_new, sizeof(temp_new));
-    if (relocated_path_old && relocated_path_new) {
-        return syscall(__NR_rename, relocated_path_old, relocated_path_new);
-    }
-    errno = EACCES;
-    return -1;
-}
-
 // int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev);
 HOOK_DEF(int, mknodat, int dirfd, const char *pathname, mode_t mode, dev_t dev) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_mknodat, dirfd, relocated_path, mode, dev);
+        return static_cast<int>(syscall(__NR_mknodat, dirfd, relocated_path, mode, dev));
     }
     errno = EACCES;
     return -1;
@@ -518,7 +352,7 @@ HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec 
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_utimensat, dirfd, relocated_path, times, flags);
+        return static_cast<int>(syscall(__NR_utimensat, dirfd, relocated_path, times, flags));
     }
     errno = EACCES;
     return -1;
@@ -529,7 +363,7 @@ HOOK_DEF(int, fchownat, int dirfd, const char *pathname, uid_t owner, gid_t grou
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_fchownat, dirfd, relocated_path, owner, group, flags);
+        return static_cast<int>(syscall(__NR_fchownat, dirfd, relocated_path, owner, group, flags));
     }
     errno = EACCES;
     return -1;
@@ -540,7 +374,7 @@ HOOK_DEF(int, chroot, const char *pathname) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_chroot, relocated_path);
+        return static_cast<int>(syscall(__NR_chroot, relocated_path));
     }
     errno = EACCES;
     return -1;
@@ -554,7 +388,7 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
     if (relocated_path_old && relocated_path_new) {
         xdja::zs::sp <virtualFile> *vf2 = virtualFileManager::getVFM().queryVF(
                 (char *) relocated_path_old);
-        if (vf2 != NULL) {
+        if (vf2 != nullptr) {
             slog(" *** need to force translate virtual File [%s] *** ", vf2->get()->getPath());
 
             xdja::zs::sp <virtualFile> pvf2(vf2->get());
@@ -569,12 +403,12 @@ HOOK_DEF(int, renameat, int olddirfd, const char *oldpath, int newdirfd, const c
             virtualFileManager::getVFM().deleted((char *) relocated_path_old);
         }
 
-        int ret = syscall(__NR_renameat, olddirfd, relocated_path_old, newdirfd,
-                          relocated_path_new);
+        int ret = static_cast<int>(syscall(__NR_renameat, olddirfd, relocated_path_old, newdirfd,
+                                           relocated_path_new));
 
         xdja::zs::sp <virtualFile> *vf3 = virtualFileManager::getVFM().queryVF(
                 (char *) relocated_path_new);
-        if (vf3 != NULL) {
+        if (vf3 != nullptr) {
             xdja::zs::sp <virtualFile> pvf3(vf3->get());
             slog(" *** update virtual file [%s] *** ", pvf3->getPath());
             pvf3->lockWhole();
@@ -597,7 +431,7 @@ HOOK_DEF(int, statfs64, const char *filename, struct statfs64 *buf) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(filename, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_statfs, relocated_path, buf);
+        return static_cast<int>(syscall(__NR_statfs, relocated_path, buf));
     }
     errno = EACCES;
     return -1;
@@ -608,7 +442,7 @@ HOOK_DEF(int, unlinkat, int dirfd, const char *pathname, int flags) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (relocated_path && !isReadOnly(relocated_path)) {
-        int ret = syscall(__NR_unlinkat, dirfd, relocated_path, flags);
+        int ret = static_cast<int>(syscall(__NR_unlinkat, dirfd, relocated_path, flags));
 
         if (ret == 0) {
             /***？？？？？？？？？？？？？？？？？？？？？？？？？？？？？***/
@@ -626,7 +460,7 @@ HOOK_DEF(int, symlinkat, const char *oldpath, int newdirfd, const char *newpath)
     char temp[PATH_MAX];
     const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        return syscall(__NR_symlinkat, relocated_path_old, newdirfd, newpath);
+        return static_cast<int>(syscall(__NR_symlinkat, relocated_path_old, newdirfd, newpath));
     }
     errno = EACCES;
     return -1;
@@ -638,8 +472,9 @@ HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const cha
     char temp[PATH_MAX];
     const char *relocated_path_old = relocate_path(oldpath, temp, sizeof(temp));
     if (relocated_path_old) {
-        return syscall(__NR_linkat, olddirfd, relocated_path_old, newdirfd, newpath,
-                       flags);
+        return static_cast<int>(syscall(__NR_linkat, olddirfd, relocated_path_old, newdirfd,
+                                        newpath,
+                                        flags));
     }
     errno = EACCES;
     return -1;
@@ -650,7 +485,7 @@ HOOK_DEF(int, mkdirat, int dirfd, const char *pathname, mode_t mode) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_mkdirat, dirfd, relocated_path, mode);
+        return static_cast<int>(syscall(__NR_mkdirat, dirfd, relocated_path, mode));
     }
     errno = EACCES;
     return -1;
@@ -661,7 +496,7 @@ HOOK_DEF(int, readlinkat, int dirfd, const char *pathname, char *buf, size_t buf
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        long ret = syscall(__NR_readlinkat, dirfd, relocated_path, buf, bufsiz);
+        int ret = static_cast<int>(syscall(__NR_readlinkat, dirfd, relocated_path, buf, bufsiz));
         if (ret < 0) {
             return ret;
         } else {
@@ -681,7 +516,7 @@ HOOK_DEF(int, truncate, const char *pathname, off_t length) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_truncate, relocated_path, length);
+        return static_cast<int>(syscall(__NR_truncate, relocated_path, length));
     }
     errno = EACCES;
     return -1;
@@ -692,7 +527,7 @@ HOOK_DEF(int, chdir, const char *pathname) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_chdir, relocated_path);
+        return static_cast<int>(syscall(__NR_chdir, relocated_path));
     }
     errno = EACCES;
     return -1;
@@ -703,7 +538,7 @@ HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        int ret = syscall(__NR_truncate64, relocated_path, length);
+        int ret = static_cast<int>(syscall(__NR_truncate, relocated_path, length));
 
         /*zString op("truncate64 length %ld ret %d err %s", length, ret, getErr);
         doFileTrace(relocated_path, op.toString());*/
@@ -717,7 +552,7 @@ HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
 
 // int __getcwd(char *buf, size_t size);
 HOOK_DEF(int, __getcwd, char *buf, size_t size) {
-    int ret = syscall(__NR_getcwd, buf, size);
+    int ret = static_cast<int>(syscall(__NR_getcwd, buf, size));
     if (!ret) {
         if (reverse_relocate_path_inplace(buf, size) < 0) {
             errno = EACCES;
@@ -827,7 +662,7 @@ HOOK_DEF(int, close, int __fd) {
         /***********************************************/
     }
 
-    ret = syscall(__NR_close, __fd);
+    ret = static_cast<int>(syscall(__NR_close, __fd));
     virtualFileDescribeSet::getVFDSet().clearFlag(__fd);
     return ret;
 }
@@ -838,7 +673,7 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(__file, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
-        return syscall(__NR_statfs, relocated_path, __buf);
+        return static_cast<int>(syscall(__NR_statfs, relocated_path, __buf));
     }
     errno = EACCES;
     return -1;
@@ -976,10 +811,10 @@ HOOK_DEF(int, execve, const char *pathname, char *argv[], char *const envp[]) {
     }
 
     char **relocated_envp = relocate_envp(relocated_path, envp);
-    int ret = syscall(__NR_execve, relocated_path, argv, relocated_envp);
+    int ret = static_cast<int>(syscall(__NR_execve, relocated_path, argv, relocated_envp));
     if (relocated_envp != envp) {
         int i = 0;
-        while (relocated_envp[i] != NULL) {
+        while (relocated_envp[i] != nullptr) {
             free(relocated_envp[i]);
             ++i;
         }
@@ -1124,7 +959,7 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
     int ret = -1;
 
     MmapFileInfo *fileInfo = 0;
-    std::map<uint32_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::uint32_t(addr));
+    std::map<int64_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::int64_t(addr));
     if (iter != MmapInfoMap.end()) {
         MmapInfoMap.erase(iter);
         fileInfo = iter->second;
@@ -1150,7 +985,7 @@ HOOK_DEF(int, munmap, void *addr, size_t length) {
         }
     }
 
-    ret = syscall(__NR_munmap, addr, length);
+    ret = static_cast<int>(syscall(__NR_munmap, addr, length));
 
     return ret;
 }
@@ -1159,7 +994,7 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
     int ret = -1;
 
     MmapFileInfo *fileInfo = 0;
-    std::map<uint32_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::uint32_t(addr));
+    std::map<int64_t , MmapFileInfo *>::iterator iter = MmapInfoMap.find(std::int64_t(addr));
     if (iter != MmapInfoMap.end()) {
         MmapInfoMap.erase(iter);
         fileInfo = iter->second;
@@ -1185,12 +1020,12 @@ HOOK_DEF(int, msync, void *addr, size_t size, int flags) {
         }
     }
 
-    ret = syscall(__NR_msync, addr, size, flags);
+    ret = static_cast<int>(syscall(__NR_msync, addr, size, flags));
 
     return ret;
 }
 
-HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd, size_t pgoffset) {
+HOOK_DEF(void *, mmap, void *addr, size_t length, int prot,int flags, int fd, size_t pgoffset) {
     void * ret = 0;
     bool flag = false;
 
@@ -1209,7 +1044,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
             if (vf.get() != nullptr) {
                 if (vf->getVFS() == VFS_ENCRYPT) {
                     flags |= MAP_ANONYMOUS;     //申请匿名内存
-                    ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, 0, 0);
+                    ret = (void *) syscall(__NR_mmap, addr, length, prot, flags, 0, 0);
 
                     bool nowrite = (prot & PROT_WRITE) == 0;
                     if (nowrite && -1 == mprotect(ret, length, prot | PROT_WRITE)) {
@@ -1225,7 +1060,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
                         MmapFileInfo *fileInfo = new MmapFileInfo(vf->getPath(), pgoffset,
                                                                   flags);
                         MmapInfoMap.insert(
-                                std::pair<uint32_t, MmapFileInfo *>(uint32_t(ret), fileInfo));
+                                std::pair<int64_t , MmapFileInfo *>(int64_t(ret), fileInfo));
                         flag = true;
                     }
                 }
@@ -1243,7 +1078,7 @@ HOOK_DEF(void *, __mmap2, void *addr, size_t length, int prot,int flags, int fd,
     }
 
     if(!flag)
-        ret = (void *) syscall(__NR_mmap2, addr, length, prot, flags, fd, pgoffset);
+        ret = (void *) syscall(__NR_mmap, addr, length, prot, flags, fd, pgoffset);
 
     return ret;
 }
@@ -1663,7 +1498,7 @@ HOOK_DEF(ssize_t, sendfile64, int out_fd, int in_fd, off64_t* offset, size_t cou
 //int dup(int oldfd);
 HOOK_DEF(int, dup, int oldfd)
 {
-    int ret = syscall(__NR_dup, oldfd);
+    int ret = static_cast<int>(syscall(__NR_dup, oldfd));
 
     zString path, path2;
     getPathFromFd(oldfd, path);
@@ -1726,7 +1561,7 @@ HOOK_DEF(int, dup, int oldfd)
 //int dup3(int oldfd, int newfd, int flags);
 HOOK_DEF(int, dup3, int oldfd, int newfd, int flags)
 {
-    return syscall(__NR_dup3, oldfd, newfd, flags);
+    return static_cast<int>(syscall(__NR_dup3, oldfd, newfd, flags));
 }
 
 HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
@@ -1737,7 +1572,7 @@ HOOK_DEF(int, fcntl, int fd, int cmd, ...) {
         case F_DUPFD:
         case F_DUPFD_CLOEXEC: {
             int target = va_arg (arg, int);
-            ret = syscall(__NR_fcntl, fd, cmd, target);
+            ret = static_cast<int>(syscall(__NR_fcntl, fd, cmd, target));
 
             if (getApiLevel() >= 29 && ret > 0) {
                 xdja::zs::sp<virtualFileDescribe> oldVfd(
@@ -1949,8 +1784,7 @@ HOOK_DEF(int, connect, int sd, struct sockaddr *addr, socklen_t socklen) {
             }
         }
     }
-
-    ret = syscall(__NR_connect, sd, addr, socklen);
+    ret = static_cast<int>(syscall(__NR_connect, sd, addr, socklen));
     return ret;
 }
 
@@ -1965,6 +1799,44 @@ HOOK_DEF(void, xlogger_Write, void* _info, const char* _log)
 __END_DECLS
 // end IO DEF
 
+bool on_found_syscall_aarch64(const char *path, int num, void *func) {
+    static int pass = 0;
+    switch (num) {
+        case __NR_fchmodat:
+            MSHookFunction(func, (void *) new_fchmodat, (void **) &orig_fchmodat);
+            pass++;
+            break;
+        case __NR_faccessat:
+            MSHookFunction(func, (void *) new_faccessat, (void **) &orig_faccessat);
+            pass++;
+            break;
+        case __NR_statfs:
+            MSHookFunction(func, (void *) new___statfs, (void **) &orig___statfs);
+            pass++;
+            break;
+        case __NR_getcwd:
+            MSHookFunction(func, (void *) new___getcwd, (void **) &orig___getcwd);
+            pass++;
+            break;
+        case __NR_openat:
+            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            pass++;
+            break;
+    }
+    if (pass == 5) {
+        return BREAK_FIND_SYSCALL;
+    }
+    return CONTINUE_FIND_SYSCALL;
+}
+
+bool on_found_linker_syscall_arch64(const char *path, int num, void *func) {
+    switch (num) {
+        case __NR_openat:
+            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            return BREAK_FIND_SYSCALL;
+    }
+    return CONTINUE_FIND_SYSCALL;
+}
 
 void onSoLoaded(const char *name, void *handle) {
 }
@@ -2035,30 +1907,12 @@ bool relocate_linker(const char* LINKER_PATH) {
     return false;
 }
 
-bool on_found_linker_syscall_arm(const char *path, int num, void *func) {
-    switch (num) {
-        case __NR_openat:
-            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
-            break;
-        case __NR_open:
-            MSHookFunction(func, (void *) new___open, (void **) &orig___open);
-            break;
-    }
-    return CONTINUE_FIND_SYSCALL;
-}
-
 void startIOHook(int api_level) {
     void *handle = dlopen("libc.so", RTLD_NOW);
 
     if (handle) {
-        HOOK_SYMBOL(handle, faccessat);
-        HOOK_SYMBOL(handle, __openat);
-        HOOK_SYMBOL(handle, fchmodat);
         HOOK_SYMBOL(handle, fchownat);
         HOOK_SYMBOL(handle, renameat);
-        HOOK_SYMBOL(handle, fstatat64);
-        HOOK_SYMBOL(handle, __statfs);
-        HOOK_SYMBOL(handle, __statfs64);
         HOOK_SYMBOL(handle, mkdirat);
         HOOK_SYMBOL(handle, mknodat);
         HOOK_SYMBOL(handle, truncate);
@@ -2067,12 +1921,19 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, unlinkat);
         HOOK_SYMBOL(handle, symlinkat);
         HOOK_SYMBOL(handle, utimensat);
-        HOOK_SYMBOL(handle, __getcwd);
         HOOK_SYMBOL(handle, chdir);
         HOOK_SYMBOL(handle, execve);
+        HOOK_SYMBOL(handle, statfs64);
         HOOK_SYMBOL(handle, kill);
         HOOK_SYMBOL(handle, vfork);
-        HOOK_SYMBOL(handle, access);
+        HOOK_SYMBOL(handle, faccessat);
+        HOOK_SYMBOL(handle, __openat);
+        HOOK_SYMBOL(handle, fchmodat);
+        HOOK_SYMBOL(handle, fstatat64);
+        HOOK_SYMBOL(handle, __statfs);
+        HOOK_SYMBOL(handle, __statfs64);
+        HOOK_SYMBOL(handle, __getcwd);
+//        HOOK_SYMBOL(handle, access);
         HOOK_SYMBOL(handle, stat);
         HOOK_SYMBOL(handle, lstat);
         HOOK_SYMBOL(handle, fstatat);
@@ -2080,7 +1941,7 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, close);
         HOOK_SYMBOL(handle, read);
         HOOK_SYMBOL(handle, write);
-        HOOK_SYMBOL(handle, __mmap2);
+        HOOK_SYMBOL(handle, mmap);
         HOOK_SYMBOL(handle, munmap);
         HOOK_SYMBOL(handle, pread64);
         HOOK_SYMBOL(handle, pwrite64);
@@ -2093,34 +1954,16 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, dup);
         HOOK_SYMBOL(handle, dup3);
         HOOK_SYMBOL(handle, fcntl);
-        HOOK_SYMBOL(handle,getaddrinfo);
-        HOOK_SYMBOL(handle,sendto);
-#if defined(__i386__) || defined(__x86_64__)
-        HOOK_SYMBOL2(handle, connect, new_connect2, orig_connect2);
+        HOOK_SYMBOL(handle, getaddrinfo);
+        HOOK_SYMBOL(handle, sendto);
+#if defined(__x86_64__)
 #else
         HOOK_SYMBOL(handle, connect);
 #endif
         HOOK_SYMBOL(handle, msync);
-        if (api_level <= 20) {
-            HOOK_SYMBOL(handle, access);
-            HOOK_SYMBOL(handle, __open);
-            HOOK_SYMBOL(handle, chmod);
-            HOOK_SYMBOL(handle, chown);
-            HOOK_SYMBOL(handle, rename);
-            HOOK_SYMBOL(handle, rmdir);
-            HOOK_SYMBOL(handle, mkdir);
-            HOOK_SYMBOL(handle, mknod);
-            HOOK_SYMBOL(handle, link);
-            HOOK_SYMBOL(handle, unlink);
-            HOOK_SYMBOL(handle, readlink);
-            HOOK_SYMBOL(handle, symlink);
-        }
-#ifdef __arm__
-        const char* LINKER_PATH = api_level > 28 ? LINKER_PATH_Q : LINKER_PATH_L;
-        if (!relocate_linker(LINKER_PATH)) {
-            findSyscalls(LINKER_PATH, on_found_linker_syscall_arm);
-        }
-#endif
+
+        findSyscalls("/system/lib64/libc.so", on_found_syscall_aarch64);
+        findSyscalls("/system/bin/linker64", on_found_linker_syscall_arch64);
         dlclose(handle);
     }
     originalInterface::original_lseek = orig_lseek;

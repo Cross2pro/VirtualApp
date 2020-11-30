@@ -56,7 +56,6 @@ import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.stub.UnInstallerActivity;
 import com.lody.virtual.remote.AppRunningProcessInfo;
-import com.lody.virtual.remote.StubActivityRecord;
 import com.xdja.zs.UacProxyActivity;
 import com.xdja.zs.VAppPermissionManager;
 import com.lody.virtual.client.ipc.VNotificationManager;
@@ -69,7 +68,6 @@ import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BuildCompat;
-import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.ParceledListSliceCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
@@ -96,11 +94,8 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.WeakHashMap;
@@ -735,7 +730,7 @@ class MethodProxies {
                     intent = UacProxyActivity.isHook(intent);
                 }
 
-                args[intentIndex] = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().is64BitEngine(), intent);
+                args[intentIndex] = ComponentUtils.processOutsideIntent(userId, VirtualCore.get().isPluginEngine(), intent);
                 ResolveInfo resolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
                 if (resolveInfo == null || resolveInfo.activityInfo == null) {
                     //fix google phone 安通拨号的设置默认电话
@@ -2290,7 +2285,7 @@ class MethodProxies {
                         for (int i = 0; i < args.length; i++) {
                             Object obj = args[i];
                             if (obj instanceof Uri) {
-                                Uri uri = ComponentUtils.processOutsideUri(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), (Uri) obj);
+                                Uri uri = ComponentUtils.processOutsideUri(VUserHandle.myUserId(), VirtualCore.get().isPluginEngine(), (Uri) obj);
                                 if (uri != null) {
                                     args[i] = uri;
                                 }
@@ -2479,7 +2474,7 @@ class MethodProxies {
                         }
                     }
                     if(needFix) {
-                        newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().is64BitEngine(), uri);
+                        newUri = ComponentUtils.processOutsideUri(getAppUserId(), VirtualCore.get().isPluginEngine(), uri);
                     }
                     if (newUri != null && uri != newUri) {
                         //Log.i("kk-test", "newUri="+newUri);
@@ -2492,7 +2487,7 @@ class MethodProxies {
                         }
                     }
 //                    } else {
-//                        ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().is64BitEngine(), intent);
+//                        ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VirtualCore.get().isPluginEngine(), intent);
 //                    }
                 }
             }

@@ -135,7 +135,7 @@ public class ResolverActivity extends Activity implements AdapterView.OnItemClic
         if(count==0){
             VLog.w(TAG, "not found app from intent %s", intent);
             //禁止发现双域外部应用
-//            intent = ComponentUtils.processOutsideIntent(0, VirtualCore.get().is64BitEngine(), intent);
+//            intent = ComponentUtils.processOutsideIntent(0, VirtualCore.get().isPluginEngine(), intent);
 //            intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
 //            startActivity(intent);
             finish();

@@ -136,7 +136,7 @@ public abstract class MethodProxy {
         if (component != null) {
             String pkg = component.getPackageName();
             SettingConfig config = VirtualCore.getConfig();
-            return pkg.equals(config.getHostPackageName()) || pkg.equals(config.get64bitEnginePackageName());
+            return pkg.equals(config.getHostPackageName()) || pkg.equals(config.getPluginEnginePackageName());
         }
         return false;
     }

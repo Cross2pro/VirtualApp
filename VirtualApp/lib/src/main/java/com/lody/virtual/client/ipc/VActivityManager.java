@@ -14,9 +14,7 @@ import android.os.IInterface;
 import android.os.Process;
 import android.os.RemoteException;
 import android.support.annotation.IntDef;
-import android.support.v4.text.TextUtilsCompat;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.client.VClient;
 import com.lody.virtual.client.core.VirtualCore;
@@ -584,7 +582,7 @@ public class VActivityManager {
 
     public int checkPermission(String permission, int pid, int uid) {
         try {
-            return getService().checkPermission(VirtualCore.get().is64BitEngine(), permission, pid, uid);
+            return getService().checkPermission(VirtualCore.get().isPluginEngine(), permission, pid, uid);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }

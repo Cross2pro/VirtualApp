@@ -51,7 +51,6 @@ import com.lody.virtual.client.ipc.VDeviceManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.ipc.VirtualStorageManager;
 import com.lody.virtual.client.service.ServiceManager;
-import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
@@ -63,13 +62,11 @@ import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
-import com.lody.virtual.remote.AppRunningProcessInfo;
 import com.lody.virtual.remote.ClientConfig;
 import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VDeviceConfig;
 import com.lody.virtual.server.pm.PackageSetting;
-import com.lody.virtual.server.secondary.FakeIdentityBinder;
 import com.xdja.activitycounter.ActivityCounterManager;
 import com.xdja.zs.VAppPermissionManager;
 import com.xdja.zs.controllerManager;
@@ -366,7 +363,7 @@ public final class VClient extends IVClient.Stub {
         }
         VDeviceConfig deviceConfig = getDeviceConfig();
         VDeviceManager.get().applyBuildProp(deviceConfig);
-        final boolean is64Bit = VirtualCore.get().is64BitEngine();
+        final boolean isSubRemote = VirtualCore.get().isPluginEngine();
         // Fix: com.loafwallet
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if("com.loafwallet".equals(packageName)) {
@@ -403,7 +400,7 @@ public final class VClient extends IVClient.Stub {
         VLog.i(TAG, "Binding application %s (%s [%d])", data.appInfo.packageName, data.processName, Process.myPid());
         mBoundApplication = data;
         VirtualRuntime.setupRuntime(data.processName, data.appInfo);
-        if (VirtualCore.get().is64BitEngine()) {
+        if (VirtualCore.get().isPluginEngine()) {
             File apkFile = new File(info.getApkPath());
             File libDir = new File(data.appInfo.nativeLibraryDir);
             if (!apkFile.exists()) {
@@ -439,7 +436,7 @@ public final class VClient extends IVClient.Stub {
         }
         //tmp dir
         File tmpDir;
-        if (is64Bit) {
+        if (isSubRemote) {
             tmpDir = new File(VEnvironment.getDataUserPackageDirectory64(userId, info.packageName), "cache");
         } else {
             tmpDir = new File(VEnvironment.getDataUserPackageDirectory(userId, info.packageName), "cache");
@@ -453,7 +450,7 @@ public final class VClient extends IVClient.Stub {
 
         if (getConfig().isEnableIORedirect()) {
             if (VirtualCore.get().isIORelocateWork()) {
-                startIORelocater(info, is64Bit);
+                startIORelocater(info, isSubRemote);
             } else {
                 VLog.w(TAG, "IO Relocate verify fail.");
             }
@@ -462,7 +459,7 @@ public final class VClient extends IVClient.Stub {
         mEnvironmentPrepared = true;
         Object mainThread = VirtualCore.mainThread();
         NativeEngine.startDexOverride();
-        initDataStorage(is64Bit, userId, packageName);
+        initDataStorage(isSubRemote, userId, packageName);
         Context context = createPackageContext(data.appInfo.packageName);
         File codeCacheDir;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -505,11 +502,18 @@ public final class VClient extends IVClient.Stub {
         }
         VMRuntime.setTargetSdkVersion.call(VMRuntime.getRuntime.call(), data.appInfo.targetSdkVersion);
         Configuration configuration = context.getResources().getConfiguration();
-        if (!is64Bit && info.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        boolean is64Bit = VirtualRuntime.is64bit();
+        if (!isSubRemote && info.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             List<String> supportAbiList = new LinkedList<>();
             for (String abi : Build.SUPPORTED_ABIS) {
-                if (NativeLibraryHelperCompat.is32bitAbi(abi)) {
-                    supportAbiList.add(abi);
+                if(is64Bit) {
+                    if (NativeLibraryHelperCompat.is64bitAbi(abi)) {
+                        supportAbiList.add(abi);
+                    }
+                } else {
+                    if (NativeLibraryHelperCompat.is32bitAbi(abi)) {
+                        supportAbiList.add(abi);
+                    }
                 }
             }
             String[] supportAbis = supportAbiList.toArray(new String[0]);

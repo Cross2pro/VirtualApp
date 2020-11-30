@@ -201,7 +201,7 @@ public class NativeEngine {
         try {
             String soPath = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME + ".so").getAbsolutePath();
             String soPath64 = new File(coreAppInfo.nativeLibraryDir, "lib" + LIB_NAME_64 + ".so").getAbsolutePath();
-            String nativePath = VEnvironment.getNativeCacheDir(VirtualCore.get().is64BitEngine()).getPath();
+            String nativePath = VEnvironment.getNativeCacheDir(VirtualCore.get().isPluginEngine()).getPath();//当前进程可读，可写的目录
             nativeEnableIORedirect(soPath, soPath64, nativePath, Build.VERSION.SDK_INT, BuildCompat.getPreviewSDKInt());
         } catch (Throwable e) {
             VLog.e(TAG, VLog.getStackTraceString(e));

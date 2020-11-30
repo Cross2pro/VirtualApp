@@ -55,7 +55,7 @@ public class App extends Application {
         }
 
         @Override
-        public String get64bitEnginePackageName() {
+        public String getPluginEnginePackageName() {
             return null;
         }
 

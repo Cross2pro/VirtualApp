@@ -27,16 +27,17 @@ public abstract class SettingConfig {
 
     public abstract String getHostPackageName();
 
-    public abstract String get64bitEnginePackageName();
+    public abstract String getPluginEnginePackageName();
 
     public String getBinderProviderAuthority() {
         return getHostPackageName() + ".virtual.service.BinderProvider";
     }
 
     public String get64bitHelperAuthority() {
-        return get64bitEnginePackageName() + ".virtual.service.64bit_helper";
+        return getPluginEnginePackageName() + ".virtual.service.64bit_helper";
     }
 
+    @Deprecated
     public String getProxyFileContentProviderAuthority() {
         return getHostPackageName() + ".virtual.fileprovider";
     }

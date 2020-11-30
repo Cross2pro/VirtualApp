@@ -20,7 +20,7 @@ public class LinuxCompat {
         if (Build.VERSION.SDK_INT < 26) {
             return;
         }
-        if (VirtualCore.get().is64BitEngine()) {
+        if (VirtualCore.get().isPluginEngine()) {
             return;
         }
         if (FileUtils.canRead("/proc/stat")) {

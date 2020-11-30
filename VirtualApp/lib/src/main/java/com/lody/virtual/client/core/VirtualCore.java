@@ -48,8 +48,6 @@ import com.lody.virtual.client.ipc.ServiceManagerNative;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.HiddenForeNotification;
-import com.lody.virtual.client.stub.InstallerSetting;
-import com.lody.virtual.client.stub.KeepAliveService;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
@@ -121,7 +119,7 @@ public final class VirtualCore {
      */
     private String processName;
     private ProcessType processType;
-    private boolean is64Bit;
+    private boolean isHostPulginApp;
     private IAppManager mService;
     private boolean isStartUp;
     private PackageInfo mHostPkgInfo;
@@ -282,7 +280,7 @@ public final class VirtualCore {
             mInitLock = new ConditionVariable();
             mConfig = config;
             String packageName = config.getHostPackageName();
-            String packageName64 = config.get64bitEnginePackageName();
+            String packageName64 = config.getPluginEnginePackageName();
             Constants.ACTION_SHORTCUT = packageName + Constants.ACTION_SHORTCUT;
             Constants.ACTION_BADGER_CHANGE = packageName + Constants.ACTION_BADGER_CHANGE;
 
@@ -315,7 +313,7 @@ public final class VirtualCore {
             if (isServerProcess() || isVAppProcess()) {
                 mainThread = ActivityThread.currentActivityThread.call();
             }
-            if (is64BitEngine()) {
+            if (isPluginEngine()) {
                 VLog.e(TAG, "===========  64Bit Engine(%s) ===========", processType.name());
                 if (isVAppProcess()) {
                     getService().asBinder().linkToDeath(new IBinder.DeathRecipient() {
@@ -381,7 +379,7 @@ public final class VirtualCore {
     }
 
     public boolean isEngineLaunched() {
-        if (is64BitEngine()) {
+        if (isPluginEngine()) {
             return true;
         }
         ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -451,7 +449,7 @@ public final class VirtualCore {
                         //過濾其他App
                         String pkg = ActivityManagerCompat.getPackageName(info);
                         if (!(TextUtils.equals(VirtualCore.getConfig().getHostPackageName(), pkg)
-                                || TextUtils.equals(VirtualCore.getConfig().get64bitEnginePackageName(), pkg)
+                                || TextUtils.equals(VirtualCore.getConfig().getPluginEnginePackageName(), pkg)
                         )) {
                             continue;
                         }
@@ -561,7 +559,7 @@ public final class VirtualCore {
         mainProcessName = context.getApplicationInfo().processName;
         // Current process name
         processName = getProcessName(context);
-        is64Bit = StubManifest.is64bitPackageName(hostPkgName);
+        isHostPulginApp = StubManifest.isHostPluginPackageName(hostPkgName);
         if (processName.equals(mainProcessName)) {
             processType = ProcessType.Main;
         } else if (processName.endsWith(Constants.SERVER_PROCESS_NAME)) {
@@ -575,8 +573,8 @@ public final class VirtualCore {
         }
     }
 
-    public boolean is64BitEngine() {
-        return is64Bit;
+    public boolean isPluginEngine() {
+        return isHostPulginApp;
     }
 
     private IAppManager getService() {
