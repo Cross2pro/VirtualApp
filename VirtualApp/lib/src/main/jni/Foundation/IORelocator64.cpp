@@ -551,7 +551,7 @@ HOOK_DEF(int, truncate64, const char *pathname, off_t length) {
 
 
 // int __getcwd(char *buf, size_t size);
-HOOK_DEF(int, __getcwd, char *buf, size_t size) {
+HOOK_DEF(int, getcwd, char *buf, size_t size) {
     int ret = static_cast<int>(syscall(__NR_getcwd, buf, size));
     if (!ret) {
         if (reverse_relocate_path_inplace(buf, size) < 0) {
@@ -563,7 +563,7 @@ HOOK_DEF(int, __getcwd, char *buf, size_t size) {
 }
 
 // int __openat(int fd, const char *pathname, int flags, int mode);
-HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
+HOOK_DEF(int, openat, int fd, const char *pathname, int flags, int mode) {
     char temp[PATH_MAX];
     const char *relocated_path = relocate_path(pathname, temp, sizeof(temp));
     if (__predict_true(relocated_path)) {
@@ -572,7 +572,7 @@ HOOK_DEF(int, __openat, int fd, const char *pathname, int flags, int mode) {
             flags |= O_RDWR;
         }
 
-        int ret = syscall(__NR_openat, fd, relocated_path, flags, mode);
+        int ret = static_cast<int>(syscall(__NR_openat, fd, relocated_path, flags, mode));
         /*zString op("openat fd = %d err = %s", ret, strerror(errno));
         doFileTrace(relocated_path, op.toString());*/
 
@@ -1634,7 +1634,7 @@ HOOK_DEF(int, getaddrinfo,const char *__node, const char *__service, const struc
     if (__node != nullptr) {
         if (getNetWorkState()) {
             if(isWhiteList()) {
-                if(isIPAddress(__node) || isContainsStr(__node,":")) {
+                if(isIPAddress(__node) || isContainsStr(__node, ":")) {
                     if(isIPAddress(__node)) {
                         if(isIpV4Enable(__node)) {
                             ret = originalInterface::original_getaddrinfo(__node, __service, __hints, __result);
@@ -1815,11 +1815,11 @@ bool on_found_syscall_aarch64(const char *path, int num, void *func) {
             pass++;
             break;
         case __NR_getcwd:
-            MSHookFunction(func, (void *) new___getcwd, (void **) &orig___getcwd);
+            MSHookFunction(func, (void *) new_getcwd, (void **) &orig_getcwd);
             pass++;
             break;
         case __NR_openat:
-            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            MSHookFunction(func, (void *) new_openat, (void **) &orig_openat);
             pass++;
             break;
     }
@@ -1832,7 +1832,7 @@ bool on_found_syscall_aarch64(const char *path, int num, void *func) {
 bool on_found_linker_syscall_arch64(const char *path, int num, void *func) {
     switch (num) {
         case __NR_openat:
-            MSHookFunction(func, (void *) new___openat, (void **) &orig___openat);
+            MSHookFunction(func, (void *) new_openat, (void **) &orig_openat);
             return BREAK_FIND_SYSCALL;
     }
     return CONTINUE_FIND_SYSCALL;
@@ -1927,12 +1927,12 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, kill);
         HOOK_SYMBOL(handle, vfork);
         HOOK_SYMBOL(handle, faccessat);
-        HOOK_SYMBOL(handle, __openat);
+        HOOK_SYMBOL(handle, openat);
         HOOK_SYMBOL(handle, fchmodat);
         HOOK_SYMBOL(handle, fstatat64);
         HOOK_SYMBOL(handle, __statfs);
         HOOK_SYMBOL(handle, __statfs64);
-        HOOK_SYMBOL(handle, __getcwd);
+        HOOK_SYMBOL(handle, getcwd);
 //        HOOK_SYMBOL(handle, access);
         HOOK_SYMBOL(handle, stat);
         HOOK_SYMBOL(handle, lstat);

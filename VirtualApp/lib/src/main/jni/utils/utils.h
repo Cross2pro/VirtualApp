@@ -5,6 +5,7 @@
 #ifndef VIRTUALAPP_UTILS_H
 #define VIRTUALAPP_UTILS_H
 
+#include <string>
 #include "zString.h"
 
 #define getErr "0"

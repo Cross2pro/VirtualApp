@@ -23,6 +23,7 @@ import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
@@ -451,7 +452,8 @@ public class VAppManagerService extends IAppManager.Stub {
                 ps.flag = PackageSetting.FLAG_RUN_64BIT;
             }
         }
-        if (ps.isRunOn64BitProcess()) {
+        if (VirtualRuntime.is64bit() && ps.flag == PackageSetting.FLAG_RUN_32BIT
+                || (!VirtualRuntime.is64bit() && ps.flag == PackageSetting.FLAG_RUN_64BIT)) {
             if (!VirtualCore.get().is64BitEngineInstalled() || !V64BitHelper.has64BitEngineStartPermission()) {
                 return InstallResult.makeFailure("64bit engine not installed.");
             }
