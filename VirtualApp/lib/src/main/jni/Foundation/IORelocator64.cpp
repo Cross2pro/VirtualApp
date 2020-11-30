@@ -679,6 +679,16 @@ HOOK_DEF(int, __statfs, __const char *__file, struct statfs *__buf) {
     return -1;
 }
 
+HOOK_DEF(int, statfs, __const char *__file, struct statfs *__buf) {
+    char temp[PATH_MAX];
+    const char *relocated_path = relocate_path(__file, temp, sizeof(temp));
+    if (__predict_true(relocated_path)) {
+        return static_cast<int>(syscall(__NR_statfs, relocated_path, __buf));
+    }
+    errno = EACCES;
+    return -1;
+}
+
 static char **relocate_envp(const char *pathname, char *const envp[]) {
     if (strstr(pathname, "libweexjsb.so")) {
         return const_cast<char **>(envp);
@@ -1930,14 +1940,13 @@ void startIOHook(int api_level) {
         HOOK_SYMBOL(handle, openat);
         HOOK_SYMBOL(handle, fchmodat);
         HOOK_SYMBOL(handle, fstatat64);
+        HOOK_SYMBOL(handle, statfs);
         HOOK_SYMBOL(handle, __statfs);
         HOOK_SYMBOL(handle, __statfs64);
         HOOK_SYMBOL(handle, getcwd);
-//        HOOK_SYMBOL(handle, access);
         HOOK_SYMBOL(handle, stat);
         HOOK_SYMBOL(handle, lstat);
         HOOK_SYMBOL(handle, fstatat);
-//        HOOK_SYMBOL(handle, __getdents64);
         HOOK_SYMBOL(handle, close);
         HOOK_SYMBOL(handle, read);
         HOOK_SYMBOL(handle, write);

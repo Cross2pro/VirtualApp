@@ -434,6 +434,7 @@ public class VAppManagerService extends IAppManager.Stub {
             Set<String> abiList = soMap.keySet();
             if (abiList.isEmpty()) {
                 support32bit = true;
+                support64bit = true;
             } else {
                 if (NativeLibraryHelperCompat.contain64bitAbi(abiList)) {
                     support64bit = true;
@@ -452,7 +453,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 ps.flag = PackageSetting.FLAG_RUN_64BIT;
             }
         }
-        if (VirtualRuntime.is64bit() && ps.flag == PackageSetting.FLAG_RUN_32BIT
+        if ((VirtualRuntime.is64bit() && ps.flag == PackageSetting.FLAG_RUN_32BIT)
                 || (!VirtualRuntime.is64bit() && ps.flag == PackageSetting.FLAG_RUN_64BIT)) {
             if (!VirtualCore.get().is64BitEngineInstalled() || !V64BitHelper.has64BitEngineStartPermission()) {
                 return InstallResult.makeFailure("64bit engine not installed.");

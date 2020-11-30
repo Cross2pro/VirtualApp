@@ -61,7 +61,7 @@ public class App extends Application {
 
         @Override
         public boolean isEnableIORedirect() {
-            return true;
+            return false;
         }
 
         @Override
@@ -76,7 +76,7 @@ public class App extends Application {
 
         @Override
         public boolean isUseRealDataDir(String packageName) {
-            return true;
+            return false;
         }
 
         @Override
