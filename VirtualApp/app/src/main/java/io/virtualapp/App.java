@@ -6,6 +6,7 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
 import android.graphics.Rect;
@@ -32,12 +33,15 @@ import com.xdja.zs.VServiceKeepAliveManager;
 import java.io.File;
 import java.io.IOException;
 
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedHelpers;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
 import io.virtualapp.delegate.MyTaskDescDelegate;
 import io.virtualapp.home.BackHomeActivity;
 import jonathanfinerty.once.Once;
+import mirror.android.content.res.CompatibilityInfo;
 
 import static android.os.ParcelFileDescriptor.*;
 
@@ -61,7 +65,7 @@ public class App extends Application {
 
         @Override
         public boolean isEnableIORedirect() {
-            return false;
+            return true;
         }
 
         @Override
@@ -81,7 +85,7 @@ public class App extends Application {
 
         @Override
         public AppLibConfig getAppLibConfig(String packageName) {
-            return AppLibConfig.UseOwnLib;
+            return AppLibConfig.UseRealLib;
         }
 
         @Override
@@ -336,6 +340,17 @@ public class App extends Application {
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
                 //内部安装，不调用系统的安装，而是自己处理（参考MyAppRequestListener），默认是静默安装在va里面。
                 virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
+//                private LoadedApk getPackageInfo(ApplicationInfo aInfo, CompatibilityInfo compatInfo,
+//                        ClassLoader baseLoader, boolean securityViolation, boolean includeCode,
+//                boolean registerPackage)
+                XposedHelpers.findAndHookMethod("android.app.ActivityThread", Application.class.getClassLoader(),
+                        "getPackageInfo", ApplicationInfo.class, CompatibilityInfo.TYPE, ClassLoader.class, boolean.class, boolean.class, boolean.class, new XC_MethodHook() {
+                            @Override
+                            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                                ApplicationInfo applicationInfo = (ApplicationInfo) param.args[0];
+                                Log.e("kk-test", "getPackageInfo:"+applicationInfo.packageName, new Exception());
+                            }
+                        });
             }
 
             @Override
