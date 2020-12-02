@@ -7,6 +7,7 @@ import android.os.Parcelable;
 import android.util.SparseArray;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.remote.InstalledAppInfo;
 
@@ -119,18 +120,15 @@ public class PackageSetting implements Parcelable {
         modifyUserState(userId).installed = installed;
     }
 
-    public boolean isRunOn64BitProcess() {
-        return false;
-        /*switch (flag) {
-            case FLAG_RUN_32BIT:
-                return false;
-            case FLAG_RUN_64BIT:
-                return true;
-            case FLAG_RUN_BOTH_32BIT_64BIT:
-                return VirtualCore.getConfig().getPluginEnginePackageName() != null;
-            default:
-                return false;
-        }*/
+    public boolean isRunPluginProcess() {
+        if (VirtualCore.getConfig().getPluginEnginePackageName() == null) {
+            return false;
+        }
+        if (VirtualRuntime.is64bit()) {
+            return flag == FLAG_RUN_32BIT;
+        } else {
+            return flag == FLAG_RUN_64BIT;
+        }
     }
 
     @Override

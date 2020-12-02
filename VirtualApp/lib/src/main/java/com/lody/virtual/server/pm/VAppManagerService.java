@@ -4,27 +4,21 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageParser;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
-import com.lody.virtual.client.NativeEngine;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.InstallerSetting;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.DexOptimizer;
@@ -33,7 +27,6 @@ import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.FileUtils;
-import com.lody.virtual.helper.utils.MD5Utils;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
@@ -294,7 +287,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 return false;
             }
         } else {
-            VEnvironment.chmodPackageDictionary(new File(ps.getApkPath(ps.isRunOn64BitProcess())));
+            VEnvironment.chmodPackageDictionary(new File(ps.getApkPath(ps.isRunPluginProcess())));
         }
 
         BroadcastSystem.get().startApp(pkg);
@@ -952,7 +945,7 @@ public class VAppManagerService extends IAppManager.Stub {
     @Override
     public boolean isRun64BitProcess(String packageName) {
         PackageSetting ps = PackageCacheManager.getSetting(packageName);
-        return ps != null && ps.isRunOn64BitProcess();
+        return ps != null && ps.isRunPluginProcess();
     }
 
     @Override
@@ -996,7 +989,7 @@ public class VAppManagerService extends IAppManager.Stub {
             for (VPackage p : PackageCacheManager.PACKAGE_CACHE.values()) {
                 PackageSetting ps = (PackageSetting) p.mExtras;
                 if (ps.appId == appId) {
-                    return ps.isRunOn64BitProcess();
+                    return ps.isRunPluginProcess();
                 }
             }
         }

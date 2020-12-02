@@ -394,6 +394,7 @@ public final class VClient extends IVClient.Stub {
         }
         mAppInfo = info;
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, userId);
+
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
         mTargetSdkVersion = data.appInfo.targetSdkVersion;
@@ -487,6 +488,8 @@ public final class VClient extends IVClient.Stub {
             }
         }
         mBoundApplication.info = ContextImpl.mPackageInfo.get(context);
+        ApplicationInfo applicationInfo = LoadedApk.mApplicationInfo.get(mBoundApplication.info);
+        applicationInfo.nativeLibraryDir = data.appInfo.nativeLibraryDir;
         Object thread = VirtualCore.mainThread();
         Object boundApp = mirror.android.app.ActivityThread.mBoundApplication.get(thread);
         mirror.android.app.ActivityThread.AppBindData.appInfo.set(boundApp, data.appInfo);

@@ -549,7 +549,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             VAppManagerService.get().savePersistenceData();
         }
         int vuid = VUserHandle.getUid(userId, ps.appId);
-        boolean is64bit = ps.isRunOn64BitProcess();
+        boolean is64bit = ps.isRunPluginProcess();
         ProcessRecord app = null;
         synchronized (mProcessLock) {
             if (vpid == -1) {

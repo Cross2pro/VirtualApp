@@ -16,10 +16,12 @@ import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Parcel;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.SettingConfig;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.compat.BuildCompat;
@@ -310,7 +312,7 @@ public class PackageParserEx {
         if (ps == null) {
             return false;
         }
-        boolean is64bit = ps.isRunOn64BitProcess();
+        boolean is64bit = ps.isRunPluginProcess();
         String apkPath = ps.getApkPath(is64bit);
         if(apkPath == null){
             return false;
@@ -346,7 +348,7 @@ public class PackageParserEx {
                     ai.splitSourceDirs = outside.splitSourceDirs;
                 }
                 if (libConfig == SettingConfig.AppLibConfig.UseRealLib) {
-                    String outsideNativeLib = chooseOutsideNativeLib(outside, is64bit);
+                    String outsideNativeLib = chooseOutsideNativeLib(outside, VirtualRuntime.is64bit());
                     if (outsideNativeLib != null) {
                         ai.nativeLibraryDir = outsideNativeLib;
                     }
@@ -370,6 +372,7 @@ public class PackageParserEx {
                 }
             }
         }
+
         if (is64bit) {
             ai.dataDir = VEnvironment.getDataUserPackageDirectory64(userId, ai.packageName).getPath();
         } else {
