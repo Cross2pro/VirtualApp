@@ -41,6 +41,7 @@ import io.virtualapp.delegate.MyComponentDelegate;
 import io.virtualapp.delegate.MyTaskDescDelegate;
 import io.virtualapp.home.BackHomeActivity;
 import jonathanfinerty.once.Once;
+import mirror.android.app.LoadedApk;
 import mirror.android.content.res.CompatibilityInfo;
 
 import static android.os.ParcelFileDescriptor.*;
@@ -340,17 +341,6 @@ public class App extends Application {
                 virtualCore.setTaskDescriptionDelegate(new MyTaskDescDelegate());
                 //内部安装，不调用系统的安装，而是自己处理（参考MyAppRequestListener），默认是静默安装在va里面。
                 virtualCore.setAppRequestListener(new MyAppRequestListener(App.this));
-//                private LoadedApk getPackageInfo(ApplicationInfo aInfo, CompatibilityInfo compatInfo,
-//                        ClassLoader baseLoader, boolean securityViolation, boolean includeCode,
-//                boolean registerPackage)
-                XposedHelpers.findAndHookMethod("android.app.ActivityThread", Application.class.getClassLoader(),
-                        "getPackageInfo", ApplicationInfo.class, CompatibilityInfo.TYPE, ClassLoader.class, boolean.class, boolean.class, boolean.class, new XC_MethodHook() {
-                            @Override
-                            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                                ApplicationInfo applicationInfo = (ApplicationInfo) param.args[0];
-                                Log.e("kk-test", "getPackageInfo:"+applicationInfo.packageName, new Exception());
-                            }
-                        });
             }
 
             @Override

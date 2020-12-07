@@ -224,7 +224,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     public ClassLoader getClassLoader(ApplicationInfo appInfo) {
-        Context context = createPackageContext(appInfo.packageName);
+        Context context = createPackageContext(appInfo.packageName, appInfo.nativeLibraryDir);
         return context.getClassLoader();
     }
 
@@ -461,7 +461,7 @@ public final class VClient extends IVClient.Stub {
         Object mainThread = VirtualCore.mainThread();
         NativeEngine.startDexOverride();
         initDataStorage(isSubRemote, userId, packageName);
-        Context context = createPackageContext(data.appInfo.packageName);
+        Context context = createPackageContext(data.appInfo.packageName, data.appInfo.nativeLibraryDir);
         File codeCacheDir;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             codeCacheDir = context.getCodeCacheDir();
@@ -489,6 +489,9 @@ public final class VClient extends IVClient.Stub {
         }
         mBoundApplication.info = ContextImpl.mPackageInfo.get(context);
         ApplicationInfo applicationInfo = LoadedApk.mApplicationInfo.get(mBoundApplication.info);
+        if(applicationInfo.nativeLibraryDir == null){
+            Log.w("kk-test", "applicationInfo.nativeLibraryDir = null,"+context.getApplicationInfo().nativeLibraryDir, new Exception());
+        }
         applicationInfo.nativeLibraryDir = data.appInfo.nativeLibraryDir;
         Object thread = VirtualCore.mainThread();
         Object boundApp = mirror.android.app.ActivityThread.mBoundApplication.get(thread);
@@ -956,10 +959,15 @@ public final class VClient extends IVClient.Stub {
 
     }
 
-    private Context createPackageContext(String packageName) {
+    private Context createPackageContext(String packageName, String libPath) {
         try {
             Context hostContext = VirtualCore.get().getContext();
-            return hostContext.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
+            Context appContext = hostContext.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
+            if(appContext.getApplicationInfo().nativeLibraryDir == null){
+                //TODO why?
+                appContext.getApplicationInfo().nativeLibraryDir = libPath;
+            }
+            return appContext;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             VirtualRuntime.crash(e);

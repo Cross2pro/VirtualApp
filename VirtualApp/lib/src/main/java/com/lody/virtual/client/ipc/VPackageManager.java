@@ -181,11 +181,7 @@ public class VPackageManager {
 
     public ApplicationInfo getApplicationInfo(String packageName, int flags, int userId) {
         try {
-            ApplicationInfo applicationInfo = getService().getApplicationInfo(packageName, flags, userId);
-            if(applicationInfo != null) {
-                Log.e("kk-test", "getApplicationInfo=" + applicationInfo.nativeLibraryDir);
-            }
-            return applicationInfo;
+            return getService().getApplicationInfo(packageName, flags, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
