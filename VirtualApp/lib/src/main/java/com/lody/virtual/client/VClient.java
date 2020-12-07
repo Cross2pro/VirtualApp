@@ -224,7 +224,7 @@ public final class VClient extends IVClient.Stub {
     }
 
     public ClassLoader getClassLoader(ApplicationInfo appInfo) {
-        Context context = createPackageContext(appInfo.packageName, appInfo.nativeLibraryDir);
+        Context context = createPackageContext(appInfo);
         return context.getClassLoader();
     }
 
@@ -461,7 +461,7 @@ public final class VClient extends IVClient.Stub {
         Object mainThread = VirtualCore.mainThread();
         NativeEngine.startDexOverride();
         initDataStorage(isSubRemote, userId, packageName);
-        Context context = createPackageContext(data.appInfo.packageName, data.appInfo.nativeLibraryDir);
+        Context context = createPackageContext(data.appInfo);
         File codeCacheDir;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             codeCacheDir = context.getCodeCacheDir();
@@ -959,13 +959,20 @@ public final class VClient extends IVClient.Stub {
 
     }
 
-    private Context createPackageContext(String packageName, String libPath) {
+    private Context createPackageContext(ApplicationInfo appInfo) {
         try {
+            final String packageName = appInfo.packageName;
             Context hostContext = VirtualCore.get().getContext();
             Context appContext = hostContext.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
-            if(appContext.getApplicationInfo().nativeLibraryDir == null){
-                //TODO why?
-                appContext.getApplicationInfo().nativeLibraryDir = libPath;
+            if (appContext != null) {
+                if (appContext.getApplicationInfo().nativeLibraryDir == null) {
+                    VLog.w(TAG, "fix nativeLibraryDir");
+                    appContext.getApplicationInfo().nativeLibraryDir = appInfo.nativeLibraryDir;
+                }
+                if (appContext.getApplicationInfo().sharedLibraryFiles == null && appInfo.sharedLibraryFiles != null) {
+                    VLog.w(TAG, "fix sharedLibraryFiles");
+                    appContext.getApplicationInfo().sharedLibraryFiles = appInfo.sharedLibraryFiles;
+                }
             }
             return appContext;
         } catch (PackageManager.NameNotFoundException e) {
